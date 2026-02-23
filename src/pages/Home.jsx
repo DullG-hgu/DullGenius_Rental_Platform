@@ -19,11 +19,12 @@ const Home = () => {
         }
     }, [loading]);
 
-    // 스크롤 위치 복원 (Home)
+    // 스크롤 위치 복원 (Home) - 뒤로가기 복원 후 즉시 삭제
     useEffect(() => {
         const savedScrollY = sessionStorage.getItem('home_scroll_y');
         if (savedScrollY) {
-            setTimeout(() => window.scrollTo(0, parseInt(savedScrollY, 10)), 0);
+            window.scrollTo(0, parseInt(savedScrollY, 10));
+            sessionStorage.removeItem('home_scroll_y'); // [FIX] 복원 후 즉시 삭제 (잔류 방지)
         }
     }, []);
 

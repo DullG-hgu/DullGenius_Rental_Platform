@@ -11,8 +11,13 @@ const CategorySelect = () => {
     // 카테고리 추출 및 정렬
     const categories = ["전체", ...new Set(games.map(g => g.category).filter(Boolean))].filter(c => c !== "전체");
 
+    // [FIX] 스크롤은 마운트 1회만 (loading 의존성 제거 → 로딩 완료 시마다 최상단 이동 버그 방지)
     useEffect(() => {
         window.scrollTo(0, 0);
+    }, []);
+
+    // 페이지 진입 로그 (로딩 완료 후 1회)
+    useEffect(() => {
         if (!loading) sendLog(null, 'VIEW', { value: 'Category Select Page' });
     }, [loading]);
 

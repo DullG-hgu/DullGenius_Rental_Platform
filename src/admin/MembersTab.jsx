@@ -215,12 +215,14 @@ function MembersTab() {
         setRoleEditModal({
             isOpen: true,
             member: member,
-            selectedRoles: [...currentRoles]
+            selectedRoles: [...currentRoles],
+            tempSemester: member.joined_semester || '',
+            tempPhone: member.phone || ''
         });
     };
 
     const handleCloseRoleEdit = () => {
-        setRoleEditModal({ isOpen: false, member: null, selectedRoles: [] });
+        setRoleEditModal({ isOpen: false, member: null, selectedRoles: [], tempSemester: '', tempPhone: '' });
     };
 
     const handleToggleRole = (roleKey) => {
@@ -528,19 +530,23 @@ function MembersTab() {
                                     <input
                                         type="text"
                                         placeholder={`YYYY-S (예: ${DEFAULT_SEMESTER})`}
-                                        defaultValue={roleEditModal.member?.joined_semester}
-                                        id="edit-joined-semester-input"
+                                        value={roleEditModal.tempSemester}
+                                        onChange={(e) => setRoleEditModal(prev => ({ ...prev, tempSemester: e.target.value }))}
                                         style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                                     />
                                     <button
                                         onClick={async () => {
-                                            const val = document.getElementById('edit-joined-semester-input').value;
+                                            const val = roleEditModal.tempSemester;
                                             if (!val) return;
                                             try {
                                                 await updateUserProfile(roleEditModal.member.id, { joined_semester: val });
                                                 showToast('가입 학기가 수정되었습니다.', { type: 'success' });
+                                                // [CRITICAL] 모달 내 member 데이터도 최신화하여 '저장' 시 권한 유실 방지
+                                                setRoleEditModal(prev => ({
+                                                    ...prev,
+                                                    member: { ...prev.member, joined_semester: val }
+                                                }));
                                                 loadMembers(); // 리스트 갱신
-                                                // 모달 닫지는 않음 (연속 작업 가능)
                                             } catch (e) {
                                                 showToast('수정 실패: ' + e.message, { type: 'error' });
                                             }
@@ -559,16 +565,21 @@ function MembersTab() {
                                     <input
                                         type="text"
                                         placeholder="010-XXXX-XXXX"
-                                        defaultValue={roleEditModal.member?.phone}
-                                        id="edit-phone-input"
+                                        value={roleEditModal.tempPhone}
+                                        onChange={(e) => setRoleEditModal(prev => ({ ...prev, tempPhone: e.target.value }))}
                                         style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                                     />
                                     <button
                                         onClick={async () => {
-                                            const val = document.getElementById('edit-phone-input').value;
+                                            const val = roleEditModal.tempPhone;
                                             try {
                                                 await updateUserProfile(roleEditModal.member.id, { phone: val });
                                                 showToast('전화번호가 수정되었습니다.', { type: 'success' });
+                                                // [CRITICAL] 모달 내 member 데이터도 최신화
+                                                setRoleEditModal(prev => ({
+                                                    ...prev,
+                                                    member: { ...prev.member, phone: val }
+                                                }));
                                                 loadMembers(); // 리스트 갱신
                                             } catch (e) {
                                                 showToast('수정 실패: ' + e.message, { type: 'error' });

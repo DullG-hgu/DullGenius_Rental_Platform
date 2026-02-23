@@ -38,15 +38,19 @@ const GameSearch = () => {
 
     const categories = ["전체", ...new Set(games.map(g => g.category).filter(Boolean))];
 
-    // 스크롤 복원 (Search Page 독립)
+    // 스크롤 복원 (Search Page 독립) - 마운트 1회만 실행
     useEffect(() => {
         const savedScrollY = sessionStorage.getItem('search_scroll_y');
-        if (savedScrollY && !loading) {
-            setTimeout(() => window.scrollTo(0, parseInt(savedScrollY, 10)), 0);
-        } else if (!savedScrollY) {
+        if (savedScrollY) {
+            // [FIX] requestAnimationFrame으로 렌더링 완료 후 복원, 복원 후 즉시 삭제
+            requestAnimationFrame(() => {
+                window.scrollTo(0, parseInt(savedScrollY, 10));
+                sessionStorage.removeItem('search_scroll_y');
+            });
+        } else {
             window.scrollTo(0, 0);
         }
-    }, [loading]);
+    }, []); // [FIX] loading 의존성 제거 → loading 변화 시마다 최상단으로 튀는 현상 방지
 
     // 검색어 디바운스 및 로그
     useEffect(() => {

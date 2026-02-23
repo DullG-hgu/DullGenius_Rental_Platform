@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { CLUB_INFO, CONTACTS, LINKS, DEVELOPERS, TERMS_OF_SERVICE, USAGE_GUIDE } from '../infoData';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext'; // [NEW] Auth Context
+import { useToast } from '../contexts/ToastContext'; // [NEW] Toast 알림
 
 /**
  * 정보 표시 모달
@@ -10,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext'; // [NEW] Auth Context
  */
 function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
     const { user } = useAuth(); // [NEW] 로그인 정보
+    const { showToast } = useToast(); // [NEW] Toast 알림
     const [activeTab, setActiveTab] = useState(initialTab);
 
     // [NEW] Form States
@@ -50,10 +52,9 @@ function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
     // [NEW] 파손 신고 제출
     const handleReportSubmit = async (e) => {
         e.preventDefault();
-        if (!user) return alert("로그인이 필요합니다.");
-        // if (!reportGameId) return alert("게임을 선택해주세요."); // [MOD] 직접 입력으로 변경되어 ID 체크 제거
-        if (!reportSearch.trim()) return alert("게임 이름을 입력해주세요.");
-        if (!reportContent.trim()) return alert("파손 내용을 입력해주세요.");
+        if (!user) return showToast("로그인이 필요합니다.", { type: "warning" });
+        if (!reportSearch.trim()) return showToast("게임 이름을 입력해주세요.", { type: "warning" });
+        if (!reportContent.trim()) return showToast("파손 내용을 입력해주세요.", { type: "warning" });
 
         setIsSubmitting(true);
         try {
@@ -65,11 +66,11 @@ function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
             });
 
             if (error) throw error;
-            alert("파손 신고가 접수되었습니다. 빠른 시일 내에 확인하겠습니다.");
+            showToast("파손 신고가 접수되었습니다. 빠른 시일 내에 확인하겠습니다.");
             onClose();
         } catch (error) {
             console.error("파손 신고 실패:", error);
-            alert("신고 접수 중 오류가 발생했습니다.");
+            showToast("신고 접수 중 오류가 발생했습니다.", { type: "error" });
         } finally {
             setIsSubmitting(false);
         }
@@ -78,8 +79,8 @@ function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
     // [NEW] 게임 신청 제출
     const handleRequestSubmit = async (e) => {
         e.preventDefault();
-        if (!user) return alert("로그인이 필요합니다.");
-        if (!requestTitle.trim()) return alert("게임 제목을 입력해주세요.");
+        if (!user) return showToast("로그인이 필요합니다.", { type: "warning" });
+        if (!requestTitle.trim()) return showToast("게임 제목을 입력해주세요.", { type: "warning" });
 
         setIsSubmitting(true);
         try {
@@ -90,11 +91,11 @@ function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
             });
 
             if (error) throw error;
-            alert("게임 신청이 완료되었습니다! 다음 구매 때 참고할게요.");
+            showToast("게임 신청이 완료되었습니다! 다음 구매 때 참고할게요.");
             onClose();
         } catch (error) {
             console.error("게임 신청 실패:", error);
-            alert("신청 중 오류가 발생했습니다.");
+            showToast("신청 중 오류가 발생했습니다.", { type: "error" });
         } finally {
             setIsSubmitting(false);
         }
@@ -209,7 +210,7 @@ function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
                                         disabled={isSubmitting}
                                     />
                                 </div>
-                                <button type="submit" style={styles.submitBtn} disabled={isSubmitting}>
+                                <button type="submit" style={styles.requestSubmitBtn} disabled={isSubmitting}>
                                     {isSubmitting ? '제출 중...' : '신청하기'}
                                 </button>
                             </form>
@@ -413,7 +414,18 @@ const styles = {
     },
     submitBtn: {
         padding: '12px',
-        background: '#e74c3c', // 파손 신고는 빨간색 계열
+        background: '#e74c3c', // 파손 신고 — 위험 행동 빨간색
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        fontSize: '1rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        marginTop: '10px'
+    },
+    requestSubmitBtn: {
+        padding: '12px',
+        background: '#3498db', // [NEW] 게임 신청 — 중립 파란색 (긍정 행동)
         color: 'white',
         border: 'none',
         borderRadius: '5px',
