@@ -76,6 +76,38 @@ export const fetchGames = async () => {
 };
 
 /**
+ * 특정 게임 1개의 최신 상태를 서버에서 정확하게 재조회합니다.
+ * 찜/취소 후 로컬 추정 대신 서버의 실제 대여 기록 기반으로 정확한 available_count를 반환합니다.
+ *
+ * @param {number} gameId - 게임 ID
+ * @returns {Promise<Object|null>} 최신 게임 객체 또는 null
+ */
+export const fetchGameById = async (gameId) => {
+  try {
+    const [gameRes, rentalsRes] = await Promise.all([
+      supabase.from('games').select('*').eq('id', gameId).single(),
+      supabase.from('rentals')
+        .select('rental_id, game_id, user_id, renter_name, type, returned_at, due_date, borrowed_at')
+        .eq('game_id', gameId)
+        .is('returned_at', null)
+    ]);
+
+    if (gameRes.error) throw gameRes.error;
+
+    const game = gameRes.data;
+    const gameRentals = rentalsRes.data || [];
+
+    const statusData = calculateGameStatus(game, gameRentals);
+    return { ...game, ...statusData };
+  } catch (e) {
+    console.error("fetchGameById 실패:", e);
+    return null;
+  }
+};
+
+
+
+/**
  * 게임을 즉시 대여 처리합니다. (회원 전용)
  * 
  * @param {number} gameId - 게임 ID
@@ -221,6 +253,26 @@ export const deleteReview = async (reviewId) => {
   const { error } = await supabase
     .from('reviews')
     .delete()
+    .eq('review_id', reviewId);
+
+  if (error) return { status: "error", message: error.message };
+  return { status: "success" };
+};
+
+/**
+ * 리뷰를 수정합니다. (RLS에 의해 본인만 가능)
+ *
+ * @param {string} reviewId - 리뷰 ID (UUID)
+ * @param {{ rating: number, content: string }} updatedData - 수정할 데이터
+ * @returns {Promise<Object>} 성공 여부 객체 { status: "success" | "error" }
+ */
+export const updateReview = async (reviewId, updatedData) => {
+  const { error } = await supabase
+    .from('reviews')
+    .update({
+      rating: parseInt(updatedData.rating),
+      content: updatedData.content,
+    })
     .eq('review_id', reviewId);
 
   if (error) return { status: "error", message: error.message };
@@ -488,7 +540,7 @@ export const editGame = async (gameData) => {
       name: gameData.name,
       category: gameData.category,
       players: gameData.players,
-      difficulty: gameData.difficulty,
+      difficulty: gameData.difficulty === "" ? null : gameData.difficulty, // [FIX] 빈 문자열은 numeric 타입 에러 방지
       tags: gameData.tags,
       image: gameData.image,
       video_url: gameData.video_url,

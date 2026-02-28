@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { fetchGames, sendMiss, fetchReviews, addReview, increaseViewCount, dibsGame, cancelDibsGame, fetchMyRentals, sendLog } from '../api';
+import { fetchGames, fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, fetchMyRentals, sendLog } from '../api';
 import { TEXTS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -23,6 +23,9 @@ function GameDetail() {
   const [newReview, setNewReview] = useState({ rating: "5", comment: "" });
   const [cooldown, setCooldown] = useState(0);
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editForm, setEditForm] = useState({ rating: "5", content: "" });
+  const [isUpdating, setIsUpdating] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [videoId, setVideoId] = useState(null);
 
@@ -163,12 +166,13 @@ function GameDetail() {
               buttonText: "마이페이지로 가기",
               onButtonClick: () => navigate('/mypage')
             });
-            setGame(prev => ({
-              ...prev,
-              status: "예약됨",
-              renterId: user.id,
-              available_count: (prev.available_count || 1) - 1
-            }));
+            // [FIX] 로컬 추정 대신 서버에서 최신 상태 재조회 (동시성 안전)
+            const updatedGame = await fetchGameById(game.id);
+            if (updatedGame) {
+              setGame(prev => ({ ...updatedGame, renterId: user.id, status: '예약됨' }));
+            } else {
+              setGame(prev => ({ ...prev, status: '예약됨', renterId: user.id }));
+            }
           } else {
             showToast(result.message || "찜하기 실패", { type: "error" });
           }
@@ -190,7 +194,13 @@ function GameDetail() {
           if (result.success) {
             localStorage.removeItem('games_cache'); // [FIX] 전역 캐시 초기화
             showToast("찜이 취소되었습니다.");
-            setGame(prev => ({ ...prev, status: "대여가능", renterId: null, available_count: (prev.available_count || 0) + 1 })); // [FIX] prev 기반 업데이트
+            // [FIX] 로컬 추정 대신 서버에서 최신 상태 재조회 (동시성 안전)
+            const updatedGame = await fetchGameById(game.id);
+            if (updatedGame) {
+              setGame(updatedGame);
+            } else {
+              setGame(prev => ({ ...prev, status: '대여가능', renterId: null, available_count: (prev.available_count || 0) + 1 }));
+            }
           } else {
             showToast(result.message || "취소 실패", { type: "error" });
           }
@@ -239,6 +249,52 @@ function GameDetail() {
     } finally {
       setIsReviewSubmitting(false);
     }
+  };
+
+  const handleStartEdit = (review) => {
+    setEditingReviewId(review.review_id);
+    setEditForm({ rating: String(review.rating), content: review.content });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingReviewId(null);
+    setEditForm({ rating: "5", content: "" });
+  };
+
+  const handleUpdateReview = async (reviewId) => {
+    if (!editForm.content.trim()) return showToast("내용을 입력해주세요.", { type: "warning" });
+    if (isUpdating) return;
+    setIsUpdating(true);
+    try {
+      const result = await updateReview(reviewId, editForm);
+      if (result.status === "error") throw new Error(result.message);
+      showToast(TEXTS.ALERT_REVIEW_UPDATE_SUCCESS);
+      handleCancelEdit();
+      const reviewsData = await fetchReviews(id);
+      setReviews(reviewsData || []);
+    } catch (e) {
+      showToast("리뷰 수정 실패: " + e.message, { type: "error" });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteReview = (reviewId) => {
+    showConfirmModal(
+      "리뷰 삭제",
+      "정말로 이 리뷰를 삭제하시겠습니까?",
+      async () => {
+        const result = await deleteReview(reviewId);
+        if (result.status === "error") {
+          showToast("삭제 실패: " + result.message, { type: "error" });
+        } else {
+          showToast(TEXTS.ALERT_REVIEW_DELETE_SUCCESS);
+          const reviewsData = await fetchReviews(id);
+          setReviews(reviewsData || []);
+        }
+      },
+      "danger"
+    );
   };
 
   if (loading && !game) return <div className="loading-container"><div className="spinner"></div></div>;
@@ -400,15 +456,55 @@ function GameDetail() {
         </h4>
         {isReviewsLoading ? <div>리뷰 불러오는 중...</div> : (
           (reviews || []).map(r => (
-            <div key={r.review_id || Math.random()} className="review-item">
-              <div className="review-item-header">
-                <strong>{r.author_name || r.user_name || "익명"}</strong>
-                <span style={{ color: "#f1c40f" }}>{"⭐".repeat(r.rating)}</span>
-              </div>
-              <div style={{ color: "#333" }}>{r.content}</div>
-              <div className="review-date">
-                {new Date(r.created_at).toLocaleDateString()}
-              </div>
+            <div key={r.review_id} className="review-item">
+              {editingReviewId === r.review_id ? (
+                /* 인라인 수정 폼 */
+                <div className="review-edit-form">
+                  <div className="review-edit-header">
+                    <strong>{r.author_name || r.user_name || "익명"}</strong>
+                    <select
+                      className="review-rating-select"
+                      value={editForm.rating}
+                      onChange={e => setEditForm({ ...editForm, rating: e.target.value })}
+                      aria-label="별점 선택"
+                    >
+                      <option value="5">⭐⭐⭐⭐⭐ (5점)</option>
+                      <option value="4">⭐⭐⭐⭐ (4점)</option>
+                      <option value="3">⭐⭐⭐ (3점)</option>
+                      <option value="2">⭐⭐ (2점)</option>
+                      <option value="1">⭐ (1점)</option>
+                    </select>
+                  </div>
+                  <textarea
+                    className="review-text-input"
+                    value={editForm.content}
+                    onChange={e => setEditForm({ ...editForm, content: e.target.value })}
+                    style={{ marginTop: "8px" }}
+                  />
+                  <div className="review-edit-actions">
+                    <button className="review-action-btn save" onClick={() => handleUpdateReview(r.review_id)} disabled={isUpdating}>{isUpdating ? "저장 중..." : "저장"}</button>
+                    <button className="review-action-btn cancel" onClick={handleCancelEdit} disabled={isUpdating}>취소</button>
+                  </div>
+                </div>
+              ) : (
+                /* 일반 리뷰 표시 */
+                <>
+                  <div className="review-item-header">
+                    <strong>{r.author_name || r.user_name || "익명"}</strong>
+                    <span style={{ color: "#f1c40f" }}>{"⭐".repeat(r.rating)}</span>
+                  </div>
+                  <div style={{ color: "#333", whiteSpace: "pre-wrap" }}>{r.content}</div>
+                  <div className="review-item-footer">
+                    <span className="review-date">{new Date(r.created_at).toLocaleDateString()}</span>
+                    {user && r.user_id === user.id && (
+                      <div className="review-owner-actions">
+                        <button className="review-action-btn edit" onClick={() => handleStartEdit(r)}>수정</button>
+                        <button className="review-action-btn delete" onClick={() => handleDeleteReview(r.review_id)}>삭제</button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           ))
         )}

@@ -134,6 +134,7 @@ export const TEXTS = {
   ALERT_MISS_SUCCESS: "📩 전달되었습니다! 다음 구매 때 참고할게요.",
   ALERT_REVIEW_SUCCESS: "✨ 리뷰가 등록되었습니다!",
   ALERT_REVIEW_DELETE_SUCCESS: "🗑️ 리뷰가 삭제되었습니다.",
+  ALERT_REVIEW_UPDATE_SUCCESS: "✏️ 리뷰가 수정되었습니다.",
 
   RENTAL_RULE:
     `

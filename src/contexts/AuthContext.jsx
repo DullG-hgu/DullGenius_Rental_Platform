@@ -65,31 +65,10 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         isMounted.current = true;
 
-        const initSession = async () => {
-            try {
-                const { data: { session }, error } = await supabase.auth.getSession();
-                if (error) throw error;
-
-                if (isMounted.current) {
-                    setUser(session?.user ?? null);
-                    if (session?.user) {
-                        await fetchProfileAndRoles(session.user.id);
-                    } else {
-                        setLoading(false);
-                    }
-                }
-            } catch (err) {
-                console.error("Session check failed:", err);
-                if (isMounted.current) {
-                    setUser(null);
-                    setLoading(false);
-                }
-            }
-        };
-
-        initSession();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        // Supabase v2는 onAuthStateChange 등록 시 즉시 INITIAL_SESSION 이벤트를 발생시킴.
+        // initSession()과 동시에 실행되면 fetchProfileAndRoles가 2번 호출되는 race condition이 생기므로
+        // initSession()을 제거하고 onAuthStateChange 단일 진입점으로 통합함.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             if (!isMounted.current) return;
 
             const currentId = session?.user?.id;
@@ -102,7 +81,7 @@ export const AuthProvider = ({ children }) => {
                 if (currentId !== prevId) {
                     setLoading(true);
                 }
-                fetchProfileAndRoles(session.user.id);
+                await fetchProfileAndRoles(session.user.id);
             } else {
                 setProfile(null);
                 setRoles([]);

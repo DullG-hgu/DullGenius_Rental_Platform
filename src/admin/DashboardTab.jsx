@@ -154,7 +154,44 @@ function DashboardTab({ games, loading, onReload }) {
       `[${formData.name}] 정보를 수정하시겠습니까?`,
       async () => {
         try {
-          await editGame({ game_id: targetGame.id, ...formData });
+          let finalImage = formData.image;
+
+          // 이미지 URL이 외부 링크(기존 Supabase URL이 아닌 경우)이면 최적화 진행
+          if (finalImage && finalImage.startsWith('http') && !finalImage.includes('supabase.co')) {
+            try {
+              showToast("이미지를 최적화하고 있습니다...", { type: "info" });
+
+              const cleanUrl = finalImage.replace(/^https?:\/\//, '');
+              const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}&w=600&output=webp&il`;
+
+              const response = await fetch(proxyUrl);
+              if (!response.ok) {
+                throw new Error(`이미지 최적화 서버 응답 에러: ${response.status}`);
+              }
+              const blob = await response.blob();
+
+              const { supabase: sb } = await import('../lib/supabaseClient');
+              const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.webp`;
+
+              const { error: uploadError } = await sb.storage
+                .from('game-images')
+                .upload(fileName, blob, { contentType: 'image/webp' });
+
+              if (uploadError) throw uploadError;
+
+              const { data: { publicUrl } } = sb.storage
+                .from('game-images')
+                .getPublicUrl(fileName);
+
+              finalImage = publicUrl;
+            } catch (imgError) {
+              console.error("Image optimization failed (edit):", imgError);
+              showToast("이미지 최적화 실패 (원본 사용)", { type: "warning" });
+              // 실패해도 원본 URL로 계속 진행
+            }
+          }
+
+          await editGame({ game_id: targetGame.id, ...formData, image: finalImage });
           showToast("수정되었습니다.", { type: "success" });
           setIsEditModalOpen(false);
           onReload();
