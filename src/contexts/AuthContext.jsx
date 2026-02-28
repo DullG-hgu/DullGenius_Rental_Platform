@@ -68,7 +68,11 @@ export const AuthProvider = ({ children }) => {
         // Supabase v2는 onAuthStateChange 등록 시 즉시 INITIAL_SESSION 이벤트를 발생시킴.
         // initSession()과 동시에 실행되면 fetchProfileAndRoles가 2번 호출되는 race condition이 생기므로
         // initSession()을 제거하고 onAuthStateChange 단일 진입점으로 통합함.
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        // onAuthStateChange 콜백 내부에서 await + supabase 쿼리를 사용하면
+        // Supabase 내부 세션 락과 데드락이 발생해 무한 로딩이 생긴다.
+        // fetchProfileAndRoles는 fire-and-forget으로 호출하고,
+        // 내부의 finally { setLoading(false) }가 완료를 처리한다.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (!isMounted.current) return;
 
             const currentId = session?.user?.id;
@@ -81,7 +85,7 @@ export const AuthProvider = ({ children }) => {
                 if (currentId !== prevId) {
                     setLoading(true);
                 }
-                await fetchProfileAndRoles(session.user.id);
+                fetchProfileAndRoles(session.user.id);
             } else {
                 setProfile(null);
                 setRoles([]);
