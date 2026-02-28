@@ -17,16 +17,24 @@ export const AuthProvider = ({ children }) => {
     const { showToast } = useToast();
     // useRef를 사용하여 마운트 상태 추적 (비동기 콜백에서의 상태 업데이트 방지)
     const isMounted = useRef(true);
-    const lastUserId = useRef(null); // [NEW] 이전 유저 ID 추적 (리프레시 방지)
+    const lastUserId = useRef(null);
+    const fetchGenRef = useRef(0); // 로그아웃 시 in-flight fetch 무효화용
 
-    // [FIX] fetchProfileAndRoles를 useEffect 밖으로 이동하여 다른 함수에서도 사용 가능하게 함
     const fetchProfileAndRoles = async (userId) => {
+        const gen = ++fetchGenRef.current;
+        console.debug(`[Auth] fetchProfileAndRoles 시작 (gen=${gen}, userId=${userId})`);
         try {
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('*, is_semester_fixed')
                 .eq('id', userId)
                 .single();
+
+            // 이 await 이후 로그아웃이 됐으면 중단
+            if (gen !== fetchGenRef.current || !isMounted.current) {
+                console.debug(`[Auth] fetchProfileAndRoles 중단 - 로그아웃됨 (gen=${gen}, current=${fetchGenRef.current})`);
+                return;
+            }
 
             if (profileError) {
                 if (profileError.code === 'PGRST116') {
@@ -39,7 +47,8 @@ export const AuthProvider = ({ children }) => {
                 }
                 throw profileError;
             }
-            if (isMounted.current) setProfile(profileData);
+            setProfile(profileData);
+            console.debug(`[Auth] 프로필 로드 완료 (gen=${gen}, name=${profileData?.name})`);
 
             const { data: roleData, error: roleError } = await supabase
                 .from('user_roles')
@@ -49,16 +58,28 @@ export const AuthProvider = ({ children }) => {
                 `)
                 .eq('user_id', userId);
 
-            if (roleError) throw roleError;
+            if (gen !== fetchGenRef.current || !isMounted.current) {
+                console.debug(`[Auth] 역할 조회 후 중단 - 로그아웃됨 (gen=${gen})`);
+                return;
+            }
 
-            const roleKeys = roleData.map(r => r.role_key);
-            if (isMounted.current) setRoles(roleKeys);
+            if (roleError) throw roleError;
+            setRoles(roleData.map(r => r.role_key));
+            console.debug(`[Auth] 역할 로드 완료 (gen=${gen}, roles=${roleData.map(r => r.role_key).join(',')})`);
 
         } catch (error) {
+            // 로그아웃 이후 발생한 에러는 무시
+            if (gen !== fetchGenRef.current) {
+                console.debug(`[Auth] 에러 무시 - 로그아웃 후 발생 (gen=${gen})`);
+                return;
+            }
             console.error('Error fetching user data:', error.message);
             showToast("사용자 정보를 불러오는데 실패했습니다.", { type: "error" });
         } finally {
-            if (isMounted.current) setLoading(false);
+            if (isMounted.current && gen === fetchGenRef.current) {
+                console.debug(`[Auth] setLoading(false) (gen=${gen})`);
+                setLoading(false);
+            }
         }
     };
 
@@ -74,6 +95,7 @@ export const AuthProvider = ({ children }) => {
         // 내부의 finally { setLoading(false) }가 완료를 처리한다.
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (!isMounted.current) return;
+            console.debug(`[Auth] onAuthStateChange event=${_event}, userId=${session?.user?.id ?? 'none'}`);
 
             const currentId = session?.user?.id;
             const prevId = lastUserId.current;
@@ -83,10 +105,13 @@ export const AuthProvider = ({ children }) => {
 
             if (session?.user) {
                 if (currentId !== prevId) {
+                    console.debug(`[Auth] 새 유저 감지 (prev=${prevId} → curr=${currentId}), setLoading(true)`);
                     setLoading(true);
                 }
                 fetchProfileAndRoles(session.user.id);
             } else {
+                fetchGenRef.current++; // in-flight fetch 무효화 (낙관적 로그아웃 미경유 시 대비)
+                console.debug(`[Auth] SIGNED_OUT, fetchGen 무효화 → ${fetchGenRef.current}`);
                 setProfile(null);
                 setRoles([]);
                 setLoading(false);
@@ -138,7 +163,17 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
-    const logout = () => supabase.auth.signOut();
+    const logout = async () => {
+        // 낙관적 로그아웃: 네트워크 응답 전에 즉시 상태 초기화 → UI 즉시 반응
+        console.debug(`[Auth] logout() 호출 - 낙관적 상태 초기화`);
+        fetchGenRef.current++; // in-flight fetchProfileAndRoles 무효화
+        setUser(null);
+        setProfile(null);
+        setRoles([]);
+        setLoading(false);
+        await supabase.auth.signOut();
+        console.debug(`[Auth] signOut() 완료`);
+    };
     const hasRole = (roleKey) => roles.includes(roleKey);
 
     // 비밀번호 변경 (사용자 본인)
