@@ -24,6 +24,7 @@ const Admin = lazy(() => import('./Admin'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginTooltip from './components/LoginTooltip';
+import ChunkErrorBoundary from './components/ChunkErrorBoundary';
 
 const PasswordReset = lazy(() => import('./components/PasswordReset'));
 
@@ -33,6 +34,7 @@ function App() {
       <AuthProvider>
         <GameProvider>
           <BrowserRouter>
+            <ChunkErrorBoundary>
             <Suspense fallback={
               <div className="loading-container">
                 <div className="spinner"></div>
@@ -58,6 +60,7 @@ function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
+            </ChunkErrorBoundary>
           </BrowserRouter>
         </GameProvider>
       </AuthProvider>
