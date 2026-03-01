@@ -13,3 +13,11 @@
 # 여기서는 Production 환경용 Redirect를 설정합니다.
 # 하지만 Netlify Functions는 기본적으로 /.netlify/functions/ 경로로 접근 가능하므로
 # 프론트엔드 api.js에서 경로를 분기처리하는 것이 더 명확합니다.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"

@@ -8,18 +8,8 @@ import ReturnModal from './ReturnModal';
 import ReservationModal from './ReservationModal'; // [NEW] 예약 수령 모달
 
 // [Constants]
-const MASTER_KEY = import.meta.env.VITE_KIOSK_MASTER_KEY;
 const IDLE_TIMEOUT_MS = 180000; // 3분 (번인 방지)
 const REFRESH_HOUR = 4; // 새벽 4시 자동 새로고침
-
-// [Utility] SHA-256 해시 생성 (간단한 보안 강화)
-async function hashToken(key) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(key);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 function KioskPage() {
     const { showToast } = useToast();
@@ -78,24 +68,17 @@ function KioskPage() {
 
     // [Effect 1] 초기 인증 체크 & 자동 새로고침 스케줄러
     useEffect(() => {
-        // 환경 변수 검증
-        if (!MASTER_KEY) {
-            console.error('❌ VITE_KIOSK_MASTER_KEY 환경 변수가 설정되지 않았습니다.');
-            return;
-        }
-
-        // 토큰 검증 (해시 확인)
-        const validateSession = async () => {
-            const storedToken = localStorage.getItem('kiosk_token');
-
-            if (storedToken) {
-                const validHash = await hashToken(MASTER_KEY);
-                if (storedToken === validHash) {
+        // 세션 검증 (만료 시간 체크)
+        const validateSession = () => {
+            try {
+                const stored = JSON.parse(localStorage.getItem('kiosk_session') || 'null');
+                if (stored && stored.authorized && stored.expiresAt > Date.now()) {
                     setIsAuthorized(true);
                 } else {
-                    // 유효하지 않은 토큰은 제거
-                    localStorage.removeItem('kiosk_token');
+                    localStorage.removeItem('kiosk_session');
                 }
+            } catch {
+                localStorage.removeItem('kiosk_session');
             }
         };
 
@@ -179,41 +162,45 @@ function KioskPage() {
 
     // [Handlers]
     const handleActivation = async () => {
-        // 환경 변수 미설정 검증
-        if (!MASTER_KEY) {
-            showToast("시스템 오류: 마스터 키가 설정되지 않았습니다. 관리자에게 문의하세요.", { type: "error" });
-            return;
-        }
-
-        // 빈 입력 검증
         if (!activationCode.trim()) {
             showToast("마스터 키를 입력해주세요.", { type: "error" });
             return;
         }
 
-        // 마스터 키 확인
-        if (activationCode === MASTER_KEY) {
-            // 해시화된 토큰 생성 및 저장 (영구 보관)
-            const hashedToken = await hashToken(MASTER_KEY);
-            localStorage.setItem('kiosk_token', hashedToken);
+        try {
+            const res = await fetch('/.netlify/functions/verify-kiosk-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: activationCode }),
+            });
+            const data = await res.json();
 
-            setIsAuthorized(true);
-            setActivationCode(""); // 입력 필드 초기화
-            showToast("기기 인증 완료! 키오스크 모드를 시작합니다.", { type: "success" });
+            if (data.success) {
+                localStorage.setItem('kiosk_session', JSON.stringify({
+                    authorized: true,
+                    expiresAt: Date.now() + 86400000, // 24시간
+                }));
+                setIsAuthorized(true);
+                setActivationCode("");
+                showToast("기기 인증 완료! 키오스크 모드를 시작합니다.", { type: "success" });
 
-            // [Fullscreen] 강제 전체화면 요청 (브라우저 정책상 사용자 상호작용 필요)
-            try {
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen();
-                } else if (document.documentElement.webkitRequestFullscreen) { // Safari/Old Chrome
-                    document.documentElement.webkitRequestFullscreen();
+                // [Fullscreen] 강제 전체화면 요청 (브라우저 정책상 사용자 상호작용 필요)
+                try {
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen();
+                    } else if (document.documentElement.webkitRequestFullscreen) {
+                        document.documentElement.webkitRequestFullscreen();
+                    }
+                } catch (err) {
+                    console.warn("Fullscreen request failed:", err);
                 }
-            } catch (err) {
-                console.warn("Fullscreen request failed:", err);
+            } else {
+                showToast("인증 실패. 마스터 키를 확인하세요.", { type: "error" });
+                setActivationCode("");
             }
-        } else {
-            showToast("인증 실패. 마스터 키를 확인하세요.", { type: "error" });
-            setActivationCode(""); // 실패 시에도 초기화
+        } catch (err) {
+            showToast("서버 연결 오류. 잠시 후 다시 시도해주세요.", { type: "error" });
+            setActivationCode("");
         }
     };
 
@@ -222,18 +209,6 @@ function KioskPage() {
         return (
             <div className="activation-screen">
                 <h1 style={{ marginBottom: "30px" }}>🔒 기기 인증 필요</h1>
-                {!MASTER_KEY && (
-                    <div style={{
-                        background: "#ff4444",
-                        color: "white",
-                        padding: "15px",
-                        borderRadius: "8px",
-                        marginBottom: "20px",
-                        fontSize: "0.9rem"
-                    }}>
-                        ⚠️ 시스템 오류: VITE_KIOSK_MASTER_KEY 환경 변수가 설정되지 않았습니다.
-                    </div>
-                )}
                 <input
                     type="password"
                     className="activation-input"
@@ -241,18 +216,16 @@ function KioskPage() {
                     value={activationCode}
                     onChange={(e) => setActivationCode(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleActivation()}
-                    disabled={!MASTER_KEY}
                 />
                 <button
                     className="kiosk-btn"
                     style={{
                         fontSize: "1rem",
                         padding: "10px 30px",
-                        background: MASTER_KEY ? "#333" : "#666",
-                        cursor: MASTER_KEY ? "pointer" : "not-allowed"
+                        background: "#333",
+                        cursor: "pointer"
                     }}
                     onClick={handleActivation}
-                    disabled={!MASTER_KEY}
                 >
                     인증하기
                 </button>
