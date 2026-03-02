@@ -352,6 +352,54 @@ export const fetchConfig = async () => {
   return data.value;
 };
 
+// 오피스아워 상태 조회
+export const fetchOfficeStatus = async () => {
+  const { data } = await supabase
+    .from('app_config')
+    .select('value')
+    .eq('key', 'office_status')
+    .single();
+  return data?.value ?? { open: false, auto_close_at: null };
+};
+
+// 오피스아워 배너 설정 조회
+export const fetchOfficeHoursConfig = async () => {
+  const { data } = await supabase
+    .from('app_config')
+    .select('value')
+    .eq('key', 'office_hours_config')
+    .single();
+  return data?.value ?? {
+    auto_close_hour: 21,
+    auto_close_minute: 0,
+    banner_icon: '🟢',
+    banner_title: '오피스아워 진행 중!',
+    banner_subtitle: '지금 방문하시면 게임을 대여할 수 있어요',
+    banner_color: 'linear-gradient(135deg, #1a5c2a, #27ae60)',
+    schedule_icon: '📅',
+    schedule_text: '',
+    offline_text: '현재 오피스아워를 운영하고 있지 않아요'
+  };
+};
+
+// 회비 검사 활성화 여부 조회
+export const fetchPaymentCheckEnabled = async () => {
+  const { data } = await supabase
+    .from('app_config')
+    .select('value')
+    .eq('key', 'payment_check_enabled')
+    .single();
+  return data?.value === 'true';
+};
+
+// 오피스아워 배너 설정 저장
+export const saveOfficeHoursConfig = async (config) => {
+  const { error } = await supabase
+    .from('app_config')
+    .upsert({ key: 'office_hours_config', value: config }, { onConflict: 'key' });
+  if (error) throw error;
+};
+
 // 5. 아쉬워요 (수요조사)
 export const sendMiss = async (gameId) => {
   // [FIX] details를 문자열이 아닌 JSON 구조로 변경하여 JSONB 호환성 확보

@@ -15,8 +15,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { fetchGames, fetchConfig } from './api';
+import { useNavigate } from 'react-router-dom';
+import { fetchGames, fetchConfig, fetchOfficeStatus } from './api';
 import { useAuth } from './contexts/AuthContext'; // [SECURITY] Supabase 권한 기반 인증
 import { useToast } from './contexts/ToastContext';
 import './Admin.css'; // [NEW] 다크 모드 스타일 임포트
@@ -29,6 +29,7 @@ import PointsTab from './admin/PointsTab';
 import MembersTab from './admin/MembersTab'; // [NEW]
 import SystemTab from './admin/SystemTab'; // [NEW] 시스템 설정 탭
 import ReportsTab from './admin/ReportsTab'; // [NEW] 신고/신청 관리 탭
+import { setOfficeOpen, setOfficeClosed } from './api_members';
 
 function Admin() {
   const { user, hasRole, logout, loading: authLoading } = useAuth();
@@ -46,6 +47,7 @@ function Admin() {
   const [games, setGames] = useState([]);
   const [config, setConfig] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [officeStatus, setOfficeStatus] = useState(null);
 
   // --- 데이터 로딩 (SWR 패턴 적용) ---
   const loadData = useCallback(async () => {
@@ -93,6 +95,12 @@ function Admin() {
     }
   }, [showToast]);
 
+  // 오피스아워 상태 로드
+  const loadOfficeStatus = useCallback(async () => {
+    const status = await fetchOfficeStatus();
+    setOfficeStatus(status);
+  }, []);
+
   // 인증 성공 시 데이터 최초 로드
   useEffect(() => {
     if (user && isAdmin) {
@@ -113,11 +121,63 @@ function Admin() {
         }
       }
       loadData();
+      loadOfficeStatus();
     }
-  }, [user?.id, isAdmin, loadData]);
+  }, [user?.id, isAdmin, loadData, loadOfficeStatus]);
 
 
   // --- 3. 로딩 및 권한 체크 ---
+
+  // 오피스아워 상태
+  const isOfficeOpen = officeStatus?.open &&
+    (!officeStatus.auto_close_at || new Date() < new Date(officeStatus.auto_close_at));
+
+  const handleOfficeOpen = async () => {
+    try {
+      await setOfficeOpen();
+      await loadOfficeStatus();
+      showToast("🟢 출근 완료! 오피스아워가 시작되었습니다.", { type: "success" });
+    } catch (e) {
+      showToast("오류: " + e.message, { type: "error" });
+    }
+  };
+
+  const handleOfficeClosed = async () => {
+    try {
+      await setOfficeClosed();
+      await loadOfficeStatus();
+      showToast("퇴근 완료! 오피스아워가 종료되었습니다.", { type: "success" });
+    } catch (e) {
+      showToast("오류: " + e.message, { type: "error" });
+    }
+  };
+
+  // 브라우저 닫기/새로고침 가드
+  useEffect(() => {
+    if (!isOfficeOpen) return;
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isOfficeOpen]);
+
+  // 앱 내 이동 가드: 퇴근 후 이동
+  const guardedNavigate = async (path) => {
+    if (!isOfficeOpen) { navigate(path); return; }
+    if (!window.confirm('오피스아워가 진행 중입니다.\n퇴근 처리 후 이동할까요?')) return;
+    await handleOfficeClosed();
+    navigate(path);
+  };
+
+  const guardedLogout = async () => {
+    if (isOfficeOpen) {
+      if (!window.confirm('오피스아워가 진행 중입니다.\n퇴근 처리 후 로그아웃할까요?')) return;
+      await handleOfficeClosed();
+    }
+    logout();
+  };
 
   // --- 4. 렌더링: 관리자 메인 화면 ---
   return (
@@ -125,10 +185,21 @@ function Admin() {
       {/* 상단 헤더 */}
       <div className="admin-header">
         <h2>🔓 관리자 페이지</h2>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={logout} className="admin-btn admin-btn-logout">로그아웃</button>
-          <Link to="/" className="admin-btn admin-btn-home">🏠 메인으로</Link>
-          <Link to="/kiosk" className="admin-btn" style={{ background: "#667eea" }}>📱 키오스크</Link>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {/* 오피스아워 빠른 토글 */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", background: "var(--admin-card-bg)", borderRadius: "8px", border: "1px solid var(--admin-border)" }}>
+            <span style={{ fontSize: "0.85rem", color: isOfficeOpen ? "#27ae60" : "var(--admin-text-sub)", fontWeight: "bold" }}>
+              {isOfficeOpen ? "🟢 운영중" : "⭕ 오프라인"}
+            </span>
+            {isOfficeOpen ? (
+              <button onClick={handleOfficeClosed} className="admin-btn" style={{ background: "#e74c3c", padding: "4px 12px", fontSize: "0.85rem" }}>퇴근</button>
+            ) : (
+              <button onClick={handleOfficeOpen} className="admin-btn" style={{ background: "#27ae60", padding: "4px 12px", fontSize: "0.85rem" }}>출근</button>
+            )}
+          </div>
+          <button onClick={guardedLogout} className="admin-btn admin-btn-logout">로그아웃</button>
+          <button onClick={() => guardedNavigate('/')} className="admin-btn admin-btn-home">🏠 메인으로</button>
+          <button onClick={() => guardedNavigate('/kiosk')} className="admin-btn" style={{ background: "#667eea" }}>📱 키오스크</button>
         </div>
       </div>
 

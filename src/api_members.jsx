@@ -33,6 +33,39 @@ export const resetSemesterPayments = async () => {
     return data;
 };
 
+// [Admin] 오피스아워 출근 (자동 퇴근 시간은 DB office_hours_config에서 읽음)
+export const setOfficeOpen = async () => {
+    // 설정에서 자동 퇴근 시간 읽기 (없으면 21:00 기본값)
+    const { data: configData } = await supabase
+        .from('app_config')
+        .select('value')
+        .eq('key', 'office_hours_config')
+        .single();
+    const hour = configData?.value?.auto_close_hour ?? 21;
+    const minute = configData?.value?.auto_close_minute ?? 0;
+
+    const autoCloseAt = new Date();
+    autoCloseAt.setHours(hour, minute, 0, 0);
+    // 설정 시간이 이미 지났으면 내일로 설정
+    if (autoCloseAt <= new Date()) {
+        autoCloseAt.setDate(autoCloseAt.getDate() + 1);
+    }
+    const { error } = await supabase
+        .from('app_config')
+        .update({ value: { open: true, auto_close_at: autoCloseAt.toISOString() } })
+        .eq('key', 'office_status');
+    if (error) throw error;
+};
+
+// [Admin] 오피스아워 퇴근
+export const setOfficeClosed = async () => {
+    const { error } = await supabase
+        .from('app_config')
+        .update({ value: { open: false, auto_close_at: null } })
+        .eq('key', 'office_status');
+    if (error) throw error;
+};
+
 // [Admin] 회비 검사 활성화/비활성화 토글
 export const togglePaymentCheck = async (enabled) => {
     const { error } = await supabase

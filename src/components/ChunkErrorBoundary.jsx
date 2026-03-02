@@ -23,7 +23,7 @@ class ChunkErrorBoundary extends React.Component {
         if (this.state.isChunkError) {
             const lastReload = sessionStorage.getItem('chunk_reload_at');
             const now = Date.now();
-            if (!lastReload || now - parseInt(lastReload) > 10000) {
+            if (!lastReload || now - parseInt(lastReload) > 3000) {
                 sessionStorage.setItem('chunk_reload_at', String(now));
                 window.location.reload();
             }

@@ -1,16 +1,31 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameData } from '../contexts/GameDataContext';
 import { getOptimizedImageUrl } from '../utils/imageOptimizer';
 import InfoBar from '../components/InfoBar';
 import Header from '../components/Header'; // [NEW] Header Component
 import LazyImage from '../components/common/LazyImage'; // [NEW] Lazy Image
-import { sendLog } from '../api';
+import { sendLog, fetchOfficeStatus, fetchOfficeHoursConfig } from '../api';
 import './Home.css'; // [NEW] External CSS
 
 const Home = () => {
     const navigate = useNavigate();
-    const { games, trending, config, loading } = useGameData();
+    const { games, trending, loading } = useGameData();
+    const [officeStatus, setOfficeStatus] = useState(null);
+    const [officeHoursConfig, setOfficeHoursConfig] = useState(null);
+
+    // 오피스아워 운영 여부
+    const isOfficeOpen = officeStatus?.open &&
+        (!officeStatus.auto_close_at || new Date() < new Date(officeStatus.auto_close_at));
+
+    useEffect(() => {
+        Promise.all([fetchOfficeStatus(), fetchOfficeHoursConfig()])
+            .then(([status, config]) => {
+                setOfficeStatus(status);
+                setOfficeHoursConfig(config);
+            })
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
         // 페이지 진입 로그
@@ -45,6 +60,50 @@ const Home = () => {
         <div className="home-container">
             {/* [1] 헤더 (로고, 로그인, 입부신청) - [RESTORED] */}
             <Header />
+
+            {/* 운영 예정 시간 안내 (오프라인일 때) */}
+            {!isOfficeOpen && officeHoursConfig && (
+                <div style={{
+                    margin: "12px 16px 0",
+                    padding: "11px 16px",
+                    background: "rgba(100, 120, 160, 0.1)",
+                    borderRadius: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    border: "1px solid rgba(100, 120, 160, 0.2)",
+                    fontSize: "0.9rem",
+                    color: "#555"
+                }}>
+                    <span style={{ fontSize: "1.1rem" }}>{officeHoursConfig.schedule_icon || '📅'}</span>
+                    <span>{officeHoursConfig.schedule_text || officeHoursConfig.offline_text || '현재 오피스아워를 운영하고 있지 않아요'}</span>
+                </div>
+            )}
+
+            {/* 오피스아워 배너 */}
+            {isOfficeOpen && (
+                <div style={{
+                    margin: "12px 16px 0",
+                    padding: "14px 20px",
+                    background: officeHoursConfig?.banner_color ?? "linear-gradient(135deg, #1a5c2a, #27ae60)",
+                    borderRadius: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    color: "white",
+                    fontWeight: "bold",
+                    fontSize: "1rem",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
+                }}>
+                    <span style={{ fontSize: "1.4rem" }}>{officeHoursConfig?.banner_icon ?? '🟢'}</span>
+                    <div>
+                        <div>{officeHoursConfig?.banner_title ?? '오피스아워 진행 중!'}</div>
+                        <div style={{ fontWeight: "normal", fontSize: "0.82rem", opacity: 0.85, marginTop: "2px" }}>
+                            {officeHoursConfig?.banner_subtitle ?? '지금 방문하시면 게임을 대여할 수 있어요'}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* [2] 메인 내비게이션 (Big Buttons) */}
             <section className="home-nav-section">
