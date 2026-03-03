@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 3. 3. 오후 6:08:56
+-- 생성 시각: 2026. 3. 3. 오후 6:18:52
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -479,7 +479,7 @@ AS $function$
 BEGIN
     -- 1. 전역 조회수 증가
     UPDATE public.games SET total_views = total_views + 1 WHERE id = p_game_id;
-    -- 2. 일별 통계 증가 (트렌드용)
+    -- 2. 일별 통계 증가 (트렌드���)
     INSERT INTO public.game_daily_stats (game_id, date, view_count) VALUES (p_game_id, current_date, 1) ON CONFLICT (game_id, date) DO UPDATE SET view_count = game_daily_stats.view_count + 1;
     -- 3. 로그 테이블 기록 (사후 분석용)
     INSERT INTO public.logs (game_id, user_id, action_type, details) VALUES (p_game_id, auth.uid(), 'VIEW', to_jsonb('Page view'::text));
@@ -596,14 +596,22 @@ CREATE OR REPLACE FUNCTION public.kiosk_return(p_game_id integer, p_user_id uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
 AS $function$
-DECLARE v_rental_id UUID; v_game_name TEXT;
+DECLARE
+    v_rental_id    UUID;
+    v_game_name    TEXT;
+    v_game_id      INTEGER;
+    v_quantity     INTEGER;
+    v_active_count INTEGER;
 BEGIN
+    -- 대여 기록 조회 (rental의 실제 game_id도 함께 가져옴)
     IF p_rental_id IS NOT NULL THEN
-        SELECT rental_id, game_name INTO v_rental_id, v_game_name
+        SELECT rental_id, game_name, game_id
+        INTO v_rental_id, v_game_name, v_game_id
         FROM public.rentals
         WHERE rental_id = p_rental_id AND returned_at IS NULL;
     ELSE
-        SELECT rental_id, game_name INTO v_rental_id, v_game_name
+        SELECT rental_id, game_name, game_id
+        INTO v_rental_id, v_game_name, v_game_id
         FROM public.rentals
         WHERE game_id = p_game_id AND user_id = p_user_id
           AND returned_at IS NULL AND type = 'RENT'
@@ -614,11 +622,28 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', '대여 기록이 없습니다.');
     END IF;
 
+    -- rental 레코드의 game_id를 우선 사용 (p_game_id와 불일치 방지)
+    v_game_id := COALESCE(v_game_id, p_game_id);
+
+    -- 반납 처리
     UPDATE public.rentals SET returned_at = now() WHERE rental_id = v_rental_id;
-    UPDATE public.games SET available_count = available_count + 1 WHERE id = p_game_id;
+
+    -- available_count 절대값 동기화 (반납 후 실제 기록 기반으로 재계산)
+    SELECT quantity INTO v_quantity FROM public.games WHERE id = v_game_id;
+
+    SELECT COUNT(*) INTO v_active_count
+    FROM public.rentals
+    WHERE game_id = v_game_id
+      AND returned_at IS NULL
+      AND (type = 'RENT' OR (type = 'DIBS' AND due_date > now()));
+
+    UPDATE public.games SET available_count = v_quantity - v_active_count WHERE id = v_game_id;
+
     PERFORM public.earn_points(p_user_id, 100, 'RETURN_REWARD', '키오스크 반납: ' || v_game_name);
+
     INSERT INTO public.logs (game_id, user_id, action_type, details)
-        VALUES (p_game_id, p_user_id, 'RETURN', to_jsonb('Kiosk Return'::text));
+        VALUES (v_game_id, p_user_id, 'RETURN', to_jsonb('Kiosk Return'::text));
+
     RETURN jsonb_build_object('success', true);
 END;
 $function$
