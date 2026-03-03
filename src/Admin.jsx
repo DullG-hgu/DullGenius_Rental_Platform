@@ -199,7 +199,7 @@ function Admin() {
           </div>
           <button onClick={guardedLogout} className="admin-btn admin-btn-logout">로그아웃</button>
           <button onClick={() => guardedNavigate('/')} className="admin-btn admin-btn-home">🏠 메인으로</button>
-          <button onClick={() => guardedNavigate('/kiosk')} className="admin-btn" style={{ background: "#667eea" }}>📱 키오스크</button>
+          <button onClick={() => navigate('/kiosk')} className="admin-btn" style={{ background: "#667eea" }}>📱 키오스크</button>
         </div>
       </div>
 

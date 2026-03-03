@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 3. 3. 오전 12:11:13
+-- 생성 시각: 2026. 3. 3. 오후 6:08:56
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -126,7 +126,7 @@ BEGIN
     GET DIAGNOSTICS v_affected = ROW_COUNT;
 
     IF v_affected = 0 THEN
-        RETURN jsonb_build_object('success', false, 'message', '반납 처리 실패 (이미 반납됐���나 RENT 타입이 아님)');
+        RETURN jsonb_build_object('success', false, 'message', '반납 처리 실패 (이미 반납됐거나 RENT 타입이 아님)');
     END IF;
 
     UPDATE public.games SET available_count = available_count + 1 WHERE id = v_game_id;
@@ -200,23 +200,54 @@ CREATE OR REPLACE FUNCTION public.dibs_game(p_game_id integer, p_user_id uuid)
  LANGUAGE plpgsql
  SECURITY DEFINER
 AS $function$
-DECLARE v_game_name TEXT; v_affected INTEGER;
+DECLARE
+    v_game_name    TEXT;
+    v_quantity     INTEGER;
+    v_active_count INTEGER;
 BEGIN
-    -- [AUTH] 본인 확인
     IF auth.uid() IS NULL OR (auth.uid() != p_user_id AND NOT public.is_admin()) THEN
         RETURN jsonb_build_object('success', false, 'message', '권한이 없습니다.');
     END IF;
 
-    SELECT name INTO v_game_name FROM public.games WHERE id = p_game_id;
-    IF v_game_name IS NULL THEN RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.'); END IF;
-    IF EXISTS (SELECT 1 FROM public.rentals WHERE game_id = p_game_id AND user_id = p_user_id AND type = 'DIBS' AND returned_at IS NULL) THEN RETURN jsonb_build_object('success', false, 'message', '이미 찜한 게임입니다.'); END IF;
+    -- 동시성 안전을 위해 게임 행 잠금
+    SELECT name, quantity INTO v_game_name, v_quantity
+    FROM public.games WHERE id = p_game_id FOR UPDATE;
 
-    UPDATE public.games SET available_count = available_count - 1 WHERE id = p_game_id AND available_count > 0;
-    GET DIAGNOSTICS v_affected = ROW_COUNT;
-    IF v_affected = 0 THEN RETURN jsonb_build_object('success', false, 'message', '재고가 없습니다.'); END IF;
+    IF v_game_name IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
+    END IF;
 
-    INSERT INTO public.rentals (game_id, user_id, game_name, type, borrowed_at, due_date) VALUES (p_game_id, p_user_id, v_game_name, 'DIBS', now(), now() + interval '30 minutes');
-    INSERT INTO public.logs (game_id, user_id, action_type, details) VALUES (p_game_id, p_user_id, 'DIBS', to_jsonb('User reserved game'::text));
+    IF EXISTS (
+        SELECT 1 FROM public.rentals
+        WHERE game_id = p_game_id AND user_id = p_user_id
+          AND type = 'DIBS' AND returned_at IS NULL
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 찜한 게임입니다.');
+    END IF;
+
+    -- 실제 활성 대여/찜 수 계산 (만료된 DIBS 제외)
+    SELECT COUNT(*) INTO v_active_count
+    FROM public.rentals
+    WHERE game_id = p_game_id
+      AND returned_at IS NULL
+      AND (type = 'RENT' OR (type = 'DIBS' AND due_date > now()));
+
+    IF v_quantity - v_active_count <= 0 THEN
+        UPDATE public.games SET available_count = 0 WHERE id = p_game_id;
+        RETURN jsonb_build_object('success', false, 'message', '재고가 없습니다.');
+    END IF;
+
+    -- available_count를 실제 기준으로 동기화하며 차감
+    UPDATE public.games
+    SET available_count = (v_quantity - v_active_count) - 1
+    WHERE id = p_game_id;
+
+    INSERT INTO public.rentals (game_id, user_id, game_name, type, borrowed_at, due_date)
+    VALUES (p_game_id, p_user_id, v_game_name, 'DIBS', now(), now() + interval '30 minutes');
+
+    INSERT INTO public.logs (game_id, user_id, action_type, details)
+    VALUES (p_game_id, p_user_id, 'DIBS', to_jsonb('User reserved game'::text));
+
     RETURN jsonb_build_object('success', true, 'message', '찜 완료');
 END;
 $function$
@@ -515,19 +546,44 @@ CREATE OR REPLACE FUNCTION public.kiosk_rental(p_game_id integer, p_user_id uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
 AS $function$
-DECLARE v_game_name TEXT; v_affected INTEGER;
+DECLARE
+    v_game_name    TEXT;
+    v_quantity     INTEGER;
+    v_active_count INTEGER;
 BEGIN
     IF is_payment_check_enabled() AND NOT is_user_payment_exempt(p_user_id) THEN
         IF NOT COALESCE((SELECT is_paid FROM public.profiles WHERE id = p_user_id), false) THEN
             RETURN jsonb_build_object('success', false, 'message', '회비 납부가 필요합니다.');
         END IF;
     END IF;
-    SELECT name INTO v_game_name FROM public.games WHERE id = p_game_id;
-    UPDATE public.games SET available_count = available_count - 1 WHERE id = p_game_id AND available_count > 0;
-    GET DIAGNOSTICS v_affected = ROW_COUNT;
-    IF v_affected = 0 THEN RETURN jsonb_build_object('success', false, 'message', '재고가 없습니다.'); END IF;
-    INSERT INTO public.rentals (game_id, user_id, game_name, type, borrowed_at, due_date) VALUES (p_game_id, p_user_id, v_game_name, 'RENT', now(), now() + interval '2 days');
-    INSERT INTO public.logs (game_id, user_id, action_type, details) VALUES (p_game_id, p_user_id, 'RENT', to_jsonb('Kiosk Rental'::text));
+
+    -- 동시성 안전을 위해 게임 행 잠금
+    SELECT name, quantity INTO v_game_name, v_quantity
+    FROM public.games WHERE id = p_game_id FOR UPDATE;
+
+    -- 실제 활성 대여/찜 수 계산 (만료된 DIBS 제외)
+    SELECT COUNT(*) INTO v_active_count
+    FROM public.rentals
+    WHERE game_id = p_game_id
+      AND returned_at IS NULL
+      AND (type = 'RENT' OR (type = 'DIBS' AND due_date > now()));
+
+    IF v_quantity - v_active_count <= 0 THEN
+        UPDATE public.games SET available_count = 0 WHERE id = p_game_id;
+        RETURN jsonb_build_object('success', false, 'message', '재고가 없습니다.');
+    END IF;
+
+    -- available_count를 실제 기준으로 동기화하며 차감
+    UPDATE public.games
+    SET available_count = (v_quantity - v_active_count) - 1
+    WHERE id = p_game_id;
+
+    INSERT INTO public.rentals (game_id, user_id, game_name, type, borrowed_at, due_date)
+    VALUES (p_game_id, p_user_id, v_game_name, 'RENT', now(), now() + interval '2 days');
+
+    INSERT INTO public.logs (game_id, user_id, action_type, details)
+    VALUES (p_game_id, p_user_id, 'RENT', to_jsonb('Kiosk Rental'::text));
+
     RETURN jsonb_build_object('success', true);
 END;
 $function$
