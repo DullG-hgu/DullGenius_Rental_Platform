@@ -53,19 +53,19 @@ function ReturnModal({ onClose }) {
                 return;
             }
 
-            // Group by user
-            const valid = data.filter(r => r.game && r.profiles);
+            // Group by user (비회원 현장대여는 profiles가 null → renter_name 기반 그룹핑)
+            const valid = data.filter(r => r.game);
             const grouped = {};
 
             valid.forEach(rental => {
-                const userId = rental.profiles.id;
-                if (!grouped[userId]) {
-                    grouped[userId] = {
-                        user: rental.profiles,
+                const groupKey = rental.profiles?.id || ('anon:' + (rental.renter_name || 'unknown'));
+                if (!grouped[groupKey]) {
+                    grouped[groupKey] = {
+                        user: rental.profiles || { id: groupKey, name: rental.renter_name || '비회원(수기)', student_id: null },
                         rentals: []
                     };
                 }
-                grouped[userId].rentals.push(rental);
+                grouped[groupKey].rentals.push(rental);
             });
 
             setUserRentals(Object.values(grouped));
@@ -119,7 +119,7 @@ function ReturnModal({ onClose }) {
                     if (!targetRental) continue;
 
                     try {
-                        const result = await kioskReturn(targetRental.game_id, targetRental.profiles.id, rentalId);
+                        const result = await kioskReturn(targetRental.game_id, targetRental.profiles?.id || null, rentalId);
                         if (result.success) {
                             successCount++;
                         } else {
