@@ -177,7 +177,8 @@
 }
 
 .main-btn.using {
-    background: #2ecc71;
+    background: #7f8c8d;
+    /* [FIX] Green -> Gray */
     color: white;
     cursor: not-allowed;
     opacity: 0.8;

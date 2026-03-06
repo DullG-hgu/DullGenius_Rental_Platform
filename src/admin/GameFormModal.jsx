@@ -17,6 +17,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
     video_url: "",
     recommendation_text: "",
     manual_url: "",
+    is_rentable: true,
     ...initialData
   });
 
@@ -24,7 +25,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        name: "", category: "보드게임", difficulty: "", players: "", tags: "", image: "", video_url: "", recommendation_text: "", manual_url: "",
+        name: "", category: "보드게임", difficulty: "", players: "", tags: "", image: "", video_url: "", recommendation_text: "", manual_url: "", is_rentable: true,
         ...initialData // 부모가 준 데이터가 있으면 덮어씌움
       });
     }
@@ -185,6 +186,19 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
             className="admin-input"
             style={{ width: "100%" }}
           />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "15px", marginBottom: "10px" }}>
+          <input
+            type="checkbox"
+            id="is-rentable-checkbox"
+            checked={formData.is_rentable !== false}
+            onChange={e => setFormData({ ...formData, is_rentable: e.target.checked })}
+            style={{ width: "20px", height: "20px", cursor: "pointer" }}
+          />
+          <label htmlFor="is-rentable-checkbox" style={{ fontWeight: "bold", color: "var(--admin-text-main)", cursor: "pointer" }}>
+            대여 가능 여부 (체크 해제 시 게임 상세 페이지에서 대여/찜 불가)
+          </label>
         </div>
 
         <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>

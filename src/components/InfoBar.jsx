@@ -1,9 +1,11 @@
 // src/components/InfoBar.jsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CLUB_INFO, LINKS, CONTACTS } from '../infoData';
 import InfoModal from './InfoModal';
 
 function InfoBar({ games }) {
+    const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalTab, setModalTab] = useState('intro');
 
@@ -37,6 +39,30 @@ function InfoBar({ games }) {
                     <span className="link-divider">|</span>
                     <button onClick={() => openModal('terms')} className="infobar-link-text">
                         이용 약관
+                    </button>
+                </div>
+
+                {/* 외부 단체 대여 안내 버튼 */}
+                <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+                    <button
+                        onClick={() => navigate('/org-rental')}
+                        style={{
+                            background: 'transparent',
+                            border: '1px solid #ced4da',
+                            borderRadius: '20px',
+                            color: '#495057',
+                            padding: '6px 14px',
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f1f3f5'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                        <span>🏢</span> 외부 단체 대여 문의 (총학생회·NGO)
                     </button>
                 </div>
 

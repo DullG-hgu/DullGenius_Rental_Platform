@@ -50,7 +50,19 @@ export const calculateGameStatus = (game, gameRentals) => {
     }
 
     // [Step B] 최종 상태(Status) 결정
-    let adminStatus = '대여가능';
+    // 0. 대여 불가(열람 전용 등) 우선 처리
+    if (game.is_rentable === false) {
+        return {
+            status: '대여 불가', // 일반 사용자용 상태
+            adminStatus: '대여 불가', // 관리자 전용 상태
+            available_count: 0,
+            renter: null,
+            renterId: null,
+            dueDate: null,
+            active_rental_count: 0,
+            rentals: []
+        };
+    }
 
     // 1. 이용자(User)용 상태: 재고 우선
     if (realAvailableCount > 0) {
@@ -62,23 +74,32 @@ export const calculateGameStatus = (game, gameRentals) => {
     }
 
     // 2. 관리자(Admin)용 상태: 조치(예약/대여) 우선
-    if (activeDibs.length > 0) {
-        adminStatus = '예약됨';
-    } else if (activeRents.length > 0) {
-        adminStatus = '대여중';
-    } else if (realAvailableCount === 0) {
-        adminStatus = '대여중'; // 재고 0이면 사실상 대여중(품절)
+    let adminStatus = '대여가능';
+
+    // [MOD] 재고가 0인 경우 품절(대여중) 처리
+    if (realAvailableCount === 0) {
+        if (activeDibs.length > 0 && activeRents.length === 0) {
+            adminStatus = '예약됨';
+        } else {
+            adminStatus = '대여중';
+        }
     } else {
-        adminStatus = '대여가능';
+        // [MOD] 재고가 1개 이상 남아있는 경우
+        if (activeDibs.length > 0 || activeRents.length > 0) {
+            adminStatus = '일부대여중'; // [NEW] 재고가 남아있으나 빌려간/예약한 사람이 있는 경우
+        } else {
+            adminStatus = '대여가능';
+        }
     }
 
     return {
-        status,
+        status, // 일반 사용자용 상태
         adminStatus, // [NEW] 관리자 전용 상태
         available_count: realAvailableCount,
         renter,
         renterId,
         dueDate,
+        active_rental_count: activeRents.length,
         rentals: [...activeDibs, ...activeRents] // [FIX] 유효한 찜/대여만 반환
     };
 };

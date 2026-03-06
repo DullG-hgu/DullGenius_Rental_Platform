@@ -21,6 +21,7 @@ const Signup = lazy(() => import('./components/Signup'));
 const MyPage = lazy(() => import('./components/MyPage'));
 const KioskPage = lazy(() => import('./kiosk/KioskPage'));
 const Admin = lazy(() => import('./Admin'));
+const OrgRental = lazy(() => import('./pages/OrgRental'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginTooltip from './components/LoginTooltip';
@@ -37,31 +38,32 @@ function App() {
           <BrowserRouter>
             <InstallPromptBanner />
             <ChunkErrorBoundary>
-            <Suspense fallback={
-              <div className="loading-container">
-                <div className="spinner"></div>
-                <p style={{ marginTop: "20px", color: "#666" }}>Loading...</p>
-              </div>
-            }>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/categories" element={<CategorySelect />} />
-                <Route path="/search" element={<GameSearch />} />
+              <Suspense fallback={
+                <div className="loading-container">
+                  <div className="spinner"></div>
+                  <p style={{ marginTop: "20px", color: "#666" }}>Loading...</p>
+                </div>
+              }>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/categories" element={<CategorySelect />} />
+                  <Route path="/search" element={<GameSearch />} />
 
-                <Route path="/game/:id" element={<GameDetail />} />
-                <Route path="/mypage" element={<MyPage />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/reset-password" element={<PasswordReset />} />
+                  <Route path="/game/:id" element={<GameDetail />} />
+                  <Route path="/mypage" element={<MyPage />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/reset-password" element={<PasswordReset />} />
 
-                <Route element={<ProtectedRoute allowedRoles={['admin', 'executive']} />}>
-                  <Route path="/admin-secret" element={<Admin />} />
-                </Route>
+                  <Route element={<ProtectedRoute allowedRoles={['admin', 'executive']} />}>
+                    <Route path="/admin-secret" element={<Admin />} />
+                  </Route>
 
-                <Route path="/kiosk" element={<KioskPage />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
+                  <Route path="/org-rental" element={<OrgRental />} />
+                  <Route path="/kiosk" element={<KioskPage />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
             </ChunkErrorBoundary>
           </BrowserRouter>
         </GameProvider>

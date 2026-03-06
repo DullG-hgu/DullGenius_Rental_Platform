@@ -24,7 +24,8 @@
       "Bash(__NEW_LINE_d4e8e7cf06134f1f__ echo:*)",
       "Bash(__NEW_LINE_44afb4b9bd40a0d9__ echo:*)",
       "Bash(__NEW_LINE_71e280df023c2a93__ echo:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(claude mcp:*)"
     ]
   }
 }

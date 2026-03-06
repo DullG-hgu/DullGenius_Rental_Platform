@@ -36,10 +36,44 @@ function AddGameTab({ onGameAdded }) {
     if (!keyword) return;
     setLoading(true);
     try {
+      // 1. 중복 검사 먼저 수행 (검색어 기준)
+      const duplicates = await checkGameExists(keyword);
+
+      if (duplicates && duplicates.length > 0) {
+        // 중복 게임 발견: 재고 추가 유도
+        const existGame = duplicates[0];
+        const currentCount = existGame.quantity || '?';
+        setLoading(false); // 팝업 띄우기 전 로딩 해제
+
+        showConfirmModal(
+          "📢 중복 게임 발견",
+          `'${existGame.name}' 게임이 이미 존재합니다.\n새로 검색하는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`,
+          async () => {
+            try {
+              await addGameCopy(existGame.id);
+              showToast("기존 게임에 재고가 추가되었습니다!", { type: "success" });
+              setResults([]);
+              setKeyword("");
+              if (onGameAdded) onGameAdded();
+            } catch (e) {
+              showToast("재고 추가 실패: " + e.message, { type: "error" });
+            }
+          },
+          "warning"
+        );
+        return; // 확인창을 띄우고 네이버 검색은 중단
+      }
+
+      // 2. 중복이 없으면 정상적으로 네이버 검색 진행
       const data = await searchNaver(keyword);
       if (data.items) setResults(data.items);
       else { showToast("결과 없음", { type: "info" }); setResults([]); }
-    } catch (e) { showToast("오류", { type: "error" }); } finally { setLoading(false); }
+    } catch (e) {
+      console.error(e);
+      showToast("오류 발생", { type: "error" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 검색 결과 선택 시 모달 열기
@@ -57,6 +91,7 @@ function AddGameTab({ onGameAdded }) {
     setSelectedGame(initialData);
     setIsModalOpen(true);
   };
+
 
   // 모달에서 '저장' 버튼 눌렀을 때 실행
   const handleSaveGame = async (formData) => {
@@ -193,6 +228,14 @@ function AddGameTab({ onGameAdded }) {
       </div>
 
       {loading && <div style={{ textAlign: "center", padding: "20px", color: "var(--admin-text-sub)" }}>네이버에서 검색 중... ⏳</div>}
+
+      {!loading && results.length === 0 && !keyword && (
+        <div style={{ marginBottom: "20px", padding: "15px", backgroundColor: "rgba(52, 152, 219, 0.1)", borderLeft: "4px solid #3498db", borderRadius: "5px", color: "var(--admin-text-main)", fontSize: "0.95em", lineHeight: "1.6" }}>
+          💡 <strong>빠르고 간편한 게임 추가 & 재고 관리 팁</strong><br />
+          검색창에 게임 이름을 정확히 입력하고 <strong>[검색]</strong> 버튼(또는 Enter)을 눌러주세요.<br />
+          동아리에 이미 등록된 게임일 경우, 네이버 검색 목록을 고를 필요 없이 <strong>단 한 번의 클릭으로 즉시 재고를 +1 추가</strong>할 수 있습니다.
+        </div>
+      )}
 
       {!loading && results.length === 0 && keyword && (
         <div style={{ textAlign: "center", color: "var(--admin-text-sub)", padding: "20px" }}>

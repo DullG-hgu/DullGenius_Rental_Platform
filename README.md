@@ -69,7 +69,7 @@
 ### 1. 설치 (Installation)
 프로젝트를 클론하고 의존성 패키지를 설치합니다.
 ```bash
-git clone https://github.com/dullgboardgamerent/dullgboardgamerent.git
+git clone https://github.com/DullG-hgu/DullGenius_Rental_Platform.git
 cd dullgboardgamerent
 npm install
 ```

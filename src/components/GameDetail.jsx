@@ -89,7 +89,7 @@ function GameDetail() {
       setIsReviewsLoading(false);
       setLoading(false);
 
-      if (targetGame && targetGame.status !== "대여가능") {
+      if (targetGame && targetGame.status !== "대여가능" && targetGame.status !== "대여 불가") {
         sendLog(id, 'OUT_OF_STOCK_VIEW', { current_status: targetGame.status });
       }
     };
@@ -218,6 +218,8 @@ function GameDetail() {
       TEXTS.ALERT_MISS_CONFIRM,
       async () => {
         await sendMiss(game.id);
+        // [NEW] 입고 요청 로그 기록
+        sendLog(game.id, 'STOCK_REQUEST', { game_name: game.name });
         showToast(TEXTS.ALERT_MISS_SUCCESS);
       },
       "info"
@@ -379,7 +381,11 @@ function GameDetail() {
         </div>
 
         <div className="main-action-area">
-          {game.status === "대여가능" ? (
+          {game.status === "대여 불가" ? (
+            <button disabled className="main-btn using" style={{ backgroundColor: "#95a5a6", cursor: "not-allowed", border: "none" }}>
+              🚫 대여 불가 (열람 전용)
+            </button>
+          ) : game.status === "대여가능" ? (
             <button onClick={handleRent} className="main-btn rent">
               ⚡ 찜하기 (30분)
             </button>
@@ -389,7 +395,7 @@ function GameDetail() {
             </button>
           ) : game.status === "예약됨" || game.status === "찜" || game.status === "대여중" || game.status === "이용중" ? (
             <button disabled className="main-btn using">
-              ✅ 이미 이용 중인 게임입니다
+              🔒 이미 이용 중인 게임입니다
             </button>
           ) : (
             <button onClick={handleMiss} className="main-btn miss">

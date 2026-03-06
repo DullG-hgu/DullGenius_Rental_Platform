@@ -65,7 +65,8 @@ export const fetchGames = async () => {
 
       return {
         ...game,
-        ...statusData
+        ...statusData,
+        rentals: gameRentals
       };
     });
 
@@ -458,6 +459,7 @@ export const addGame = async (gameData) => {
       recommendation_text: gameData.recommendation_text,
       manual_url: gameData.manual_url,
       tags: gameData.tags,
+      is_rentable: gameData.is_rentable !== false, // [NEW] 대여 가능 여부
       total_views: 0,
       quantity: 1, // [NEW] 기본 재고 1
       available_count: 1 // [NEW] 대여 가능 1
@@ -593,7 +595,8 @@ export const editGame = async (gameData) => {
       image: gameData.image,
       video_url: gameData.video_url,
       recommendation_text: gameData.recommendation_text,
-      manual_url: gameData.manual_url
+      manual_url: gameData.manual_url,
+      is_rentable: gameData.is_rentable !== false // [NEW] 대여 가능 여부
     })
     .eq('id', gameData.game_id);
   if (error) throw error;

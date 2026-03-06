@@ -7,6 +7,7 @@
 // ==========================================
 export const STATUS = {
   AVAILABLE: { ko: '대여가능', en: 'AVAILABLE', color: '#2ecc71' },
+  PARTIAL_RENT: { ko: '일부대여중', en: 'PARTIAL_RENT', color: '#e67e22' }, // [NEW] 일부대여중 (주황색)
   RENTED: { ko: '대여중', en: 'RENTED', color: '#3498db' },
   RESERVED: { ko: '찜', en: 'RESERVED', color: '#f1c40f' },
   LOST: { ko: '분실', en: 'LOST', color: '#95a5a6' },
@@ -69,7 +70,7 @@ export const TEXTS = {
 
 1. 로그인 필수
 - 대여를 위해 로그인이 필요합니다!
-- 아직 부원이 아니라면? 회비 납부 여부를 확인 후 관리자에게 문의해주세요.
+- 권한이 부여되지 않았다면? 회비 납부 여부를 확인 후 관리자에게 문의해주세요.
 
 2. 똑똑하게 예약하고 수령하기
 - '찜하기'를 누르면 30분간 게임을 예약할 수 있습니다.
