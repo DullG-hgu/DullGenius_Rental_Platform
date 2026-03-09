@@ -725,6 +725,32 @@ export const returnGamesByRenter = async (renterName, targetUserId, targetGameId
 };
 
 /**
+ * 특정 대여자의 대여 건 만료일(due_date)을 24시 자정 기준으로 연장합니다.
+ * targetRentalId가 제공되면 해당 건만 처리합니다.
+ * 
+ * @param {string} [renterName]
+ * @param {string} [targetUserId]
+ * @param {number} [targetGameId]
+ * @param {string} [targetRentalId]
+ * @param {number} [days=7]
+ * @returns {Promise<Object>}
+ */
+export const extendRentalsByRenter = async (renterName, targetUserId, targetGameId, targetRentalId, days = 7) => {
+  const { data, error } = await supabase.rpc('admin_extend_rentals', {
+    p_user_id: targetUserId || null,
+    p_renter_name: renterName || null,
+    p_game_id: targetGameId || null,
+    p_rental_id: targetRentalId || null,
+    p_days: parseInt(days) || 7
+  });
+  if (error) {
+    console.error("연장 중 에러:", error);
+    return { status: "error", message: error.message };
+  }
+  return { status: "success", count: data.success ? (data.message.match(/\d+/)?.[0] || 1) : 0, message: data.message };
+};
+
+/**
  * 특정 대여자의 찜(예약) 기록을 일괄적으로 대여 상태로 승인(수령) 처리합니다.
  * 
  * @param {string} [renterName] - 대여자 이름

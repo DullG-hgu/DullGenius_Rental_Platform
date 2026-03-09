@@ -10,8 +10,9 @@ import React from 'react';
  * @param {Object} props.game - 게임 객체 (rentals 배열 포함)
  * @param {Function} props.onReturn - 개별 반납 핸들러 (game, rentalId) => void
  * @param {Function} props.onReceive - 개별 수령 핸들러 (game, rentalId) => void
+ * @param {Function} props.onExtend - 개별 연장 핸들러 (game, rentalId) => void
  */
-const RentalInstanceList = ({ game, onReturn, onReceive }) => {
+const RentalInstanceList = ({ game, onReturn, onReceive, onExtend }) => {
     if (!game.rentals || game.rentals.length <= 1) return null;
 
     return (
@@ -66,12 +67,20 @@ const RentalInstanceList = ({ game, onReturn, onReceive }) => {
                                     수령 확인
                                 </button>
                             ) : (
-                                <button
-                                    onClick={() => onReturn(game, r.rental_id)}
-                                    style={btnStyle("#27ae60")}
-                                >
-                                    반납 확인
-                                </button>
+                                <div style={{ display: 'flex', gap: '5px' }}>
+                                    <button
+                                        onClick={() => onExtend(game, r.rental_id)}
+                                        style={btnStyle("#8e44ad")}
+                                    >
+                                        📅 연장
+                                    </button>
+                                    <button
+                                        onClick={() => onReturn(game, r.rental_id)}
+                                        style={btnStyle("#27ae60")}
+                                    >
+                                        반납 확인
+                                    </button>
+                                </div>
                             )}
                         </div>
                     );

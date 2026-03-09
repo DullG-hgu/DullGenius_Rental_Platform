@@ -18,7 +18,7 @@ export const CONTACTS = {
 export const LINKS = {
     gameRequest: "https://forms.gle/VaASrMoiC6pda75t8", // 게임 신청 구글 폼 (기존 링크 활용)
     recruit: "https://docs.google.com/forms/d/e/1FAIpQLScrbBs5TsTkT0Nkm4HMtkg7STmPkUNjIdlSeiV3dp60Q7wFzQ/viewform?usp=header", // 부원 가입 신청 폼
-    orgRentalForm: "https://forms.gle/PLACEHOLDER", // (TODO: 새로 만든 구글 폼 링크 넣기)
+    orgRentalForm: "https://docs.google.com/forms/d/e/1FAIpQLSfhI5Y62TLi3KLoaIOIIjXHvklMI3RH-OWtTz1y6Xju0ei8kw/viewform", // 단체 대여 신청 구글 폼
 };
 
 export const DEVELOPERS = [

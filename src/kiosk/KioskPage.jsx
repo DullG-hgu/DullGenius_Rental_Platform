@@ -178,7 +178,7 @@ function KioskPage() {
             if (data.success) {
                 localStorage.setItem('kiosk_session', JSON.stringify({
                     authorized: true,
-                    expiresAt: Date.now() + 86400000, // 24시간
+                    expiresAt: Date.now() + 15552000000, // 180일 (1000 * 60 * 60 * 24 * 180)
                 }));
                 setIsAuthorized(true);
                 setActivationCode("");

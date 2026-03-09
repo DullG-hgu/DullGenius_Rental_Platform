@@ -1,6 +1,6 @@
 // src/admin/DashboardTab.js
 import { useState, useEffect } from 'react';
-import { adminUpdateGame, deleteGame, approveDibsByRenter, returnGamesByRenter, editGame, fetchGameLogs, fetchAllLogs, fetchUsers } from '../api';
+import { adminUpdateGame, deleteGame, approveDibsByRenter, returnGamesByRenter, extendRentalsByRenter, editGame, fetchGameLogs, fetchAllLogs, fetchUsers } from '../api';
 import GameFormModal from './GameFormModal';
 import UserSelectModal from './UserSelectModal'; // [NEW]
 import ConfirmModal from '../components/ConfirmModal'; // [NEW]
@@ -431,6 +431,74 @@ function DashboardTab({ games, loading, onReload }) {
     }
   };
 
+  // 4-1. [NEW] 기한 연장 로직 (자정 자동 마감)
+  const handleExtend = async (game, rentalId) => {
+    // 1. 단일(개별) 연장
+    if (rentalId) {
+      const targetRental = game.rentals?.find(r => r.rental_id === rentalId);
+      const renterName = targetRental?.renter_name || targetRental?.profiles?.name || "알 수 없음";
+      const userId = targetRental?.user_id || null;
+
+      const daysStr = prompt(`[${renterName}] 님의 [${game.name}] 기한을 며칠 연장하시겠습니까?\n(입력한 일수의 자정 24시에 마감됩니다)\n\n기본값: 7일`, "7");
+      if (daysStr === null) return;
+      const days = parseInt(daysStr) || 7;
+
+      const res = await extendRentalsByRenter(null, userId, null, rentalId, days);
+      if (res.status === "success" && res.count > 0) {
+        showToast(`${days}일 연장 처리 완료! (${res.count}건)`, { type: "success" });
+        onReload();
+      } else {
+        showToast(`❌ 연장 처리 실패: ${res.message || '매칭되는 대여 기록 없음'}`, { type: "error" });
+      }
+      return;
+    }
+
+    // 2. 다중 대여 일괄 연장
+    const userId = game.renterId || null;
+    const renterName = game.renter;
+    const firstRenter = renterName?.split(',')[0].trim();
+    if (!firstRenter && !userId) return;
+
+    const totalUserRentals = games.reduce((acc, g) => {
+      const userRentals = g.rentals?.filter(r =>
+        r.type === 'RENT' && !r.returned_at &&
+        (userId ? r.user_id === userId : (r.renter_name === firstRenter || r.profiles?.name === firstRenter))
+      ) || [];
+      return acc + userRentals.length;
+    }, 0);
+
+    const displayName = firstRenter || "알 수 없음";
+
+    if (totalUserRentals <= 1) {
+      const targetRental = game.rentals?.find(r => r.type === 'RENT' && !r.returned_at) || game.rentals?.[0];
+      const finalRentalId = targetRental?.rental_id;
+
+      const daysStr = prompt(`[${displayName}] 님의 [${game.name}] 기한을 며칠 연장하시겠습니까?\n\n기본값: 7일`, "7");
+      if (daysStr === null) return;
+
+      const days = parseInt(daysStr) || 7;
+      const res = await extendRentalsByRenter(null, userId, null, finalRentalId, days);
+      if (res.status === "success" && res.count > 0) {
+        showToast(`${days}일 연장 완료!`, { type: "success" });
+        onReload();
+      } else {
+        showToast(`❌ 연장 실패: ${res.message}`, { type: "error" });
+      }
+    } else {
+      const daysStr = prompt(`💡 [${displayName}] 님이 빌려간 게임이 총 ${totalUserRentals}개입니다.\n모든 기록의 기한을 일괄 연장하시겠습니까?\n\n며칠 연장할까요? (기본 7일)`, "7");
+      if (daysStr === null) return;
+
+      const days = parseInt(daysStr) || 7;
+      const res = await extendRentalsByRenter(firstRenter, userId, null, null, days);
+      if (res.status === "success" && res.count > 0) {
+        showToast(`총 ${res.count}건이 ${days}일 일괄 연장되었습니다!`, { type: "success" });
+        onReload();
+      } else {
+        showToast(`❌ 일괄 연장 실패: ${res.message}`, { type: "error" });
+      }
+    }
+  };
+
   // 5. [개선] 스마트 수령 (일괄 찜 처리 로직 + 동명이인 처리)
   const handleReceive = async (game, rentalId) => {
     // [MOD] 특정 rentalId가 '명시적'으로 전달된 경우 (드롭다운 개별 버튼 클릭) 즉시 처리
@@ -681,6 +749,7 @@ function DashboardTab({ games, loading, onReload }) {
                     game={game}
                     onReturn={handleReturn}
                     onReceive={handleReceive}
+                    onExtend={handleExtend}
                   />
                 )}
               </div>
@@ -701,10 +770,13 @@ function DashboardTab({ games, loading, onReload }) {
                   </>
                 )}
 
-                {/* 2. 반납/분실 (대여 중인 건이 있고, 예약된 건이 없는 경우) */}
+                {/* 2. 반납/분실 및 연장 (대여 중인 건이 있고, 예약된 건이 없는 경우) */}
                 {(!game.rentals || !game.rentals.some(r => r.type === 'DIBS')) &&
                   ((game.rentals && game.rentals.some(r => r.type === 'RENT' && !r.returned_at)) || game.active_rental_count > 0) && (
                     <>
+                      <button onClick={() => handleExtend(game)} style={actionBtnStyle("#8e44ad")} title="해당 사용자의 모든 대여 연장">
+                        {game.rentals?.filter(r => r.type === 'RENT' && !r.returned_at).length > 1 ? "📅 일괄연장" : "📅 연장"}
+                      </button>
                       <button onClick={() => handleReturn(game)} style={actionBtnStyle("#27ae60")} title="해당 사용자의 모든 대여 반납">
                         {game.rentals?.filter(r => r.type === 'RENT' && !r.returned_at).length > 1 ? "↩️ 일괄반납" : "↩️ 반납"}
                       </button>
