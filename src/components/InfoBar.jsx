@@ -42,7 +42,7 @@ function InfoBar({ games }) {
                     </button>
                     <span className="link-divider">|</span>
                     <button onClick={() => navigate('/org-rental')} className="infobar-link-text">
-                        단체 대여 문의
+                        단기 대여 문의
                     </button>
                 </div>
 

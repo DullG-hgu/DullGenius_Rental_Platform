@@ -11,7 +11,6 @@ export const CLUB_INFO = {
 };
 
 export const CONTACTS = {
-    // email: "alexcat5929@handong.ac.kr", // 이전 개인 이메일
     email: "DullGenius.official@gmail.com",
 };
 
@@ -22,7 +21,7 @@ export const LINKS = {
 };
 
 export const DEVELOPERS = [
-    { name: "김범근", role: "Main Developer & 25-2, 26-1 회장" },
+    { name: "김범근", role: "Main Developer & 25-2, 26-1 회장", email: "alexcat5929@handong.ac.kr" },
     // { name: "Contributer Name", role: "Designer" }
 ];
 
