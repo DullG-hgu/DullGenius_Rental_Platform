@@ -81,6 +81,14 @@ function KioskPage() {
         else setLoginError(null);
     };
 
+    // [Effect] 키오스크 전용 manifest로 교체 (홈 화면 추가 시 /kiosk로 시작)
+    useEffect(() => {
+        const link = document.querySelector('link[rel="manifest"]');
+        const prev = link?.getAttribute('href');
+        if (link) link.setAttribute('href', '/manifest-kiosk.json');
+        return () => { if (link && prev) link.setAttribute('href', prev); };
+    }, []);
+
     // [Effect] Kiosk 자동 로그인: 세션 없을 때만 env var 계정으로 자동 sign-in
     useEffect(() => {
         if (authLoading) return;
@@ -178,7 +186,7 @@ function KioskPage() {
     }, []); // isIdle 제거 - 한 번만 설정
 
     // [Views]
-    const isAuthorized = !authLoading && user && hasRole('kiosk');
+    const isAuthorized = !authLoading && user && (hasRole('kiosk') || hasRole('admin') || hasRole('executive'));
 
     if (!isAuthorized) {
         // 로그인은 됐지만 kiosk role이 아닌 경우 (일반 유저가 /kiosk 접근)
