@@ -81,14 +81,6 @@ function KioskPage() {
         else setLoginError(null);
     };
 
-    // [Effect] 키오스크 전용 manifest로 교체 (홈 화면 추가 시 /kiosk로 시작)
-    useEffect(() => {
-        const link = document.querySelector('link[rel="manifest"]');
-        const prev = link?.getAttribute('href');
-        if (link) link.setAttribute('href', '/manifest-kiosk.json');
-        return () => { if (link && prev) link.setAttribute('href', prev); };
-    }, []);
-
     // [Effect] Kiosk 자동 로그인: 세션 없을 때만 env var 계정으로 자동 sign-in
     useEffect(() => {
         if (authLoading) return;
