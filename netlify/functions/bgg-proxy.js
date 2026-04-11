@@ -1,0 +1,144 @@
+exports.handler = async function (event, context) {
+    // 1. CORS Preflight 처리
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+            statusCode: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            },
+            body: '',
+        };
+    }
+
+    // 2. Query Parameter 추출
+    const { action, query, id } = event.queryStringParameters || {};
+
+    if (!action) {
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ error: 'action parameter is required (search or detail)' }),
+        };
+    }
+
+    // 3. BGG API 호출
+    let bggUrl;
+    if (action === 'search') {
+        if (!query) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'query parameter is required for search action' }),
+            };
+        }
+        bggUrl = `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(query)}&type=boardgame`;
+    } else if (action === 'detail') {
+        if (!id) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'id parameter is required for detail action' }),
+            };
+        }
+        bggUrl = `https://boardgamegeek.com/xmlapi2/thing?id=${id}&stats=1`;
+    } else {
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ error: 'action must be search or detail' }),
+        };
+    }
+
+    try {
+        // 202 Retry 루프 (최대 3회, 1초 간격)
+        let response;
+        let attempts = 0;
+        while (attempts < 3) {
+            response = await fetch(bggUrl);
+            if (response.status !== 202) break;
+            await new Promise(r => setTimeout(r, 1000));
+            attempts++;
+        }
+
+        if (response.status === 202) {
+            return {
+                statusCode: 202,
+                body: JSON.stringify({ error: 'BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.' }),
+            };
+        }
+
+        if (!response.ok) {
+            return {
+                statusCode: response.status,
+                body: JSON.stringify({ error: `BGG API Error: ${response.statusText}` }),
+            };
+        }
+
+        const xmlText = await response.text();
+
+        // XML 파싱 후 JSON 변환
+        let responseData;
+        if (action === 'search') {
+            responseData = { items: parseSearchXml(xmlText) };
+        } else {
+            responseData = parseDetailXml(xmlText);
+        }
+
+        // 4. 응답 반환
+        return {
+            statusCode: 200,
+            headers: { 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify(responseData),
+        };
+
+    } catch (error) {
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: error.message }),
+        };
+    }
+};
+
+// XML 파싱 함수 (검색 결과)
+function parseSearchXml(xml) {
+    const items = [];
+    const itemRegex = /<item[^>]*type="boardgame"[^>]*id="(\d+)"[^>]*>([\s\S]*?)<\/item>/g;
+    let match;
+    while ((match = itemRegex.exec(xml)) !== null) {
+        const id = match[1];
+        const inner = match[2];
+        const nameMatch = inner.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+        const yearMatch = inner.match(/<yearpublished[^>]*value="([^"]+)"/);
+        if (nameMatch) {
+            items.push({
+                id,
+                name: nameMatch[1],
+                year: yearMatch ? yearMatch[1] : ''
+            });
+        }
+    }
+    return items;
+}
+
+// XML 파싱 함수 (상세 정보)
+function parseDetailXml(xml) {
+    const idMatch = xml.match(/<item[^>]*id="(\d+)"/);
+    const nameMatch = xml.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+    const thumbMatch = xml.match(/<thumbnail>(.*?)<\/thumbnail>/);
+    const minPMatch = xml.match(/<minplayers[^>]*value="(\d+)"/);
+    const maxPMatch = xml.match(/<maxplayers[^>]*value="(\d+)"/);
+    const weightMatch = xml.match(/<averageweight[^>]*value="([^"]+)"/);
+
+    let thumbnail = thumbMatch ? thumbMatch[1].trim() : '';
+    // thumbnail URL이 protocol 없이 //로 시작하면 https: 붙이기
+    if (thumbnail && thumbnail.startsWith('//')) {
+        thumbnail = 'https:' + thumbnail;
+    }
+
+    return {
+        id: idMatch ? idMatch[1] : '',
+        name: nameMatch ? nameMatch[1] : '',
+        thumbnail: thumbnail,
+        minPlayers: minPMatch ? minPMatch[1] : '',
+        maxPlayers: maxPMatch ? maxPMatch[1] : '',
+        weight: weightMatch ? parseFloat(weightMatch[1]).toFixed(2) : ''
+    };
+}

@@ -444,6 +444,122 @@ export const searchNaver = async (query) => {
   }
 };
 
+// [BGG] XML 파싱 헬퍼 (검색 결과)
+const parseBGGSearch = (xmlText) => {
+  const items = [];
+  const itemRegex = /<item[^>]*type="boardgame"[^>]*id="(\d+)"[^>]*>([\s\S]*?)<\/item>/g;
+  let match;
+  while ((match = itemRegex.exec(xmlText)) !== null) {
+    const id = match[1];
+    const inner = match[2];
+    const nameMatch = inner.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+    const yearMatch = inner.match(/<yearpublished[^>]*value="([^"]+)"/);
+    if (nameMatch) {
+      items.push({
+        id,
+        name: nameMatch[1],
+        year: yearMatch ? yearMatch[1] : ''
+      });
+    }
+  }
+  return items;
+};
+
+// [BGG] XML 파싱 헬퍼 (상세 정보)
+const parseBGGDetail = (xmlText) => {
+  const idMatch = xmlText.match(/<item[^>]*id="(\d+)"/);
+  const nameMatch = xmlText.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+  const thumbMatch = xmlText.match(/<thumbnail>(.*?)<\/thumbnail>/);
+  const minPMatch = xmlText.match(/<minplayers[^>]*value="(\d+)"/);
+  const maxPMatch = xmlText.match(/<maxplayers[^>]*value="(\d+)"/);
+  const weightMatch = xmlText.match(/<averageweight[^>]*value="([^"]+)"/);
+
+  let thumbnail = thumbMatch ? thumbMatch[1].trim() : '';
+  // thumbnail URL이 protocol 없이 //로 시작하면 https: 붙이기
+  if (thumbnail && thumbnail.startsWith('//')) {
+    thumbnail = 'https:' + thumbnail;
+  }
+
+  return {
+    id: idMatch ? idMatch[1] : '',
+    name: nameMatch ? nameMatch[1] : '',
+    thumbnail: thumbnail,
+    minPlayers: minPMatch ? minPMatch[1] : '',
+    maxPlayers: maxPMatch ? maxPMatch[1] : '',
+    weight: weightMatch ? parseFloat(weightMatch[1]).toFixed(2) : ''
+  };
+};
+
+// [BGG] 게임 검색 (이름으로)
+export const searchBGG = async (query) => {
+  if (!query) return [];
+
+  try {
+    // PROD(배포): Netlify 함수만 사용
+    if (!import.meta.env.DEV) {
+      const url = `/.netlify/functions/bgg-proxy?action=search&query=${encodeURIComponent(query)}`;
+      const response = await fetch(url);
+
+      if (response.status === 202) {
+        throw new Error('BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.');
+      }
+
+      if (!response.ok) {
+        throw new Error(`BGG 요청 실패: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.items || [];
+    } else {
+      // DEV: 배포 후 사용 가능 메시지
+      throw new Error('BGG 자동 검색은 배포 후에 사용 가능합니다. 🌐 BGG 웹사이트에서 검색 버튼을 사용해주세요.');
+    }
+  } catch (e) {
+    console.error('searchBGG 실패:', e);
+    throw e;
+  }
+};
+
+// [BGG] 게임 상세 조회 (BGG ID로)
+export const fetchBGGGame = async (bggId) => {
+  if (!bggId) return null;
+
+  try {
+    // PROD(배포): Netlify 함수만 사용
+    if (!import.meta.env.DEV) {
+      const url = `/.netlify/functions/bgg-proxy?action=detail&id=${bggId}`;
+
+      // 202 Retry 로직 (클라이언트 측 안전성)
+      let response;
+      let attempts = 0;
+      while (attempts < 3) {
+        response = await fetch(url);
+        if (response.status !== 202) break;
+        await new Promise(r => setTimeout(r, 1500));
+        attempts++;
+      }
+
+      if (response.status === 202) {
+        throw new Error('BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.');
+      }
+
+      if (!response.ok) {
+        throw new Error(`BGG 요청 실패: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      return data;
+    } else {
+      // DEV: 배포 후 사용 가능 메시지
+      throw new Error('BGG 자동 검색은 배포 후에 사용 가능합니다. 🌐 BGG 웹사이트에서 검색 버튼을 사용해주세요.');
+    }
+  } catch (e) {
+    console.error('fetchBGGGame 실패:', e);
+    throw e;
+  }
+};
+
 // [Admin] 게임 추가 (개선됨)
 export const addGame = async (gameData) => {
   // 1. Games 테이블 추가
@@ -461,6 +577,7 @@ export const addGame = async (gameData) => {
       tags: gameData.tags,
       owner: gameData.owner,
       is_rentable: gameData.is_rentable !== false, // [NEW] 대여 가능 여부
+      bgg_id: gameData.bgg_id || null, // [NEW] BGG ID
       total_views: 0,
       quantity: 1, // [NEW] 기본 재고 1
       available_count: 1 // [NEW] 대여 가능 1

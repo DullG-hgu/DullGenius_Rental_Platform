@@ -41,6 +41,16 @@ export default defineConfig(({ mode }) => {
                         })
                     },
                 },
+                '/bgg-search': {
+                    target: 'https://boardgamegeek.com',
+                    changeOrigin: true,
+                    rewrite: (path) => path.replace(/^\/bgg-search/, '/xmlapi2/search'),
+                },
+                '/bgg-thing': {
+                    target: 'https://boardgamegeek.com',
+                    changeOrigin: true,
+                    rewrite: (path) => path.replace(/^\/bgg-thing/, '/xmlapi2/thing'),
+                },
             },
         },
         build: {
