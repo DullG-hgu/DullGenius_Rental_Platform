@@ -36,3 +36,4 @@ test_fix4.js
 test_weserv.js
 diff_uncommitted.txt
 tag_analysis.txt
+.claude/settings.json
