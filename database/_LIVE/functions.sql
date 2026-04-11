@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 4. 11. PM 3:22:07
+-- 생성 시각: 2026. 4. 11. PM 3:27:57
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -21,7 +21,7 @@ DECLARE
     r RECORD;
     v_count INTEGER := 0;
 BEGIN
-    -- [��전장치 1] 타 렌탈 건 침해 방지: 조건이 모두 NULL이면 전체 업데이트 위험이 있으므로 즉시 차단
+    -- [���전장치 1] 타 렌탈 건 침해 방지: 조건이 모두 NULL이면 전체 업데이트 위험이 있으므로 즉시 차단
     IF p_user_id IS NULL AND p_renter_name IS NULL AND p_game_id IS NULL AND p_rental_id IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '연장 대상을 특정할 수 없습니다. (모든 식별자가 비어있음)');
     END IF;
@@ -952,7 +952,7 @@ DECLARE
     v_user_id UUID;
     v_target_email TEXT;
 BEGIN
-    -- 1. 프로필 정보 대조 (학번, 이름, 전화번호 일치 여부 확인)
+    -- 1. 프로필 정보 대조 (학번, 이름, 전화번호 일�� 여부 확인)
     SELECT id INTO v_user_id
     FROM public.profiles
     WHERE student_id = p_student_id 
@@ -1141,7 +1141,7 @@ BEGIN
   WHERE id = v_user_id;
   -- 2. 이미 고정된 경우 수정 불가
   IF v_is_fixed THEN
-    RETURN json_build_object('success', false, 'message', '이미 가입 학기�� 확정되어 수정할 수 없습니다.');
+    RETURN json_build_object('success', false, 'message', '이미 가입 학기가 확정되어 수정할 수 없습니다.');
   END IF;
   -- 3. 업데이트 및 고정 (최초 1회만 가능하도록)
   UPDATE public.profiles
