@@ -732,6 +732,7 @@ function DashboardTab({ games, loading, onReload }) {
                 </div>
                 <div style={{ fontSize: "0.85em", color: "var(--admin-text-sub)", marginTop: "5px", lineHeight: "1.4" }}>
                   <span style={{ color: "#e67e22", marginRight: "10px" }}>난이도: {game.difficulty || "-"}</span>
+                  {game.owner && <span style={{ marginRight: "10px" }}>👤 소유자: {game.owner}</span>}
                   <span title="유튜브 설명 영상" style={{ cursor: "help", opacity: game.video_url ? 1 : 0.3, marginRight: "5px" }}>
                     {game.video_url ? "📺" : "📺❌"}
                   </span>

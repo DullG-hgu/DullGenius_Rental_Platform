@@ -121,7 +121,55 @@ export const resetUserPassword = async (userId) => {
     return data;
 };
 
-// [User] 비밀번호 자가 재설정 (학번, 이름, 전화번호 대조)
+// [User] 비밀번호 재설정 - 속도 제한 확인
+export const checkRateLimitOTP = async (studentId) => {
+    try {
+        const response = await fetch('/.netlify/functions/rate-limit-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || `Rate limit exceeded (${response.status})`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.warn('Rate limit check warning:', error.message);
+        // 속도 제한 체크 실패 시에도 진행 (네트워크 오류 대비)
+        return { success: true, message: 'Rate limit check skipped' };
+    }
+};
+
+// [User] 비밀번호 재설정 - OTP 요청
+export const requestPasswordResetOTP = async (studentId, name, phone) => {
+    const { data, error } = await supabase.rpc('request_password_reset_otp', {
+        p_student_id: studentId,
+        p_name: name,
+        p_phone: phone
+    });
+
+    if (error) throw error;
+    if (!data.success) throw new Error(data.message);
+    return data;
+};
+
+// [User] 비밀번호 재설정 - OTP 검증 후 변경
+export const verifyOTPAndResetPassword = async (studentId, otpCode, newPassword) => {
+    const { data, error } = await supabase.rpc('verify_otp_and_reset_password', {
+        p_student_id: studentId,
+        p_otp_code: otpCode,
+        p_new_password: newPassword
+    });
+
+    if (error) throw error;
+    if (!data.success) throw new Error(data.message);
+    return data;
+};
+
+// [Legacy] 이전 비밀번호 재설정 함수 (호환성)
 export const resetOwnPassword = async (studentId, name, phone, newPassword) => {
     const { data, error } = await supabase.rpc('reset_own_password', {
         p_student_id: studentId,

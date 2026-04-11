@@ -31,7 +31,8 @@
       "Bash(claude --version 2>/dev/null && claude mcp list 2>/dev/null || echo \"mcp list not available\")",
       "mcp__supabase__execute_sql",
       "mcp__supabase__apply_migration",
-      "Bash(cd \"C:\\\\Users\\\\USER\\\\Desktop\\\\OSS\\\\BoardGameRent\\\\dullgboardgamerent\" && npm install recharts 2>&1 | tail -5)"
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\Desktop\\\\OSS\\\\BoardGameRent\\\\dullgboardgamerent\" && npm install recharts 2>&1 | tail -5)",
+      "mcp__supabase__list_tables"
     ]
   }
 }

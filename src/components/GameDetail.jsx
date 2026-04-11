@@ -369,6 +369,11 @@ function GameDetail() {
         </div>
         <p className="detail-category">{game.category} | {game.genre}</p>
 
+        {/* 소유자 */}
+        {game.owner && (
+          <p className="detail-owner">👤 소유자: {game.owner}</p>
+        )}
+
         {/* 추천 문구 */}
         {game.recommendation_text && (
           <div className="detail-recommendation">

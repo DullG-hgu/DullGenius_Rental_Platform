@@ -459,6 +459,7 @@ export const addGame = async (gameData) => {
       recommendation_text: gameData.recommendation_text,
       manual_url: gameData.manual_url,
       tags: gameData.tags,
+      owner: gameData.owner,
       is_rentable: gameData.is_rentable !== false, // [NEW] 대여 가능 여부
       total_views: 0,
       quantity: 1, // [NEW] 기본 재고 1
@@ -596,6 +597,7 @@ export const editGame = async (gameData) => {
       video_url: gameData.video_url,
       recommendation_text: gameData.recommendation_text,
       manual_url: gameData.manual_url,
+      owner: gameData.owner,
       is_rentable: gameData.is_rentable !== false // [NEW] 대여 가능 여부
     })
     .eq('id', gameData.game_id);

@@ -1,7 +1,7 @@
 -- ================================================================
 -- RLS POLICIES — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 3. 13. 오전 12:12:41
+-- 생성 시각: 2026. 4. 11. PM 3:22:11
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -298,11 +298,11 @@ CREATE POLICY "Admin View All Profiles" ON public.profiles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role_key = ANY (ARRAY['admin'::text, 'executive'::text]))))))
 ;
 
-CREATE POLICY "Public Read" ON public.profiles
+CREATE POLICY "Authenticated users read own profile" ON public.profiles
   AS PERMISSIVE
   FOR SELECT
-  TO public
-  USING (true)
+  TO authenticated
+  USING ((auth.uid() = id))
 ;
 
 CREATE POLICY "Read Own Profile" ON public.profiles

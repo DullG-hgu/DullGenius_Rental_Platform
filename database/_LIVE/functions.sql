@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 3. 13. 오전 12:12:37
+-- 생성 시각: 2026. 4. 11. PM 3:22:07
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -257,7 +257,7 @@ DECLARE
     v_active_count INTEGER;
 BEGIN
     IF auth.uid() IS NULL OR (auth.uid() != p_user_id AND NOT public.is_admin()) THEN
-        RETURN jsonb_build_object('success', false, 'message', '권한이 없습니��.');
+        RETURN jsonb_build_object('success', false, 'message', '권한이 없습니다.');
     END IF;
 
     SELECT name, quantity INTO v_game_name, v_quantity
@@ -336,7 +336,7 @@ BEGIN
       AND returned_at IS NULL
       AND due_date < now();
     GET DIAGNOSTICS v_expired_dibs_count = ROW_COUNT;
-    -- 고��� RESERVED 상태 복구
+    -- 고아 RESERVED 상태 복구
     UPDATE public.game_copies
     SET status = 'AVAILABLE'
     WHERE status = 'RESERVED'
@@ -875,7 +875,7 @@ BEGIN
     FOREACH v_player_id IN ARRAY p_player_ids LOOP
         v_is_winner := (v_player_id = ANY(p_winner_ids));
         v_points := CASE WHEN v_is_winner THEN 200 ELSE 50 END;
-        PERFORM public.earn_points(v_player_id, v_points, 'MATCH_REWARD', COALESCE(v_game_name, '��드게임') || (CASE WHEN v_is_winner THEN ' 승리' ELSE ' 참여' END));
+        PERFORM public.earn_points(v_player_id, v_points, 'MATCH_REWARD', COALESCE(v_game_name, '보드게임') || (CASE WHEN v_is_winner THEN ' 승리' ELSE ' 참여' END));
     END LOOP;
     RETURN jsonb_build_object('success', true);
 END;
@@ -952,7 +952,7 @@ DECLARE
     v_user_id UUID;
     v_target_email TEXT;
 BEGIN
-    -- 1. 프로필 정보 대조 (학번, 이���, 전화번호 일치 여부 확인)
+    -- 1. 프로필 정보 대조 (학번, 이름, 전화번호 일치 여부 확인)
     SELECT id INTO v_user_id
     FROM public.profiles
     WHERE student_id = p_student_id 
@@ -1141,7 +1141,7 @@ BEGIN
   WHERE id = v_user_id;
   -- 2. 이미 고정된 경우 수정 불가
   IF v_is_fixed THEN
-    RETURN json_build_object('success', false, 'message', '이미 가입 학기가 확정되어 수정할 수 없습니다.');
+    RETURN json_build_object('success', false, 'message', '이미 가입 학기�� 확정되어 수정할 수 없습니다.');
   END IF;
   -- 3. 업데이트 및 고정 (최초 1회만 가능하도록)
   UPDATE public.profiles

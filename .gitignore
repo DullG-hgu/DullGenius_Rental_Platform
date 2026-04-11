@@ -37,3 +37,9 @@ test_weserv.js
 diff_uncommitted.txt
 tag_analysis.txt
 .claude/settings.json
+
+# MCP configuration (contains sensitive API tokens)
+.mcp.json
+
+# Claude Code local settings (project-level, contains API tokens)
+.claude/settings.local.json

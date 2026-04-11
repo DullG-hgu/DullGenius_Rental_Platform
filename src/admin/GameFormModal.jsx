@@ -17,6 +17,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
     video_url: "",
     recommendation_text: "",
     manual_url: "",
+    owner: "",
     is_rentable: true,
     ...initialData
   });
@@ -25,7 +26,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        name: "", category: "보드게임", difficulty: "", players: "", tags: "", image: "", video_url: "", recommendation_text: "", manual_url: "", is_rentable: true,
+        name: "", category: "보드게임", difficulty: "", players: "", tags: "", image: "", video_url: "", recommendation_text: "", manual_url: "", owner: "", is_rentable: true,
         ...initialData // 부모가 준 데이터가 있으면 덮어씌움
       });
     }
@@ -183,6 +184,17 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
             value={formData.manual_url || ""}
             onChange={e => setFormData({ ...formData, manual_url: e.target.value })}
             placeholder="예: https://..."
+            className="admin-input"
+            style={{ width: "100%" }}
+          />
+        </div>
+
+        <div className="admin-form-group">
+          <label className="admin-label">소유자</label>
+          <input
+            value={formData.owner || ""}
+            onChange={e => setFormData({ ...formData, owner: e.target.value })}
+            placeholder="예: 김철수"
             className="admin-input"
             style={{ width: "100%" }}
           />
