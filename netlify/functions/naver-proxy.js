@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 exports.handler = async function (event, context) {
     // 1. CORS Preflight 처리 (선택)
     if (event.httpMethod === 'OPTIONS') {
@@ -24,15 +22,26 @@ exports.handler = async function (event, context) {
     }
 
     // 3. Naver API 호출
-    // 주의: 환경변수(NAVER_CLIENT_ID, NAVER_CLIENT_SECRET)는 Netlify Dashboard에서 설정해야 함
+    // 주의: 환경변수는 Netlify Dashboard → Site settings → Environment variables에서 설정
+    // 반드시 다음 이름으로 설정: NAVER_CLIENT_ID, NAVER_CLIENT_SECRET
+    const clientId = process.env.NAVER_CLIENT_ID;
+    const clientSecret = process.env.NAVER_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: 'Environment variables not set: NAVER_CLIENT_ID and/or NAVER_CLIENT_SECRET' }),
+        };
+    }
+
     try {
         const url = `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(query)}&display=10`;
 
         // node-fetch v2 사용 (CommonJS 호환)
         const response = await fetch(url, {
             headers: {
-                'X-Naver-Client-Id': process.env.REACT_APP_NAVER_CLIENT_ID || process.env.NAVER_CLIENT_ID,
-                'X-Naver-Client-Secret': process.env.REACT_APP_NAVER_CLIENT_SECRET || process.env.NAVER_CLIENT_SECRET,
+                'X-Naver-Client-Id': clientId,
+                'X-Naver-Client-Secret': clientSecret,
             },
         });
 
