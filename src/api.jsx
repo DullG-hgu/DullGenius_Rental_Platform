@@ -753,6 +753,27 @@ export const fetchUsers = async () => {
 };
 
 /**
+ * 특정 사용자의 상세 프로필(전화번호 포함)을 가져옵니다.
+ *
+ * @param {string} userId - 사용자 UUID
+ * @returns {Promise<Object|null>} 프로필 객체
+ */
+export const fetchUserProfile = async (userId) => {
+  // [SECURITY] 상세 조회 시에만 phone 포함 (API_FIELDS에서 관리)
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(API_FIELDS.USER_PROFILE_DETAIL.fields.join(', '))
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching profile:', error);
+    return null;
+  }
+  return data;
+};
+
+/**
  * 게임의 기본 정보(이름, 카테고리, 태그 등)를 수정합니다.
  * 
  * @param {Object} gameData - 수정할 게임 데이터 (game_id 필수)
