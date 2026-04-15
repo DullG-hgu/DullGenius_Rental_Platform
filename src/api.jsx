@@ -545,6 +545,7 @@ export const fetchBGGGame = async (bggId) => {
     if (import.meta.env.DEV) {
       // DEV: Vite 프록시 사용
       url = `/bgg-thing?id=${bggId}&stats=1`;
+      console.log('📥 DEV fetchBGGGame 요청:', url);
       response = await fetch(url);
 
       if (!response.ok) {
@@ -552,7 +553,10 @@ export const fetchBGGGame = async (bggId) => {
       }
 
       const xmlText = await response.text();
-      return parseBGGDetail(xmlText);
+      console.log('📄 XML 응답 첫 500자:', xmlText.substring(0, 500));
+      const detail = parseBGGDetail(xmlText);
+      console.log('✅ 파싱된 상세정보:', detail);
+      return detail;
     } else {
       // PROD: Netlify 함수 사용
       url = `/.netlify/functions/bgg-proxy?action=detail&id=${bggId}`;
