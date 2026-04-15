@@ -115,6 +115,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
     if (!/^\d+$/.test(trimmed)) {
       return showToast("BGG ID는 숫자만 입력하세요. (예: 266192)", { type: "warning" });
     }
+    // [FIXED] applyBggData 내에서 자동 초기화됨 (setManualBggId('') in finally)
     applyBggData(trimmed);
   };
 

@@ -626,30 +626,38 @@ export const addGame = async (gameData) => {
 };
 
 // [Admin] 게임 이름 중복 확인 [IMPROVED]
-// 정확한 일치(eq)와 부분 일치(ilike) 모두 확인하여
+// 정확한 일치(eq) 우선, 필요시만 부분 일치(ilike) 확인
 // 영문/한글 혼용, 띄어쓰기 차이 등에 대응
 export const checkGameExists = async (name) => {
   if (!name?.trim()) return [];
+
+  const trimmedName = name.trim();
 
   // 1단계: 정확한 일치 확인 (우선도 높음)
   const { data: exactMatch } = await supabase
     .from('games')
     .select('id, name, quantity, bgg_id')
-    .eq('name', name.trim());
+    .eq('name', trimmedName);
 
   if (exactMatch && exactMatch.length > 0) {
     return exactMatch;
   }
 
-  // 2단계: 부분 일치 확인 (대소문자 무시)
-  // ilike 사용으로 "스플렌더" / "Splendor" / "splendor" 모두 감지
-  const { data: fuzzyMatch } = await supabase
-    .from('games')
-    .select('id, name, quantity, bgg_id')
-    .ilike('name', `%${name.trim()}%`)
-    .limit(5);  // 오탐지 방지: 최대 5개만
+  // 2단계: 부분 일치 확인 (3글자 이상일 때만, 대소문자 무시)
+  // 너무 짧은 검색어는 오탐지 가능성 높으므로 제외
+  // "스" (1글자) → 검색 안함
+  // "스플렌더" (4글자) → 부분 검색 (스플렌더, Splendor 모두 감지)
+  if (trimmedName.length >= 3) {
+    const { data: fuzzyMatch } = await supabase
+      .from('games')
+      .select('id, name, quantity, bgg_id')
+      .ilike('name', `%${trimmedName}%`)
+      .limit(5);  // 오탐지 방지: 최대 5개만
 
-  return fuzzyMatch || [];
+    return fuzzyMatch || [];
+  }
+
+  return [];
 };
 
 // [Admin] 기존 게임에 재고(Copy) 추가 [NEW]

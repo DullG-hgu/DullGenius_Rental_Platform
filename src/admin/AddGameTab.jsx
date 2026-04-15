@@ -32,6 +32,18 @@ function AddGameTab({ onGameAdded }) {
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   };
 
+  // [REFACTORED] 중복 검사 공통 로직
+  const handleDuplicateFound = (matches) => {
+    const exactMatch = matches[0];
+    const currentCount = exactMatch.quantity || '?';
+    const hasSimilar = matches.length > 1;
+    const message = hasSimilar
+      ? `'${exactMatch.name}' 게임이 이미 존재합니다. (유사 게임 ${matches.length}개 발견)\n새로 검색하는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`
+      : `'${exactMatch.name}' 게임이 이미 존재합니다.\n새로 검색하는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`;
+
+    return { exactMatch, message };
+  };
+
   const handleSearch = async () => {
     if (!keyword) return;
     setLoading(true);
@@ -40,16 +52,10 @@ function AddGameTab({ onGameAdded }) {
       const matches = await checkGameExists(keyword);
 
       if (matches && matches.length > 0) {
-        // [IMPROVED] 정확한 일치(첫 항목)를 우선으로 표시
-        const exactMatch = matches[0];
-        const currentCount = exactMatch.quantity || '?';
         setLoading(false); // 팝업 띄우기 전 로딩 해제
 
-        // 유사 게임이 여러 개 있으면 경고 추가
-        const hasSimilar = matches.length > 1;
-        const message = hasSimilar
-          ? `'${exactMatch.name}' 게임이 이미 존재합니다. (유사 게임 ${matches.length}개 발견)\n새로 검색하는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`
-          : `'${exactMatch.name}' 게임이 이미 존재합니다.\n새로 검색하는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`;
+        // [REFACTORED] 공통 함수 사용
+        const { exactMatch, message } = handleDuplicateFound(matches);
 
         showConfirmModal(
           "📢 중복 게임 발견",
@@ -106,13 +112,8 @@ function AddGameTab({ onGameAdded }) {
       const matches = await checkGameExists(formData.name);
 
       if (matches && matches.length > 0) {
-        // [IMPROVED] 정확한 일치를 우선 처리
-        const exactMatch = matches[0];
-        const currentCount = exactMatch.quantity || '?';
-        const hasSimilar = matches.length > 1;
-        const message = hasSimilar
-          ? `'${exactMatch.name}' 게임이 이미 존재합니다. (유사 게임 ${matches.length}개 발견)\n새로 만드는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`
-          : `'${exactMatch.name}' 게임이 이미 존재합니다.\n새로 만드는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`;
+        // [REFACTORED] 공통 함수 사용
+        const { exactMatch, message } = handleDuplicateFound(matches);
 
         showConfirmModal(
           "📢 중복 게임 발견",
