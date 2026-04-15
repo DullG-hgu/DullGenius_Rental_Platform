@@ -159,7 +159,10 @@ function RouletteModal({ onClose }) {
                         {result && (
                             <div style={{ animation: "popIn 0.5s" }}>
                                 <h3 style={{ color: "gold" }}>🎉 당첨!</h3>
-                                <p style={{ wordBreak: "keep-all" }}>{result.category} / {result.players}</p>
+                                <p style={{ wordBreak: "keep-all" }}>
+                                    {result.category} / {result.players}
+                                    {result.playingtime && ` / ⏱️ ${result.playingtime}`}
+                                </p>
                                 <button className="kiosk-btn" style={{ background: "#444", marginTop: "20px", height: "60px", width: "100%" }} onClick={onClose}>
                                     좋아, 이걸로 할래!
                                 </button>

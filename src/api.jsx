@@ -1,6 +1,7 @@
 // src/api.js
 import { supabase } from './lib/supabaseClient';
 import { statusToKorean, koreanToStatus } from './constants'; // [NEW] STATUS enum 헬퍼 함수
+import { API_FIELDS, GAME_REQUIRED_FIELDS, RENTAL_REQUIRED_FIELDS, REVIEW_REQUIRED_FIELDS } from './constants/fields';
 import { calculateGameStatus } from './lib/gameStatus';
 
 /**
@@ -13,11 +14,15 @@ import { calculateGameStatus } from './lib/gameStatus';
 export const fetchGames = async () => {
 
   try {
-    // [Step 1] 병렬 데이터 조회
-    // game_copies 테이블은 삭제되었으므로 games와 rentals만 조회
+    // [Step 1] 병렬 데이터 조회 (Server-side Join 적용, 필드는 API_FIELDS에서 관리)
+    // rentals와 profiles를 서버사이드에서 Join하여 쿼리 횟수 감소
     const [gamesRes, rentalsRes] = await Promise.all([
-      supabase.from('games').select('*').order('name'),
-      supabase.from('rentals').select('rental_id, game_id, user_id, renter_name, type, returned_at, due_date, borrowed_at').is('returned_at', null)
+      supabase.from('games')
+        .select(API_FIELDS.GAMES_FOR_LISTING.fields.join(', '))
+        .order('name'),
+      supabase.from('rentals')
+        .select(API_FIELDS.RENTALS_ACTIVE.fields.join(', '))
+        .is('returned_at', null)
     ]);
 
     if (gamesRes.error) throw gamesRes.error;
@@ -28,34 +33,15 @@ export const fetchGames = async () => {
 
 
 
-    // [Step 2] 렌탈 유저 정보(Profile) 조회
-    const userIds = [...new Set(activeRentals.map(r => r.user_id).filter(Boolean))];
-    let profilesMap = {};
-
-    if (userIds.length > 0) {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .in('id', userIds);
-
-      if (!profilesError && profiles) {
-        profiles.forEach(p => profilesMap[p.id] = p.name);
-      }
-    }
-
-    // [Step 3] 데이터 병합 (Application-Side Join)
-    // Rental 그룹화 (game_id 기준)
+    // [Step 2] 데이터 병합 (Simplified Application-side Mapping)
+    // 이전의 별도 profiles 조회 단계가 제거됨
     const rentalsByGame = {};
     activeRentals.forEach(r => {
       if (!rentalsByGame[r.game_id]) rentalsByGame[r.game_id] = [];
-      // 프로필 정보 주입
-      if (r.user_id && profilesMap[r.user_id]) {
-        r.profiles = { name: profilesMap[r.user_id] };
-      }
       rentalsByGame[r.game_id].push(r);
     });
 
-    // [Step 4] 최종 게임 객체 생성
+    // [Step 3] 최종 게임 객체 생성
     return games.map(game => {
       const gameRentals = rentalsByGame[game.id] || [];
 
@@ -85,10 +71,14 @@ export const fetchGames = async () => {
  */
 export const fetchGameById = async (gameId) => {
   try {
+    // [PERFORMANCE] 필드는 API_FIELDS에서 관리 (constants/fields.js)
     const [gameRes, rentalsRes] = await Promise.all([
-      supabase.from('games').select('*').eq('id', gameId).single(),
+      supabase.from('games')
+        .select(API_FIELDS.GAMES_FOR_LISTING.fields.join(', '))
+        .eq('id', gameId)
+        .single(),
       supabase.from('rentals')
-        .select('rental_id, game_id, user_id, renter_name, type, returned_at, due_date, borrowed_at')
+        .select(API_FIELDS.RENTALS_ACTIVE.fields.join(', '))
         .eq('game_id', gameId)
         .is('returned_at', null)
     ]);
@@ -167,10 +157,10 @@ export const cancelDibsGame = async (gameId, userId) => {
  * @returns {Promise<Array>} 중복 제거된 리뷰 배열
  */
 export const fetchReviews = async (gameId) => {
-  // author_name이 reviews 테이블에 있으므로 그냥 가져오면 됨
+  // 리뷰 필드는 API_FIELDS에서 관리 (constants/fields.js)
   let query = supabase
     .from('reviews')
-    .select('*')
+    .select(API_FIELDS.REVIEWS.fields.join(', '))
     .order('created_at', { ascending: false });
 
   if (gameId) {
@@ -184,21 +174,7 @@ export const fetchReviews = async (gameId) => {
     return [];
   }
 
-  // [FIX] 서버 DB에 중복된 데이터가 있을 경우를 대비해, API 레벨에서 중복 제거
-  // (작성자 + 내용 + 게임ID)가 같으면 중복으로 간주하고 최신 것만 남김
-  const uniqueReviews = [];
-  const seen = new Set();
-
-  for (const review of data) {
-    // 키 생성 (유니크 조건)
-    const key = `${review.game_id} -${review.author_name || review.user_name} -${review.content} `;
-    if (!seen.has(key)) {
-      seen.add(key);
-      uniqueReviews.push(review);
-    }
-  }
-
-  return uniqueReviews;
+  return data || [];
 };
 
 /**
@@ -306,7 +282,7 @@ export const fetchTrending = async () => {
       if (error) console.warn("Trending RPC Error (Fallback to total_views):", error.message);
       const { data, error: fbError } = await supabase
         .from('games')
-        .select('*')
+        .select('id, name, image, category, total_views')
         .order('total_views', { ascending: false })
         .limit(20);
 
@@ -682,25 +658,48 @@ export const saveConfig = async (newConfig) => {
 
   return { status: "success" };
 };
-
 /**
- * 전체 사용자 목록을 가져오며, 각 사용자의 역할(관리자, 집행부 등) 정보를 병합합니다.
+ * 전체 사용자 목록을 가져오며, 각 사용자의 역할 정보를 병합합니다.
+ * 보안 및 성능을 위해 민감 정보(전화번호)는 제외하고 기본 정보만 가져옵니다.
  * 
  * @returns {Promise<Array>} 역할 정보가 포함된 프로필 배열
  */
 export const fetchUsers = async () => {
-  // 1. 프로필 조회
+  // 1. 프로필 조회 (민감 정보 phone 제외) - API_FIELDS에서 관리
   const { data: profiles, error: profileError } = await supabase
     .from('profiles')
-    .select('id, name, student_id, phone, is_paid, joined_semester, status')
+    .select(API_FIELDS.USERS_LIST.fields.join(', '))
     .order('name');
 
   if (profileError) {
     console.error('Error fetching profiles:', profileError);
     return [];
   }
+...
+/**
+ * 특정 사용자의 상세 프로필(전화번호 포함)을 가져옵니다.
+ * 
+ * @param {string} userId - 사용자 UUID
+ * @returns {Promise<Object|null>} 프로필 객체
+ */
+export const fetchUserProfile = async (userId) => {
+  // [SECURITY] 상세 조회 시에만 phone 포함 (API_FIELDS에서 관리)
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(API_FIELDS.USER_PROFILE_DETAIL.fields.join(', '))
+    .eq('id', userId)
+    .single();
 
-  // 2. 역할 조회 (전체 가져오기) - 실패해도 프로필은 반환
+  if (error) {
+    console.error('Error fetching profile:', error);
+    return null;
+  }
+  return data;
+};
+
+/**
+ * 게임의 기본 정보(이름, 카테고리, 태그 등)를 수정합니다.
+
   let roles = [];
   try {
     const { data, error } = await supabase
@@ -1124,7 +1123,14 @@ export const fetchAllLogs = async () => {
 };
 
 // [MyPage]
-export const fetchMyRentals = async (userId) => {
+export const fetchMyRentals = async () => {
+  // [SECURITY] userId 파라미터 제거, server의 auth.uid() 사용
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    console.error("사용자 인증 실패:", authError);
+    return { status: "error", message: "인증 오류" };
+  }
+
   // rentals -> game_copies -> games (name)
   // Supabase join syntax:
   const { data, error } = await supabase
@@ -1138,7 +1144,7 @@ export const fetchMyRentals = async (userId) => {
       game_id,
       games (id, name, image, video_url, manual_url)
     `)
-    .eq('user_id', userId)
+    .eq('user_id', user.id)
     .order('borrowed_at', { ascending: false });
 
   if (error) {
@@ -1180,7 +1186,14 @@ export const fetchMyRentals = async (userId) => {
   return { status: "success", data: formatted };
 };
 
-export const fetchMyRentalHistory = async (userId) => {
+export const fetchMyRentalHistory = async () => {
+  // [SECURITY] userId 파라미터 제거, server의 auth.uid() 사용
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    console.error("사용자 인증 실패:", authError);
+    return { status: "error", message: "인증 오류" };
+  }
+
   const { data, error } = await supabase
     .from('rentals')
     .select(`
@@ -1191,7 +1204,7 @@ export const fetchMyRentalHistory = async (userId) => {
       game_id,
       games (id, name, image)
     `)
-    .eq('user_id', userId)
+    .eq('user_id', user.id)
     .not('returned_at', 'is', null)
     .order('returned_at', { ascending: false })
     .limit(30);
@@ -1220,16 +1233,22 @@ export const fetchMyRentalHistory = async (userId) => {
 // ==========================================
 
 /**
- * 특정 사용자의 포인트 거래 내역을 가져옵니다.
- * 
- * @param {string} userId - 사용자 UUID
+ * 현재 사용자의 포인트 거래 내역을 가져옵니다.
+ *
  * @returns {Promise<Array>} 포인트 거래 내역 배열
  */
-export const fetchPointHistory = async (userId) => {
+export const fetchPointHistory = async () => {
+  // [SECURITY] userId 파라미터 제거, server의 auth.uid() 사용
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    console.error("사용자 인증 실패:", authError);
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('point_transactions')
-    .select('*')
-    .eq('user_id', userId)
+    .select('id, amount, type, reason, created_at')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -1263,16 +1282,19 @@ export const registerMatch = async (gameId, playerIds, winnerIds) => {
 };
 
 /**
- * 특정 사용자의 현재 가용 포인트를 조회합니다.
- * 
- * @param {string} userId - 사용자 UUID
+ * 현재 사용자의 가용 포인트를 조회합니다.
+ *
  * @returns {Promise<number>} 현재 포인트
  */
-export const fetchUserPoints = async (userId) => {
+export const fetchUserPoints = async () => {
+  // [SECURITY] userId 파라미터 제거, server의 auth.uid() 사용
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return 0;
+
   const { data, error } = await supabase
     .from('profiles')
     .select('current_points')
-    .eq('id', userId)
+    .eq('id', user.id)
     .single();
 
   if (error) return 0;

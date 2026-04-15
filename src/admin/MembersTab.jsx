@@ -2,7 +2,7 @@
 // 회원 관리 탭 - 회원 목록, 정렬, 검색, 회비 상태 관리, 비밀번호 재설정
 
 import { useState, useEffect, useMemo } from 'react';
-import { fetchUsers } from '../api';
+import { fetchUsers, fetchUserProfile } from '../api';
 import { updatePaymentStatus, updateUserProfile, getUserRoles, updateUserRoles, resetUserPassword } from '../api_members';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabaseClient';
@@ -146,8 +146,7 @@ function MembersTab() {
                 const term = searchTerm.toLowerCase();
                 return (
                     member.name?.toLowerCase().includes(term) ||
-                    member.student_id?.toLowerCase().includes(term) ||
-                    member.phone?.includes(term)
+                    member.student_id?.toLowerCase().includes(term)
                 );
             })
             .sort((a, b) => {
@@ -210,15 +209,21 @@ function MembersTab() {
     };
 
     // [Fix] 누락된 역할 편집 핸들러 함수들 추가
-    const handleOpenRoleEdit = (member) => {
-        const currentRoles = memberRoles[member.id] || [];
-        setRoleEditModal({
-            isOpen: true,
-            member: member,
-            selectedRoles: [...currentRoles],
-            tempSemester: member.joined_semester || '',
-            tempPhone: member.phone || ''
-        });
+    const handleOpenRoleEdit = async (member) => {
+        try {
+            // [Optimized] 상세 정보(전화번호 등)는 편집 시에만 개별 로드
+            const profile = await fetchUserProfile(member.id);
+            const currentRoles = memberRoles[member.id] || [];
+            setRoleEditModal({
+                isOpen: true,
+                member: member,
+                selectedRoles: [...currentRoles],
+                tempSemester: profile?.joined_semester || member.joined_semester || '',
+                tempPhone: profile?.phone || ''
+            });
+        } catch (e) {
+            showToast('회원 상세 정보 로드 실패', { type: 'error' });
+        }
     };
 
     const handleCloseRoleEdit = () => {
@@ -295,7 +300,7 @@ function MembersTab() {
             <div style={styles.filterBar}>
                 <input
                     type="text"
-                    placeholder="🔍 이름, 학번, 전화번호 검색..."
+                    placeholder="🔍 이름, 학번 검색..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="admin-input"
@@ -341,7 +346,6 @@ function MembersTab() {
                                     학번 {sortBy === 'student_id' && (sortOrder === 'asc' ? '▲' : '▼')}
                                 </th>
                                 <th>활동 기간</th>
-                                <th>전화번호</th>
                                 <th>역할</th>
                                 <th onClick={() => handleSort('is_paid')} style={{ cursor: 'pointer' }}>
                                     회비 {sortBy === 'is_paid' && (sortOrder === 'asc' ? '▲' : '▼')}
@@ -352,7 +356,7 @@ function MembersTab() {
                         <tbody>
                             {filteredAndSortedMembers.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--admin-text-sub)' }}>
+                                    <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--admin-text-sub)' }}>
                                         검색 결과가 없습니다.
                                     </td>
                                 </tr>
@@ -372,7 +376,6 @@ function MembersTab() {
                                                 <div style={{ fontWeight: 'bold', color: '#2c3e50' }}>{calculateDuration(member.joined_semester)}</div>
                                                 <div style={{ fontSize: '0.8em', color: '#7f8c8d' }}>{member.joined_semester || '-'}</div>
                                             </td>
-                                            <td>{member.phone || '-'}</td>
                                             <td>
                                                 <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
                                                     {roles.length === 0 ? (

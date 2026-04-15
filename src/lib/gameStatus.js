@@ -1,9 +1,16 @@
 /**
  * [CORE LOGIC] Game Status Calculation
- * 
+ *
  * 이 함수는 게임의 재고, 대여 기록, 예약(찜) 정보를 바탕으로
  * 최종 상태(status)와 대여 정보(renter, dueDate 등)를 결정합니다.
- * 
+ *
+ * ⚠️ [PERFORMANCE] Race Condition 주의:
+ * - 데이터 조회(fetchGameById)와 상태 계산(이 함수) 사이의 시간 차이로 인해
+ *   brief inconsistency가 발생할 수 있습니다.
+ * - 예: T0에 available_count=5 조회 → T1에 다른 사용자가 1개 대여 → T2에 여전히 5개로 표시
+ * - [FIX] 향후 이 로직을 RPC 함수나 View로 이관하여 원자적 실행 필요
+ *   (예: CREATE OR REPLACE FUNCTION get_game_with_status() RETURNS TABLE (...)
+ *
  * ⚠️ WARNING: 핵심 비즈니스 로직입니다. (Encapsulated)
  * 함부로 수정하지 마세요. (Do not modify without review)
  */

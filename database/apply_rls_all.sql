@@ -9,9 +9,22 @@
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
 BEGIN
+  -- [SECURITY] kiosk 역할 제외 - kiosk는 자동화 계정, 관리자 아님
   RETURN EXISTS (
-    SELECT 1 FROM public.user_roles 
-    WHERE user_id = auth.uid() 
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = auth.uid()
+      AND role_key IN ('admin', 'executive')
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- [NEW] 키오스크 또는 관리자 (kiosk RPC 전용)
+CREATE OR REPLACE FUNCTION public.is_kiosk_or_admin()
+RETURNS boolean AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = auth.uid()
       AND role_key IN ('admin', 'executive', 'kiosk')
   );
 END;
@@ -51,11 +64,9 @@ ALTER TABLE public.rentals ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public Read Rentals" ON public.rentals;
 DROP POLICY IF EXISTS "Admin Manage Rentals" ON public.rentals;
-DROP POLICY IF EXISTS "Enable insert for all users" ON public.rentals;
-DROP POLICY IF EXISTS "Enable update for all users" ON public.rentals;
-DROP POLICY IF EXISTS "Enable select for all users" ON public.rentals;
+DROP POLICY IF EXISTS "Read Rentals for Owner or Admin" ON public.rentals;
 
-CREATE POLICY "Public Read Rentals" ON public.rentals FOR SELECT USING (true);
+CREATE POLICY "Read Rentals for Owner or Admin" ON public.rentals FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
 CREATE POLICY "Admin Manage Rentals" ON public.rentals FOR ALL USING (public.is_admin());
 
 

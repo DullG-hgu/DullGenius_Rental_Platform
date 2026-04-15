@@ -64,12 +64,12 @@ const MyPage = () => {
 
       setLoading(true);
       try {
-        // [FIX] user.id (UUID)를 사용
+        // [SECURITY] userId 파라미터 제거, server의 auth.uid() 사용
         const [rentalsResult, points, history, historyResult] = await Promise.all([
-          fetchMyRentals(user.id),
-          fetchUserPoints(user.id),
-          fetchPointHistory(user.id),
-          fetchMyRentalHistory(user.id)
+          fetchMyRentals(),
+          fetchUserPoints(),
+          fetchPointHistory(),
+          fetchMyRentalHistory()
         ]);
 
         if (rentalsResult.status === "success") {

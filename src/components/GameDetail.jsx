@@ -102,9 +102,10 @@ function GameDetail() {
   useEffect(() => {
     const checkDibsStatus = async () => {
       if (user && game) {
-        const { data: myRentals } = await fetchMyRentals(user.id);
-        if (myRentals) {
-          const myRental = myRentals.find(r => String(r.gameId) === String(game.id) && !r.returnedAt);
+        // [SECURITY] userId 파라미터 제거, server의 auth.uid() 사용
+        const result = await fetchMyRentals();
+        if (result.status === "success" && result.data) {
+          const myRental = result.data.find(r => String(r.gameId) === String(game.id) && !r.returnedAt);
           if (myRental) {
             setGame(prev => ({
               ...prev,
@@ -397,6 +398,12 @@ function GameDetail() {
               )}
             </div>
           </div>
+          {game.playingtime && (
+            <div>
+              <div className="stat-label">플레이 시간</div>
+              <div className="stat-value">⏱️ {game.playingtime}</div>
+            </div>
+          )}
         </div>
 
         <div className="main-action-area">

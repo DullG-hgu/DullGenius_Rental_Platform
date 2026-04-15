@@ -106,6 +106,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
  * rental_id가 제공되면 해당 인스턴스를 정확하게 타겟팅하여 대여로 전환합니다.
  */
 DROP FUNCTION IF EXISTS public.admin_rent_game(INTEGER, TEXT, UUID);
+DROP FUNCTION IF EXISTS public.admin_rent_game(INTEGER, TEXT, UUID, UUID);
 CREATE OR REPLACE FUNCTION public.admin_rent_game(
     p_game_id INTEGER, 
     p_renter_name TEXT, 
@@ -117,6 +118,11 @@ DECLARE
     v_affected INTEGER;
     v_target_rental_id UUID;
 BEGIN
+    -- [SECURITY] 관리자 권한 체크
+    IF NOT public.is_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 없습니다.');
+    END IF;
+
     -- [준비] 게임 이름 조회 및 존재 여부 확인
     SELECT name INTO v_game_name FROM public.games WHERE id = p_game_id;
     IF v_game_name IS NULL THEN 
@@ -181,7 +187,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
  * 대여(RENT) 기록을 종료(returned_at 설정)하고 재고를 복구합니다.
  * rental_id가 제공되면 해당 인스턴스를 정확하게 타겟팅하여 반납 처리합니다.
  */
-DROP FUNCTION IF EXISTS public.admin_return_game(INTEGER, TEXT, UUID);
+DROP FUNCTION IF EXISTS public.admin_return_game(INTEGER, TEXT, UUID, UUID);
 CREATE OR REPLACE FUNCTION public.admin_return_game(
     p_game_id INTEGER, 
     p_renter_name TEXT DEFAULT NULL, 
@@ -193,6 +199,11 @@ DECLARE
     v_target_rental_id UUID;
     v_game_id INTEGER;
 BEGIN
+    -- [SECURITY] 관리자 권한 체크
+    IF NOT public.is_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 없습니다.');
+    END IF;
+
     -- [Step 1] 반납할 대여 건(RENT) 확정
     -- rental_id가 있으면 최우선 사용, 없으면 검색 로직(가장 오래된 기록) 수행
     IF p_rental_id IS NOT NULL THEN
@@ -255,6 +266,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP FUNCTION IF EXISTS public.safe_delete_game(INTEGER);
 CREATE OR REPLACE FUNCTION public.safe_delete_game(p_game_id INTEGER) RETURNS jsonb AS $$
 BEGIN
+    -- [SECURITY] 관리자 권한 체크
+    IF NOT public.is_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 없습니다.');
+    END IF;
+
     IF EXISTS (SELECT 1 FROM public.rentals WHERE game_id = p_game_id AND returned_at IS NULL) THEN
         RETURN jsonb_build_object('success', false, 'message', '대여/찜 중인 내역이 있어 삭제할 수 없습니다.');
     END IF;
@@ -363,6 +379,11 @@ DROP FUNCTION IF EXISTS public.kiosk_rental(INTEGER, UUID);
 CREATE OR REPLACE FUNCTION public.kiosk_rental(p_game_id INTEGER, p_user_id UUID) RETURNS jsonb AS $$
 DECLARE v_game_name TEXT; v_affected INTEGER;
 BEGIN
+    -- [SECURITY] 키오스크 또는 관리자만 호출 가능
+    IF NOT public.is_kiosk_or_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '키오스크 권한이 없습니다.');
+    END IF;
+
     IF is_payment_check_enabled() AND NOT is_user_payment_exempt(p_user_id) THEN
         IF NOT COALESCE((SELECT is_paid FROM public.profiles WHERE id = p_user_id), false) THEN
             RETURN jsonb_build_object('success', false, 'message', '회비 납부가 필요합니다.');
@@ -387,6 +408,11 @@ DROP FUNCTION IF EXISTS public.kiosk_return(INTEGER, UUID, UUID);
 CREATE OR REPLACE FUNCTION public.kiosk_return(p_game_id INTEGER, p_user_id UUID, p_rental_id UUID DEFAULT NULL) RETURNS jsonb AS $$
 DECLARE v_rental_id UUID; v_game_name TEXT;
 BEGIN
+    -- [SECURITY] 키오스크 또는 관리자만 호출 가능
+    IF NOT public.is_kiosk_or_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '키오스크 권한이 없습니다.');
+    END IF;
+
     IF p_rental_id IS NOT NULL THEN
         SELECT rental_id, game_name INTO v_rental_id, v_game_name FROM public.rentals WHERE rental_id = p_rental_id AND returned_at IS NULL;
     ELSE
@@ -408,6 +434,11 @@ DROP FUNCTION IF EXISTS public.kiosk_pickup(UUID);
 CREATE OR REPLACE FUNCTION public.kiosk_pickup(p_rental_id UUID) RETURNS jsonb AS $$
 DECLARE v_game_id INTEGER; v_user_id UUID; v_type TEXT;
 BEGIN
+    -- [SECURITY] 키오스크 또는 관리자만 호출 가능
+    IF NOT public.is_kiosk_or_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '키오스크 권한이 없습니다.');
+    END IF;
+
     SELECT game_id, user_id, type INTO v_game_id, v_user_id, v_type FROM public.rentals WHERE rental_id = p_rental_id;
     IF v_type != 'DIBS' THEN RETURN jsonb_build_object('success', false, 'message', '예약 상태가 아닙니다.'); END IF;
     UPDATE public.rentals SET type = 'RENT', borrowed_at = now(), due_date = now() + interval '2 days' WHERE rental_id = p_rental_id;

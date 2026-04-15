@@ -197,8 +197,10 @@ const GameSearch = () => {
                                     <h3 className="game-item-title">{game.name}</h3>
                                     <div className="game-item-meta">
                                         {game.genre}
-                                        {game.genre && game.players && " · "}
+                                        {game.genre && (game.players || game.playingtime) && " · "}
                                         {game.players ? `👥 ${game.players}` : ""}
+                                        {game.players && game.playingtime && " · "}
+                                        {game.playingtime ? `⏱️ ${game.playingtime}` : ""}
                                     </div>
                                     <div className="game-item-badges">
                                         {game.status === "대여가능" ? (
