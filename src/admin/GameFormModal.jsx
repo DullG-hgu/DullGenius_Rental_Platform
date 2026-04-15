@@ -64,10 +64,9 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
       if (results.length === 0) {
         showToast("검색 결과가 없습니다. BGG ID를 직접 입력해보세요.", { type: "info" });
       } else {
-        // 가장 순위 높은 첫 번째 결과 자동 선택
+        // 드롭다운만 표시 (자동 선택 안 함)
         setBggSearchResults(results);
-        showToast(`"${results[0].name}"을(를) 선택했습니다. (다른 결과는 아래에서 선택 가능)`, { type: "success" });
-        await applyBggData(results[0].id);
+        showToast(`${results.length}개 결과를 찾았습니다. 아래에서 선택해주세요.`, { type: "info" });
       }
     } catch (e) {
       showToast("BGG 검색 오류: " + e.message, { type: "error" });
