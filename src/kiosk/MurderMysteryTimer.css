@@ -235,3 +235,34 @@
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     box-shadow: 0 8px 25px rgba(240, 147, 251, 0.4);
 }
+
+/* 시간 조정 버튼 */
+.mm-adjust-buttons {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.mm-adjust-btn {
+    padding: 20px 40px;
+    font-size: 1.5rem;
+    border: 2px solid #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    min-width: 160px;
+}
+
+.mm-adjust-btn:hover {
+    background: rgba(102, 126, 234, 0.2);
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.mm-adjust-btn:active {
+    transform: scale(0.98);
+}

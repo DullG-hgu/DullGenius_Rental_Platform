@@ -74,6 +74,16 @@ function MurderMysteryTimerModal({ onClose }) {
         hasPlayedSoundRef.current = false;
     };
 
+    // 남은 시간 조정 (+1분)
+    const addMinute = () => {
+        setTargetSeconds(prev => prev + 60);
+    };
+
+    // 남은 시간 조정 (-1분)
+    const subtractMinute = () => {
+        setTargetSeconds(prev => Math.max(60, prev - 60)); // 최소 1분 유지
+    };
+
     // 타이머 카운트 업
     useEffect(() => {
         if (isRunning) {
@@ -161,6 +171,16 @@ function MurderMysteryTimerModal({ onClose }) {
 
                     {isTimeUp && <div className="mm-time-up-text-fullscreen">⏰ 시간 끝!</div>}
 
+                    {/* 시간 조정 버튼 (+/- 1분) */}
+                    <div className="mm-adjust-buttons">
+                        <button className="mm-adjust-btn" onClick={subtractMinute}>
+                            ➖ 1분
+                        </button>
+                        <button className="mm-adjust-btn" onClick={addMinute}>
+                            ➕ 1분
+                        </button>
+                    </div>
+
                     {/* 컨트롤 버튼 */}
                     <div className="mm-controls-fullscreen">
                         <button
@@ -174,7 +194,11 @@ function MurderMysteryTimerModal({ onClose }) {
                         </button>
                         <button
                             className="mm-control-btn"
-                            onClick={() => setIsSettingMode(true)}
+                            onClick={() => {
+                                setIsSettingMode(true);
+                                setElapsedSeconds(0);
+                                setIsRunning(false);
+                            }}
                         >
                             ⚙️
                         </button>
