@@ -8,6 +8,7 @@ import MatchModal from './MatchModal';
 import RouletteModal from './RouletteModal';
 import ReturnModal from './ReturnModal';
 import ReservationModal from './ReservationModal'; // [NEW] 예약 수령 모달
+import MurderMysteryTimerModal from './MurderMysteryTimerModal'; // [NEW] 머더 미스터리 타이머
 
 // [Constants]
 const IDLE_TIMEOUT_MS = 180000; // 3분 (번인 방지)
@@ -31,8 +32,10 @@ function KioskPage() {
     const [showMatchModal, setShowMatchModal] = useState(false);
     const [showRouletteModal, setShowRouletteModal] = useState(false);
     const [showReservationModal, setShowReservationModal] = useState(false); // [NEW]
+    const [showMurderMysteryTimer, setShowMurderMysteryTimer] = useState(false); // [NEW] 머더 미스터리
 
     const idleTimerRef = useRef(null);
+    const timerActiveRef = useRef(false); // [NEW] 머더 미스터리 타이머 켜짐 여부
 
     // [Helper] Set grace period
     const setGracePeriod = (minutes) => {
@@ -49,6 +52,11 @@ function KioskPage() {
 
     const scheduleIdleTimer = () => {
         if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+
+        // [NEW] 머더 미스터리 타이머가 켜져있으면 유휴 타이머 실행 안 함
+        if (timerActiveRef.current) {
+            return;
+        }
 
         const now = Date.now();
         const timeUntilGraceEnd = gracePeriodEndRef.current - now;
@@ -239,7 +247,7 @@ function KioskPage() {
         );
     }
 
-    if (isIdle) {
+    if (isIdle && !showMurderMysteryTimer) {
         return <ScreenSaver onWake={() => setIsIdle(false)} />;
     }
 
@@ -277,6 +285,15 @@ function KioskPage() {
                     <div className="btn-icon">🎰</div>
                     게임 추천
                     <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>뭐 할지 모를 때!</span>
+                </button>
+
+                <button className="kiosk-btn" style={{ background: "linear-gradient(135deg, #8b0000 0%, #ff4444 100%)" }} onClick={() => {
+                    setShowMurderMysteryTimer(true);
+                    timerActiveRef.current = true;
+                }}>
+                    <div className="btn-icon">🔪</div>
+                    머더 미스터리
+                    <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>타이머 시작</span>
                 </button>
             </div>
 
@@ -319,6 +336,13 @@ function KioskPage() {
 
             {/* [NEW] 예약 수령 모달 */}
             {showReservationModal && <ReservationModal onClose={() => setShowReservationModal(false)} />}
+
+            {/* [NEW] 머더 미스터리 타이머 모달 */}
+            {showMurderMysteryTimer && <MurderMysteryTimerModal onClose={() => {
+                setShowMurderMysteryTimer(false);
+                timerActiveRef.current = false;
+                setGracePeriod(1); // 타이머 종료 후 1분 유예
+            }} />}
         </div>
     );
 }

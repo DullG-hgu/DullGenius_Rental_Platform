@@ -1,0 +1,225 @@
+.murder-mystery-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.murder-mystery-modal {
+    background: linear-gradient(135deg, #2d1b2e 0%, #1a0f1a 100%);
+    border: 2px solid #8b0000;
+    border-radius: 12px;
+    padding: 40px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(139, 0, 0, 0.5);
+    text-align: center;
+}
+
+.mm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.mm-header h2 {
+    margin: 0;
+    color: #ff6b6b;
+    font-size: 1.8rem;
+}
+
+.mm-close-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mm-close-btn:hover {
+    color: #fff;
+}
+
+/* 큰 타이머 표시 */
+.mm-timer-display {
+    font-size: 6rem;
+    font-weight: bold;
+    color: #ff6b6b;
+    font-family: 'Courier New', monospace;
+    margin: 40px 0;
+    text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+    letter-spacing: 8px;
+}
+
+/* 컨트롤 버튼 */
+.mm-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.mm-btn {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.mm-btn-start {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    flex: 1;
+}
+
+.mm-btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.mm-btn-start.running {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.mm-btn-reset {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: #333;
+    flex: 1;
+}
+
+.mm-btn-reset:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(250, 112, 154, 0.4);
+}
+
+.mm-btn-add {
+    width: 100%;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.mm-btn-add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+}
+
+.mm-btn-close-main {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    color: #999;
+    border: 1px solid #444;
+}
+
+.mm-btn-close-main:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+/* 초기 설정 모드 */
+.mm-setting-mode {
+    padding: 20px 0;
+}
+
+.mm-preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.mm-preset-btn {
+    padding: 12px 8px;
+    border: 2px solid #666;
+    background: rgba(255, 255, 255, 0.05);
+    color: #888;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.mm-preset-btn:hover {
+    border-color: #FF9966;
+    color: #FF9966;
+}
+
+.mm-preset-btn.active {
+    background: linear-gradient(135deg, #FF9966 0%, #FF5E62 100%);
+    border-color: #FF5E62;
+    color: #fff;
+}
+
+/* 커스텀 입력 */
+.mm-custom-input {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.mm-custom-input input {
+    width: 100px;
+    padding: 12px;
+    font-size: 1.2rem;
+    text-align: center;
+    background: #1a0f1a;
+    border: 2px solid #666;
+    color: #ff6b6b;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.mm-custom-input input:focus {
+    outline: none;
+    border-color: #ff6b6b;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+}
+
+/* 시간 끝났을 때 표시 */
+.mm-timer-display.time-up {
+    animation: pulse 0.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.mm-time-up-text {
+    text-align: center;
+    color: #ff6b6b;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    animation: bounce 0.6s;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
