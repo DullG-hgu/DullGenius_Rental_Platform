@@ -56,15 +56,6 @@ function MurderMysteryTimerModal({ onClose }) {
         hasPlayedSoundRef.current = false;
     };
 
-    // 커스텀 시간 설정 적용
-    const applyCustomTime = () => {
-        const minutes = parseInt(inputMinutes) || 0;
-        setTargetSeconds(minutes * 60);
-        setElapsedSeconds(0);
-        setIsSettingMode(false);
-        hasPlayedSoundRef.current = false;
-    };
-
     // 설정 완료 후 타이머 시작
     const startTimer = () => {
         setIsSettingMode(false);
@@ -119,89 +110,77 @@ function MurderMysteryTimerModal({ onClose }) {
     const isTimeUp = remainingSeconds === 0 && elapsedSeconds > 0;
 
     return (
-        <div className="murder-mystery-modal-overlay" onClick={onClose}>
-            <div className="murder-mystery-modal" onClick={(e) => e.stopPropagation()}>
-                {/* 헤더 */}
-                <div className="mm-header">
-                    <h2>🔪 머더 미스터리 타이머</h2>
-                    <button className="mm-close-btn" onClick={onClose}>✕</button>
+        <div className="mm-fullscreen-container">
+            {/* 우측 상단 원형 닫기 버튼 */}
+            <button className="mm-circular-close-btn" onClick={onClose}>✕</button>
+
+            {isSettingMode ? (
+                // 초기 시간 설정 모드
+                <div className="mm-setting-fullscreen">
+                    <h1 style={{ marginBottom: '60px', fontSize: '3rem', color: '#ff6b6b' }}>🔪 머더 미스터리 타이머</h1>
+                    <p style={{ color: '#888', marginBottom: '40px', fontSize: '1.5rem' }}>시간을 선택하세요</p>
+
+                    {/* 빠른 설정 버튼 */}
+                    <div className="mm-preset-buttons-fullscreen">
+                        {[5, 10, 15, 20, 30].map((min) => (
+                            <button
+                                key={min}
+                                className={`mm-preset-btn-fullscreen ${inputMinutes === String(min) ? 'active' : ''}`}
+                                onClick={() => setPreset(min)}
+                            >
+                                {min}분
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* 커스텀 시간 입력 */}
+                    <div className="mm-custom-input-fullscreen">
+                        <input
+                            type="number"
+                            min="1"
+                            max="120"
+                            value={inputMinutes}
+                            onChange={(e) => setInputMinutes(e.target.value)}
+                            placeholder="분 입력"
+                        />
+                        <span>분</span>
+                    </div>
+
+                    {/* 시작 버튼 */}
+                    <button className="mm-start-btn-fullscreen" onClick={startTimer}>
+                        ▶️ 타이머 시작
+                    </button>
                 </div>
+            ) : (
+                // 타이머 실행 모드
+                <div className="mm-timer-fullscreen">
+                    {/* 큰 타이머 표시 */}
+                    <div className={`mm-timer-display-fullscreen ${isTimeUp ? 'time-up' : ''}`}>
+                        {formatTime(remainingSeconds)}
+                    </div>
 
-                {isSettingMode ? (
-                    // 초기 시간 설정 모드
-                    <div className="mm-setting-mode">
-                        <p style={{ color: '#888', marginBottom: '20px' }}>시간을 선택하세요</p>
+                    {isTimeUp && <div className="mm-time-up-text-fullscreen">⏰ 시간 끝!</div>}
 
-                        {/* 빠른 설정 버튼 */}
-                        <div className="mm-preset-buttons">
-                            {[5, 10, 15, 20, 30].map((min) => (
-                                <button
-                                    key={min}
-                                    className={`mm-preset-btn ${inputMinutes === String(min) ? 'active' : ''}`}
-                                    onClick={() => setPreset(min)}
-                                >
-                                    {min}분
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* 커스텀 시간 입력 */}
-                        <div className="mm-custom-input">
-                            <input
-                                type="number"
-                                min="1"
-                                max="120"
-                                value={inputMinutes}
-                                onChange={(e) => setInputMinutes(e.target.value)}
-                                placeholder="분 입력"
-                            />
-                            <span style={{ marginLeft: '8px', color: '#888' }}>분</span>
-                        </div>
-
-                        {/* 적용 및 시작 버튼 */}
-                        <button className="mm-btn mm-btn-start" onClick={startTimer} style={{ width: '100%', marginTop: '20px' }}>
-                            ▶️ 타이머 시작
+                    {/* 컨트롤 버튼 */}
+                    <div className="mm-controls-fullscreen">
+                        <button
+                            className={`mm-control-btn ${isRunning ? 'running' : ''}`}
+                            onClick={toggleTimer}
+                        >
+                            {isRunning ? '⏸' : '▶️'}
+                        </button>
+                        <button className="mm-control-btn" onClick={resetTimer}>
+                            🔄
+                        </button>
+                        <button
+                            className="mm-control-btn"
+                            onClick={() => setIsSettingMode(true)}
+                        >
+                            ⚙️
                         </button>
                     </div>
-                ) : (
-                    // 타이머 실행 모드
-                    <>
-                        {/* 큰 타이머 표시 */}
-                        <div className={`mm-timer-display ${isTimeUp ? 'time-up' : ''}`}>
-                            {formatTime(remainingSeconds)}
-                        </div>
-
-                        {isTimeUp && <div className="mm-time-up-text">⏰ 시간 끝!</div>}
-
-                        {/* 컨트롤 버튼 */}
-                        <div className="mm-controls">
-                            <button
-                                className={`mm-btn mm-btn-start ${isRunning ? 'running' : ''}`}
-                                onClick={toggleTimer}
-                            >
-                                {isRunning ? '⏸ 일시정지' : '▶️ 시작'}
-                            </button>
-                            <button className="mm-btn mm-btn-reset" onClick={resetTimer}>
-                                🔄 초기화
-                            </button>
-                        </div>
-
-                        {/* 시간 재설정 버튼 */}
-                        <button
-                            className="mm-btn mm-btn-close-main"
-                            onClick={() => setIsSettingMode(true)}
-                            style={{ marginBottom: '10px' }}
-                        >
-                            ⚙️ 시간 재설정
-                        </button>
-
-                        {/* 닫기 버튼 */}
-                        <button className="mm-btn mm-btn-close-main" onClick={onClose}>
-                            닫기
-                        </button>
-                    </>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
