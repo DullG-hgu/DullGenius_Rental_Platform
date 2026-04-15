@@ -14,6 +14,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
     difficulty: "",
     genre: "",
     players: "",
+    playingtime: "", // [NEW] 플레이 시간
     tags: "",
     image: "",
     video_url: "",
@@ -35,7 +36,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        name: "", category: "보드게임", difficulty: "", players: "", tags: "", image: "", video_url: "", recommendation_text: "", manual_url: "", owner: "", is_rentable: true, bgg_id: "", // [NEW]
+        name: "", category: "보드게임", difficulty: "", players: "", playingtime: "", tags: "", image: "", video_url: "", recommendation_text: "", manual_url: "", owner: "", is_rentable: true, bgg_id: "", // [NEW]
         ...initialData // 부모가 준 데이터가 있으면 덮어씌움
       });
       setBggSearchResults([]);
@@ -91,6 +92,9 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
         players: (detail.minPlayers && detail.maxPlayers)
           ? `${detail.minPlayers}~${detail.maxPlayers}인`
           : prev.players,
+        playingtime: (detail.minPlaytime && detail.maxPlaytime)
+          ? `${detail.minPlaytime}~${detail.maxPlaytime}분`
+          : prev.playingtime,
       }));
 
       showToast("BGG 정보가 자동으로 채워졌습니다.", { type: "success" });
@@ -311,6 +315,17 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
             value={formData.players || ""}
             onChange={e => setFormData({ ...formData, players: e.target.value })}
             placeholder="예: 2~4인"
+            className="admin-input"
+            style={{ width: "100%" }}
+          />
+        </div>
+
+        <div className="admin-form-group">
+          <label className="admin-label">플레이 시간</label>
+          <input
+            value={formData.playingtime || ""}
+            onChange={e => setFormData({ ...formData, playingtime: e.target.value })}
+            placeholder="예: 60~90분"
             className="admin-input"
             style={{ width: "100%" }}
           />

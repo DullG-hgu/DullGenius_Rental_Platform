@@ -476,6 +476,8 @@ const parseBGGDetail = (xmlText) => {
   const minPMatch = xmlText.match(/<minplayers[^>]*value="(\d+)"/);
   const maxPMatch = xmlText.match(/<maxplayers[^>]*value="(\d+)"/);
   const weightMatch = xmlText.match(/<averageweight[^>]*value="([^"]+)"/);
+  const minPTimeMatch = xmlText.match(/<minplaytime[^>]*value="(\d+)"/);
+  const maxPTimeMatch = xmlText.match(/<maxplaytime[^>]*value="(\d+)"/);
 
   let thumbnail = thumbMatch ? thumbMatch[1].trim() : '';
   // thumbnail URL이 protocol 없이 //로 시작하면 https: 붙이기
@@ -489,7 +491,9 @@ const parseBGGDetail = (xmlText) => {
     thumbnail: thumbnail,
     minPlayers: minPMatch ? minPMatch[1] : '',
     maxPlayers: maxPMatch ? maxPMatch[1] : '',
-    weight: weightMatch ? parseFloat(weightMatch[1]).toFixed(2) : ''
+    weight: weightMatch ? parseFloat(weightMatch[1]).toFixed(2) : '',
+    minPlaytime: minPTimeMatch ? minPTimeMatch[1] : '',
+    maxPlaytime: maxPTimeMatch ? maxPTimeMatch[1] : ''
   };
 };
 
@@ -597,6 +601,7 @@ export const addGame = async (gameData) => {
       name: gameData.name,
       category: gameData.category || '보드게임',
       players: gameData.players,
+      playingtime: gameData.playingtime, // [NEW] 플레이 시간
       difficulty: gameData.difficulty === "" ? null : gameData.difficulty, // [FIX] 빈 문자열은 DB에서 numeric 변환 불가
       image: gameData.image,
       video_url: gameData.video_url,
