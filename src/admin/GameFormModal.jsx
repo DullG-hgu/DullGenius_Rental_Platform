@@ -110,8 +110,12 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
 
   // [NEW] 수동 BGG ID 조회
   const handleManualBggFetch = () => {
-    if (!manualBggId.trim()) return showToast("BGG ID를 입력하세요.", { type: "warning" });
-    applyBggData(manualBggId.trim());
+    const trimmed = manualBggId.trim();
+    if (!trimmed) return showToast("BGG ID를 입력하세요.", { type: "warning" });
+    if (!/^\d+$/.test(trimmed)) {
+      return showToast("BGG ID는 숫자만 입력하세요. (예: 266192)", { type: "warning" });
+    }
+    applyBggData(trimmed);
   };
 
   // [NEW] BGG 웹사이트에서 직접 검색
@@ -130,7 +134,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
       display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
     }}>
       <div className="modal-content" style={{
-        padding: "25px", borderRadius: "15px", width: "90%", maxWidth: "450px",
+        padding: "25px", borderRadius: "15px", width: "90%", maxWidth: "min(450px, 95vw)",
         boxShadow: "0 5px 20px rgba(0,0,0,0.5)", maxHeight: "90vh", overflowY: "auto"
       }}>
         <h3 style={{ marginTop: 0 }}>{title}</h3>

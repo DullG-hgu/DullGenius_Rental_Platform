@@ -37,20 +37,26 @@ function AddGameTab({ onGameAdded }) {
     setLoading(true);
     try {
       // 1. 중복 검사 먼저 수행 (검색어 기준)
-      const duplicates = await checkGameExists(keyword);
+      const matches = await checkGameExists(keyword);
 
-      if (duplicates && duplicates.length > 0) {
-        // 중복 게임 발견: 재고 추가 유도
-        const existGame = duplicates[0];
-        const currentCount = existGame.quantity || '?';
+      if (matches && matches.length > 0) {
+        // [IMPROVED] 정확한 일치(첫 항목)를 우선으로 표시
+        const exactMatch = matches[0];
+        const currentCount = exactMatch.quantity || '?';
         setLoading(false); // 팝업 띄우기 전 로딩 해제
+
+        // 유사 게임이 여러 개 있으면 경고 추가
+        const hasSimilar = matches.length > 1;
+        const message = hasSimilar
+          ? `'${exactMatch.name}' 게임이 이미 존재합니다. (유사 게임 ${matches.length}개 발견)\n새로 검색하는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`
+          : `'${exactMatch.name}' 게임이 이미 존재합니다.\n새로 검색하는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`;
 
         showConfirmModal(
           "📢 중복 게임 발견",
-          `'${existGame.name}' 게임이 이미 존재합니다.\n새로 검색하는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`,
+          message,
           async () => {
             try {
-              await addGameCopy(existGame.id);
+              await addGameCopy(exactMatch.id);
               showToast("기존 게임에 재고가 추가되었습니다!", { type: "success" });
               setResults([]);
               setKeyword("");
@@ -97,18 +103,23 @@ function AddGameTab({ onGameAdded }) {
   const handleSaveGame = async (formData) => {
     try {
       // 1. 중복 체크를 가장 먼저 수행
-      const duplicates = await checkGameExists(formData.name);
+      const matches = await checkGameExists(formData.name);
 
-      if (duplicates && duplicates.length > 0) {
-        // 중복 발견: 재고 추가 유도
-        const existGame = duplicates[0];
-        const currentCount = existGame.quantity || '?';
+      if (matches && matches.length > 0) {
+        // [IMPROVED] 정확한 일치를 우선 처리
+        const exactMatch = matches[0];
+        const currentCount = exactMatch.quantity || '?';
+        const hasSimilar = matches.length > 1;
+        const message = hasSimilar
+          ? `'${exactMatch.name}' 게임이 이미 존재합니다. (유사 게임 ${matches.length}개 발견)\n새로 만드는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`
+          : `'${exactMatch.name}' 게임이 이미 존재합니다.\n새로 만드는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`;
+
         showConfirmModal(
           "📢 중복 게임 발견",
-          `'${formData.name}' 게임이 이미 존재합니다.\n새로 만드는 대신 재고(Copy)를 추가하시겠습니까?\n(현재 재고: ${currentCount}개)`,
+          message,
           async () => {
             try {
-              await addGameCopy(existGame.id); // 위치 파라미터 불필요
+              await addGameCopy(exactMatch.id);
               showToast("기존 게임에 재고가 추가되었습니다!", { type: "success" });
               setIsModalOpen(false);
               setResults([]);
@@ -118,7 +129,7 @@ function AddGameTab({ onGameAdded }) {
               showToast("재고 추가 실패: " + e.message, { type: "error" });
             }
           },
-          "warning" // Warning type for visual distinction if supported
+          "warning"
         );
         return; // 중복일 경우 처리 종료 (이미지 업로드 안함)
       }
@@ -137,8 +148,8 @@ function AddGameTab({ onGameAdded }) {
             console.log("2. Condition check:", !!finalImage, finalImage?.startsWith('http'), !finalImage?.includes('supabase.co'));
             if (finalImage && finalImage.startsWith('http') && !finalImage.includes('supabase.co')) {
               try {
-                // Toast: 이미지 처리 중 알림
-                showToast("이미지를 최적화하고 있습니다...", { type: "info" });
+                // [IMPROVED] 단계별 진행률 표시
+                showToast("📥 이미지를 최적화하고 있습니다...", { type: "info" });
 
                 // weserv.nl을 통해 리사이징된 이미지(WebP, 600px) Fetch
                 const cleanUrl = finalImage.replace(/^https?:\/\//, '');
@@ -154,6 +165,9 @@ function AddGameTab({ onGameAdded }) {
 
                 const blob = await response.blob();
                 console.log("5. Blob size:", blob.size);
+
+                // [IMPROVED] 업로드 진행 표시
+                showToast("☁️ 이미지를 업로드하고 있습니다...", { type: "info" });
 
                 // Supabase Storage 업로드
                 const { supabase } = await import('../lib/supabaseClient'); // Dynamic Import to avoid top-level cyclic dependency if any
@@ -181,7 +195,7 @@ function AddGameTab({ onGameAdded }) {
 
               } catch (imgError) {
                 console.error("9. Image optimization catch block reached:", imgError);
-                showToast("이미지 최적화 실패 (원본 사용)", { type: "warning" });
+                showToast("⚠️ 이미지 최적화 실패 (원본 사용)", { type: "warning" });
                 // 실패해도 원본 URL로 계속 진행
               }
             }

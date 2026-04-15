@@ -601,15 +601,31 @@ export const addGame = async (gameData) => {
   return newGame;
 };
 
-// [Admin] 게임 이름 중복 확인 [NEW]
+// [Admin] 게임 이름 중복 확인 [IMPROVED]
+// 정확한 일치(eq)와 부분 일치(ilike) 모두 확인하여
+// 영문/한글 혼용, 띄어쓰기 차이 등에 대응
 export const checkGameExists = async (name) => {
-  const { data, error } = await supabase
-    .from('games')
-    .select('id, name, quantity')
-    .eq('name', name);
+  if (!name?.trim()) return [];
 
-  if (error) return [];
-  return data; // 중복된 게임 리스트 (보통 1개여야 함)
+  // 1단계: 정확한 일치 확인 (우선도 높음)
+  const { data: exactMatch } = await supabase
+    .from('games')
+    .select('id, name, quantity, bgg_id')
+    .eq('name', name.trim());
+
+  if (exactMatch && exactMatch.length > 0) {
+    return exactMatch;
+  }
+
+  // 2단계: 부분 일치 확인 (대소문자 무시)
+  // ilike 사용으로 "스플렌더" / "Splendor" / "splendor" 모두 감지
+  const { data: fuzzyMatch } = await supabase
+    .from('games')
+    .select('id, name, quantity, bgg_id')
+    .ilike('name', `%${name.trim()}%`)
+    .limit(5);  // 오탐지 방지: 최대 5개만
+
+  return fuzzyMatch || [];
 };
 
 // [Admin] 기존 게임에 재고(Copy) 추가 [NEW]

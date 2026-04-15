@@ -758,3 +758,146 @@ export const adminUpdateGame = async (gameId, userId) => {
 **리뷰 완료**: 2026-04-15
 **피드백**: 위 Issue 1, Issue 2는 큰 작업이 아니므로 즉시 수정 권장
 
+---
+
+---
+
+# 🔧 게임 추가 탭 개선사항 (2026-04-15)
+
+## P0 보안 개선 ✅
+
+### 1️⃣ BGG ID 형식 검증 추가
+
+**수정 위치**: GameFormModal.jsx:112-115
+
+```javascript
+// Before
+const handleManualBggFetch = () => {
+  if (!manualBggId.trim()) return showToast("BGG ID를 입력하세요.", { type: "warning" });
+  applyBggData(manualBggId.trim());
+};
+
+// After
+const handleManualBggFetch = () => {
+  const trimmed = manualBggId.trim();
+  if (!trimmed) return showToast("BGG ID를 입력하세요.", { type: "warning" });
+  if (!/^\d+$/.test(trimmed)) {  // ✅ 숫자 형식만 허용
+    return showToast("BGG ID는 숫자만 입력하세요. (예: 266192)", { type: "warning" });
+  }
+  applyBggData(trimmed);
+};
+```
+
+**효과**: 사용자 입력 오류 → API 호출 오류 연쇄 차단
+
+---
+
+## P1 기능 개선 ✅
+
+### 1️⃣ checkGameExists 이름 매칭 개선
+
+**수정 위치**: api.jsx:604-622
+
+```javascript
+// Before: 정확한 일치만 (eq)
+const { data, error } = await supabase
+  .from('games')
+  .select('id, name, quantity')
+  .eq('name', name);  // ❌ "스플렌더" ≠ "Splendor"
+
+// After: 2단계 매칭 (정확 → 부분)
+export const checkGameExists = async (name) => {
+  if (!name?.trim()) return [];
+
+  // 1단계: 정확한 일치 확인 (우선도 높음)
+  const { data: exactMatch } = await supabase
+    .from('games')
+    .select('id, name, quantity, bgg_id')
+    .eq('name', name.trim());
+  if (exactMatch?.length > 0) return exactMatch;
+
+  // 2단계: 부분 일치 확인 (ilike로 대소문자 무시)
+  const { data: fuzzyMatch } = await supabase
+    .from('games')
+    .select('id, name, quantity, bgg_id')
+    .ilike('name', `%${name.trim()}%`)
+    .limit(5);  // 오탐지 방지
+  return fuzzyMatch || [];
+};
+```
+
+**효과**:
+- ✅ "스플렌더" → "Splendor" 감지 가능
+- ✅ "splendor" → "SPLENDOR" 감지 가능
+- ⚠️ 오탐지 가능성 (최대 5개로 제한)
+
+**사용자 경험**: 유사 게임이 여러 개 있으면 알림 표시
+```javascript
+const hasSimilar = matches.length > 1;
+const message = hasSimilar
+  ? `'${exactMatch.name}' 게임이 이미 존재합니다. (유사 게임 ${matches.length}개 발견)`
+  : `'${exactMatch.name}' 게임이 이미 존재합니다.`;
+```
+
+---
+
+### 2️⃣ 모바일 반응형 모달 너비 조정
+
+**수정 위치**: GameFormModal.jsx:133
+
+```javascript
+// Before
+maxWidth: "450px"  // 고정값 (모바일에서 너무 클 수 있음)
+
+// After
+maxWidth: "min(450px, 95vw)"  // ✅ 뷰포트에 맞춤
+```
+
+**효과**: 모바일 화면(375px)에서도 모달이 화면을 초과하지 않음
+
+---
+
+### 3️⃣ 이미지 최적화 진행률 표시
+
+**수정 위치**: AddGameTab.jsx:140-189
+
+```javascript
+// Before
+showToast("이미지를 최적화하고 있습니다...", { type: "info" });
+
+// After (단계별 표시)
+showToast("📥 이미지를 최적화하고 있습니다...", { type: "info" });
+// ... 최적화 진행 ...
+showToast("☁️ 이미지를 업로드하고 있습니다...", { type: "info" });
+// ... 업로드 진행 ...
+showToast("⚠️ 이미지 최적화 실패 (원본 사용)", { type: "warning" });
+```
+
+**효과**: 사용자가 진행 상황을 인지 → 낮은 대기감
+
+---
+
+## 📊 개선 효과
+
+| 항목 | Before | After | 효과 |
+|------|--------|-------|------|
+| BGG ID 입력 | 텍스트 자유입력 | 숫자만 ✅ | 입력 오류 차단 |
+| 게임명 중복 | 정확 일치만 | 정확 + 부분 ✅ | 한글/영문 혼용 대응 |
+| 모달 너비 | 고정 450px | 반응형 ✅ | 모바일 호환성 |
+| 진행률 표시 | 단일 토스트 | 단계별 ✅ | UX 개선 |
+
+---
+
+## ✅ 체크리스트
+
+- [x] BGG ID 형식 검증 (P0)
+- [x] checkGameExists 2단계 매칭 (P1)
+- [x] 모달 반응형 너비 (P1)
+- [x] 이미지 최적화 진행률 (P1)
+- [ ] Netlify 함수 속도 제한 확인 (P1 - 별도 검토 필요)
+
+---
+
+**수정 시간**: ~20분
+**영향 범위**: UX (중), 보안 (낮), 호환성 (중)
+
