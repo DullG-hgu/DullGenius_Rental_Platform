@@ -306,7 +306,7 @@ function KioskPage() {
                 timerActiveRef.current = true;
             }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ fontSize: '2rem' }}>🔪</div>
+                    <div style={{ fontSize: '2.2rem' }}>⏱️</div>
                     <div style={{ fontSize: '0.9rem', marginTop: '4px', fontWeight: 'bold', whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>
                         타이머
                     </div>

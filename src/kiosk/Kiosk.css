@@ -370,11 +370,11 @@
     width: 100px;
     height: 100px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #8b0000 0%, #ff4444 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
     font-size: 1.8rem;
-    box-shadow: 0 8px 30px rgba(255, 68, 68, 0.6);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
     z-index: 10000 !important;
     cursor: pointer;
     display: flex;
