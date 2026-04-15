@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 4. 11. PM 3:27:57
+-- 생성 시각: 2026. 4. 15. PM 2:48:59
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -952,7 +952,7 @@ DECLARE
     v_user_id UUID;
     v_target_email TEXT;
 BEGIN
-    -- 1. 프로필 정보 대조 (학번, 이름, 전화번호 일�� 여부 확인)
+    -- 1. 프로필 정보 대조 (학번, 이름, 전화번호 일치 여부 확인)
     SELECT id INTO v_user_id
     FROM public.profiles
     WHERE student_id = p_student_id 
@@ -975,7 +975,7 @@ BEGIN
         v_user_id, 
         'SELF_RESET_PW', 
         jsonb_build_object(
-            'description', '사용자가 정보를 대조하여 비밀번호를 직접 재설정함'
+            'description', '사용자가 정보를 대조하여 비���번호를 직접 재설정함'
         )
     );
     RETURN jsonb_build_object('success', true, 'message', '비밀번호가 성공적으로 변경되었습니다.');
