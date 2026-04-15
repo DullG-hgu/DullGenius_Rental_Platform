@@ -91,7 +91,6 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
         players: (detail.minPlayers && detail.maxPlayers)
           ? `${detail.minPlayers}~${detail.maxPlayers}인`
           : prev.players,
-        image: detail.thumbnail || prev.image,
       }));
 
       showToast("BGG 정보가 자동으로 채워졌습니다.", { type: "success" });
