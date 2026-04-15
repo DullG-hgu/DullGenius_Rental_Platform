@@ -48,11 +48,29 @@ exports.handler = async function (event, context) {
     }
 
     try {
+        // BGG API Token 확인
+        const bggToken = process.env.BGG_API_TOKEN;
+        if (!bggToken) {
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ error: 'BGG_API_TOKEN environment variable not set' }),
+            };
+        }
+
         // 202 Retry 루프 (최대 3회, 1초 간격)
         let response;
         let attempts = 0;
         while (attempts < 3) {
-            response = await fetch(bggUrl);
+            response = await fetch(bggUrl, {
+                headers: {
+                    'Authorization': `Bearer ${bggToken}`,
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/xml, text/xml, */*',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
             if (response.status !== 202) break;
             await new Promise(r => setTimeout(r, 1000));
             attempts++;
@@ -66,9 +84,11 @@ exports.handler = async function (event, context) {
         }
 
         if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`BGG API Error ${response.status}:`, errorBody.substring(0, 500));
             return {
                 statusCode: response.status,
-                body: JSON.stringify({ error: `BGG API Error: ${response.statusText}` }),
+                body: JSON.stringify({ error: `BGG API Error: ${response.statusText} (${response.status})` }),
             };
         }
 
