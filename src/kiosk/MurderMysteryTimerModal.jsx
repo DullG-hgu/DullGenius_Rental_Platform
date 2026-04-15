@@ -132,7 +132,7 @@ function MurderMysteryTimerModal({ onClose }) {
 
                     {/* 빠른 설정 버튼 */}
                     <div className="mm-preset-buttons-fullscreen">
-                        {[5, 10, 15, 20, 30].map((min) => (
+                        {[1, 5, 10, 15, 20, 30].map((min) => (
                             <button
                                 key={min}
                                 className={`mm-preset-btn-fullscreen ${inputMinutes === String(min) ? 'active' : ''}`}
