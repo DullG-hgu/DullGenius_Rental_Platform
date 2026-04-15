@@ -88,10 +88,8 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
         ...prev,
         bgg_id: detail.id,
         difficulty: detail.weight || prev.difficulty,
-        players: detail.minPlayers && detail.maxPlayers
-          ? (detail.minPlayers === detail.maxPlayers
-            ? `${detail.minPlayers}인`
-            : `${detail.minPlayers}~${detail.maxPlayers}인`)
+        players: (detail.minPlayers && detail.maxPlayers)
+          ? `${detail.minPlayers}~${detail.maxPlayers}인`
           : prev.players,
         image: detail.thumbnail || prev.image,
       }));
