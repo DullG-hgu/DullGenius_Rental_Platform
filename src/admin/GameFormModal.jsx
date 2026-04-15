@@ -55,14 +55,6 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
   // [NEW] BGG 게임 검색
   const handleBggSearch = async () => {
     if (!formData.name) return showToast("게임 이름을 먼저 입력하세요.", { type: "warning" });
-
-    // 한글 감지 (한글이 포함되면 웹사이트 검색으로 유도)
-    if (/[가-힣]/g.test(formData.name)) {
-      showToast("한국어는 BGG 웹사이트에서 검색해주세요!", { type: "info" });
-      openBGGWebSearch();
-      return;
-    }
-
     setBggSearching(true);
     setShowBggPanel(true);
     setBggSearchResults([]);

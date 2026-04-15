@@ -452,7 +452,10 @@ const parseBGGSearch = (xmlText) => {
   while ((match = itemRegex.exec(xmlText)) !== null) {
     const id = match[1];
     const inner = match[2];
-    const nameMatch = inner.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+    // 영어(primary) 또는 한국어(alternate) 이름 모두 지원
+    const primaryNameMatch = inner.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+    const alternateNameMatch = inner.match(/<name[^>]*type="alternate"[^>]*value="([^"]+)"/);
+    const nameMatch = primaryNameMatch || alternateNameMatch;
     const yearMatch = inner.match(/<yearpublished[^>]*value="([^"]+)"/);
     if (nameMatch) {
       items.push({
