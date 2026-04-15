@@ -45,11 +45,27 @@ export default defineConfig(({ mode }) => {
                     target: 'https://boardgamegeek.com',
                     changeOrigin: true,
                     rewrite: (path) => path.replace(/^\/bgg-search/, '/xmlapi2/search'),
+                    configure: (proxy, _options) => {
+                        proxy.on('proxyReq', (proxyReq, req, _res) => {
+                            const bggToken = env.VITE_BGG_API_TOKEN
+                            if (bggToken) {
+                                proxyReq.setHeader('Authorization', `Bearer ${bggToken}`)
+                            }
+                        })
+                    },
                 },
                 '/bgg-thing': {
                     target: 'https://boardgamegeek.com',
                     changeOrigin: true,
                     rewrite: (path) => path.replace(/^\/bgg-thing/, '/xmlapi2/thing'),
+                    configure: (proxy, _options) => {
+                        proxy.on('proxyReq', (proxyReq, req, _res) => {
+                            const bggToken = env.VITE_BGG_API_TOKEN
+                            if (bggToken) {
+                                proxyReq.setHeader('Authorization', `Bearer ${bggToken}`)
+                            }
+                        })
+                    },
                 },
             },
         },

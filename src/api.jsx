@@ -495,19 +495,36 @@ export const searchBGG = async (query) => {
   if (!query) return [];
 
   try {
-    const url = `/.netlify/functions/bgg-proxy?action=search&query=${encodeURIComponent(query)}`;
-    const response = await fetch(url);
+    let url;
+    let response;
 
-    if (response.status === 202) {
-      throw new Error('BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.');
+    if (import.meta.env.DEV) {
+      // DEV: Vite 프록시 사용
+      url = `/bgg-search?query=${encodeURIComponent(query)}&type=boardgame`;
+      response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`BGG 요청 실패: ${response.status}`);
+      }
+
+      const xmlText = await response.text();
+      return parseBGGSearch(xmlText);
+    } else {
+      // PROD: Netlify 함수 사용
+      url = `/.netlify/functions/bgg-proxy?action=search&query=${encodeURIComponent(query)}`;
+      response = await fetch(url);
+
+      if (response.status === 202) {
+        throw new Error('BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.');
+      }
+
+      if (!response.ok) {
+        throw new Error(`BGG 요청 실패: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.items || [];
     }
-
-    if (!response.ok) {
-      throw new Error(`BGG 요청 실패: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.items || [];
   } catch (e) {
     console.error('searchBGG 실패:', e);
     throw e;
@@ -519,29 +536,45 @@ export const fetchBGGGame = async (bggId) => {
   if (!bggId) return null;
 
   try {
-    const url = `/.netlify/functions/bgg-proxy?action=detail&id=${bggId}`;
-
-    // 202 Retry 로직 (클라이언트 측 안전성)
+    let url;
     let response;
-    let attempts = 0;
-    while (attempts < 3) {
+
+    if (import.meta.env.DEV) {
+      // DEV: Vite 프록시 사용
+      url = `/bgg-thing?id=${bggId}&stats=1`;
       response = await fetch(url);
-      if (response.status !== 202) break;
-      await new Promise(r => setTimeout(r, 1500));
-      attempts++;
-    }
 
-    if (response.status === 202) {
-      throw new Error('BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.');
-    }
+      if (!response.ok) {
+        throw new Error(`BGG 요청 실패: ${response.status}`);
+      }
 
-    if (!response.ok) {
-      throw new Error(`BGG 요청 실패: ${response.status}`);
-    }
+      const xmlText = await response.text();
+      return parseBGGDetail(xmlText);
+    } else {
+      // PROD: Netlify 함수 사용
+      url = `/.netlify/functions/bgg-proxy?action=detail&id=${bggId}`;
 
-    const data = await response.json();
-    if (data.error) throw new Error(data.error);
-    return data;
+      // 202 Retry 로직 (클라이언트 측 안전성)
+      let attempts = 0;
+      while (attempts < 3) {
+        response = await fetch(url);
+        if (response.status !== 202) break;
+        await new Promise(r => setTimeout(r, 1500));
+        attempts++;
+      }
+
+      if (response.status === 202) {
+        throw new Error('BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.');
+      }
+
+      if (!response.ok) {
+        throw new Error(`BGG 요청 실패: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      return data;
+    }
   } catch (e) {
     console.error('fetchBGGGame 실패:', e);
     throw e;
