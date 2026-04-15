@@ -79,7 +79,14 @@ function MembersTab() {
     const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
     const [showWithdrawn, setShowWithdrawn] = useState(false); // [NEW] 탈퇴 회원 보기 토글
     const [memberRoles, setMemberRoles] = useState({}); // { userId: ['admin', 'payment_exempt'] }
-    const [roleEditModal, setRoleEditModal] = useState({ isOpen: false, member: null, selectedRoles: [] });
+    // [FIXED] 초기 상태에 tempSemester, tempPhone 추가하여 일관성 확보
+    const [roleEditModal, setRoleEditModal] = useState({
+        isOpen: false,
+        member: null,
+        selectedRoles: [],
+        tempSemester: '',
+        tempPhone: ''
+    });
 
     // Confirm 모달 상태
     const [confirmModal, setConfirmModal] = useState({
