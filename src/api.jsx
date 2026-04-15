@@ -495,25 +495,19 @@ export const searchBGG = async (query) => {
   if (!query) return [];
 
   try {
-    // PROD(배포): Netlify 함수만 사용
-    if (!import.meta.env.DEV) {
-      const url = `/.netlify/functions/bgg-proxy?action=search&query=${encodeURIComponent(query)}`;
-      const response = await fetch(url);
+    const url = `/.netlify/functions/bgg-proxy?action=search&query=${encodeURIComponent(query)}`;
+    const response = await fetch(url);
 
-      if (response.status === 202) {
-        throw new Error('BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.');
-      }
-
-      if (!response.ok) {
-        throw new Error(`BGG 요청 실패: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.items || [];
-    } else {
-      // DEV: 배포 후 사용 가능 메시지
-      throw new Error('BGG 자동 검색은 배포 후에 사용 가능합니다. 🌐 BGG 웹사이트에서 검색 버튼을 사용해주세요.');
+    if (response.status === 202) {
+      throw new Error('BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.');
     }
+
+    if (!response.ok) {
+      throw new Error(`BGG 요청 실패: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.items || [];
   } catch (e) {
     console.error('searchBGG 실패:', e);
     throw e;
@@ -525,35 +519,29 @@ export const fetchBGGGame = async (bggId) => {
   if (!bggId) return null;
 
   try {
-    // PROD(배포): Netlify 함수만 사용
-    if (!import.meta.env.DEV) {
-      const url = `/.netlify/functions/bgg-proxy?action=detail&id=${bggId}`;
+    const url = `/.netlify/functions/bgg-proxy?action=detail&id=${bggId}`;
 
-      // 202 Retry 로직 (클라이언트 측 안전성)
-      let response;
-      let attempts = 0;
-      while (attempts < 3) {
-        response = await fetch(url);
-        if (response.status !== 202) break;
-        await new Promise(r => setTimeout(r, 1500));
-        attempts++;
-      }
-
-      if (response.status === 202) {
-        throw new Error('BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.');
-      }
-
-      if (!response.ok) {
-        throw new Error(`BGG 요청 실패: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
-      return data;
-    } else {
-      // DEV: 배포 후 사용 가능 메시지
-      throw new Error('BGG 자동 검색은 배포 후에 사용 가능합니다. 🌐 BGG 웹사이트에서 검색 버튼을 사용해주세요.');
+    // 202 Retry 로직 (클라이언트 측 안전성)
+    let response;
+    let attempts = 0;
+    while (attempts < 3) {
+      response = await fetch(url);
+      if (response.status !== 202) break;
+      await new Promise(r => setTimeout(r, 1500));
+      attempts++;
     }
+
+    if (response.status === 202) {
+      throw new Error('BGG 서버가 준비중입니다. 잠시 후 다시 시도해주세요.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`BGG 요청 실패: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return data;
   } catch (e) {
     console.error('fetchBGGGame 실패:', e);
     throw e;
