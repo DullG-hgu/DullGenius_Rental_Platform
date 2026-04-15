@@ -362,3 +362,32 @@
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }
+/* 플로팅 타이머 버튼 (우측 상단) */
+.floating-timer-btn {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b0000 0%, #ff4444 100%);
+    color: white;
+    border: none;
+    font-size: 1.8rem;
+    box-shadow: 0 8px 30px rgba(255, 68, 68, 0.6);
+    z-index: 10000 !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    transition: transform 0.2s;
+}
+
+.floating-timer-btn:hover {
+    transform: scale(1.05);
+}
+
+.floating-timer-btn:active {
+    transform: scale(0.98);
+}

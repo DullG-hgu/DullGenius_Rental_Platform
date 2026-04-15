@@ -287,14 +287,7 @@ function KioskPage() {
                     <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>뭐 할지 모를 때!</span>
                 </button>
 
-                <button className="kiosk-btn" style={{ background: "linear-gradient(135deg, #8b0000 0%, #ff4444 100%)" }} onClick={() => {
-                    setShowMurderMysteryTimer(true);
-                    timerActiveRef.current = true;
-                }}>
-                    <div className="btn-icon">🔪</div>
-                    머더 미스터리
-                    <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>타이머 시작</span>
-                </button>
+
             </div>
 
             {/* 플로팅 수령 버튼 (좌측 하단) */}
@@ -303,6 +296,19 @@ function KioskPage() {
                     <div style={{ fontSize: '2.5rem' }}>📥</div>
                     <div style={{ fontSize: '1.2rem', marginTop: '8px', fontWeight: 'bold', whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>
                         수령하기
+                    </div>
+                </div>
+            </button>
+
+            {/* 플로팅 타이머 버튼 (우측 상단) */}
+            <button className="floating-timer-btn" onClick={() => {
+                setShowMurderMysteryTimer(true);
+                timerActiveRef.current = true;
+            }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ fontSize: '2rem' }}>🔪</div>
+                    <div style={{ fontSize: '0.9rem', marginTop: '4px', fontWeight: 'bold', whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>
+                        타이머
                     </div>
                 </div>
             </button>
