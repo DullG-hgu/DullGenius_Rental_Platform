@@ -8,7 +8,7 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 // .env 로딩
-const envPath = path.resolve(__dirname, '../.env');
+const envPath = path.resolve(__dirname, '../.env.local');
 let env = {};
 if (fs.existsSync(envPath)) {
     fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {

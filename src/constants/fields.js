@@ -13,7 +13,7 @@ export const API_FIELDS = {
   GAMES_FOR_LISTING: {
     description: '게임 목록용 (필수 필드)',
     fields: [
-      'id', 'name', 'image', 'category', 'genre', 'players', 'playingtime',
+      'id', 'name', 'image', 'category', 'genres', 'min_players', 'max_players', 'playingtime',
       'difficulty', 'is_rentable', 'quantity', 'available_count', 'video_url',
       'manual_url', 'owner', 'recommendation_text', 'tags', 'total_views'
     ],
@@ -24,7 +24,7 @@ export const API_FIELDS = {
     description: '활성 대여 정보 (Profile JOIN 포함)',
     fields: [
       'rental_id', 'game_id', 'user_id', 'renter_name', 'type',
-      'due_date', 'returned_at',  // ✅ returned_at 포함 (과거 기록 조회용)
+      'due_date',
       'profiles(name)'
     ],
     excludeFields: []

@@ -24,8 +24,8 @@ function AddGameTab({ onGameAdded }) {
     type: "info"
   });
 
-  const showConfirmModal = (title, message, onConfirm, type = "info") => {
-    setConfirmModal({ isOpen: true, title, message, onConfirm, type });
+  const showConfirmModal = (title, message, onConfirm, type = "info", onCancel = null) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, type, onCancel });
   };
 
   const closeConfirmModal = () => {
@@ -71,7 +71,18 @@ function AddGameTab({ onGameAdded }) {
               showToast("재고 추가 실패: " + e.message, { type: "error" });
             }
           },
-          "warning"
+          "warning",
+          async () => {
+            // 취소했을 때 네이버 검색 진행
+            try {
+              const data = await searchNaver(keyword);
+              if (data.items) setResults(data.items);
+              else { showToast("결과 없음", { type: "info" }); setResults([]); }
+            } catch (e) {
+              console.error(e);
+              showToast("검색 오류", { type: "error" });
+            }
+          }
         );
         return; // 확인창을 띄우고 네이버 검색은 중단
       }
@@ -93,10 +104,11 @@ function AddGameTab({ onGameAdded }) {
     const initialData = {
       name: item.title.replace(/<[^>]*>?/g, ''),
       category: "보드게임",
-      players: "2~4인",
+      min_players: 2,
+      max_players: 4,
       tags: "",
       difficulty: "",
-      genre: "",
+      genres: null,
       image: item.image,
       naverId: item.productId
     };
@@ -235,7 +247,7 @@ function AddGameTab({ onGameAdded }) {
         />
         <button onClick={handleSearch} style={styles.searchBtn}>검색</button>
         <button
-          onClick={() => openAddModal({ title: "새 게임", image: "", productId: "manual" })}
+          onClick={() => openAddModal({ title: "", image: "", productId: "manual" })}
           style={{ ...styles.searchBtn, background: "#2ecc71", marginLeft: "auto" }}
         >
           ➕ 직접 추가
@@ -280,7 +292,12 @@ function AddGameTab({ onGameAdded }) {
       {/* Confirm 모달 */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
-        onClose={closeConfirmModal}
+        onClose={() => {
+          if (confirmModal.onCancel) {
+            confirmModal.onCancel();
+          }
+          closeConfirmModal();
+        }}
         onConfirm={confirmModal.onConfirm}
         title={confirmModal.title}
         message={confirmModal.message}

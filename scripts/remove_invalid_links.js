@@ -4,7 +4,7 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 // Setup Supabase
-const envPath = path.resolve(__dirname, '../.env');
+const envPath = path.resolve(__dirname, '../.env.local');
 const envContent = fs.readFileSync(envPath, 'utf8');
 const envVars = {};
 envContent.split(/\r?\n/).forEach(line => {

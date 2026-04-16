@@ -8,7 +8,7 @@ const fs    = require('fs');
 const path  = require('path');
 
 // .env 로딩
-const envPath = path.resolve(__dirname, '../.env');
+const envPath = path.resolve(__dirname, '../.env.local');
 let env = {};
 fs.readFileSync(envPath, 'utf8').split('\n').forEach(l => {
     const [k, ...v] = l.split('=');

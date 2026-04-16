@@ -4,15 +4,15 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 // 1. Load environment variables from .env manually
-const envPath = path.resolve(__dirname, '../.env');
+const envPath = path.resolve(__dirname, '../.env.local');
 if (!fs.existsSync(envPath)) {
-    console.error('.env file not found at:', envPath);
+    console.error('.env.local file not found at:', envPath);
     process.exit(1);
 }
 
 const envContent = fs.readFileSync(envPath, 'utf8');
 const envVars = {};
-console.log('Parsing .env file...');
+console.log('Parsing .env.local file...');
 envContent.split(/\r?\n/).forEach(line => {
     line = line.trim();
     if (!line || line.startsWith('#')) return;
@@ -38,7 +38,7 @@ console.log(`Supabase URL found: ${!!supabaseUrl}`);
 console.log(`Supabase Key found: ${!!supabaseKey}`);
 
 if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing Supabase credentials in .env');
+    console.error('Missing Supabase credentials in .env.local');
     process.exit(1);
 }
 

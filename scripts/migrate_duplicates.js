@@ -3,7 +3,7 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 // 1. Load Env
-const envPath = path.resolve(__dirname, '../.env');
+const envPath = path.resolve(__dirname, '../.env.local');
 const envContent = fs.readFileSync(envPath, 'utf8');
 const env = {};
 envContent.split('\n').forEach(line => {
@@ -16,12 +16,12 @@ const supabaseKey = env.REACT_APP_SUPABASE_ANON_KEY;
 // IMPORTANT: Use SERVICE_ROLE key if available for deletions, otherwise ANON key with RLS might fail 
 // if the user is not the owner. But assuming local dev environment or admin rights context.
 // Actually, RLS usually blocks delete for anon. We might need to rely on the fact user is an admin or we have a service role key.
-// Since we don't have service role key in .env usually (security), we hope anon key has rights or RLS is permissive for now.
+// Since we don't have service role key in .env.local usually (security), we hope anon key has rights or RLS is permissive for now.
 // If this fails, we will need to ask user for Service Key or use SQL editor.
 // *Assumption*: The `analyze` script worked, so we have read access. Write access depends on RLS.
 
 if (!supabaseUrl || !supabaseKey) {
-    console.error("Missing Supabase Credentials in .env");
+    console.error("Missing Supabase Credentials in .env.local");
     process.exit(1);
 }
 

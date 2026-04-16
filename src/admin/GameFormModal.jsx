@@ -9,12 +9,15 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
   const { showToast } = useToast(); // [NEW]
   const [formData, setFormData] = useState({
     name: "",
-    bgg_id: "", // [NEW]
+    bgg_id: "",
     category: "보드게임",
     difficulty: "",
     genre: "",
-    players: "",
-    playingtime: "", // [NEW] 플레이 시간
+    min_players: null,
+    max_players: null,
+    min_playtime: null,
+    max_playtime: null,
+    playingtime: "",
     tags: "",
     image: "",
     video_url: "",
@@ -31,17 +34,19 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
   const [bggFetching, setBggFetching] = useState(false);
   const [showBggPanel, setShowBggPanel] = useState(false);
   const [manualBggId, setManualBggId] = useState('');
+  const [bggMechanics, setBggMechanics] = useState(null); // BGG 메커니즘 참고용
 
   // 모달이 열릴 때마다 초기 데이터(initialData)로 폼을 리셋
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        name: "", category: "보드게임", difficulty: "", players: "", playingtime: "", tags: "", image: "", video_url: "", recommendation_text: "", manual_url: "", owner: "", is_rentable: true, bgg_id: "", // [NEW]
-        ...initialData // 부모가 준 데이터가 있으면 덮어씌움
+        name: "", category: "보드게임", difficulty: "", genre: "", min_players: null, max_players: null, min_playtime: null, max_playtime: null, playingtime: "", tags: "", image: "", video_url: "", recommendation_text: "", manual_url: "", owner: "", is_rentable: true, bgg_id: "",
+        ...initialData
       });
       setBggSearchResults([]);
       setShowBggPanel(false);
       setManualBggId('');
+      setBggMechanics(null);
     }
   }, [isOpen, initialData]);
 
@@ -88,13 +93,21 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
         ...prev,
         bgg_id: detail.id,
         difficulty: detail.weight || prev.difficulty,
-        players: (detail.minPlayers && detail.maxPlayers)
-          ? `${detail.minPlayers}~${detail.maxPlayers}인`
-          : prev.players,
+        min_players: detail.minPlayers || prev.min_players,
+        max_players: detail.maxPlayers || prev.max_players,
+        min_playtime: detail.minPlaytime || prev.min_playtime,
+        max_playtime: detail.maxPlaytime || prev.max_playtime,
         playingtime: (detail.minPlaytime && detail.maxPlaytime)
-          ? `${detail.minPlaytime}~${detail.maxPlaytime}분`
+          ? (detail.minPlaytime === detail.maxPlaytime
+              ? `${detail.minPlaytime}분`
+              : `${detail.minPlaytime}~${detail.maxPlaytime}분`)
           : prev.playingtime,
       }));
+
+      // 메커니즘 참고용 저장
+      if (detail.mechanics && detail.mechanics.length > 0) {
+        setBggMechanics(detail.mechanics);
+      }
 
       showToast("BGG 정보가 자동으로 채워졌습니다.", { type: "success" });
       setShowBggPanel(false);
@@ -313,26 +326,72 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
           />
         </div>
 
-        <div className="admin-form-group">
-          <label className="admin-label">인원</label>
-          <input
-            value={formData.players || ""}
-            onChange={e => setFormData({ ...formData, players: e.target.value })}
-            placeholder="예: 2~4인"
-            className="admin-input"
-            style={{ width: "100%" }}
-          />
+        {/* 메커니즘 참고용 (BGG에서 가져온 정보) */}
+        {bggMechanics && bggMechanics.length > 0 && (
+          <div className="admin-form-group" style={{ padding: "12px", borderRadius: "6px", backgroundColor: "rgba(100, 100, 100, 0.08)", borderLeft: "3px solid #999" }}>
+            <label className="admin-label" style={{ color: "var(--admin-text-sub)", fontSize: "0.9em", marginBottom: "8px" }}>⚙️ BGG 메커니즘 (참고용)</label>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              {bggMechanics.map((m, i) => (
+                <span key={i} style={{ backgroundColor: "rgba(150, 150, 150, 0.3)", padding: "4px 10px", borderRadius: "4px", fontSize: "0.85em", color: "var(--admin-text-sub)" }}>
+                  {m}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+          <div className="admin-form-group">
+            <label className="admin-label">최소 인원</label>
+            <input
+              type="number"
+              min="1"
+              value={formData.min_players || ""}
+              onChange={e => setFormData({ ...formData, min_players: e.target.value ? parseInt(e.target.value) : null })}
+              placeholder="예: 2"
+              className="admin-input"
+              style={{ width: "100%" }}
+            />
+          </div>
+          <div className="admin-form-group">
+            <label className="admin-label">최대 인원</label>
+            <input
+              type="number"
+              min="1"
+              value={formData.max_players || ""}
+              onChange={e => setFormData({ ...formData, max_players: e.target.value ? parseInt(e.target.value) : null })}
+              placeholder="예: 4"
+              className="admin-input"
+              style={{ width: "100%" }}
+            />
+          </div>
         </div>
 
-        <div className="admin-form-group">
-          <label className="admin-label">플레이 시간</label>
-          <input
-            value={formData.playingtime || ""}
-            onChange={e => setFormData({ ...formData, playingtime: e.target.value })}
-            placeholder="예: 60~90분"
-            className="admin-input"
-            style={{ width: "100%" }}
-          />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+          <div className="admin-form-group">
+            <label className="admin-label">최소 플레이 시간 (분)</label>
+            <input
+              type="number"
+              min="0"
+              value={formData.min_playtime || ""}
+              onChange={e => setFormData({ ...formData, min_playtime: e.target.value ? parseInt(e.target.value) : null })}
+              placeholder="예: 10"
+              className="admin-input"
+              style={{ width: "100%" }}
+            />
+          </div>
+          <div className="admin-form-group">
+            <label className="admin-label">최대 플레이 시간 (분)</label>
+            <input
+              type="number"
+              min="0"
+              value={formData.max_playtime || ""}
+              onChange={e => setFormData({ ...formData, max_playtime: e.target.value ? parseInt(e.target.value) : null })}
+              placeholder="예: 60"
+              className="admin-input"
+              style={{ width: "100%" }}
+            />
+          </div>
         </div>
 
         <div className="admin-form-group">
@@ -369,7 +428,33 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
 
         {/* [NEW] 영상/설명서 링크 */}
         <div className="admin-form-group">
-          <label className="admin-label">설명 영상 URL (유튜브)</label>
+          <div style={{ display: "flex", gap: "8px", alignItems: "flex-end", marginBottom: "8px" }}>
+            <div style={{ flex: 1 }}>
+              <label className="admin-label">설명 영상 URL (유튜브)</label>
+            </div>
+            <button
+              onClick={() => {
+                if (!formData.name) return showToast("게임 이름을 먼저 입력하세요.", { type: "warning" });
+                const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(formData.name)}`;
+                window.open(youtubeUrl, '_blank');
+              }}
+              style={{
+                padding: "8px 12px",
+                background: "#FF0000",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "0.85em",
+                fontWeight: "bold",
+                whiteSpace: "nowrap",
+                marginBottom: "2px"
+              }}
+              title="유튜브에서 게임 제목으로 검색"
+            >
+              🔍 유튜브 검색
+            </button>
+          </div>
           <input
             value={formData.video_url || ""}
             onChange={e => setFormData({ ...formData, video_url: e.target.value })}

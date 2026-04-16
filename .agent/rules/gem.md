@@ -20,6 +20,11 @@ trigger: always_on
 - `is_admin()` → admin, executive만 허용
 - `is_kiosk_or_admin()` → admin, executive, kiosk 허용 (키오스크 RPC 전용)
 
+**⭐ BGG API 호출 규칙:**
+- **모든 BGG 관련 API 검토 시**: 메모리 `project_bgg_integration.md` 반드시 참고
+- BGG 검색 결과 다양성, 다국어 지원, 확장판 혼동 등 이미 정리된 주의사항 숙지 필수
+- BGG 토큰 보안, 클라이언트 사이드 노출 위험, 레이트 제한 확인 필수
+
 ## 리뷰 관점
 
 리뷰 요청이 오면 다음 항목을 기준으로 비판적으로 검토한다:
@@ -29,6 +34,8 @@ trigger: always_on
 - `SECURITY DEFINER` 함수에 auth 체크(`is_admin()` / `is_kiosk_or_admin()`)가 있는가
 - `VITE_` 접두사 env var로 민감 정보가 클라이언트에 노출되는가
 - 권한 상승 취약점 (kiosk가 admin 권한을 우회하는 경로 등)
+- **BGG API 토큰 노출**: `VITE_BGG_API_TOKEN`이 노출되지 않는가? (클라이언트 측 프록시 필수)
+- **BGG API 클라이언트 사이드 호출**: `searchBGG` / `fetchBGGGame`이 Netlify 함수/Vite proxy를 거치는가?
 
 ### 2. 인증·인가 로직
 - AuthContext와의 상호작용 (race condition, in-flight fetch 무효화)

@@ -14,21 +14,12 @@ export const useGameFilter = (games, filters) => {
     } = filters;
 
     // 인원수 체크 헬퍼 함수
-    const checkPlayerCount = (rangeStr, targetFilter) => {
-        if (!rangeStr) return false;
-        try {
-            const parts = rangeStr.split('~');
-            const min = parseInt(parts[0]);
-            const max = parts.length > 1 ? parseInt(parts[1]) : min;
-
-            if (targetFilter === "6+") return max >= 6;
-            else {
-                const target = parseInt(targetFilter);
-                return target >= min && target <= max;
-            }
-        } catch (e) {
-            return false;
-        }
+    const checkPlayerCount = (minPlayers, maxPlayers, targetFilter) => {
+        if (minPlayers == null || maxPlayers == null) return false;
+        if (targetFilter === "6+") return maxPlayers >= 6;
+        if (targetFilter === "8+") return maxPlayers >= 8;
+        const target = parseInt(targetFilter);
+        return target >= minPlayers && target <= maxPlayers;
     };
 
     const filteredGames = useMemo(() => {
@@ -134,8 +125,8 @@ export const useGameFilter = (games, filters) => {
             }
 
             // 인원수 필터
-            if (playerFilter !== "all" && game.players) {
-                if (!checkPlayerCount(game.players, playerFilter)) return false;
+            if (playerFilter !== "all" && (game.min_players != null || game.max_players != null)) {
+                if (!checkPlayerCount(game.min_players, game.max_players, playerFilter)) return false;
             }
 
             return true;

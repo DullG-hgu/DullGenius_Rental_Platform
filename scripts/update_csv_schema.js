@@ -68,7 +68,7 @@ try {
     // 1. Split Games & Copies
     const gameHeaders = [
         'id', 'name', 'category', 'image', 'video_url', 'manual_url',
-        'difficulty', 'genre', 'players', 'tags',
+        'difficulty', 'genre', 'min_players', 'max_players', 'tags',
         'total_views', 'dibs_count', 'review_count', 'avg_rating',
         'naver_id', 'bgg_id'
     ];
@@ -89,7 +89,8 @@ try {
             manual_url: '',
             difficulty: row.difficulty,
             genre: row.genre,
-            players: row.players,
+            min_players: row.min_players,
+            max_players: row.max_players,
             tags: row.tags,
             total_views: row.total_views,
             dibs_count: row.dibs_count,

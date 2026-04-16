@@ -1,7 +1,7 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 4. 15. PM 2:49:02
+-- 생성 시각: 2026. 4. 16. PM 6:30:23
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -74,8 +74,6 @@ CREATE TABLE public.games (
   naver_id text,
   bgg_id text,
   difficulty numeric,
-  genre text,
-  players text,
   tags text,
   total_views int4 DEFAULT 0,
   dibs_count int4 DEFAULT 0,
@@ -89,7 +87,12 @@ CREATE TABLE public.games (
   recommendation_text text,
   is_rentable bool DEFAULT true,
   owner text,
-  playingtime text
+  playingtime text,
+  min_players int4,
+  max_players int4,
+  genres _text,
+  min_playtime int4,
+  max_playtime int4
 );
 
 -- ----------------------------------------------------------------

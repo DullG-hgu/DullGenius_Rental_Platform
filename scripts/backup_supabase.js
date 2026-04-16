@@ -36,11 +36,11 @@ const log = {
     header: (msg) => console.log(`\n${colors.bgBlue}${colors.bright} ${msg} ${colors.reset}\n`)
 };
 
-// Manually parse .env file
+// Manually parse .env.local file
 function loadEnv() {
-    const envPath = path.resolve(__dirname, '../.env');
+    const envPath = path.resolve(__dirname, '../.env.local');
     if (!fs.existsSync(envPath)) {
-        log.warn('.env file not found in root directory.');
+        log.warn('.env.local file not found in root directory.');
         return {};
     }
 
@@ -75,14 +75,14 @@ async function main() {
     const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_KEY || env.VITE_SUPABASE_KEY || env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        log.error("Missing credentials in .env file.");
+        log.error("Missing credentials in .env.local.local file.");
         log.info("Please ensure VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or VITE_SUPABASE_KEY) are set.");
         process.exit(1);
     }
 
     if (!env.SUPABASE_SERVICE_ROLE_KEY && !env.VITE_SUPABASE_SERVICE_ROLE_KEY) {
         log.warn("Running with Anon/Public Key. Some tables (like profiles) may be incomplete due to RLS.");
-        log.warn("For a full backup, please add SUPABASE_SERVICE_ROLE_KEY to your .env file.");
+        log.warn("For a full backup, please add SUPABASE_SERVICE_ROLE_KEY to your .env.local file.");
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey, {

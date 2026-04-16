@@ -4,9 +4,10 @@ import { useGameData } from '../contexts/GameDataContext';
 import { useGameFilter } from '../hooks/useGameFilter';
 import FilterBar from '../components/FilterBar';
 import { getOptimizedImageUrl } from '../utils/imageOptimizer';
-import LazyImage from '../components/common/LazyImage'; // [NEW] Lazy Image
+import LazyImage from '../components/common/LazyImage';
 import { sendLog } from '../api';
-import './GameSearch.css'; // [NEW] External CSS
+import { translateGenre } from '../constants/genreMap';
+import './GameSearch.css';
 
 const GameSearch = () => {
     const navigate = useNavigate();
@@ -196,10 +197,15 @@ const GameSearch = () => {
                                 <div className="game-item-info">
                                     <h3 className="game-item-title">{game.name}</h3>
                                     <div className="game-item-meta">
-                                        {game.genre}
-                                        {game.genre && (game.players || game.playingtime) && " · "}
-                                        {game.players ? `👥 ${game.players}` : ""}
-                                        {game.players && game.playingtime && " · "}
+                                        {game.genres && game.genres.length > 0 && (
+                                            <>
+                                                {game.genres.slice(0, 2).map(translateGenre).join(', ')}
+                                                {game.genres.length > 2 ? ` +${game.genres.length - 2}` : ""}
+                                            </>
+                                        )}
+                                        {game.genres?.length > 0 && (game.min_players || game.playingtime) && " · "}
+                                        {game.min_players && game.max_players ? `👥 ${game.min_players}~${game.max_players}인` : ""}
+                                        {game.min_players && game.playingtime && " · "}
                                         {game.playingtime ? `⏱️ ${game.playingtime}` : ""}
                                     </div>
                                     <div className="game-item-badges">

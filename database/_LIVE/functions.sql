@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 4. 15. PM 2:48:59
+-- 생성 시각: 2026. 4. 16. PM 6:30:20
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -21,7 +21,7 @@ DECLARE
     r RECORD;
     v_count INTEGER := 0;
 BEGIN
-    -- [���전장치 1] 타 렌탈 건 침해 방지: 조건이 모두 NULL이면 전체 업데이트 위험이 있으므로 즉시 차단
+    -- [안전장치 1] 타 렌탈 건 침해 방지: 조건이 모두 NULL이면 전체 업데이트 위험이 있으므로 즉시 차단
     IF p_user_id IS NULL AND p_renter_name IS NULL AND p_game_id IS NULL AND p_rental_id IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '연장 대상을 특정할 수 없습니다. (모든 식별자가 비어있음)');
     END IF;
@@ -670,12 +670,12 @@ $function$
 CREATE OR REPLACE FUNCTION public.is_admin()
  RETURNS boolean
  LANGUAGE plpgsql
- SECURITY DEFINER
+ STABLE SECURITY DEFINER
 AS $function$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM public.user_roles 
-    WHERE user_id = auth.uid() 
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = auth.uid()
       AND role_key IN ('admin', 'executive')
   );
 END;
@@ -687,12 +687,12 @@ $function$
 CREATE OR REPLACE FUNCTION public.is_kiosk_or_admin()
  RETURNS boolean
  LANGUAGE plpgsql
- SECURITY DEFINER
+ STABLE SECURITY DEFINER
 AS $function$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM public.user_roles 
-    WHERE user_id = auth.uid() 
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = auth.uid()
       AND role_key IN ('admin', 'executive', 'kiosk')
   );
 END;
@@ -975,12 +975,12 @@ BEGIN
         v_user_id, 
         'SELF_RESET_PW', 
         jsonb_build_object(
-            'description', '사용자가 정보를 대조하여 비���번호를 직접 재설정함'
+            'description', '사용자가 정보를 대조하여 비밀번호를 직접 재설정함'
         )
     );
     RETURN jsonb_build_object('success', true, 'message', '비밀번호가 성공적으로 변경되었습니다.');
 EXCEPTION WHEN OTHERS THEN
-    RETURN jsonb_build_object('success', false, 'message', '오류 발생: ' || SQLERRM);
+    RETURN jsonb_build_object('success', false, 'message', '��류 발생: ' || SQLERRM);
 END;
 $function$
 

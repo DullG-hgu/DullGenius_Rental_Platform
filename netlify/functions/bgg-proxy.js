@@ -125,7 +125,11 @@ function parseSearchXml(xml) {
     while ((match = itemRegex.exec(xml)) !== null) {
         const id = match[1];
         const inner = match[2];
-        const nameMatch = inner.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+        // primary 이름을 먼저 찾고, 없으면 alternate 이름 사용 (다국어 지원)
+        let nameMatch = inner.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+        if (!nameMatch) {
+            nameMatch = inner.match(/<name[^>]*type="alternate"[^>]*value="([^"]+)"/);
+        }
         const yearMatch = inner.match(/<yearpublished[^>]*value="([^"]+)"/);
         if (nameMatch) {
             items.push({
@@ -141,16 +145,38 @@ function parseSearchXml(xml) {
 // XML 파싱 함수 (상세 정보)
 function parseDetailXml(xml) {
     const idMatch = xml.match(/<item[^>]*id="(\d+)"/);
-    const nameMatch = xml.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+    // primary 이름을 먼저 찾고, 없으면 alternate 이름 사용 (다국어 지원)
+    let nameMatch = xml.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+    if (!nameMatch) {
+        nameMatch = xml.match(/<name[^>]*type="alternate"[^>]*value="([^"]+)"/);
+    }
     const thumbMatch = xml.match(/<thumbnail>(.*?)<\/thumbnail>/);
     const minPMatch = xml.match(/<minplayers[^>]*value="(\d+)"/);
     const maxPMatch = xml.match(/<maxplayers[^>]*value="(\d+)"/);
     const weightMatch = xml.match(/<averageweight[^>]*value="([^"]+)"/);
+    const minPlaytimeMatch = xml.match(/<minplaytime[^>]*value="(\d+)"/);
+    const maxPlaytimeMatch = xml.match(/<maxplaytime[^>]*value="(\d+)"/);
 
     let thumbnail = thumbMatch ? thumbMatch[1].trim() : '';
     // thumbnail URL이 protocol 없이 //로 시작하면 https: 붙이기
     if (thumbnail && thumbnail.startsWith('//')) {
         thumbnail = 'https:' + thumbnail;
+    }
+
+    // 장르(카테고리) 파싱
+    const genres = [];
+    const categoryRegex = /<link[^>]*type="boardgamecategory"[^>]*value="([^"]+)"/g;
+    let categoryMatch;
+    while ((categoryMatch = categoryRegex.exec(xml)) !== null) {
+        genres.push(categoryMatch[1]);
+    }
+
+    // 메커니즘 파싱
+    const mechanics = [];
+    const mechanicRegex = /<link[^>]*type="boardgamemechanic"[^>]*value="([^"]+)"/g;
+    let mechanicMatch;
+    while ((mechanicMatch = mechanicRegex.exec(xml)) !== null) {
+        mechanics.push(mechanicMatch[1]);
     }
 
     return {
@@ -159,6 +185,10 @@ function parseDetailXml(xml) {
         thumbnail: thumbnail,
         minPlayers: minPMatch ? minPMatch[1] : '',
         maxPlayers: maxPMatch ? maxPMatch[1] : '',
-        weight: weightMatch ? parseFloat(weightMatch[1]).toFixed(2) : ''
+        minPlaytime: minPlaytimeMatch ? minPlaytimeMatch[1] : '',
+        maxPlaytime: maxPlaytimeMatch ? maxPlaytimeMatch[1] : '',
+        weight: weightMatch ? parseFloat(weightMatch[1]).toFixed(2) : '',
+        genres: genres,
+        mechanics: mechanics
     };
 }

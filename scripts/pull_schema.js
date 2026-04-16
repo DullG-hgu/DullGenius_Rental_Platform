@@ -19,8 +19,8 @@ const fs    = require('fs');
 const path  = require('path');
 const https = require('https');
 
-// ── .env 파싱 ─────────────────────────────────────────────────────────────────
-const envPath = path.resolve(__dirname, '../.env');
+// ── .env.local 파싱 ─────────────────────────────────────────────────────────────
+const envPath = path.resolve(__dirname, '../.env.local');
 const env = {};
 fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
     const m = line.match(/^\s*([\w.-]+)\s*=\s*(.*)\s*$/);
@@ -34,7 +34,7 @@ const OUTPUT_DIR   = path.resolve(__dirname, '../database/_LIVE');
 
 // ── 사전 검증 ─────────────────────────────────────────────────────────────────
 if (!ACCESS_TOKEN) {
-    console.error('\n❌ SUPABASE_ACCESS_TOKEN 이 .env 에 없습니다.');
+    console.error('\n❌ SUPABASE_ACCESS_TOKEN 이 .env.local 에 없습니다.');
     process.exit(1);
 }
 if (!PROJECT_REF) {

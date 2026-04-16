@@ -1,12 +1,12 @@
 -- ================================================================
 -- RLS POLICIES — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 4. 15. PM 2:49:03
+-- 생성 시각: 2026. 4. 16. PM 6:30:24
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 57개 정책
+-- 총 58개 정책
 
 -- ----------------------------------------------------------------
 -- 테이블: app_config  (4개 정책)
@@ -336,7 +336,7 @@ CREATE POLICY "View Own Profile" ON public.profiles
 ;
 
 -- ----------------------------------------------------------------
--- 테이블: rentals  (6개 정책)
+-- 테이블: rentals  (7개 정책)
 -- ----------------------------------------------------------------
 ALTER TABLE public.rentals ENABLE ROW LEVEL SECURITY;
 
@@ -361,6 +361,13 @@ CREATE POLICY "Create Own Rentals" ON public.rentals
   FOR INSERT
   TO public
   WITH CHECK ((auth.uid() = user_id))
+;
+
+CREATE POLICY "Read Rentals for Owner or Admin" ON public.rentals
+  AS PERMISSIVE
+  FOR SELECT
+  TO public
+  USING (((auth.uid() = user_id) OR is_admin()))
 ;
 
 CREATE POLICY "Rentals viewable by everyone" ON public.rentals

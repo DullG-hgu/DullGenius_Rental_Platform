@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { fetchGames, fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, fetchMyRentals, sendLog } from '../api';
 import { TEXTS } from '../constants';
+import { translateGenre } from '../constants/genreMap';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from './ConfirmModal';
@@ -367,7 +368,10 @@ function GameDetail() {
             </button>
           )}
         </div>
-        <p className="detail-category">{game.category} | {game.genre}</p>
+        <p className="detail-category">
+          {game.category}
+          {game.genres && game.genres.length > 0 && ` | ${game.genres.map(translateGenre).join(', ')}`}
+        </p>
 
         {/* 소유자 */}
         {game.owner && (

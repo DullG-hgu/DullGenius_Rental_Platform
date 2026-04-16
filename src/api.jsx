@@ -471,7 +471,10 @@ const parseBGGSearch = (xmlText) => {
 // [BGG] XML 파싱 헬퍼 (상세 정보)
 const parseBGGDetail = (xmlText) => {
   const idMatch = xmlText.match(/<item[^>]*id="(\d+)"/);
-  const nameMatch = xmlText.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+  // primary 이름을 먼저 찾고, 없으면 alternate 이름 사용 (다국어 지원)
+  const primaryNameMatch = xmlText.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
+  const alternateNameMatch = xmlText.match(/<name[^>]*type="alternate"[^>]*value="([^"]+)"/);
+  const nameMatch = primaryNameMatch || alternateNameMatch;
   const thumbMatch = xmlText.match(/<thumbnail>(.*?)<\/thumbnail>/);
   const minPMatch = xmlText.match(/<minplayers[^>]*value="(\d+)"/);
   const maxPMatch = xmlText.match(/<maxplayers[^>]*value="(\d+)"/);
@@ -485,6 +488,22 @@ const parseBGGDetail = (xmlText) => {
     thumbnail = 'https:' + thumbnail;
   }
 
+  // 카테고리/장르 파싱
+  const genres = [];
+  const categoryRegex = /<link[^>]*type="boardgamecategory"[^>]*value="([^"]+)"/g;
+  let categoryMatch;
+  while ((categoryMatch = categoryRegex.exec(xmlText)) !== null) {
+    genres.push(categoryMatch[1]);
+  }
+
+  // 메커니즘 파싱
+  const mechanics = [];
+  const mechanicRegex = /<link[^>]*type="boardgamemechanic"[^>]*value="([^"]+)"/g;
+  let mechanicMatch;
+  while ((mechanicMatch = mechanicRegex.exec(xmlText)) !== null) {
+    mechanics.push(mechanicMatch[1]);
+  }
+
   return {
     id: idMatch ? idMatch[1] : '',
     name: nameMatch ? nameMatch[1] : '',
@@ -493,7 +512,9 @@ const parseBGGDetail = (xmlText) => {
     maxPlayers: maxPMatch ? maxPMatch[1] : '',
     weight: weightMatch ? parseFloat(weightMatch[1]).toFixed(2) : '',
     minPlaytime: minPTimeMatch ? minPTimeMatch[1] : '',
-    maxPlaytime: maxPTimeMatch ? maxPTimeMatch[1] : ''
+    maxPlaytime: maxPTimeMatch ? maxPTimeMatch[1] : '',
+    genres: genres,
+    mechanics: mechanics
   };
 };
 
@@ -600,27 +621,29 @@ export const addGame = async (gameData) => {
     .insert([{
       name: gameData.name,
       category: gameData.category || '보드게임',
-      players: gameData.players,
-      playingtime: gameData.playingtime, // [NEW] 플레이 시간
-      difficulty: gameData.difficulty === "" ? null : gameData.difficulty, // [FIX] 빈 문자열은 DB에서 numeric 변환 불가
+      min_players: gameData.min_players || null,
+      max_players: gameData.max_players || null,
+      min_playtime: gameData.min_playtime || null,
+      max_playtime: gameData.max_playtime || null,
+      playingtime: gameData.playingtime,
+      difficulty: gameData.difficulty === "" ? null : gameData.difficulty,
       image: gameData.image,
       video_url: gameData.video_url,
       recommendation_text: gameData.recommendation_text,
       manual_url: gameData.manual_url,
       tags: gameData.tags,
       owner: gameData.owner,
-      is_rentable: gameData.is_rentable !== false, // [NEW] 대여 가능 여부
-      bgg_id: gameData.bgg_id || null, // [NEW] BGG ID
+      is_rentable: gameData.is_rentable !== false,
+      bgg_id: gameData.bgg_id || null,
+      genres: gameData.genres || null,
       total_views: 0,
-      quantity: 1, // [NEW] 기본 재고 1
-      available_count: 1 // [NEW] 대여 가능 1
+      quantity: 1,
+      available_count: 1
     }])
     .select()
     .single();
 
   if (error) throw error;
-
-  // 2. Game Copy 추가 (제거됨 - games 테이블에 통합)
 
   return newGame;
 };
@@ -785,7 +808,12 @@ export const editGame = async (gameData) => {
     .update({
       name: gameData.name,
       category: gameData.category,
-      players: gameData.players,
+      min_players: gameData.min_players,
+      max_players: gameData.max_players,
+      min_playtime: gameData.min_playtime,
+      max_playtime: gameData.max_playtime,
+      playingtime: gameData.playingtime,
+      genre: gameData.genre,
       difficulty: gameData.difficulty === "" ? null : gameData.difficulty, // [FIX] 빈 문자열은 numeric 타입 에러 방지
       tags: gameData.tags,
       image: gameData.image,
