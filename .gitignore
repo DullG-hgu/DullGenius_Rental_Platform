@@ -43,3 +43,29 @@ tag_analysis.txt
 
 # Claude Code local settings (project-level, contains API tokens)
 .claude/settings.local.json
+
+# Temporary BGG/scraping files
+BGG_API_DATA_UPDATE_PLAN.md
+bgg_*.json
+bgg_*.log
+bgg_*.sql
+scrape_*.py
+scrape_*.json
+scrape_*.log
+get_bgg_data.py
+validate_bgg_data.py
+
+# Database backup and migration files
+database/games_backup_*.csv
+database/bgg_*.sql
+database/update_*.sql
+database/optimize_*.sql
+
+# Temporary CSV and Python files
+final_games.csv
+update_*.py
+update_*.sql
+
+# Python cache
+__pycache__/
+*.pyc
