@@ -214,7 +214,7 @@ const GameSearch = () => {
                                         ) : (
                                             <span className="badge-status unavailable">{game.status}</span>
                                         )}
-                                        {game.difficulty && <span className="badge-difficulty">🔥 {game.difficulty}</span>}
+                                        {game.difficulty && <span className="badge-difficulty">난이도 {game.difficulty}</span>}
                                     </div>
                                 </div>
                             </div>
