@@ -144,7 +144,7 @@ export const AuthProvider = ({ children }) => {
             isMounted.current = false;
             subscription.unsubscribe();
         };
-    }, [showToast]);
+    }, []);
 
     const login = async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({

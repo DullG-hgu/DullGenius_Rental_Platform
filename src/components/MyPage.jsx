@@ -55,7 +55,9 @@ const MyPage = () => {
       showToast("로그인이 필요합니다.", { type: "warning" });
       navigate("/login");
     }
-  }, [user, authLoading, navigate, showToast]);
+    // showToast는 ToastContext에서 useCallback으로 안정적이므로 의존성 제외
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const loadData = async () => {

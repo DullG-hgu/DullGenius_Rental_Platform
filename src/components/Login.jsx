@@ -13,11 +13,6 @@ function Login() {
   const [studentId, setStudentId] = useState(""); // [CHANGE] 이메일 -> 학번
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const isMountedRef = React.useRef(true);
-
-  React.useEffect(() => {
-    return () => { isMountedRef.current = false; };
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,7 +49,7 @@ function Login() {
         showToast(getAuthErrorMessage(error), { type: "error" });
       }
     } finally {
-      if (isMountedRef.current) setLoading(false);
+      setLoading(false);
     }
   };
 

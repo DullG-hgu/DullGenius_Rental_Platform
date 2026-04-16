@@ -9,11 +9,6 @@ function Signup() {
   const navigate = useNavigate();
   const { signup } = useAuth(); // restoreAccount 제거
   const { showToast } = useToast();
-  const isMountedRef = React.useRef(true);
-
-  React.useEffect(() => {
-    return () => { isMountedRef.current = false; };
-  }, []);
 
   const [formData, setFormData] = useState({
     // email 제거 (학번으로 자동 생성)
@@ -65,7 +60,7 @@ function Signup() {
       console.error("Signup Error:", error);
       showToast(getAuthErrorMessage(error), { type: "error" });
     } finally {
-      if (isMountedRef.current) setLoading(false);
+      setLoading(false);
     }
   };
 

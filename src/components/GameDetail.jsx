@@ -52,7 +52,6 @@ function GameDetail() {
     window.scrollTo(0, 0);
   }, []);
 
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (id) increaseViewCount(id);
     const loadData = async () => {
