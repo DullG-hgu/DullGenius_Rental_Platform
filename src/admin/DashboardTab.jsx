@@ -617,7 +617,7 @@ function DashboardTab({ games, loading, onReload }) {
           onReload();
         } catch (e) {
           console.error('[DashboardTab] 게임 삭제 실패:', e);
-          showToast("삭제 실패", { type: "error" });
+          showToast(`삭제 실패: ${e.message || '알 수 없는 오류'}`, { type: "error" });
         }
       },
       "danger"
