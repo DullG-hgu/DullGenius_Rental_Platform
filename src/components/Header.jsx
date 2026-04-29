@@ -9,7 +9,7 @@ import LoginTooltip from './LoginTooltip'; // [NEW] Login Tooltip Import
 import './Header.css';
 
 const Header = () => {
-    const { user, profile, roles, logout } = useAuth(); // [FIX] signOut -> logout
+    const { user, profile, roles, logout, loading: authLoading } = useAuth(); // [FIX] signOut -> logout
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -50,7 +50,13 @@ const Header = () => {
         <header className={`hero-header ${isPaidUser ? 'paid-user' : ''}`}>
             {/* 상단: 로그인 정보 & 마이페이지 */}
             <div className="header-top-bar">
-                {user ? (
+                {authLoading ? (
+                    // 인증 하이드레이션 중: 로그인 버튼 플래시 방지용 자리 홀더
+                    <div className="user-action-group" aria-hidden="true" style={{ visibility: 'hidden' }}>
+                        <Link to="/login" className="header-sm-btn">로그인</Link>
+                        <Link to="/signup" className="header-sm-btn outline">회원가입</Link>
+                    </div>
+                ) : user ? (
                     <div className="user-action-group">
                         <span className="user-greeting">
                             <span className="branding-icon">🕊️</span>

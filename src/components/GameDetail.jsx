@@ -373,9 +373,11 @@ function GameDetail() {
           {game.genres && game.genres.length > 0 && ` | ${game.genres.map(translateGenre).join(', ')}`}
         </p>
 
-        {/* 소유자 */}
-        {game.owner && (
-          <p className="detail-owner">👤 소유자: {game.owner}</p>
+        {/* 플레이 가능 인원 */}
+        {(game.min_players || game.max_players) && (
+          <p className="detail-players">
+            👥 {game.min_players || "?"}~{game.max_players || "?"}명
+          </p>
         )}
 
         {/* 추천 문구 */}
@@ -404,7 +406,7 @@ function GameDetail() {
           {game.playingtime && (
             <div>
               <div className="stat-label">플레이 시간</div>
-              <div className="stat-value">⏱️ {game.playingtime}</div>
+              <div className="stat-value">⏱️ {game.playingtime}{typeof game.playingtime === 'number' ? '분' : ''}</div>
             </div>
           )}
         </div>

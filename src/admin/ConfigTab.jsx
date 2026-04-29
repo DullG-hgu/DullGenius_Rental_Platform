@@ -82,6 +82,7 @@ function ConfigTab({ config, onReload }) {
           showToast("저장되었습니다.", { type: "success" });
           if (onReload) onReload(); // 부모 컴포넌트 데이터 갱신
         } catch (e) {
+          console.error('[ConfigTab] 홈페이지 설정 저장 실패:', e);
           showToast("저장 실패: " + e, { type: "error" });
         }
       },

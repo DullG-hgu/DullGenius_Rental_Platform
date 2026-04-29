@@ -76,6 +76,13 @@
     margin-top: 5px;
 }
 
+.detail-players {
+    color: #555;
+    margin-top: 6px;
+    font-size: 0.95em;
+    font-weight: 500;
+}
+
 .detail-owner {
     color: #666;
     margin-top: 8px;

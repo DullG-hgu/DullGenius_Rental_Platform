@@ -64,6 +64,7 @@ function DashboardTab({ games, loading, onReload }) {
   const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [renterFilter, setRenterFilter] = useState(""); // 👤 대여자 검색용
+  const [ownerFilter, setOwnerFilter] = useState(""); // [NEW] 소유자 필터
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [difficultyFilter, setDifficultyFilter] = useState("전체");
   const [playerFilter, setPlayerFilter] = useState("all");
@@ -132,16 +133,18 @@ function DashboardTab({ games, loading, onReload }) {
   const filteredGames = useGameFilter(games, {
     searchTerm,
     renterFilter, // Admin 전용
+    ownerFilter, // [NEW] Admin 전용 - 소유자 필터
     selectedCategory,
     onlyAvailable,
     difficultyFilter,
     playerFilter,
-    sortByName: false // [FIX] Admin.js에서 정한 중요도 순서(찜>대여가능)를 유지하기 위해 이름 정렬 끔
+    sortByName: false, // [FIX] Admin.js에서 정한 중요도 순서(찜>대여가능)를 유지하기 위해 이름 정렬 끔
+    isAdmin: true // [NEW] Admin 모드 활성화 - TRPG 필터링 해제
   });
 
   // 필터 초기화 함수
   const resetFilters = () => {
-    setInputValue(""); setSearchTerm(""); setRenterFilter("");
+    setInputValue(""); setSearchTerm(""); setRenterFilter(""); setOwnerFilter("");
     setSelectedCategory("전체"); setDifficultyFilter("전체");
     setPlayerFilter("all"); setOnlyAvailable(false);
   };
@@ -152,6 +155,13 @@ function DashboardTab({ games, loading, onReload }) {
 
   // 카테고리 목록 추출
   const categories = ["전체", ...new Set(games.map(g => g.category).filter(Boolean))];
+
+  // [NEW] 소유자 목록 추출 (null은 제외, 유니크만)
+  const owners = [
+    "전체",
+    ...new Set(games.map(g => g.owner).filter(Boolean)), // null 제외
+    "동아리방" // 동아리 소유 옵션
+  ];
 
 
   // 수정 모달 열기
@@ -209,7 +219,8 @@ function DashboardTab({ games, loading, onReload }) {
           setIsEditModalOpen(false);
           onReload();
         } catch (e) {
-          showToast("수정 실패: " + e, { type: "error" });
+          console.error("Game edit error:", e);
+          showToast("수정 실패: " + (e.message || String(e)), { type: "error" });
         }
       }
     );
@@ -339,6 +350,7 @@ function DashboardTab({ games, loading, onReload }) {
           showToast("처리되었습니다.", { type: "success" });
           onReload();
         } catch (e) {
+          console.error('[DashboardTab] 게임 상태 변경 실패:', e);
           showToast("오류 발생: " + e, { type: "error" });
         }
       }
@@ -519,6 +531,7 @@ function DashboardTab({ games, loading, onReload }) {
               onReload();
             }
           } catch (e) {
+            console.error('[DashboardTab] 수령 처리 실패:', e);
             showToast(`❌ 수령 처리 실패: ${e.message || '매칭되는 찜 기록이 없거나 DB 오류'}`, { type: "error" });
           }
         }
@@ -603,6 +616,7 @@ function DashboardTab({ games, loading, onReload }) {
           showToast("삭제되었습니다.", { type: "success" });
           onReload();
         } catch (e) {
+          console.error('[DashboardTab] 게임 삭제 실패:', e);
           showToast("삭제 실패", { type: "error" });
         }
       },
@@ -637,6 +651,7 @@ function DashboardTab({ games, loading, onReload }) {
         showToast("로그를 불러오지 못했습니다.", { type: "error" });
       }
     } catch (e) {
+      console.error('[DashboardTab] 개별 게임 로그 로딩 실패:', e);
       showToast("로그 로딩 에러", { type: "error" });
     }
   };
@@ -668,6 +683,7 @@ function DashboardTab({ games, loading, onReload }) {
         showToast("전체 로그를 불러오지 못했습니다.", { type: "error" });
       }
     } catch (e) {
+      console.error('[DashboardTab] 전체 로그 로딩 실패:', e);
       showToast("전체 로그 로딩 에러", { type: "error" });
     }
   };
@@ -700,6 +716,8 @@ function DashboardTab({ games, loading, onReload }) {
         isAdmin={true}                   // 관리자 모드 켜기
         renterFilter={renterFilter}      // 대여자 검색 state
         setRenterFilter={setRenterFilter}
+        ownerFilter={ownerFilter}        // [NEW] 소유자 검색 state
+        setOwnerFilter={setOwnerFilter}
       />
 
       {loading ? (

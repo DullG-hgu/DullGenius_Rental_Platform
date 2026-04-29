@@ -12,7 +12,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
     bgg_id: "",
     category: "보드게임",
     difficulty: "",
-    genre: "",
+    genres: null,
     min_players: null,
     max_players: null,
     min_playtime: null,
@@ -40,7 +40,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        name: "", category: "보드게임", difficulty: "", genre: "", min_players: null, max_players: null, min_playtime: null, max_playtime: null, playingtime: "", tags: "", image: "", video_url: "", recommendation_text: "", manual_url: "", owner: "", is_rentable: true, bgg_id: "",
+        name: "", category: "보드게임", difficulty: "", genres: null, min_players: null, max_players: null, min_playtime: null, max_playtime: null, playingtime: "", tags: "", image: "", video_url: "", recommendation_text: "", manual_url: "", owner: "", is_rentable: true, bgg_id: "",
         ...initialData
       });
       setBggSearchResults([]);
@@ -74,6 +74,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
         showToast(`${results.length}개 결과를 찾았습니다. 아래에서 선택해주세요.`, { type: "info" });
       }
     } catch (e) {
+      console.error("BGG 검색 에러:", e);
       showToast("BGG 검색 오류: " + e.message, { type: "error" });
     } finally {
       setBggSearching(false);
@@ -318,8 +319,8 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
         <div className="admin-form-group">
           <label className="admin-label">장르</label>
           <input
-            value={formData.genre || ""}
-            onChange={e => setFormData({ ...formData, genre: e.target.value })}
+            value={formData.genres ? formData.genres.join(', ') : ""}
+            onChange={e => setFormData({ ...formData, genres: e.target.value ? e.target.value.split(',').map(g => g.trim()).filter(Boolean) : null })}
             placeholder="예: 전략, 추리, 파티"
             className="admin-input"
             style={{ width: "100%" }}

@@ -9,8 +9,21 @@ const InstallPromptBanner = () => {
     const [isIOS, setIsIOS] = useState(false);
     const [showIOSGuide, setShowIOSGuide] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
+    // [PERF] 첫 페인트 경로에서 제외: 브라우저 유휴 시점까지 초기화 대기
+    const [ready, setReady] = useState(false);
 
     useEffect(() => {
+        const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 800));
+        const handle = idle(() => setReady(true), { timeout: 2000 });
+        return () => {
+            if (window.cancelIdleCallback && typeof handle === 'number') {
+                window.cancelIdleCallback(handle);
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!ready) return;
         // 이미 설치됨 (standalone 모드)
         if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) return;
         // 이미 닫은 적 있음
@@ -32,7 +45,7 @@ const InstallPromptBanner = () => {
         };
         window.addEventListener('beforeinstallprompt', handler);
         return () => window.removeEventListener('beforeinstallprompt', handler);
-    }, []);
+    }, [ready]);
 
     // 어드민, 키오스크 페이지에서는 숨김
     if (pathname.startsWith('/admin') || pathname.startsWith('/kiosk')) return null;

@@ -37,6 +37,7 @@ test_weserv.js
 diff_uncommitted.txt
 tag_analysis.txt
 .claude/settings.json
+.claude/scheduled_tasks.lock
 
 # MCP configuration (contains sensitive API tokens)
 .mcp.json

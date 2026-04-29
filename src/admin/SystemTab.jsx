@@ -57,6 +57,7 @@ function SystemTab() {
             setOfficeHoursConfig(ohConfig);
 
         } catch (e) {
+            console.error('[SystemTab] 데이터 로딩 실패:', e);
             showToast('데이터 로딩 실패: ' + e.message, { type: 'error' });
         } finally {
             setLoading(false);
@@ -83,6 +84,7 @@ function SystemTab() {
                     setPaymentCheckEnabled(newState);
                     showToast(`✅ 회비 검사가 ${action}되었습니다.`, { type: 'success' });
                 } catch (e) {
+                    console.error('[SystemTab] 회비 검사 토글 실패:', e);
                     showToast('설정 변경 실패: ' + e.message, { type: 'error' });
                 }
             },
@@ -96,6 +98,7 @@ function SystemTab() {
             await saveOfficeHoursConfig(officeHoursConfig);
             showToast('✅ 오피스아워 설정이 저장되었습니다.', { type: 'success' });
         } catch (e) {
+            console.error('[SystemTab] 오피스아워 설정 저장 실패:', e);
             showToast('저장 실패: ' + e.message, { type: 'error' });
         }
     };
@@ -114,6 +117,7 @@ function SystemTab() {
                     showToast(`✅ ${result.reset_count}명의 회비 상태가 초기화되었습니다.`, { type: 'success' });
                     loadData(); // 통계 새로고침
                 } catch (e) {
+                    console.error('[SystemTab] 학기 초기화 실패:', e);
                     showToast('초기화 실패: ' + e.message, { type: 'error' });
                 }
             },

@@ -66,12 +66,7 @@ const Home = () => {
         navigate(path);
     }, [navigate]);
 
-    if (loading) return (
-        <div className="loading-container">
-            <div className="spinner"></div>
-            <p style={{ marginTop: "20px", color: "#666" }}>보드게임 정보를 불러오고 있어요...</p>
-        </div>
-    );
+    // [PERF] 전체 스피너 제거. 레이아웃은 즉시 렌더하고 트렌딩만 스켈레톤 처리.
 
     return (
         <div className="home-container">
@@ -157,6 +152,15 @@ const Home = () => {
             <section className="trending-section">
                 <h2 className="section-title" style={{ paddingLeft: "20px" }}>🔥 요즘 뜨는 게임</h2>
                 <div className="trending-list">
+                    {loading && trending.length === 0 && (
+                        [0, 1, 2, 3, 4].map(i => (
+                            <div key={`skel-${i}`} className="trending-item" aria-hidden="true">
+                                <div className="trending-skeleton-img" />
+                                <div className="trending-skeleton-line" />
+                                <div className="trending-skeleton-line short" />
+                            </div>
+                        ))
+                    )}
                     {trending.slice(0, 5).map((game, index) => (
                         <div
                             key={game.id}

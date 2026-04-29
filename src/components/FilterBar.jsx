@@ -14,6 +14,7 @@ function FilterBar({
   // 관리자 전용 Props
   isAdmin = false,
   renterFilter, setRenterFilter,
+  ownerFilter, setOwnerFilter, // [NEW] props 추가
   hideSearch = false
 }) {
   return (
@@ -43,6 +44,18 @@ function FilterBar({
           onChange={(e) => setRenterFilter(e.target.value)}
           className="admin-input search-input"
           style={isAdmin ? {} : { ...styles.inputSearch, borderColor: "#3498db", background: "#f0f9ff" }}
+        />
+      )}
+
+      {/* 2-2. [관리자 전용] 소유자 검색 - 관리자일 때만 노출 */}
+      {isAdmin && (
+        <input
+          type="text"
+          placeholder="🏢 소유자 검색"
+          value={ownerFilter}
+          onChange={(e) => setOwnerFilter(e.target.value)}
+          className="admin-input search-input"
+          style={isAdmin ? {} : { ...styles.inputSearch, borderColor: "#27ae60", background: "#f0fff4" }}
         />
       )}
 

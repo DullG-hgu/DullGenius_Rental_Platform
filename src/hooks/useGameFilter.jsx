@@ -10,7 +10,9 @@ export const useGameFilter = (games, filters) => {
         difficultyFilter = "전체",
         playerFilter = "all",
         onlyAvailable = false,
-        renterFilter = "" // [Admin 전용]
+        renterFilter = "", // [Admin 전용]
+        ownerFilter = "", // [NEW] Admin 전용 - 소유자 필터
+        isAdmin = false // [NEW] Admin 플래그
     } = filters;
 
     // 인원수 체크 헬퍼 함수
@@ -29,8 +31,8 @@ export const useGameFilter = (games, filters) => {
             // 이름 필터 (빈 게임 제외)
             if (!game.name || game.name.trim() === "") return false;
 
-            // TRPG는 선택한 경우에만 표시
-            if (selectedCategory !== "TRPG" && game.category === "TRPG") return false;
+            // TRPG는 선택한 경우에만 표시 (Admin 제외)
+            if (!isAdmin && selectedCategory !== "TRPG" && game.category === "TRPG") return false;
 
             // [Professional Search Improvements]
             // 1. 공백 제거 및 대소문자 정규화
@@ -110,6 +112,17 @@ export const useGameFilter = (games, filters) => {
                 return false;
             }
 
+            // [NEW] Admin 전용 - 소유자 필터
+            if (ownerFilter) {
+                if (ownerFilter === "club") {
+                    // "동아리" 선택시 owner가 null인 게임만
+                    if (game.owner !== null) return false;
+                } else {
+                    // 특정 소유자 선택시 정확히 일치
+                    if (game.owner !== ownerFilter) return false;
+                }
+            }
+
             // 카테고리 필터
             if (selectedCategory !== "전체" && game.category !== selectedCategory) return false;
 
@@ -135,7 +148,7 @@ export const useGameFilter = (games, filters) => {
             if (filters.sortByName === false) return 0; // 정렬 안 함 (원본 순서 유지)
             return a.name.localeCompare(b.name, 'ko');
         });
-    }, [games, searchTerm, selectedCategory, onlyAvailable, difficultyFilter, playerFilter, renterFilter, filters.sortByName]);
+    }, [games, searchTerm, selectedCategory, onlyAvailable, difficultyFilter, playerFilter, renterFilter, ownerFilter, filters.sortByName, isAdmin]);
 
     return filteredGames;
 };

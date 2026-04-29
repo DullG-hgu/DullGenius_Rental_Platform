@@ -68,6 +68,7 @@ function AddGameTab({ onGameAdded }) {
               setKeyword("");
               if (onGameAdded) onGameAdded();
             } catch (e) {
+              console.error("재고 추가 실패 (Search):", e);
               showToast("재고 추가 실패: " + e.message, { type: "error" });
             }
           },
@@ -139,6 +140,7 @@ function AddGameTab({ onGameAdded }) {
               setKeyword("");
               if (onGameAdded) onGameAdded();
             } catch (e) {
+              console.error("재고 추가 실패 (Save):", e);
               showToast("재고 추가 실패: " + e.message, { type: "error" });
             }
           },
