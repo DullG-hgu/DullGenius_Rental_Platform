@@ -2,74 +2,31 @@
 import { supabase } from './lib/supabaseClient';
 import { statusToKorean, koreanToStatus } from './constants'; // [NEW] STATUS enum 헬퍼 함수
 import { calculateGameStatus } from './lib/gameStatus';
+import { API_FIELDS } from './constants/fields';
 
 /**
  * 전체 게임 목록을 가져옵니다.
- * 이 함수는 Application-Side Join을 사용하여 게임 정보, 대여 기록, 프로필 정보를 병합합니다.
- * 
+ * [PERF] 서버 사이드 조인 RPC(get_games_with_rentals) 사용 — 1 RTT.
+ * RPC 반환 형태: SETOF jsonb (각 row = game_columns || { rentals: [...] })
+ *
  * @returns {Promise<Array>} 병합된 게임 정보 배열
  * @throws {Error} Supabase 조회 중 발생한 에러
  */
 export const fetchGames = async () => {
-
   try {
-    // [Step 1] 병렬 데이터 조회
-    // game_copies 테이블은 삭제되었으므로 games와 rentals만 조회
-    const [gamesRes, rentalsRes] = await Promise.all([
-      supabase.from('games').select('*').order('name'),
-      supabase.from('rentals').select('rental_id, game_id, user_id, renter_name, type, returned_at, due_date, borrowed_at').is('returned_at', null)
-    ]);
+    const { data, error } = await supabase.rpc('get_games_with_rentals');
+    if (error) throw error;
 
-    if (gamesRes.error) throw gamesRes.error;
-    if (rentalsRes.error) console.warn("Rentals fetch failed:", rentalsRes.error);
-
-    const games = gamesRes.data || [];
-    const activeRentals = rentalsRes.data || [];
-
-
-
-    // [Step 2] 렌탈 유저 정보(Profile) 조회
-    const userIds = [...new Set(activeRentals.map(r => r.user_id).filter(Boolean))];
-    let profilesMap = {};
-
-    if (userIds.length > 0) {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .in('id', userIds);
-
-      if (!profilesError && profiles) {
-        profiles.forEach(p => profilesMap[p.id] = p.name);
-      }
-    }
-
-    // [Step 3] 데이터 병합 (Application-Side Join)
-    // Rental 그룹화 (game_id 기준)
-    const rentalsByGame = {};
-    activeRentals.forEach(r => {
-      if (!rentalsByGame[r.game_id]) rentalsByGame[r.game_id] = [];
-      // 프로필 정보 주입
-      if (r.user_id && profilesMap[r.user_id]) {
-        r.profiles = { name: profilesMap[r.user_id] };
-      }
-      rentalsByGame[r.game_id].push(r);
-    });
-
-    // [Step 4] 최종 게임 객체 생성
-    return games.map(game => {
-      const gameRentals = rentalsByGame[game.id] || [];
-
-      // [REF] 로직 캡슐화 (src/lib/gameStatus.js)
-      // 상태 결정 로직을 완전히 분리하여 안전하게 관리함
+    const rows = data || [];
+    return rows.map(game => {
+      const gameRentals = Array.isArray(game.rentals) ? game.rentals : [];
       const statusData = calculateGameStatus(game, gameRentals);
-
       return {
         ...game,
         ...statusData,
         rentals: gameRentals
       };
     });
-
   } catch (e) {
     console.error("fetchGames 실패:", e);
     throw e;
@@ -643,7 +600,10 @@ export const addGame = async (gameData) => {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[addGame] Error inserting game:', error);
+    throw error;
+  }
 
   return newGame;
 };
@@ -692,7 +652,10 @@ export const addGameCopy = async (gameId) => { // location removed (no column)
     .eq('id', gameId)
     .single();
 
-  if (fetchError) throw fetchError;
+  if (fetchError) {
+    console.error('[addGameCopy] Error fetching game:', fetchError);
+    throw fetchError;
+  }
 
   // 2. 수량 증가
   const newQty = (game.quantity || 0) + 1;
@@ -705,7 +668,10 @@ export const addGameCopy = async (gameId) => { // location removed (no column)
     .eq('id', gameId)
     .select();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[addGameCopy] Error updating quantity:', error);
+    throw error;
+  }
   return data;
 };
 
@@ -727,6 +693,9 @@ export const saveConfig = async (newConfig) => {
     throw error;
   }
 
+  // [SWR] 관리자가 설정 변경 후 다음 홈 진입 시 즉시 반영되도록 캐시 무효화
+  try { localStorage.removeItem('config_cache'); } catch (e) { /* ignore */ }
+
   return { status: "success" };
 };
 
@@ -739,7 +708,7 @@ export const fetchUsers = async () => {
   // 1. 프로필 조회
   const { data: profiles, error: profileError } = await supabase
     .from('profiles')
-    .select('id, name, student_id, phone, is_paid, joined_semester, status')
+    .select('id, name, student_id, phone, is_paid, joined_semester, status, last_paid_semester')
     .order('name');
 
   if (profileError) {
@@ -813,7 +782,7 @@ export const editGame = async (gameData) => {
       min_playtime: gameData.min_playtime,
       max_playtime: gameData.max_playtime,
       playingtime: gameData.playingtime,
-      genre: gameData.genre,
+      genres: gameData.genres,
       difficulty: gameData.difficulty === "" ? null : gameData.difficulty, // [FIX] 빈 문자열은 numeric 타입 에러 방지
       tags: gameData.tags,
       image: gameData.image,
@@ -824,7 +793,10 @@ export const editGame = async (gameData) => {
       is_rentable: gameData.is_rentable !== false // [NEW] 대여 가능 여부
     })
     .eq('id', gameData.game_id);
-  if (error) throw error;
+  if (error) {
+    console.error('[editGame] Error updating game:', error);
+    throw error;
+  }
 };
 
 /**
@@ -1558,3 +1530,36 @@ export const updateGameRequestStatus = async (requestId, newStatus) => {
 
   if (error) throw error;
 };
+
+// ────────────────────────────────────────────────────────────────
+// 외부 대여 신청 (Google Form → HOLD)
+// ────────────────────────────────────────────────────────────────
+export const fetchRentalRequests = async (
+  statuses = ['needs_review', 'auto_confirmed', 'pending']
+) => {
+  const { data, error } = await supabase
+    .from('rental_requests')
+    .select('*')
+    .in('status', statuses)
+    .order('submitted_at', { ascending: false });
+  if (error) throw error;
+  return data;
+};
+
+export const confirmRentalRequest = (requestId, gameIds, pickupAt, durationDays) =>
+  supabase.rpc('confirm_rental_request', {
+    p_request_id: requestId,
+    p_game_ids: gameIds,
+    p_pickup_at: pickupAt,
+    p_duration_days: durationDays,
+  });
+
+export const rejectRentalRequest = (requestId, reason) =>
+  supabase.rpc('reject_rental_request', {
+    p_request_id: requestId,
+    p_reason: reason,
+  });
+
+// 관리자만 호출 가능 — GAS 공유 시크릿 초기 설정/교체용
+export const setPrivateConfig = (key, value) =>
+  supabase.rpc('set_private_config', { p_key: key, p_value: value });

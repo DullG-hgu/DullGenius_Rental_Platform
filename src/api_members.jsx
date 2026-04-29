@@ -3,12 +3,19 @@
 // ==========================================
 
 import { supabase } from './lib/supabaseClient';
+import { getCurrentSemester } from './constants';
 
 // [Admin] 회비 납부 상태 업데이트
+// is_paid=true 전환 시 last_paid_semester도 현재 학기로 기록 (드롭아웃 식별용).
+// is_paid=false로 되돌릴 땐 기존 last_paid_semester 유지.
 export const updatePaymentStatus = async (userId, isPaid) => {
+    const updates = { is_paid: isPaid };
+    if (isPaid) {
+        updates.last_paid_semester = getCurrentSemester();
+    }
     const { error } = await supabase
         .from('profiles')
-        .update({ is_paid: isPaid })
+        .update(updates)
         .eq('id', userId);
 
     if (error) throw error;
