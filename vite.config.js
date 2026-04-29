@@ -13,7 +13,37 @@ export default defineConfig(({ mode }) => {
                 devOptions: {
                     enabled: false
                 },
-                manifest: false  // manifest는 public/manifest.json, public/manifest-kiosk.json으로 직접 관리
+                manifest: false,  // manifest는 public/manifest.json, public/manifest-kiosk.json으로 직접 관리
+                workbox: {
+                    // [PERF] Supabase Storage 이미지 CacheFirst → 재방문 즉시 썸네일 표시
+                    runtimeCaching: [
+                        {
+                            urlPattern: ({ url }) =>
+                                url.hostname.endsWith('supabase.co') && url.pathname.includes('/storage/v1/object/public/'),
+                            handler: 'CacheFirst',
+                            options: {
+                                cacheName: 'supabase-images',
+                                expiration: {
+                                    maxEntries: 400,
+                                    maxAgeSeconds: 60 * 60 * 24 * 30 // 30일
+                                },
+                                cacheableResponse: { statuses: [0, 200] }
+                            }
+                        },
+                        {
+                            urlPattern: ({ url }) => url.hostname === 'cf.geekdo-images.com',
+                            handler: 'CacheFirst',
+                            options: {
+                                cacheName: 'bgg-images',
+                                expiration: {
+                                    maxEntries: 400,
+                                    maxAgeSeconds: 60 * 60 * 24 * 30
+                                },
+                                cacheableResponse: { statuses: [0, 200] }
+                            }
+                        }
+                    ]
+                }
             })
         ],
         envPrefix: ['VITE_'],
@@ -74,8 +104,13 @@ export default defineConfig(({ mode }) => {
             rollupOptions: {
                 output: {
                     manualChunks: {
-                        vendor: ['react', 'react-dom', 'react-router-dom'],
-                        supabase: ['@supabase/supabase-js']
+                        // React 런타임 (가장 안정적, 최장 캐시)
+                        react: ['react', 'react-dom'],
+                        // 라우터는 런타임과 분리 (router 업데이트 시 react 청크 그대로 재사용)
+                        router: ['react-router-dom'],
+                        // Supabase SDK (무거움, 별도)
+                        supabase: ['@supabase/supabase-js'],
+                        // recharts는 StatsTab에서만 쓰므로 manualChunks 없이도 Admin 청크에 포함됨 - 그대로 둠
                     }
                 }
             }
