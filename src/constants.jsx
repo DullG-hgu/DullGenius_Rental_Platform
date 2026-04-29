@@ -18,8 +18,26 @@ export const STATUS = {
   RENTED_NO_STOCK: { ko: '대여중', en: 'RENTED', color: '#e74c3c' } // 재고 없음 (Red)
 };
 
-// [NEW] 기본 학기 설정 (시스템 전반에서 fallback으로 사용)
-export const DEFAULT_SEMESTER = '2025-1';
+// 기본 학기 설정 (fallback용). 런타임 분류에는 getCurrentSemester() 사용.
+export const DEFAULT_SEMESTER = '2026-1';
+
+// 현재 학기 계산 (1~6월 → S1, 7~12월 → S2)
+export const getCurrentSemester = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const sem = now.getMonth() + 1 <= 6 ? 1 : 2;
+  return `${year}-${sem}`;
+};
+
+// 학기 문자열 비교 ('YYYY-S' 형식). a<b면 음수, a>b면 양수, 같으면 0.
+export const compareSemester = (a, b) => {
+  if (!a || !b) return 0;
+  const [ay, as] = a.split('-').map(Number);
+  const [by, bs] = b.split('-').map(Number);
+  if (Number.isNaN(ay) || Number.isNaN(by)) return 0;
+  if (ay !== by) return ay - by;
+  return (as || 0) - (bs || 0);
+};
 
 // 헬퍼 함수: 영문 -> 한글
 export const statusToKorean = (enStatus) => {

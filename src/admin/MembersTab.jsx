@@ -7,7 +7,29 @@ import { updatePaymentStatus, updateUserProfile, getUserRoles, updateUserRoles, 
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabaseClient';
 import ConfirmModal from '../components/ConfirmModal';
-import { DEFAULT_SEMESTER } from '../constants'; // [NEW]
+import { DEFAULT_SEMESTER, getCurrentSemester, compareSemester } from '../constants';
+
+// 회원 분류 상수/로직 (탭 필터용)
+const EXEMPT_ROLES = ['admin', 'executive', 'payment_exempt'];
+
+const classifyMember = (member, currentSemester) => {
+    if (member.status === 'withdrawn') return 'withdrawn';
+    const roles = member.roles || [];
+    if (roles.some(r => EXEMPT_ROLES.includes(r))) return 'exempt';
+    if (member.is_paid) return 'paid';
+    if (!member.last_paid_semester) return 'free_rental';
+    if (compareSemester(member.last_paid_semester, currentSemester) < 0) return 'dropout';
+    return 'dropout';
+};
+
+const TABS = [
+    { key: 'all',         label: '전체',     emoji: '👥', color: '#95a5a6' },
+    { key: 'paid',        label: '정회원',   emoji: '✅', color: '#27ae60' },
+    { key: 'free_rental', label: '무료대여', emoji: '🆓', color: '#7f8c8d' },
+    { key: 'dropout',     label: '드롭아웃', emoji: '⚠️', color: '#e67e22' },
+    { key: 'exempt',      label: '면제',     emoji: '🎖️', color: '#3498db' },
+    { key: 'withdrawn',   label: '탈퇴',     emoji: '🚪', color: '#e74c3c' },
+];
 
 // 유틸 함수: 전화번호 마스킹
 const maskPhone = (phone) => {
@@ -77,7 +99,7 @@ function MembersTab() {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('name'); // 'name', 'student_id', 'is_paid'
     const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
-    const [showWithdrawn, setShowWithdrawn] = useState(false); // [NEW] 탈퇴 회원 보기 토글
+    const [categoryFilter, setCategoryFilter] = useState('all'); // 탭 필터 (TABS.key)
     const [memberRoles, setMemberRoles] = useState({}); // { userId: ['admin', 'payment_exempt'] }
     // [FIXED] 초기 상태에 tempSemester, tempPhone 추가하여 일관성 확보
     const [roleEditModal, setRoleEditModal] = useState({
@@ -122,6 +144,7 @@ function MembersTab() {
             }
             setMemberRoles(rolesMap);
         } catch (e) {
+            console.error('[MembersTab] 회원 목록 로딩 실패:', e);
             showToast('회원 목록 로딩 실패', { type: 'error' });
         } finally {
             setLoading(false);
@@ -142,13 +165,32 @@ function MembersTab() {
         }
     };
 
+    // 현재 학기 (렌더마다 재계산 불필요 — 컴포넌트 수명동안 고정으로 충분)
+    const currentSemester = useMemo(() => getCurrentSemester(), []);
+
+    // 각 분류별 회원 수 (검색어 무관)
+    const categoryCounts = useMemo(() => {
+        const acc = { all: 0, paid: 0, free_rental: 0, dropout: 0, exempt: 0, withdrawn: 0 };
+        members.forEach(m => {
+            const cat = classifyMember(m, currentSemester);
+            acc[cat]++;
+            if (cat !== 'withdrawn') acc.all++;
+        });
+        return acc;
+    }, [members, currentSemester]);
+
     // 필터링 및 정렬된 회원 목록 (useMemo로 최적화)
     const filteredAndSortedMembers = useMemo(() => {
         return members
             .filter(member => {
-                // 1. 탈퇴 회원 필터링
-                if (!showWithdrawn && member.status === 'withdrawn') return false;
-
+                const cat = classifyMember(member, currentSemester);
+                // 1. 카테고리 필터
+                if (categoryFilter === 'all') {
+                    if (cat === 'withdrawn') return false; // 전체 탭에선 탈퇴 제외
+                } else if (cat !== categoryFilter) {
+                    return false;
+                }
+                // 2. 검색어 필터
                 if (!searchTerm) return true;
                 const term = searchTerm.toLowerCase();
                 return (
@@ -157,6 +199,11 @@ function MembersTab() {
                 );
             })
             .sort((a, b) => {
+                // 이번 학기 신규 가입자는 정렬 기준과 무관하게 항상 최상단 고정
+                const aNew = a.joined_semester === currentSemester ? 1 : 0;
+                const bNew = b.joined_semester === currentSemester ? 1 : 0;
+                if (aNew !== bNew) return bNew - aNew;
+
                 let aVal, bVal;
 
                 if (sortBy === 'name') {
@@ -178,7 +225,7 @@ function MembersTab() {
                 }
                 return 0;
             });
-    }, [members, searchTerm, sortBy, sortOrder]);
+    }, [members, searchTerm, sortBy, sortOrder, categoryFilter, currentSemester]);
 
     // 회비 납부 상태 토글
     const handleTogglePayment = async (member) => {
@@ -192,6 +239,7 @@ function MembersTab() {
                     showToast('회비 상태가 변경되었습니다.', { type: 'success' });
                     loadMembers();
                 } catch (e) {
+                    console.error('[MembersTab] 회비 상태 변경 실패:', e);
                     showToast('회비 상태 변경 실패: ' + e.message, { type: 'error' });
                 }
             },
@@ -208,6 +256,7 @@ function MembersTab() {
                     await resetUserPassword(member.id);
                     showToast(`✅ ${member.name}님의 비밀번호가 '12345678'로 초기화되었습니다.`, { type: 'success' });
                 } catch (e) {
+                    console.error('[MembersTab] 비밀번호 초기화 실패:', e);
                     showToast('비밀번호 초기화 실패: ' + e.message, { type: 'error' });
                 }
             },
@@ -229,6 +278,7 @@ function MembersTab() {
                 tempPhone: profile?.phone || ''
             });
         } catch (e) {
+            console.error('[MembersTab] 회원 상세 정보 로드 실패:', e);
             showToast('회원 상세 정보 로드 실패', { type: 'error' });
         }
     };
@@ -245,8 +295,6 @@ function MembersTab() {
             return { ...prev, selectedRoles: roles };
         });
     };
-
-    const EXEMPT_ROLES = ['admin', 'executive', 'payment_exempt'];
 
     const handleSaveRoles = async () => {
         if (!roleEditModal.member) return;
@@ -266,41 +314,44 @@ function MembersTab() {
             loadMembers();
             handleCloseRoleEdit();
         } catch (e) {
+            console.error('[MembersTab] 역할 수정 실패:', e);
             showToast('역할 수정 실패: ' + e.message, { type: 'error' });
         }
     };
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <h3 style={{ margin: 0 }}>👥 회원 관리 (총 {members.length}명)</h3>
-                    {/* [NEW] 탈퇴 회원 토글을 여기로 이동하여 시인성 확보 */}
-                    <label style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        fontSize: '0.9em',
-                        userSelect: 'none',
-                        background: showWithdrawn ? 'rgba(231, 76, 60, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                        padding: '6px 12px',
-                        borderRadius: '20px',
-                        border: showWithdrawn ? '1px solid #e74c3c' : '1px solid var(--admin-border)',
-                        transition: 'all 0.2s'
-                    }}>
-                        <input
-                            type="checkbox"
-                            checked={showWithdrawn}
-                            onChange={(e) => setShowWithdrawn(e.target.checked)}
-                            style={{ cursor: 'pointer' }}
-                        />
-                        <span style={{ color: showWithdrawn ? '#e74c3c' : 'var(--admin-text-sub)', fontWeight: 'bold' }}>
-                            탈퇴한 회원 보기
-                        </span>
-                    </label>
-                </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3 style={{ margin: 0 }}>👥 회원 관리 (총 {members.length}명)</h3>
                 <button onClick={loadMembers} style={styles.refreshBtn}>🔄 새로고침</button>
+            </div>
+
+            {/* 분류 탭 바 */}
+            <div style={styles.tabBar}>
+                {TABS.map(tab => {
+                    const active = categoryFilter === tab.key;
+                    return (
+                        <button
+                            key={tab.key}
+                            onClick={() => setCategoryFilter(tab.key)}
+                            style={{
+                                ...styles.tabBtn,
+                                background: active ? tab.color : 'var(--admin-card-bg)',
+                                color: active ? 'white' : 'var(--admin-text-main)',
+                                border: `1px solid ${active ? tab.color : 'var(--admin-border)'}`
+                            }}
+                        >
+                            <span>{tab.emoji} {tab.label}</span>
+                            <span style={{
+                                ...styles.tabCount,
+                                background: active ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)',
+                                color: active ? 'white' : 'var(--admin-text-sub)'
+                            }}>
+                                {categoryCounts[tab.key] ?? 0}
+                            </span>
+                        </button>
+                    );
+                })}
             </div>
 
             {/* 검색 및 필터 */}
@@ -376,6 +427,23 @@ function MembersTab() {
                                         <tr key={member.id}>
                                             <td style={{ fontWeight: 'bold', color: member.status === 'withdrawn' ? '#999' : 'inherit' }}>
                                                 {member.name || '-'}
+                                                {member.joined_semester === currentSemester && (
+                                                    <span
+                                                        title="이번 학기 신규 가입 — 입금 확인 필요"
+                                                        style={{
+                                                            marginLeft: '6px',
+                                                            padding: '1px 7px',
+                                                            borderRadius: '10px',
+                                                            fontSize: '0.7em',
+                                                            fontWeight: 'bold',
+                                                            background: 'linear-gradient(135deg, #9b59b6, #e91e63)',
+                                                            color: 'white',
+                                                            verticalAlign: 'middle'
+                                                        }}
+                                                    >
+                                                        🆕 신규
+                                                    </span>
+                                                )}
                                                 {member.status === 'withdrawn' && <span style={{ fontSize: '0.8em', color: '#e74c3c', marginLeft: '5px' }}>(탈퇴)</span>}
                                             </td>
                                             <td>{member.student_id || '-'}</td>
@@ -413,16 +481,23 @@ function MembersTab() {
                                                         ✨ 면제됨
                                                     </span>
                                                 ) : (
-                                                    <button
-                                                        onClick={() => handleTogglePayment(member)}
-                                                        aria-label={`${member.name}님 회비 상태: ${member.is_paid ? '납부 완료' : '미납'}`}
-                                                        style={{
-                                                            ...styles.paymentBtn,
-                                                            background: member.is_paid ? '#27ae60' : '#e74c3c'
-                                                        }}
-                                                    >
-                                                        {member.is_paid ? '✅ 납부' : '❌ 미납'}
-                                                    </button>
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleTogglePayment(member)}
+                                                            aria-label={`${member.name}님 회비 상태: ${member.is_paid ? '납부 완료' : '미납'}`}
+                                                            style={{
+                                                                ...styles.paymentBtn,
+                                                                background: member.is_paid ? '#27ae60' : '#e74c3c'
+                                                            }}
+                                                        >
+                                                            {member.is_paid ? '✅ 납부' : '❌ 미납'}
+                                                        </button>
+                                                        {!member.is_paid && member.last_paid_semester && (
+                                                            <div style={{ fontSize: '0.75em', color: 'var(--admin-text-sub)', marginTop: '4px' }}>
+                                                                최근 납부: {member.last_paid_semester}
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
                                             </td>
                                             <td>
@@ -569,6 +644,7 @@ function MembersTab() {
                                                 }));
                                                 loadMembers(); // 리스트 갱신
                                             } catch (e) {
+                                                console.error('[MembersTab] 가입학기 수정 실패:', e);
                                                 showToast('수정 실패: ' + e.message, { type: 'error' });
                                             }
                                         }}
@@ -603,6 +679,7 @@ function MembersTab() {
                                                 }));
                                                 loadMembers(); // 리스트 갱신
                                             } catch (e) {
+                                                console.error('[MembersTab] 전화번호 수정 실패:', e);
                                                 showToast('수정 실패: ' + e.message, { type: 'error' });
                                             }
                                         }}
@@ -672,6 +749,31 @@ const styles = {
         borderRadius: '8px',
         border: '1px solid var(--admin-border)',
         flexWrap: 'wrap'
+    },
+    tabBar: {
+        display: 'flex',
+        gap: '8px',
+        marginBottom: '15px',
+        flexWrap: 'wrap'
+    },
+    tabBtn: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '8px 14px',
+        borderRadius: '999px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        fontSize: '0.9em',
+        transition: 'all 0.15s'
+    },
+    tabCount: {
+        padding: '2px 8px',
+        borderRadius: '999px',
+        fontSize: '0.8em',
+        fontWeight: 'bold',
+        minWidth: '20px',
+        textAlign: 'center'
     },
     sortBtn: {
         padding: '8px 12px',
