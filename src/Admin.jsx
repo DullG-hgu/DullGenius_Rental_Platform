@@ -29,6 +29,9 @@ import PointsTab from './admin/PointsTab';
 import MembersTab from './admin/MembersTab'; // [NEW]
 import SystemTab from './admin/SystemTab'; // [NEW] 시스템 설정 탭
 import ReportsTab from './admin/ReportsTab'; // [NEW] 신고/신청 관리 탭
+import RentalRequestsTab from './admin/RentalRequestsTab';
+import AdminOverviewCard from './admin/AdminOverviewCard'; // [NEW] 대시보드 상단 안내 카드
+import ConfirmModal from './components/ConfirmModal';
 const StatsTab = React.lazy(() => import('./admin/StatsTab'));
 import { setOfficeOpen, setOfficeClosed } from './api_members';
 
@@ -38,7 +41,9 @@ function Admin() {
   const navigate = useNavigate();
 
   // --- 1. 권한 체크: 관리자 권한이 있는지 확인 ---
-  const isDevBypass = sessionStorage.getItem('dev_admin_bypass') === 'true'; // [CHANGED] 배포 환경에서도 허용
+  // [SECURITY] dev_admin_bypass는 개발 환경(vite dev server)에서만 동작.
+  // 프로덕션 빌드에서는 import.meta.env.DEV가 false이므로 우회 불가.
+  const isDevBypass = import.meta.env.DEV && sessionStorage.getItem('dev_admin_bypass') === 'true';
   const isAdmin = hasRole('admin') || hasRole('executive') || isDevBypass;
 
 
@@ -49,6 +54,9 @@ function Admin() {
   const [config, setConfig] = useState([]);
   const [loading, setLoading] = useState(false);
   const [officeStatus, setOfficeStatus] = useState(null);
+
+  // 오피스아워 진행 중 이동/로그아웃 시 확인용 모달
+  const [exitConfirm, setExitConfirm] = useState({ isOpen: false, action: null, target: null });
 
   // --- 데이터 로딩 (SWR 패턴 적용) ---
   const loadData = useCallback(async () => {
@@ -90,6 +98,7 @@ function Admin() {
       }));
 
     } catch (e) {
+      console.error('[Admin] 초기 데이터 로딩 실패:', e);
       showToast("데이터 로딩 실패 (인터넷 연결 확인)", { type: "error" });
     } finally {
       setLoading(false);
@@ -139,6 +148,7 @@ function Admin() {
       await loadOfficeStatus();
       showToast("🟢 출근 완료! 오피스아워가 시작되었습니다.", { type: "success" });
     } catch (e) {
+      console.error('[Admin] 출근 처리 실패:', e);
       showToast("오류: " + e.message, { type: "error" });
     }
   };
@@ -149,6 +159,7 @@ function Admin() {
       await loadOfficeStatus();
       showToast("퇴근 완료! 오피스아워가 종료되었습니다.", { type: "success" });
     } catch (e) {
+      console.error('[Admin] 퇴근 처리 실패:', e);
       showToast("오류: " + e.message, { type: "error" });
     }
   };
@@ -165,19 +176,24 @@ function Admin() {
   }, [isOfficeOpen]);
 
   // 앱 내 이동 가드: 퇴근 후 이동
-  const guardedNavigate = async (path) => {
+  const guardedNavigate = (path) => {
     if (!isOfficeOpen) { navigate(path); return; }
-    if (!window.confirm('오피스아워가 진행 중입니다.\n퇴근 처리 후 이동할까요?')) return;
-    await handleOfficeClosed();
-    navigate(path);
+    setExitConfirm({ isOpen: true, action: 'navigate', target: path });
   };
 
-  const guardedLogout = async () => {
-    if (isOfficeOpen) {
-      if (!window.confirm('오피스아워가 진행 중입니다.\n퇴근 처리 후 로그아웃할까요?')) return;
-      await handleOfficeClosed();
+  const guardedLogout = () => {
+    if (!isOfficeOpen) { logout(); return; }
+    setExitConfirm({ isOpen: true, action: 'logout', target: null });
+  };
+
+  const handleExitConfirm = async () => {
+    const { action, target } = exitConfirm;
+    await handleOfficeClosed();
+    if (action === 'navigate') {
+      navigate(target);
+    } else if (action === 'logout') {
+      logout();
     }
-    logout();
   };
 
   // --- 4. 렌더링: 관리자 메인 화면 ---
@@ -200,34 +216,56 @@ function Admin() {
           </div>
           <button onClick={guardedLogout} className="admin-btn admin-btn-logout">로그아웃</button>
           <button onClick={() => guardedNavigate('/')} className="admin-btn admin-btn-home">🏠 메인으로</button>
+          <button onClick={() => guardedNavigate('/admin-secret/events')} className="admin-btn" style={{ background: "#bb86fc", color: "#000" }}>🎪 행사 관리</button>
           <button onClick={() => navigate('/kiosk')} className="admin-btn" style={{ background: "#667eea" }}>📱 키오스크</button>
         </div>
       </div>
 
       {/* 탭 버튼 영역 */}
       <div className="admin-tabs">
-        <TabButton label="📋 대여 현황 / 태그" id="dashboard" activeTab={activeTab} onClick={setActiveTab} />
-        <TabButton label="📢 신고/신청 관리" id="reports" activeTab={activeTab} onClick={setActiveTab} />
-        <TabButton label="➕ 게임 추가" id="add" activeTab={activeTab} onClick={setActiveTab} />
-        <TabButton label="⚙️ 시스템 설정" id="system" activeTab={activeTab} onClick={setActiveTab} /> {/* [NEW] */}
-        <TabButton label="👥 회원 관리" id="members" activeTab={activeTab} onClick={setActiveTab} />
-        <TabButton label="💰 포인트 시스템" id="points" activeTab={activeTab} onClick={setActiveTab} />
-        <TabButton label="🎨 홈페이지 설정" id="config" activeTab={activeTab} onClick={setActiveTab} />
-        <TabButton label="📊 통계" id="stats" activeTab={activeTab} onClick={setActiveTab} />
+        <TabButton label="📋 대여 현황 / 태그" id="dashboard" activeTab={activeTab} onClick={setActiveTab}
+          hint="게임 대여/반납 처리, 게임 정보 수정, 대여 이력 확인" />
+        <TabButton label="📢 신고/신청 관리" id="reports" activeTab={activeTab} onClick={setActiveTab}
+          hint="회원이 올린 파손 신고와 게임 신청을 확인·처리" />
+        <TabButton label="📝 외부 대여 신청" id="rental_requests" activeTab={activeTab} onClick={setActiveTab}
+          hint="Google Form으로 들어온 외부 단체 대여 신청 검토·승인" />
+        <TabButton label="➕ 게임 추가" id="add" activeTab={activeTab} onClick={setActiveTab}
+          hint="BGG에서 새 게임을 검색해 목록에 등록" />
+        <TabButton label="⚙️ 시스템 설정" id="system" activeTab={activeTab} onClick={setActiveTab}
+          hint="회비 검사 on/off, 학기 초기화, 오피스아워 설정" />
+        <TabButton label="👥 회원 관리" id="members" activeTab={activeTab} onClick={setActiveTab}
+          hint="회원 목록, 회비 납부 상태, 비밀번호 초기화, 권한 변경" />
+        <TabButton label="💰 포인트 시스템" id="points" activeTab={activeTab} onClick={setActiveTab}
+          hint="회원별 포인트 잔액과 적립/차감 이력 관리" />
+        <TabButton label="🎨 홈페이지 설정" id="config" activeTab={activeTab} onClick={setActiveTab}
+          hint="홈 화면에 노출되는 배너/문구/색상 등을 수정" />
+        <TabButton label="📊 통계" id="stats" activeTab={activeTab} onClick={setActiveTab}
+          hint="대여 건수, 인기 게임, 회원 활동 통계" />
       </div>
 
       {/* 탭 컨텐츠 영역 */}
       <div className="admin-content">
         {activeTab === "dashboard" && (
-          <DashboardTab
-            games={games}
-            loading={loading}
-            onReload={loadData}
-          />
+          <>
+            <AdminOverviewCard
+              games={games}
+              isOfficeOpen={isOfficeOpen}
+              onGoReports={() => setActiveTab('reports')}
+            />
+            <DashboardTab
+              games={games}
+              loading={loading}
+              onReload={loadData}
+            />
+          </>
         )}
 
         {activeTab === "reports" && (
           <ReportsTab />
+        )}
+
+        {activeTab === "rental_requests" && (
+          <RentalRequestsTab />
         )}
 
         {activeTab === "add" && (
@@ -261,6 +299,22 @@ function Admin() {
           </React.Suspense>
         )}
       </div>
+
+      {/* 오피스아워 진행 중 이동/로그아웃 확인 */}
+      <ConfirmModal
+        isOpen={exitConfirm.isOpen}
+        onClose={() => setExitConfirm({ isOpen: false, action: null, target: null })}
+        onConfirm={handleExitConfirm}
+        title="⚠️ 오피스아워 진행 중"
+        message={
+          exitConfirm.action === 'logout'
+            ? '지금 로그아웃하면 자동으로 퇴근 처리됩니다.\n계속하시겠습니까?'
+            : '지금 이동하면 자동으로 퇴근 처리됩니다.\n계속하시겠습니까?'
+        }
+        confirmText="퇴근하고 진행"
+        cancelText="취소"
+        type="warning"
+      />
     </div>
   );
 }
@@ -268,10 +322,13 @@ function Admin() {
 // --- 스타일 및 서브 컴포넌트 ---
 
 // 탭 버튼 컴포넌트 (CSS 클래스 사용)
-const TabButton = ({ label, id, activeTab, onClick }) => (
+// hint: 마우스 호버 시 표시되는 한 줄 설명 (첫 방문자용 가이드)
+const TabButton = ({ label, id, activeTab, onClick, hint }) => (
   <button
     onClick={() => onClick(id)}
     className={`admin-tab-btn ${activeTab === id ? 'active' : ''}`}
+    title={hint}
+    aria-label={hint ? `${label} — ${hint}` : label}
   >
     {label}
   </button>

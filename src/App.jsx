@@ -21,12 +21,18 @@ const Signup = lazy(() => import('./components/Signup'));
 const MyPage = lazy(() => import('./components/MyPage'));
 const KioskPage = lazy(() => import('./kiosk/KioskPage'));
 const Admin = lazy(() => import('./Admin'));
+const EventsListPage = lazy(() => import('./admin/events/EventsListPage'));
+const EventDetailPage = lazy(() => import('./admin/events/EventDetailPage'));
+const EventPage = lazy(() => import('./event/EventPage'));
+const EventApplyPage = lazy(() => import('./event/EventApplyPage'));
+const EventTeamJoinPage = lazy(() => import('./event/EventTeamJoinPage'));
 const OrgRental = lazy(() => import('./pages/OrgRental'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginTooltip from './components/LoginTooltip';
 import ChunkErrorBoundary from './components/ChunkErrorBoundary';
-import InstallPromptBanner from './components/InstallPromptBanner';
+// [PERF] 첫 페인트 경로에서 제외: 사용자 상호작용 직전까지 불필요
+const InstallPromptBanner = lazy(() => import('./components/InstallPromptBanner'));
 
 const PasswordReset = lazy(() => import('./components/PasswordReset'));
 
@@ -36,7 +42,9 @@ function App() {
       <AuthProvider>
         <GameProvider>
           <BrowserRouter>
-            <InstallPromptBanner />
+            <Suspense fallback={null}>
+              <InstallPromptBanner />
+            </Suspense>
             <ChunkErrorBoundary>
               <Suspense fallback={
                 <div className="loading-container">
@@ -57,8 +65,13 @@ function App() {
 
                   <Route element={<ProtectedRoute allowedRoles={['admin', 'executive']} />}>
                     <Route path="/admin-secret" element={<Admin />} />
+                    <Route path="/admin-secret/events" element={<EventsListPage />} />
+                    <Route path="/admin-secret/events/:id" element={<EventDetailPage />} />
                   </Route>
 
+                  <Route path="/event/:slug" element={<EventPage />} />
+                  <Route path="/event/:slug/apply" element={<EventApplyPage />} />
+                  <Route path="/event/team/:code" element={<EventTeamJoinPage />} />
                   <Route path="/org-rental" element={<OrgRental />} />
                   <Route path="/kiosk" element={<KioskPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />

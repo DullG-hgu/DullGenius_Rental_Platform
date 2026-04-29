@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchMyRentals, fetchUserPoints, fetchPointHistory, withdrawAccount, cancelDibsGame, fetchMyRentalHistory } from '../api';
+import MyEventsCard from '../event/MyEventsCard';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -235,6 +236,9 @@ const MyPage = () => {
         </div>
       </section>
 
+
+      {/* 1.5. 내 행사 신청 (있을 때만 노출) */}
+      <MyEventsCard />
 
       {/* 2. 대여 현황 섹션 */}
       <section style={{ ...styles.card, marginTop: "20px" }}>
