@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
     const { user, hasRole, loading } = useAuth();
+    // hooks는 항상 동일 순서/개수로 호출되어야 함 — early return 이전에 호출
+    const navigate = useNavigate();
 
     if (loading) {
         return (
@@ -13,8 +15,6 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
             </div>
         );
     }
-
-    const navigate = useNavigate();
 
     // 1. 로그인 안 된 경우
     if (!user) {

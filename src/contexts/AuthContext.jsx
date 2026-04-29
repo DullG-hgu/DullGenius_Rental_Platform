@@ -24,11 +24,11 @@ export const AuthProvider = ({ children }) => {
         const gen = ++fetchGenRef.current;
         console.debug(`[Auth] fetchProfileAndRoles 시작 (gen=${gen}, userId=${userId}, retry=${retryCount})`);
         try {
-            const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select('*, is_semester_fixed')
-                .eq('id', userId)
-                .single();
+            // [PERF] profile + roles 병렬 조회 (기존: 순차 2 RTT → 병렬 1 RTT)
+            const [profileRes, roleRes] = await Promise.all([
+                supabase.from('profiles').select('*').eq('id', userId).single(),
+                supabase.from('user_roles').select('role_key').eq('user_id', userId)
+            ]);
 
             // 이 await 이후 로그아웃이 됐으면 중단
             if (gen !== fetchGenRef.current || !isMounted.current) {
@@ -36,13 +36,12 @@ export const AuthProvider = ({ children }) => {
                 return;
             }
 
+            const { data: profileData, error: profileError } = profileRes;
+            const { data: roleData, error: roleError } = roleRes;
+
             if (profileError) {
                 if (profileError.code === 'PGRST116') {
-                    // kiosk 계정처럼 profiles가 없는 경우: 역할만 조회해서 kiosk role이면 허용
-                    const { data: roleData } = await supabase
-                        .from('user_roles')
-                        .select('role_key')
-                        .eq('user_id', userId);
+                    // kiosk 계정처럼 profiles가 없는 경우: 역할만 보고 kiosk면 허용
                     const roleKeys = (roleData ?? []).map(r => r.role_key);
                     if (roleKeys.includes('kiosk')) {
                         setProfile(null);
@@ -58,25 +57,12 @@ export const AuthProvider = ({ children }) => {
                 }
                 throw profileError;
             }
-            setProfile(profileData);
-            console.debug(`[Auth] 프로필 로드 완료 (gen=${gen}, name=${profileData?.name})`);
-
-            const { data: roleData, error: roleError } = await supabase
-                .from('user_roles')
-                .select(`
-                    role_key,
-                    roles (display_name, permissions)
-                `)
-                .eq('user_id', userId);
-
-            if (gen !== fetchGenRef.current || !isMounted.current) {
-                console.debug(`[Auth] 역할 조회 후 중단 - 로그아웃됨 (gen=${gen})`);
-                return;
-            }
 
             if (roleError) throw roleError;
+
+            setProfile(profileData);
             setRoles(roleData.map(r => r.role_key));
-            console.debug(`[Auth] 역할 로드 완료 (gen=${gen}, roles=${roleData.map(r => r.role_key).join(',')})`);
+            console.debug(`[Auth] 프로필+역할 로드 완료 (gen=${gen}, name=${profileData?.name}, roles=${roleData.map(r => r.role_key).join(',')})`);
 
         } catch (error) {
             // 로그아웃 이후 발생한 에러는 무시
@@ -153,7 +139,7 @@ export const AuthProvider = ({ children }) => {
         });
         if (error) throw error;
 
-        /* 
+        /*
            [NOTE] Rename & Archive 전략:
            탈퇴 시 이메일이 변경되므로, 위 signInWithPassword 단계에서 이미 걸러짐.
            따라서 data.user가 존재한다면 active 유저임이 보장됨.
@@ -227,21 +213,12 @@ export const AuthProvider = ({ children }) => {
         refreshProfile // [NEW]
     };
 
+    // [PERF] 전역 스피너 게이트 제거.
+    // 익명 유저는 로그인이 필요없으므로 즉시 렌더.
+    // 인증이 필요한 화면(ProtectedRoute, MyPage 등)이 loading을 직접 소비.
     return (
         <AuthContext.Provider value={value}>
-            {loading ? (
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100vh',
-                    flexDirection: 'column',
-                    gap: '20px'
-                }}>
-                    <div className="spinner"></div>
-                    <p>로그인 정보를 확인하고 있어요...</p>
-                </div>
-            ) : children}
+            {children}
         </AuthContext.Provider>
     );
 };
