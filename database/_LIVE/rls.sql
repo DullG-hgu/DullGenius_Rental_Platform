@@ -1,12 +1,12 @@
 -- ================================================================
 -- RLS POLICIES — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 4. 16. PM 6:30:24
+-- 생성 시각: 2026. 4. 29. PM 6:26:41
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 58개 정책
+-- 총 69개 정책
 
 -- ----------------------------------------------------------------
 -- 테이블: app_config  (4개 정책)
@@ -89,6 +89,86 @@ CREATE POLICY "Users can see their own reports" ON public.damage_reports
   FOR SELECT
   TO public
   USING ((auth.uid() = user_id))
+;
+
+-- ----------------------------------------------------------------
+-- 테이블: event_payment_logs  (1개 정책)
+-- ----------------------------------------------------------------
+ALTER TABLE public.event_payment_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "event_payment_logs_admin" ON public.event_payment_logs
+  AS PERMISSIVE
+  FOR ALL
+  TO public
+  USING (is_admin())
+  WITH CHECK (is_admin())
+;
+
+-- ----------------------------------------------------------------
+-- 테이블: event_registrations  (2개 정책)
+-- ----------------------------------------------------------------
+ALTER TABLE public.event_registrations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "event_regs_admin_write" ON public.event_registrations
+  AS PERMISSIVE
+  FOR ALL
+  TO public
+  USING (is_admin())
+  WITH CHECK (is_admin())
+;
+
+CREATE POLICY "event_regs_self_read" ON public.event_registrations
+  AS PERMISSIVE
+  FOR SELECT
+  TO public
+  USING ((is_admin() OR (user_id = auth.uid()) OR ((team_id IS NOT NULL) AND is_event_team_leader(team_id))))
+;
+
+-- ----------------------------------------------------------------
+-- 테이블: event_teams  (2개 정책)
+-- ----------------------------------------------------------------
+ALTER TABLE public.event_teams ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "event_teams_admin_write" ON public.event_teams
+  AS PERMISSIVE
+  FOR ALL
+  TO public
+  USING (is_admin())
+  WITH CHECK (is_admin())
+;
+
+CREATE POLICY "event_teams_read" ON public.event_teams
+  AS PERMISSIVE
+  FOR SELECT
+  TO public
+  USING ((is_admin() OR (leader_user_id = auth.uid()) OR is_event_team_member(id)))
+;
+
+-- ----------------------------------------------------------------
+-- 테이블: events  (3개 정책)
+-- ----------------------------------------------------------------
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "events_admin_read" ON public.events
+  AS PERMISSIVE
+  FOR SELECT
+  TO public
+  USING (is_admin())
+;
+
+CREATE POLICY "events_admin_write" ON public.events
+  AS PERMISSIVE
+  FOR ALL
+  TO public
+  USING (is_admin())
+  WITH CHECK (is_admin())
+;
+
+CREATE POLICY "events_public_read" ON public.events
+  AS PERMISSIVE
+  FOR SELECT
+  TO public
+  USING (((deleted_at IS NULL) AND (status <> ALL (ARRAY['draft'::text, 'archived'::text]))))
 ;
 
 -- ----------------------------------------------------------------
@@ -271,6 +351,19 @@ CREATE POLICY "View Own Points" ON public.point_transactions
 ;
 
 -- ----------------------------------------------------------------
+-- 테이블: private_config  (1개 정책)
+-- ----------------------------------------------------------------
+ALTER TABLE public.private_config ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Deny All" ON public.private_config
+  AS PERMISSIVE
+  FOR ALL
+  TO public
+  USING (false)
+  WITH CHECK (false)
+;
+
+-- ----------------------------------------------------------------
 -- 테이블: profiles  (8개 정책)
 -- ----------------------------------------------------------------
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -336,7 +429,20 @@ CREATE POLICY "View Own Profile" ON public.profiles
 ;
 
 -- ----------------------------------------------------------------
--- 테이블: rentals  (7개 정책)
+-- 테이블: rental_requests  (1개 정책)
+-- ----------------------------------------------------------------
+ALTER TABLE public.rental_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admin Manage Rental Requests" ON public.rental_requests
+  AS PERMISSIVE
+  FOR ALL
+  TO public
+  USING (is_admin())
+  WITH CHECK (is_admin())
+;
+
+-- ----------------------------------------------------------------
+-- 테이블: rentals  (8개 정책)
 -- ----------------------------------------------------------------
 ALTER TABLE public.rentals ENABLE ROW LEVEL SECURITY;
 
@@ -363,18 +469,25 @@ CREATE POLICY "Create Own Rentals" ON public.rentals
   WITH CHECK ((auth.uid() = user_id))
 ;
 
+CREATE POLICY "Kiosk view active rentals" ON public.rentals
+  AS PERMISSIVE
+  FOR SELECT
+  TO public
+  USING ((is_kiosk_or_admin() AND (returned_at IS NULL)))
+;
+
+CREATE POLICY "Public view active rentals" ON public.rentals
+  AS PERMISSIVE
+  FOR SELECT
+  TO public
+  USING ((returned_at IS NULL))
+;
+
 CREATE POLICY "Read Rentals for Owner or Admin" ON public.rentals
   AS PERMISSIVE
   FOR SELECT
   TO public
   USING (((auth.uid() = user_id) OR is_admin()))
-;
-
-CREATE POLICY "Rentals viewable by everyone" ON public.rentals
-  AS PERMISSIVE
-  FOR SELECT
-  TO public
-  USING (true)
 ;
 
 CREATE POLICY "User View Own Rentals" ON public.rentals

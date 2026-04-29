@@ -1,12 +1,289 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 4. 16. PM 6:30:20
+-- 생성 시각: 2026. 4. 29. PM 6:26:25
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 36개 함수
+-- 총 67개 함수
+
+-- ----------------------------------------------------------------
+-- 함수: _event_calc_fee
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._event_calc_fee(p_pricing jsonb, p_tier text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_fee int;
+  v_lookup_tier text;
+BEGIN
+  IF p_pricing IS NULL OR p_pricing = '{}'::jsonb THEN RETURN 0; END IF;
+  -- member tier는 non_member 가격을 공유 (UI 단순화: 정회원/비회원/현장결제 3단)
+  v_lookup_tier := CASE WHEN p_tier = 'member' THEN 'non_member' ELSE p_tier END;
+  v_fee := COALESCE((p_pricing -> 'base' ->> v_lookup_tier)::int, 0);
+  RETURN v_fee;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _event_generate_invite_code
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._event_generate_invite_code()
+ RETURNS text
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  v_code text;
+  v_attempts int := 0;
+  v_exists bool;
+BEGIN
+  LOOP
+    v_code := '';
+    FOR i IN 1..4 LOOP
+      v_code := v_code || substr(v_chars, 1 + floor(random() * length(v_chars))::int, 1);
+    END LOOP;
+    v_code := v_code || '-';
+    FOR i IN 1..4 LOOP
+      v_code := v_code || substr(v_chars, 1 + floor(random() * length(v_chars))::int, 1);
+    END LOOP;
+    SELECT EXISTS(SELECT 1 FROM public.event_teams WHERE invite_code = v_code) INTO v_exists;
+    EXIT WHEN NOT v_exists;
+    v_attempts := v_attempts + 1;
+    IF v_attempts > 20 THEN RAISE EXCEPTION 'invite_code_generation_failed'; END IF;
+  END LOOP;
+  RETURN v_code;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _event_is_full
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._event_is_full(p_event_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_capacity int;
+  v_unit text;
+  v_count int;
+BEGIN
+  SELECT capacity, capacity_unit INTO v_capacity, v_unit
+    FROM public.events WHERE id = p_event_id;
+  IF v_capacity IS NULL THEN RETURN false; END IF;
+
+  IF v_unit = 'team' THEN
+    SELECT count(*) INTO v_count FROM public.event_teams
+      WHERE event_id = p_event_id AND status != 'cancelled';
+  ELSE
+    SELECT count(*) INTO v_count FROM public.event_registrations
+      WHERE event_id = p_event_id
+        AND status IN ('pending','paid');
+  END IF;
+  RETURN v_count >= v_capacity;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _event_make_depositor_name
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._event_make_depositor_name(p_event_slug text, p_name text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  RETURN p_event_slug || '_' || regexp_replace(p_name, '\s+', '', 'g');
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _fuzzy_match_games
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._fuzzy_match_games(raw text)
+ RETURNS integer[]
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_tokens text[];
+    v_token  text;
+    v_trim   text;
+    v_id     int;
+    v_result int[] := '{}';
+BEGIN
+    IF raw IS NULL OR btrim(raw) = '' THEN
+        RETURN '{}';
+    END IF;
+
+    v_tokens := string_to_array(raw, ',');
+
+    FOREACH v_token IN ARRAY v_tokens LOOP
+        v_trim := btrim(v_token);
+        IF v_trim = '' THEN CONTINUE; END IF;
+
+        -- exact match 먼저
+        SELECT id INTO v_id
+        FROM public.games
+        WHERE name = v_trim
+        ORDER BY id
+        LIMIT 1;
+
+        IF v_id IS NULL THEN
+            -- ILIKE fallback (case-insensitive 부분 일치)
+            SELECT id INTO v_id
+            FROM public.games
+            WHERE name ILIKE '%' || v_trim || '%'
+            ORDER BY length(name), id
+            LIMIT 1;
+        END IF;
+
+        IF v_id IS NOT NULL THEN
+            v_result := array_append(v_result, v_id);
+            v_id := NULL;
+        END IF;
+    END LOOP;
+
+    RETURN v_result;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _parse_duration
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._parse_duration(raw text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ IMMUTABLE
+AS $function$
+DECLARE v_match text[];
+BEGIN
+    IF raw IS NULL OR btrim(raw) = '' THEN RETURN NULL; END IF;
+    v_match := regexp_match(raw, '(\d+)\s*일');
+    IF v_match IS NULL THEN RETURN NULL; END IF;
+    RETURN v_match[1]::int;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _parse_fee
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._parse_fee(raw text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ IMMUTABLE
+AS $function$
+DECLARE v_match text[];
+BEGIN
+    IF raw IS NULL OR btrim(raw) = '' THEN RETURN NULL; END IF;
+    v_match := regexp_match(raw, '(\d+)\s*원');
+    IF v_match IS NULL THEN RETURN NULL; END IF;
+    RETURN v_match[1]::int;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _parse_game_count
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._parse_game_count(raw text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ IMMUTABLE
+AS $function$
+DECLARE v_match text[];
+BEGIN
+    IF raw IS NULL OR btrim(raw) = '' THEN RETURN NULL; END IF;
+    v_match := regexp_match(raw, '(\d+)\s*개');
+    IF v_match IS NULL THEN RETURN NULL; END IF;
+    RETURN v_match[1]::int;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _parse_pickup
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._parse_pickup(raw text)
+ RETURNS timestamp with time zone
+ LANGUAGE plpgsql
+ IMMUTABLE
+AS $function$
+DECLARE
+    v_date_match text;
+    v_time_match text;
+    v_ampm       text;
+    v_year       int;
+    v_month      int;
+    v_day        int;
+    v_hour       int := 12;
+    v_minute     int := 0;
+    v_parts      text[];
+    v_result     timestamptz;
+BEGIN
+    IF raw IS NULL OR btrim(raw) = '' THEN RETURN NULL; END IF;
+
+    -- 날짜 추출: YYYY[-./년 ]M[-./월 ]D
+    v_date_match := (regexp_match(
+        raw,
+        '(\d{4})[-./년\s]+(\d{1,2})[-./월\s]+(\d{1,2})'
+    ))[1];
+    IF v_date_match IS NULL THEN
+        -- 매칭 실패
+        RETURN NULL;
+    END IF;
+
+    v_parts := regexp_match(raw, '(\d{4})[-./년\s]+(\d{1,2})[-./월\s]+(\d{1,2})');
+    v_year  := v_parts[1]::int;
+    v_month := v_parts[2]::int;
+    v_day   := v_parts[3]::int;
+
+    -- 오전/오후 감지
+    v_ampm := (regexp_match(raw, '(오전|오후|AM|PM|am|pm)'))[1];
+
+    -- 시간 추출: "14:30" / "14시 30분" / "14시" / "2시"
+    v_parts := regexp_match(raw, '(\d{1,2})[:시]\s*(\d{1,2})?');
+    IF v_parts IS NOT NULL THEN
+        v_hour := v_parts[1]::int;
+        IF v_parts[2] IS NOT NULL THEN
+            v_minute := v_parts[2]::int;
+        END IF;
+        IF v_ampm IN ('오후', 'PM', 'pm') AND v_hour < 12 THEN
+            v_hour := v_hour + 12;
+        ELSIF v_ampm IN ('오전', 'AM', 'am') AND v_hour = 12 THEN
+            v_hour := 0;
+        END IF;
+    END IF;
+
+    BEGIN
+        v_result := make_timestamptz(v_year, v_month, v_day, v_hour, v_minute, 0, 'Asia/Seoul');
+    EXCEPTION WHEN OTHERS THEN
+        RETURN NULL;
+    END;
+    RETURN v_result;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _tg_event_set_updated_at
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._tg_event_set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$function$
 
 -- ----------------------------------------------------------------
 -- 함수: admin_extend_rentals
@@ -53,7 +330,7 @@ BEGIN
     END LOOP;
     
     IF v_count = 0 THEN
-        RETURN jsonb_build_object('success', false, 'message', '조건에 맞는 연장할 활성 대여 건이 없습니다. 이미 반납되었거나 대상을 찾을 수 없습니다.');
+        RETURN jsonb_build_object('success', false, 'message', '조건에 맞는 연장할 활성 대여 건이 ��습니다. 이미 반납되었거나 대상을 찾을 수 없습니다.');
     END IF;
     
     RETURN jsonb_build_object('success', true, 'message', v_count || '건 연장 처리 완료', 'new_due_date', v_new_due_date);
@@ -223,14 +500,153 @@ CREATE OR REPLACE FUNCTION public.cleanup_expired_dibs()
  LANGUAGE plpgsql
  SECURITY DEFINER
 AS $function$
-DECLARE v_count INTEGER;
+DECLARE
+    v_dibs_count    INTEGER;
+    v_hold_count    INTEGER;
+    v_affected_ids  INTEGER[];
 BEGIN
+    -- 1) 만료된 DIBS 반납 마킹 + 영향 게임 수집
     WITH expired AS (
-        UPDATE public.rentals SET returned_at = now() WHERE type = 'DIBS' AND returned_at IS NULL AND due_date < now() RETURNING game_id
+        UPDATE public.rentals
+        SET returned_at = now()
+        WHERE type = 'DIBS'
+          AND returned_at IS NULL
+          AND due_date < now()
+        RETURNING game_id
+    ),
+    grouped AS (
+        SELECT game_id, COUNT(*) AS cnt
+        FROM expired
+        GROUP BY game_id
     )
-    UPDATE public.games g SET available_count = available_count + sub.cnt FROM (SELECT game_id, COUNT(*) as cnt FROM expired GROUP BY game_id) sub WHERE g.id = sub.game_id;
-    GET DIAGNOSTICS v_count = ROW_COUNT;
-    RETURN jsonb_build_object('success', true, 'cancelled_count', v_count);
+    UPDATE public.games g
+    SET available_count = COALESCE(g.available_count, 0) + grouped.cnt
+    FROM grouped
+    WHERE g.id = grouped.game_id;
+    GET DIAGNOSTICS v_dibs_count = ROW_COUNT;
+
+    -- 2) 만료된 HOLD 반납 마킹 + 영향 게임 수집
+    WITH expired_holds AS (
+        UPDATE public.rentals
+        SET returned_at = now()
+        WHERE type = 'HOLD'
+          AND returned_at IS NULL
+          AND due_date < now()
+        RETURNING game_id
+    )
+    SELECT array_agg(game_id)
+    INTO v_affected_ids
+    FROM expired_holds;
+
+    v_hold_count := COALESCE(array_length(v_affected_ids, 1), 0);
+
+    -- 3) HOLD 만료로 영향 받은 게임의 available_count 재계산
+    --    (7일 lookahead 윈도우 기준)
+    IF v_hold_count > 0 THEN
+        UPDATE public.games g
+        SET available_count = GREATEST(
+            0,
+            g.quantity - COALESCE((
+                SELECT COUNT(*)
+                FROM public.rentals r
+                WHERE r.game_id = g.id
+                  AND r.returned_at IS NULL
+                  AND (
+                      r.type = 'RENT'
+                      OR (r.type = 'DIBS' AND r.due_date > now())
+                      OR (r.type = 'HOLD'
+                          AND r.borrowed_at <= now() + interval '7 days'
+                          AND r.due_date > now())
+                  )
+            ), 0)
+        )
+        WHERE g.id = ANY(v_affected_ids);
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'cancelled_count', v_dibs_count,
+        'expired_hold_count', v_hold_count
+    );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: confirm_rental_request
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.confirm_rental_request(p_request_id uuid, p_game_ids integer[], p_pickup_at timestamp with time zone, p_duration_days integer)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_req           public.rental_requests%ROWTYPE;
+    v_gid           int;
+    v_hold_id       uuid;
+    v_hold_ids      uuid[] := '{}';
+    v_borrowed_at   timestamptz;
+    v_due_date      timestamptz;
+    v_note          text;
+BEGIN
+    IF NOT public.is_admin() THEN
+        RAISE EXCEPTION '관리자 권한이 필요합니다.';
+    END IF;
+
+    SELECT * INTO v_req FROM public.rental_requests WHERE id = p_request_id;
+    IF v_req.id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '요청을 찾을 수 없습니다.');
+    END IF;
+    IF v_req.status NOT IN ('pending', 'needs_review') THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 처리된 요청입니다.');
+    END IF;
+    IF p_pickup_at IS NULL OR p_duration_days IS NULL OR p_duration_days <= 0 THEN
+        RETURN jsonb_build_object('success', false, 'message', '수령일/기간이 올바르지 않습니다.');
+    END IF;
+    IF p_game_ids IS NULL OR array_length(p_game_ids, 1) IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '게임을 한 개 이상 지정하세요.');
+    END IF;
+
+    v_borrowed_at := p_pickup_at - interval '24 hours';
+    v_due_date    := p_pickup_at + (p_duration_days || ' days')::interval;
+    v_note        := 'HOLD request:' || v_req.id::text;
+
+    FOR v_gid IN SELECT unnest(p_game_ids) LOOP
+        INSERT INTO public.rentals (
+            game_id, user_id, game_name, renter_name, type,
+            borrowed_at, due_date, source, note
+        )
+        SELECT v_gid, NULL, g.name, v_req.requester_name, 'HOLD',
+               v_borrowed_at, v_due_date, 'form', v_note
+        FROM public.games g WHERE g.id = v_gid
+        RETURNING rental_id INTO v_hold_id;
+
+        v_hold_ids := array_append(v_hold_ids, v_hold_id);
+
+        IF v_borrowed_at <= now() + interval '7 days' AND v_due_date > now() THEN
+            UPDATE public.games
+            SET available_count = GREATEST(0, COALESCE(available_count, 0) - 1)
+            WHERE id = v_gid;
+        END IF;
+    END LOOP;
+
+    UPDATE public.rental_requests
+    SET status = 'manual_confirmed',
+        matched_game_ids = p_game_ids,
+        pickup_at = p_pickup_at,
+        duration_days = p_duration_days,
+        hold_rental_ids = v_hold_ids,
+        reviewed_by = auth.uid(),
+        reviewed_at = now()
+    WHERE id = p_request_id;
+
+    INSERT INTO public.logs (game_id, user_id, action_type, details)
+    VALUES (
+        NULL, auth.uid(), 'RENTAL_REQUEST_CONFIRM',
+        jsonb_build_object('request_id', p_request_id, 'hold_count', array_length(v_hold_ids, 1))
+    );
+
+    RETURN jsonb_build_object('success', true, 'hold_rental_ids', v_hold_ids);
 END;
 $function$
 
@@ -279,7 +695,13 @@ BEGIN
     FROM public.rentals
     WHERE game_id = p_game_id
       AND returned_at IS NULL
-      AND (type = 'RENT' OR (type = 'DIBS' AND due_date > now()));
+      AND (
+          type = 'RENT'
+          OR (type = 'DIBS' AND due_date > now())
+          OR (type = 'HOLD'
+              AND borrowed_at <= now() + interval '7 days'
+              AND due_date > now())
+      );
 
     IF v_quantity - v_active_count <= 0 THEN
         UPDATE public.games SET available_count = 0 WHERE id = p_game_id;
@@ -311,6 +733,678 @@ AS $function$
 BEGIN
     INSERT INTO public.point_transactions (user_id, amount, type, reason) VALUES (p_user_id, p_amount, p_type, p_reason);
     UPDATE public.profiles SET current_points = COALESCE(current_points, 0) + p_amount WHERE id = p_user_id;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_admin_register
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_admin_register(p_event_id uuid, p_user_id uuid, p_membership_tier text DEFAULT NULL::text, p_team_id uuid DEFAULT NULL::uuid, p_mark_paid boolean DEFAULT false, p_actual_depositor_name text DEFAULT NULL::text, p_note text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_event public.events%ROWTYPE;
+  v_profile public.profiles%ROWTYPE;
+  v_tier text;
+  v_fee int;
+  v_reg_id uuid;
+  v_depositor text;
+  v_status text;
+  v_received timestamptz;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'forbidden'; END IF;
+
+  SELECT * INTO v_event FROM public.events WHERE id = p_event_id;
+  IF NOT FOUND OR v_event.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'event_not_found'; END IF;
+
+  SELECT * INTO v_profile FROM public.profiles WHERE id = p_user_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'profile_not_found'; END IF;
+
+  IF EXISTS (SELECT 1 FROM public.event_registrations
+             WHERE event_id = p_event_id AND user_id = p_user_id
+               AND status NOT IN ('cancelled_unpaid','cancelled_self','cancelled_admin','refunded'))
+  THEN
+    RAISE EXCEPTION 'duplicate_registration';
+  END IF;
+
+  IF p_team_id IS NOT NULL THEN
+    IF NOT EXISTS (SELECT 1 FROM public.event_teams WHERE id = p_team_id AND event_id = p_event_id) THEN
+      RAISE EXCEPTION 'team_not_in_event';
+    END IF;
+  END IF;
+
+  v_tier := COALESCE(p_membership_tier, public.resolve_membership_tier(p_user_id));
+  IF v_tier NOT IN ('paid_member','member','non_member','walk_in','invited') THEN
+    RAISE EXCEPTION 'invalid_membership_tier';
+  END IF;
+
+  -- [PATCH] walk_in은 행사 설정에서 허용된 경우에만
+  IF v_tier = 'walk_in' AND NOT v_event.allow_walk_in THEN
+    RAISE EXCEPTION 'walk_in_not_allowed';
+  END IF;
+
+  v_fee := public._event_calc_fee(v_event.pricing, v_tier);
+  v_depositor := public._event_make_depositor_name(v_event.slug, v_profile.name);
+
+  IF p_mark_paid THEN
+    v_status := 'paid';
+    v_received := now();
+  ELSE
+    v_status := 'pending';
+    v_received := NULL;
+  END IF;
+
+  INSERT INTO public.event_registrations (
+    event_id, team_id, user_id,
+    applicant_name, applicant_student_id, applicant_phone,
+    membership_tier, fee_amount, status,
+    payment_deadline_at, payment_received_at,
+    expected_depositor_name, actual_depositor_name,
+    privacy_consent_at
+  ) VALUES (
+    p_event_id, p_team_id, p_user_id,
+    v_profile.name, v_profile.student_id, v_profile.phone,
+    v_tier, v_fee, v_status,
+    CASE WHEN p_mark_paid THEN NULL ELSE now() + (v_event.payment_deadline_hours || ' hours')::interval END,
+    v_received,
+    v_depositor, p_actual_depositor_name,
+    now()
+  ) RETURNING id INTO v_reg_id;
+
+  INSERT INTO public.event_payment_logs (registration_id, action, amount, note, performed_by)
+  VALUES (
+    v_reg_id,
+    CASE WHEN p_mark_paid THEN 'mark_paid' ELSE 'register_admin' END,
+    v_fee, p_note, auth.uid()
+  );
+
+  RETURN v_reg_id;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_cancel_admin
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_cancel_admin(p_registration_id uuid, p_reason text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_reg public.event_registrations%ROWTYPE;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'forbidden'; END IF;
+  SELECT * INTO v_reg FROM public.event_registrations WHERE id = p_registration_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'registration_not_found'; END IF;
+
+  UPDATE public.event_registrations
+    SET status = 'cancelled_admin',
+        cancelled_at = now(),
+        cancel_reason = p_reason
+    WHERE id = p_registration_id;
+
+  INSERT INTO public.event_payment_logs (registration_id, action, amount, note, performed_by)
+  VALUES (p_registration_id, 'cancel', v_reg.fee_amount, p_reason, auth.uid());
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_cancel_my_registration
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_cancel_my_registration(p_registration_id uuid, p_reason text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_reg public.event_registrations%ROWTYPE;
+  v_event public.events%ROWTYPE;
+BEGIN
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'auth_required'; END IF;
+
+  SELECT * INTO v_reg FROM public.event_registrations
+    WHERE id = p_registration_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'registration_not_found'; END IF;
+  IF v_reg.user_id != v_user_id THEN RAISE EXCEPTION 'not_owner'; END IF;
+  IF v_reg.status NOT IN ('pending','paid','waitlisted') THEN
+    RAISE EXCEPTION 'cannot_cancel_in_status';
+  END IF;
+
+  SELECT * INTO v_event FROM public.events WHERE id = v_reg.event_id;
+  IF v_event.event_start_at <= now() THEN
+    RAISE EXCEPTION 'event_already_started';
+  END IF;
+
+  UPDATE public.event_registrations
+    SET status = 'cancelled_self',
+        cancelled_at = now(),
+        cancel_reason = p_reason
+    WHERE id = p_registration_id;
+
+  -- 팀장이 취소하면 팀 status를 cancelled로 변경 (팀원도 모두 취소될지는 운영판단)
+  IF v_reg.team_id IS NOT NULL THEN
+    IF EXISTS (SELECT 1 FROM public.event_teams WHERE id = v_reg.team_id AND leader_user_id = v_user_id) THEN
+      UPDATE public.event_teams SET status = 'cancelled' WHERE id = v_reg.team_id;
+    END IF;
+  END IF;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_check_in
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_check_in(p_registration_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'forbidden'; END IF;
+  UPDATE public.event_registrations
+    SET checked_in_at = now()
+    WHERE id = p_registration_id
+      AND status = 'paid';
+  IF NOT FOUND THEN RAISE EXCEPTION 'cannot_check_in'; END IF;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_create_team
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_create_team(p_event_id uuid, p_team_name text, p_size_target integer, p_extra_answers jsonb DEFAULT '{}'::jsonb, p_photo_consent boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_event public.events%ROWTYPE;
+  v_profile public.profiles%ROWTYPE;
+  v_tier text;
+  v_fee int;
+  v_full bool;
+  v_invite_code text;
+  v_team_id uuid;
+  v_reg_id uuid;
+  v_depositor text;
+  v_status text;
+  v_deadline timestamptz;
+BEGIN
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'auth_required'; END IF;
+  IF length(COALESCE(p_extra_answers::text,'')) > 4096 THEN
+    RAISE EXCEPTION 'extra_answers_too_large';
+  END IF;
+  IF p_team_name IS NULL OR btrim(p_team_name) = '' THEN RAISE EXCEPTION 'team_name_required'; END IF;
+  IF length(p_team_name) > 50 THEN RAISE EXCEPTION 'team_name_too_long'; END IF;
+  IF p_size_target IS NULL OR p_size_target < 1 THEN RAISE EXCEPTION 'team_size_invalid'; END IF;
+
+  SELECT * INTO v_event FROM public.events WHERE id = p_event_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'event_not_found'; END IF;
+  IF v_event.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'event_deleted'; END IF;
+  IF v_event.status != 'recruiting' THEN RAISE EXCEPTION 'event_not_recruiting'; END IF;
+  IF now() < v_event.recruit_start_at OR now() > v_event.recruit_end_at THEN
+    RAISE EXCEPTION 'event_recruit_window_closed';
+  END IF;
+  IF v_event.participation_mode = 'individual' THEN
+    RAISE EXCEPTION 'event_individual_only';
+  END IF;
+  IF v_event.team_size_min IS NOT NULL AND p_size_target < v_event.team_size_min THEN
+    RAISE EXCEPTION 'team_size_below_min';
+  END IF;
+  IF v_event.team_size_max IS NOT NULL AND p_size_target > v_event.team_size_max THEN
+    RAISE EXCEPTION 'team_size_above_max';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.event_registrations
+             WHERE event_id = p_event_id AND user_id = v_user_id
+               AND status NOT IN ('cancelled_unpaid','cancelled_self','cancelled_admin','refunded'))
+  THEN
+    RAISE EXCEPTION 'duplicate_registration';
+  END IF;
+
+  SELECT * INTO v_profile FROM public.profiles WHERE id = v_user_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'profile_not_found'; END IF;
+
+  v_tier := public.resolve_membership_tier(v_user_id);
+  v_fee := public._event_calc_fee(v_event.pricing, v_tier);
+
+  v_full := public._event_is_full(p_event_id);
+  IF v_full THEN
+    IF v_event.waitlist_enabled THEN
+      v_status := 'waitlisted';
+      v_deadline := NULL;
+    ELSE
+      RAISE EXCEPTION 'event_full';
+    END IF;
+  ELSE
+    v_status := 'pending';
+    v_deadline := now() + (v_event.payment_deadline_hours || ' hours')::interval;
+  END IF;
+
+  v_invite_code := public._event_generate_invite_code();
+
+  INSERT INTO public.event_teams (event_id, team_name, invite_code, leader_user_id, size_target)
+  VALUES (p_event_id, btrim(p_team_name), v_invite_code, v_user_id, p_size_target)
+  RETURNING id INTO v_team_id;
+
+  v_depositor := public._event_make_depositor_name(v_event.slug, v_profile.name);
+
+  INSERT INTO public.event_registrations (
+    event_id, team_id, user_id,
+    applicant_name, applicant_student_id, applicant_phone,
+    membership_tier, fee_amount, status,
+    payment_deadline_at, expected_depositor_name,
+    extra_answers, privacy_consent_at, photo_consent
+  ) VALUES (
+    p_event_id, v_team_id, v_user_id,
+    v_profile.name, v_profile.student_id, v_profile.phone,
+    v_tier, v_fee, v_status,
+    v_deadline, v_depositor,
+    COALESCE(p_extra_answers, '{}'::jsonb),
+    CASE WHEN v_event.require_privacy_consent THEN now() ELSE NULL END,
+    p_photo_consent
+  ) RETURNING id INTO v_reg_id;
+
+  RETURN jsonb_build_object(
+    'team_id', v_team_id,
+    'invite_code', v_invite_code,
+    'registration_id', v_reg_id
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_expire_unpaid
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_expire_unpaid(p_event_id uuid DEFAULT NULL::uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_count int := 0;
+  v_reg record;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'forbidden'; END IF;
+
+  FOR v_reg IN
+    SELECT id, fee_amount FROM public.event_registrations
+    WHERE status = 'pending'
+      AND payment_deadline_at IS NOT NULL
+      AND payment_deadline_at < now()
+      AND (p_event_id IS NULL OR event_id = p_event_id)
+    FOR UPDATE
+  LOOP
+    UPDATE public.event_registrations
+      SET status = 'cancelled_unpaid',
+          cancelled_at = now(),
+          cancel_reason = 'payment_deadline_exceeded'
+      WHERE id = v_reg.id;
+
+    INSERT INTO public.event_payment_logs (registration_id, action, amount, note, performed_by)
+    VALUES (v_reg.id, 'expire_unpaid', v_reg.fee_amount, 'auto-expired', auth.uid());
+
+    v_count := v_count + 1;
+  END LOOP;
+
+  RETURN v_count;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_invite_user
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_invite_user(p_event_id uuid, p_user_id uuid, p_note text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_event public.events%ROWTYPE;
+  v_profile public.profiles%ROWTYPE;
+  v_reg_id uuid;
+  v_depositor text;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'forbidden'; END IF;
+
+  SELECT * INTO v_event FROM public.events WHERE id = p_event_id;
+  IF NOT FOUND OR v_event.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'event_not_found'; END IF;
+
+  SELECT * INTO v_profile FROM public.profiles WHERE id = p_user_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'profile_not_found'; END IF;
+
+  IF EXISTS (SELECT 1 FROM public.event_registrations
+             WHERE event_id = p_event_id AND user_id = p_user_id
+               AND status NOT IN ('cancelled_unpaid','cancelled_self','cancelled_admin','refunded'))
+  THEN
+    RAISE EXCEPTION 'duplicate_registration';
+  END IF;
+
+  v_depositor := public._event_make_depositor_name(v_event.slug, v_profile.name);
+
+  INSERT INTO public.event_registrations (
+    event_id, team_id, user_id,
+    applicant_name, applicant_student_id, applicant_phone,
+    membership_tier, fee_amount, is_invited, status,
+    expected_depositor_name,
+    privacy_consent_at
+  ) VALUES (
+    p_event_id, NULL, p_user_id,
+    v_profile.name, v_profile.student_id, v_profile.phone,
+    'invited', 0, true, 'paid',
+    v_depositor,
+    now()
+  ) RETURNING id INTO v_reg_id;
+
+  INSERT INTO public.event_payment_logs (registration_id, action, amount, note, performed_by)
+  VALUES (v_reg_id, 'invite', 0, p_note, auth.uid());
+
+  RETURN v_reg_id;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_join_team
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_join_team(p_invite_code text, p_extra_answers jsonb DEFAULT '{}'::jsonb, p_photo_consent boolean DEFAULT false)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_team public.event_teams%ROWTYPE;
+  v_event public.events%ROWTYPE;
+  v_profile public.profiles%ROWTYPE;
+  v_tier text;
+  v_fee int;
+  v_member_count int;
+  v_reg_id uuid;
+  v_depositor text;
+  v_status text;
+  v_deadline timestamptz;
+  v_full bool;
+BEGIN
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'auth_required'; END IF;
+  IF length(COALESCE(p_extra_answers::text,'')) > 4096 THEN
+    RAISE EXCEPTION 'extra_answers_too_large';
+  END IF;
+
+  SELECT * INTO v_team FROM public.event_teams
+    WHERE invite_code = upper(btrim(p_invite_code)) FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'team_not_found'; END IF;
+  IF v_team.status != 'forming' THEN RAISE EXCEPTION 'team_closed'; END IF;
+
+  -- [PATCH] events도 FOR UPDATE 잠금
+  SELECT * INTO v_event FROM public.events WHERE id = v_team.event_id FOR UPDATE;
+  IF v_event.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'event_deleted'; END IF;
+  IF v_event.status != 'recruiting' THEN RAISE EXCEPTION 'event_not_recruiting'; END IF;
+  IF now() > v_event.recruit_end_at THEN RAISE EXCEPTION 'event_recruit_window_closed'; END IF;
+
+  IF EXISTS (SELECT 1 FROM public.event_registrations
+             WHERE event_id = v_team.event_id AND user_id = v_user_id
+               AND status NOT IN ('cancelled_unpaid','cancelled_self','cancelled_admin','refunded'))
+  THEN
+    RAISE EXCEPTION 'duplicate_registration';
+  END IF;
+
+  SELECT count(*) INTO v_member_count FROM public.event_registrations
+    WHERE team_id = v_team.id
+      AND status NOT IN ('cancelled_unpaid','cancelled_self','cancelled_admin','refunded');
+  IF v_member_count >= v_team.size_target THEN RAISE EXCEPTION 'team_full'; END IF;
+
+  SELECT * INTO v_profile FROM public.profiles WHERE id = v_user_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'profile_not_found'; END IF;
+
+  v_tier := public.resolve_membership_tier(v_user_id);
+  v_fee := public._event_calc_fee(v_event.pricing, v_tier);
+  v_depositor := public._event_make_depositor_name(v_event.slug, v_profile.name);
+
+  -- [PATCH] 행사 전체 정원 체크 (capacity_unit=person 기준에서 의미; team이면 팀 단위라 신규 인원 추가는 영향 없음)
+  IF v_event.capacity_unit = 'person' THEN
+    v_full := public._event_is_full(v_team.event_id);
+    IF v_full THEN
+      IF v_event.waitlist_enabled THEN
+        v_status := 'waitlisted';
+        v_deadline := NULL;
+      ELSE
+        RAISE EXCEPTION 'event_full';
+      END IF;
+    ELSE
+      v_status := 'pending';
+      v_deadline := now() + (v_event.payment_deadline_hours || ' hours')::interval;
+    END IF;
+  ELSE
+    -- 팀 단위 정원이면 팀 자체는 이미 등록 시점에 정원 체크됨 → 신규 팀원은 항상 pending
+    v_status := 'pending';
+    v_deadline := now() + (v_event.payment_deadline_hours || ' hours')::interval;
+  END IF;
+
+  INSERT INTO public.event_registrations (
+    event_id, team_id, user_id,
+    applicant_name, applicant_student_id, applicant_phone,
+    membership_tier, fee_amount, status,
+    payment_deadline_at, expected_depositor_name,
+    extra_answers, privacy_consent_at, photo_consent
+  ) VALUES (
+    v_team.event_id, v_team.id, v_user_id,
+    v_profile.name, v_profile.student_id, v_profile.phone,
+    v_tier, v_fee, v_status,
+    v_deadline, v_depositor,
+    COALESCE(p_extra_answers, '{}'::jsonb),
+    CASE WHEN v_event.require_privacy_consent THEN now() ELSE NULL END,
+    p_photo_consent
+  ) RETURNING id INTO v_reg_id;
+
+  IF v_member_count + 1 >= v_team.size_target THEN
+    UPDATE public.event_teams SET status = 'complete' WHERE id = v_team.id;
+  END IF;
+
+  RETURN v_reg_id;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_mark_paid
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_mark_paid(p_registration_id uuid, p_actual_depositor_name text DEFAULT NULL::text, p_note text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_reg public.event_registrations%ROWTYPE;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'forbidden'; END IF;
+  SELECT * INTO v_reg FROM public.event_registrations WHERE id = p_registration_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'registration_not_found'; END IF;
+  IF v_reg.status NOT IN ('pending','paid') THEN
+    RAISE EXCEPTION 'cannot_mark_paid_in_status';
+  END IF;
+
+  UPDATE public.event_registrations
+    SET status = 'paid',
+        payment_received_at = now(),
+        actual_depositor_name = COALESCE(p_actual_depositor_name, actual_depositor_name)
+    WHERE id = p_registration_id;
+
+  INSERT INTO public.event_payment_logs (registration_id, action, amount, note, performed_by)
+  VALUES (p_registration_id, 'mark_paid', v_reg.fee_amount, p_note, auth.uid());
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_promote_waitlist
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_promote_waitlist(p_registration_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_reg public.event_registrations%ROWTYPE;
+  v_event public.events%ROWTYPE;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'forbidden'; END IF;
+  SELECT * INTO v_reg FROM public.event_registrations WHERE id = p_registration_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'registration_not_found'; END IF;
+  IF v_reg.status != 'waitlisted' THEN RAISE EXCEPTION 'not_waitlisted'; END IF;
+
+  SELECT * INTO v_event FROM public.events WHERE id = v_reg.event_id;
+
+  UPDATE public.event_registrations
+    SET status = 'pending',
+        payment_deadline_at = now() + (v_event.payment_deadline_hours || ' hours')::interval
+    WHERE id = p_registration_id;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_refund
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_refund(p_registration_id uuid, p_note text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_reg public.event_registrations%ROWTYPE;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'forbidden'; END IF;
+  SELECT * INTO v_reg FROM public.event_registrations WHERE id = p_registration_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'registration_not_found'; END IF;
+  IF v_reg.status != 'paid' THEN RAISE EXCEPTION 'not_paid_status'; END IF;
+
+  UPDATE public.event_registrations
+    SET status = 'refunded',
+        cancelled_at = now(),
+        cancel_reason = p_note
+    WHERE id = p_registration_id;
+
+  INSERT INTO public.event_payment_logs (registration_id, action, amount, note, performed_by)
+  VALUES (p_registration_id, 'refund', v_reg.fee_amount, p_note, auth.uid());
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_register_individual
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_register_individual(p_event_id uuid, p_extra_answers jsonb DEFAULT '{}'::jsonb, p_photo_consent boolean DEFAULT false)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_event public.events%ROWTYPE;
+  v_profile public.profiles%ROWTYPE;
+  v_tier text;
+  v_fee int;
+  v_full bool;
+  v_status text;
+  v_deadline timestamptz;
+  v_reg_id uuid;
+  v_depositor text;
+BEGIN
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'auth_required'; END IF;
+  IF length(COALESCE(p_extra_answers::text,'')) > 4096 THEN
+    RAISE EXCEPTION 'extra_answers_too_large';
+  END IF;
+
+  SELECT * INTO v_event FROM public.events WHERE id = p_event_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'event_not_found'; END IF;
+  IF v_event.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'event_deleted'; END IF;
+  IF v_event.status != 'recruiting' THEN RAISE EXCEPTION 'event_not_recruiting'; END IF;
+  IF now() < v_event.recruit_start_at OR now() > v_event.recruit_end_at THEN
+    RAISE EXCEPTION 'event_recruit_window_closed';
+  END IF;
+  IF v_event.participation_mode = 'team' THEN
+    RAISE EXCEPTION 'event_team_only';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.event_registrations
+             WHERE event_id = p_event_id AND user_id = v_user_id
+               AND status NOT IN ('cancelled_unpaid','cancelled_self','cancelled_admin','refunded'))
+  THEN
+    RAISE EXCEPTION 'duplicate_registration';
+  END IF;
+
+  SELECT * INTO v_profile FROM public.profiles WHERE id = v_user_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'profile_not_found'; END IF;
+
+  v_tier := public.resolve_membership_tier(v_user_id);
+  v_fee := public._event_calc_fee(v_event.pricing, v_tier);
+
+  v_full := public._event_is_full(p_event_id);
+  IF v_full THEN
+    IF v_event.waitlist_enabled THEN
+      v_status := 'waitlisted';
+      v_deadline := NULL;
+    ELSE
+      RAISE EXCEPTION 'event_full';
+    END IF;
+  ELSE
+    v_status := 'pending';
+    v_deadline := now() + (v_event.payment_deadline_hours || ' hours')::interval;
+  END IF;
+
+  v_depositor := public._event_make_depositor_name(v_event.slug, v_profile.name);
+
+  INSERT INTO public.event_registrations (
+    event_id, team_id, user_id,
+    applicant_name, applicant_student_id, applicant_phone,
+    membership_tier, fee_amount, status,
+    payment_deadline_at, expected_depositor_name,
+    extra_answers, privacy_consent_at, photo_consent
+  ) VALUES (
+    p_event_id, NULL, v_user_id,
+    v_profile.name, v_profile.student_id, v_profile.phone,
+    v_tier, v_fee, v_status,
+    v_deadline, v_depositor,
+    COALESCE(p_extra_answers, '{}'::jsonb),
+    CASE WHEN v_event.require_privacy_consent THEN now() ELSE NULL END,
+    p_photo_consent
+  ) RETURNING id INTO v_reg_id;
+
+  RETURN v_reg_id;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_unmark_paid
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_unmark_paid(p_registration_id uuid, p_note text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_reg public.event_registrations%ROWTYPE;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'forbidden'; END IF;
+  SELECT * INTO v_reg FROM public.event_registrations WHERE id = p_registration_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'registration_not_found'; END IF;
+  IF v_reg.status != 'paid' THEN RAISE EXCEPTION 'not_paid_status'; END IF;
+
+  UPDATE public.event_registrations
+    SET status = 'pending',
+        payment_received_at = NULL
+    WHERE id = p_registration_id;
+
+  INSERT INTO public.event_payment_logs (registration_id, action, amount, note, performed_by)
+  VALUES (p_registration_id, 'unmark_paid', v_reg.fee_amount, p_note, auth.uid());
 END;
 $function$
 
@@ -407,6 +1501,47 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'message', '정리 중 오류 발생', 'error', SQLERRM);
 END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: get_games_with_rentals
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_games_with_rentals()
+ RETURNS SETOF jsonb
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  SELECT to_jsonb(g.*) || jsonb_build_object(
+    'rentals', COALESCE(
+      (
+        SELECT jsonb_agg(
+          jsonb_build_object(
+            'rental_id', r.rental_id,
+            'game_id', r.game_id,
+            'user_id', r.user_id,
+            'renter_name', r.renter_name,
+            'type', r.type,
+            'returned_at', r.returned_at,
+            'due_date', r.due_date,
+            'borrowed_at', r.borrowed_at,
+            'profiles', CASE
+              WHEN p.id IS NOT NULL THEN jsonb_build_object('name', p.name)
+              ELSE NULL
+            END
+          )
+          ORDER BY r.borrowed_at
+        )
+        FROM public.rentals r
+        LEFT JOIN public.profiles p ON p.id = r.user_id
+        WHERE r.game_id = g.id
+          AND r.returned_at IS NULL
+      ),
+      '[]'::jsonb
+    )
+  )
+  FROM public.games g
+  ORDER BY g.name;
 $function$
 
 -- ----------------------------------------------------------------
@@ -665,6 +1800,228 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: ingest_rental_request
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.ingest_rental_request(p_payload jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_expected_secret text;
+    v_secret          text;
+
+    v_submitted_at    timestamptz;
+    v_requester_name  text;
+    v_requester_phone text;
+    v_games_raw       text;
+    v_game_count_raw  text;
+    v_duration_raw    text;
+    v_pickup_raw      text;
+
+    v_is_free         boolean;
+    v_matched_ids     int[];
+    v_pickup_at       timestamptz;
+    v_duration_days   int;
+    v_fee             int;
+    v_game_count      int;
+
+    v_request_id      uuid;
+    v_auto_ok         boolean;
+
+    v_gid             int;
+    v_hold_ids        uuid[] := '{}';
+    v_hold_id         uuid;
+    v_note            text;
+    v_borrowed_at     timestamptz;
+    v_due_date        timestamptz;
+    v_quantity        int;
+    v_conflict_count  int;
+    v_any_conflict    boolean := false;
+    v_status          text;
+    v_dup_id          uuid;
+BEGIN
+    -- 1) 시크릿 검증
+    SELECT value INTO v_expected_secret
+    FROM public.private_config
+    WHERE key = 'gas_shared_secret';
+
+    v_secret := p_payload->>'_secret';
+
+    IF v_expected_secret IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '서버 시크릿 미설정');
+    END IF;
+    IF v_secret IS NULL OR v_secret <> v_expected_secret THEN
+        RETURN jsonb_build_object('success', false, 'message', '인증 실패');
+    END IF;
+
+    -- 2) 필드 추출
+    v_submitted_at := COALESCE(
+        (p_payload->>'submitted_at')::timestamptz,
+        now()
+    );
+    v_requester_name  := btrim(COALESCE(p_payload->>'requester_name', ''));
+    v_requester_phone := btrim(COALESCE(p_payload->>'requester_phone', ''));
+    v_games_raw       := btrim(COALESCE(p_payload->>'requested_games_raw', ''));
+    v_game_count_raw  := COALESCE(p_payload->>'game_count_raw', '');
+    v_duration_raw    := COALESCE(p_payload->>'rental_duration_raw', '');
+    v_pickup_raw      := COALESCE(p_payload->>'pickup_raw', '');
+
+    IF v_requester_name = '' OR v_requester_phone = '' OR v_games_raw = '' THEN
+        RETURN jsonb_build_object('success', false, 'message', '필수 필드 누락');
+    END IF;
+
+    -- 3) dedupe: 같은 제출시각+전화+게임원문 3중 일치 → 기존 id 반환
+    SELECT id INTO v_dup_id
+    FROM public.rental_requests
+    WHERE submitted_at = v_submitted_at
+      AND requester_phone = v_requester_phone
+      AND requested_games_raw = v_games_raw
+    LIMIT 1;
+
+    IF v_dup_id IS NOT NULL THEN
+        RETURN jsonb_build_object(
+            'success', true,
+            'duplicate', true,
+            'request_id', v_dup_id
+        );
+    END IF;
+
+    -- 4) 파싱
+    v_is_free := (
+        COALESCE(btrim(p_payload->>'org_name'), '') <> ''
+        AND COALESCE(btrim(p_payload->>'event_overview'), '') <> ''
+        AND COALESCE(btrim(p_payload->>'event_schedule'), '') <> ''
+        AND COALESCE(btrim(p_payload->>'audience_notes'), '') <> ''
+    );
+    v_matched_ids   := public._fuzzy_match_games(v_games_raw);
+    v_pickup_at     := public._parse_pickup(v_pickup_raw);
+    v_duration_days := public._parse_duration(v_duration_raw);
+    v_fee           := public._parse_fee(v_game_count_raw);
+    v_game_count    := public._parse_game_count(v_game_count_raw);
+
+    -- 요청된 토큰 수 (comma-split 기준, 공백 토큰 제외)
+    IF v_game_count IS NULL THEN
+        SELECT COUNT(*) INTO v_game_count
+        FROM unnest(string_to_array(v_games_raw, ',')) t
+        WHERE btrim(t) <> '';
+    END IF;
+
+    -- 5) rental_requests INSERT
+    INSERT INTO public.rental_requests (
+        submitted_at, requester_name, requester_phone,
+        org_type, org_name, event_overview, event_schedule, audience_notes,
+        requested_games_raw, game_count, rental_fee, rental_duration_raw, pickup_raw,
+        is_free, matched_game_ids, pickup_at, duration_days,
+        status, raw_payload
+    ) VALUES (
+        v_submitted_at, v_requester_name, v_requester_phone,
+        p_payload->>'org_type', p_payload->>'org_name',
+        p_payload->>'event_overview', p_payload->>'event_schedule', p_payload->>'audience_notes',
+        v_games_raw, v_game_count, v_fee, v_duration_raw, v_pickup_raw,
+        v_is_free, COALESCE(v_matched_ids, '{}'), v_pickup_at, v_duration_days,
+        'pending', p_payload
+    ) RETURNING id INTO v_request_id;
+
+    -- 6) 자동 확정 판정
+    v_auto_ok := (
+        v_matched_ids IS NOT NULL
+        AND array_length(v_matched_ids, 1) = v_game_count
+        AND v_game_count > 0
+        AND v_pickup_at IS NOT NULL
+        AND v_duration_days IS NOT NULL
+        AND v_pickup_at > now()
+    );
+
+    IF v_auto_ok THEN
+        v_borrowed_at := v_pickup_at - interval '24 hours';
+        v_due_date    := v_pickup_at + (v_duration_days || ' days')::interval;
+        v_note        := 'HOLD request:' || v_request_id::text;
+
+        -- 게임별 HOLD 생성 + 재고 충돌 검사
+        FOR v_gid IN SELECT unnest(v_matched_ids) LOOP
+            SELECT quantity INTO v_quantity
+            FROM public.games WHERE id = v_gid FOR UPDATE;
+
+            -- 해당 기간 겹치는 active 대여/HOLD 수
+            SELECT COUNT(*) INTO v_conflict_count
+            FROM public.rentals
+            WHERE game_id = v_gid
+              AND returned_at IS NULL
+              AND (
+                  type = 'RENT'
+                  OR (type = 'DIBS' AND due_date > now())
+                  OR (type = 'HOLD' AND due_date > now())
+              )
+              AND tstzrange(borrowed_at, due_date, '[)')
+                  && tstzrange(v_borrowed_at, v_due_date, '[)');
+
+            IF v_conflict_count >= v_quantity THEN
+                v_any_conflict := true;
+            END IF;
+
+            INSERT INTO public.rentals (
+                game_id, user_id, game_name, renter_name, type,
+                borrowed_at, due_date, source, note
+            )
+            SELECT v_gid, NULL, g.name, v_requester_name, 'HOLD',
+                   v_borrowed_at, v_due_date, 'form', v_note
+            FROM public.games g WHERE g.id = v_gid
+            RETURNING rental_id INTO v_hold_id;
+
+            v_hold_ids := array_append(v_hold_ids, v_hold_id);
+
+            -- 7일 lookahead 창이면 재고 차감
+            IF v_borrowed_at <= now() + interval '7 days' AND v_due_date > now() THEN
+                UPDATE public.games
+                SET available_count = GREATEST(0, COALESCE(available_count, 0) - 1)
+                WHERE id = v_gid;
+            END IF;
+        END LOOP;
+
+        IF v_any_conflict THEN
+            v_status := 'needs_review';
+            -- 충돌 발생 시에도 HOLD는 이미 INSERT됨 — 관리자 검토로 회귀
+            UPDATE public.rental_requests
+            SET status = v_status,
+                hold_rental_ids = v_hold_ids,
+                review_note = '재고 충돌 감지 — 관리자 확인 필요'
+            WHERE id = v_request_id;
+        ELSE
+            v_status := 'auto_confirmed';
+            UPDATE public.rental_requests
+            SET status = v_status, hold_rental_ids = v_hold_ids
+            WHERE id = v_request_id;
+        END IF;
+    ELSE
+        v_status := 'needs_review';
+        UPDATE public.rental_requests
+        SET status = v_status
+        WHERE id = v_request_id;
+    END IF;
+
+    -- 로그
+    INSERT INTO public.logs (game_id, user_id, action_type, details)
+    VALUES (
+        NULL, NULL, 'RENTAL_REQUEST_INGEST',
+        jsonb_build_object(
+            'request_id', v_request_id,
+            'status', v_status,
+            'matched', COALESCE(array_length(v_matched_ids, 1), 0),
+            'requested_count', v_game_count
+        )
+    );
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'request_id', v_request_id,
+        'status', v_status
+    );
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: is_admin
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -679,6 +2036,36 @@ BEGIN
       AND role_key IN ('admin', 'executive')
   );
 END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: is_event_team_leader
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.is_event_team_leader(p_team_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (
+    SELECT 1 FROM event_teams
+    WHERE id = p_team_id AND leader_user_id = auth.uid()
+  );
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: is_event_team_member
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.is_event_team_member(p_team_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (
+    SELECT 1 FROM event_registrations
+    WHERE team_id = p_team_id AND user_id = auth.uid()
+  );
 $function$
 
 -- ----------------------------------------------------------------
@@ -766,7 +2153,13 @@ BEGIN
     FROM public.rentals
     WHERE game_id = p_game_id
       AND returned_at IS NULL
-      AND (type = 'RENT' OR (type = 'DIBS' AND due_date > now()));
+      AND (
+          type = 'RENT'
+          OR (type = 'DIBS' AND due_date > now())
+          OR (type = 'HOLD'
+              AND borrowed_at <= now() + interval '7 days'
+              AND due_date > now())
+      );
 
     IF v_quantity - v_active_count <= 0 THEN
         UPDATE public.games SET available_count = 0 WHERE id = p_game_id;
@@ -837,7 +2230,13 @@ BEGIN
     FROM   public.rentals
     WHERE  game_id     = v_game_id
       AND  returned_at IS NULL
-      AND  (type = 'RENT' OR (type = 'DIBS' AND due_date > now()));
+      AND  (
+          type = 'RENT'
+          OR (type = 'DIBS' AND due_date > now())
+          OR (type = 'HOLD'
+              AND borrowed_at <= now() + interval '7 days'
+              AND due_date > now())
+      );
     UPDATE public.games SET available_count = v_quantity - v_active_count WHERE id = v_game_id;
 
     IF p_user_id IS NOT NULL THEN
@@ -877,6 +2276,84 @@ BEGIN
         v_points := CASE WHEN v_is_winner THEN 200 ELSE 50 END;
         PERFORM public.earn_points(v_player_id, v_points, 'MATCH_REWARD', COALESCE(v_game_name, '보드게임') || (CASE WHEN v_is_winner THEN ' 승리' ELSE ' 참여' END));
     END LOOP;
+    RETURN jsonb_build_object('success', true);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: reject_rental_request
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.reject_rental_request(p_request_id uuid, p_reason text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_req        public.rental_requests%ROWTYPE;
+    v_hold_id    uuid;
+    v_game_id    int;
+BEGIN
+    IF NOT public.is_admin() THEN
+        RAISE EXCEPTION '관리자 권한이 필요합니다.';
+    END IF;
+
+    SELECT * INTO v_req FROM public.rental_requests WHERE id = p_request_id;
+    IF v_req.id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '요청을 찾을 수 없습니다.');
+    END IF;
+    IF v_req.status IN ('rejected', 'cancelled') THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 처리된 요청입니다.');
+    END IF;
+
+    -- 연결된 HOLD가 있으면 반납 마킹 + 재고 복원
+    IF v_req.hold_rental_ids IS NOT NULL AND array_length(v_req.hold_rental_ids, 1) > 0 THEN
+        FOR v_hold_id IN SELECT unnest(v_req.hold_rental_ids) LOOP
+            SELECT game_id INTO v_game_id
+            FROM public.rentals
+            WHERE rental_id = v_hold_id AND returned_at IS NULL;
+
+            IF v_game_id IS NOT NULL THEN
+                UPDATE public.rentals
+                SET returned_at = now()
+                WHERE rental_id = v_hold_id;
+
+                -- available_count 재계산
+                UPDATE public.games g
+                SET available_count = GREATEST(
+                    0,
+                    g.quantity - COALESCE((
+                        SELECT COUNT(*)
+                        FROM public.rentals r
+                        WHERE r.game_id = g.id
+                          AND r.returned_at IS NULL
+                          AND (
+                              r.type = 'RENT'
+                              OR (r.type = 'DIBS' AND r.due_date > now())
+                              OR (r.type = 'HOLD'
+                                  AND r.borrowed_at <= now() + interval '7 days'
+                                  AND r.due_date > now())
+                          )
+                    ), 0)
+                )
+                WHERE g.id = v_game_id;
+            END IF;
+        END LOOP;
+    END IF;
+
+    UPDATE public.rental_requests
+    SET status = 'rejected',
+        review_note = p_reason,
+        reviewed_by = auth.uid(),
+        reviewed_at = now()
+    WHERE id = p_request_id;
+
+    INSERT INTO public.logs (game_id, user_id, action_type, details)
+    VALUES (
+        NULL, auth.uid(), 'RENTAL_REQUEST_REJECT',
+        jsonb_build_object('request_id', p_request_id, 'reason', p_reason)
+    );
+
     RETURN jsonb_build_object('success', true);
 END;
 $function$
@@ -980,7 +2457,7 @@ BEGIN
     );
     RETURN jsonb_build_object('success', true, 'message', '비밀번호가 성공적으로 변경되었습니다.');
 EXCEPTION WHEN OTHERS THEN
-    RETURN jsonb_build_object('success', false, 'message', '��류 발생: ' || SQLERRM);
+    RETURN jsonb_build_object('success', false, 'message', '오류 발생: ' || SQLERRM);
 END;
 $function$
 
@@ -1063,6 +2540,25 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: resolve_membership_tier
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.resolve_membership_tier(p_user_id uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_is_paid bool;
+BEGIN
+  IF p_user_id IS NULL THEN RETURN 'non_member'; END IF;
+  SELECT is_paid INTO v_is_paid FROM public.profiles WHERE id = p_user_id;
+  IF NOT FOUND THEN RETURN 'non_member'; END IF;
+  IF v_is_paid THEN RETURN 'paid_member'; END IF;
+  RETURN 'member';
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: return_game
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.return_game(p_game_id integer, p_user_id uuid)
@@ -1120,6 +2616,25 @@ BEGIN
     INSERT INTO public.logs (game_id, user_id, action_type, details) VALUES (p_game_id, auth.uid(), p_action_type, p_details);
     RETURN jsonb_build_object('success', true);
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: set_private_config
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.set_private_config(p_key text, p_value text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF NOT public.is_admin() THEN
+        RAISE EXCEPTION '관리자 권한이 필요합니다.';
+    END IF;
+    INSERT INTO public.private_config (key, value, updated_at)
+    VALUES (p_key, p_value, now())
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
 END;
 $function$
 
