@@ -102,10 +102,10 @@ function GameDetail() {
   useEffect(() => {
     const checkDibsStatus = async () => {
       if (user && game) {
-        // [SECURITY] userId 파라미터 제거, server의 auth.uid() 사용
-        const result = await fetchMyRentals();
-        if (result.status === "success" && result.data) {
-          const myRental = result.data.find(r => String(r.gameId) === String(game.id) && !r.returnedAt);
+        try {
+          // [SECURITY] userId 파라미터 제거, server의 auth.uid() 사용
+          const rentals = await fetchMyRentals();
+          const myRental = rentals.find(r => String(r.gameId) === String(game.id) && !r.returnedAt);
           if (myRental) {
             setGame(prev => ({
               ...prev,
@@ -113,6 +113,8 @@ function GameDetail() {
               renterId: user.id
             }));
           }
+        } catch (e) {
+          console.error("내 대여 상태 확인 실패:", e);
         }
       }
     };
@@ -283,8 +285,7 @@ function GameDetail() {
     if (isUpdating) return;
     setIsUpdating(true);
     try {
-      const result = await updateReview(reviewId, editForm);
-      if (result.status === "error") throw new Error(result.message);
+      await updateReview(reviewId, editForm);
       showToast(TEXTS.ALERT_REVIEW_UPDATE_SUCCESS);
       handleCancelEdit();
       const reviewsData = await fetchReviews(id);
@@ -301,13 +302,13 @@ function GameDetail() {
       "리뷰 삭제",
       "정말로 이 리뷰를 삭제하시겠습니까?",
       async () => {
-        const result = await deleteReview(reviewId);
-        if (result.status === "error") {
-          showToast("삭제 실패: " + result.message, { type: "error" });
-        } else {
+        try {
+          await deleteReview(reviewId);
           showToast(TEXTS.ALERT_REVIEW_DELETE_SUCCESS);
           const reviewsData = await fetchReviews(id);
           setReviews(reviewsData || []);
+        } catch (e) {
+          showToast("삭제 실패: " + e.message, { type: "error" });
         }
       },
       "danger"

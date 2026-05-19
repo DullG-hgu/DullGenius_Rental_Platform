@@ -68,27 +68,22 @@ const MyPage = () => {
       setLoading(true);
       try {
         // [SECURITY] userId 파라미터 제거, server의 auth.uid() 사용
-        const [rentalsResult, points, history, historyResult] = await Promise.all([
+        // Promise.allSettled — 한쪽 실패가 나머지 데이터 로드를 막지 않도록
+        const [rentalsRes, pointsRes, historyRes, rentalHistoryRes] = await Promise.allSettled([
           fetchMyRentals(),
           fetchUserPoints(),
           fetchPointHistory(),
           fetchMyRentalHistory()
         ]);
 
-        if (rentalsResult.status === "success") {
-          setRentals(rentalsResult.data);
-        } else {
-          console.error("❌ [MyPage] Rental fetch error:", rentalsResult.message);
-        }
+        if (rentalsRes.status === "fulfilled") setRentals(rentalsRes.value);
+        else console.error("❌ [MyPage] Rental fetch error:", rentalsRes.reason);
 
-        setCurrentPoints(points);
-        setPointHistory(history || []);
+        if (pointsRes.status === "fulfilled") setCurrentPoints(pointsRes.value);
+        if (historyRes.status === "fulfilled") setPointHistory(historyRes.value || []);
 
-        if (historyResult.status === "success") {
-          setRentalHistory(historyResult.data);
-        } else {
-          console.error("❌ [MyPage] Rental history fetch error:", historyResult.message);
-        }
+        if (rentalHistoryRes.status === "fulfilled") setRentalHistory(rentalHistoryRes.value);
+        else console.error("❌ [MyPage] Rental history fetch error:", rentalHistoryRes.reason);
 
       } catch (e) {
         console.error("❌ [MyPage] Fetch failed:", e);

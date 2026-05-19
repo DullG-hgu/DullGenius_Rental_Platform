@@ -276,17 +276,12 @@ function DashboardTab({ games, loading, onReload }) {
       confirmMsg,
       async () => {
         try {
-          // matchedUser가 있으면 id 사용, 없으면 null
-          const res = await adminUpdateGame(game.id, "대여중", renterNameInput, matchedUser?.id);
-          if (res && res.status === "success") {
-            showToast(TEXTS.ADMIN_RENT_SUCCESS, { type: "success" });
-            onReload();
-          } else {
-            showToast("오류 발생: " + (res.message || "응답 없음"), { type: "error" });
-          }
+          await adminUpdateGame(game.id, "대여중", renterNameInput, matchedUser?.id);
+          showToast(TEXTS.ADMIN_RENT_SUCCESS, { type: "success" });
+          onReload();
         } catch (e) {
           console.error(e);
-          showToast("처리 실패 (콘솔 확인): " + e, { type: "error" });
+          showToast("처리 실패: " + (e.message || String(e)), { type: "error" });
         }
       },
       "warning"
@@ -308,25 +303,29 @@ function DashboardTab({ games, loading, onReload }) {
       "수령 확인",
       confirmMsg,
       async () => {
-        const res = await approveDibsByRenter(renterNameInput, matchedUser?.id);
+        try {
+          const res = await approveDibsByRenter(renterNameInput, matchedUser?.id);
 
-        if (res.count > 0) {
-          showToast(`${res.message}`, { type: "success" });
+          if (res.count > 0) {
+            showToast(`${res.message}`, { type: "success" });
 
-          if (res.failed > 0 && res.failedGames && res.failedGames.length > 0) {
-            const failedList = res.failedGames.map(f => `${f.gameName} (${f.error})`).join(', ');
-            showToast(`⚠️ 실패 목록: ${failedList}`, { type: "warning", duration: 8000 });
+            if (res.failed > 0 && res.failedGames && res.failedGames.length > 0) {
+              const failedList = res.failedGames.map(f => `${f.gameName} (${f.error})`).join(', ');
+              showToast(`⚠️ 실패 목록: ${failedList}`, { type: "warning", duration: 8000 });
+            }
+
+            localStorage.removeItem('games_cache');
+            await onReload();
+          } else if (res.total === 0) {
+            showToast("⚠️ 처리할 찜이 없습니다. (이미 수령되었거나 만료됨)", { type: "warning" });
+            onReload();
+          } else {
+            showToast(`❌ 처리 실패: ${res.failedGames?.[0]?.error || '알 수 없는 오류'}`, { type: "error" });
+            onReload();
           }
-
-          // [FIX] 캐시 무효화 + 강제 새로고침
-          localStorage.removeItem('games_cache');
-          await onReload();
-        } else if (res.total === 0) {
-          showToast("⚠️ 처리할 찜이 없습니다. (이미 수령되었거나 만료됨)", { type: "warning" });
-          onReload();
-        } else {
-          showToast(`❌ 처리 실패: ${res.failedGames?.[0]?.error || '알 수 없는 오류'}`, { type: "error" });
-          onReload();
+        } catch (e) {
+          console.error('[DashboardTab] 수령 처리 실패:', e);
+          showToast(`❌ 수령 처리 실패: ${e.message || String(e)}`, { type: "error" });
         }
       },
       "info"
@@ -369,13 +368,17 @@ function DashboardTab({ games, loading, onReload }) {
         "반납 확인",
         `[${game.name}] ${renterName}님의 대여 건을 반납 처리하시겠습니까?`,
         async () => {
-          // [FIX] userId도 함께 전달하여 매칭 신뢰성 향상
-          const res = await returnGamesByRenter(null, userId, null, rentalId);
-          if (res.status === "success" && res.count > 0) {
-            showToast("반납되었습니다.", { type: "success" });
-            onReload();
-          } else {
-            showToast(`❌ 반납 처리 실패: ${res.message || '매칭되는 대여 기록이 없거나 DB 오류'}`, { type: "error" });
+          try {
+            const res = await returnGamesByRenter(null, userId, null, rentalId);
+            if (res.count > 0) {
+              showToast("반납되었습니다.", { type: "success" });
+              onReload();
+            } else {
+              showToast(`❌ 반납 처리 실패: 매칭되는 대여 기록이 없습니다.`, { type: "error" });
+            }
+          } catch (e) {
+            console.error('[DashboardTab] 반납 처리 실패:', e);
+            showToast(`❌ 반납 처리 실패: ${e.message || String(e)}`, { type: "error" });
           }
         }
       );
@@ -413,13 +416,17 @@ function DashboardTab({ games, loading, onReload }) {
         "반납 확인",
         `[${game.name}] ${displayName}님의 대여 건을 반납 처리하시겠습니까?`,
         async () => {
-          // [FIX] userId 전달로 키오스크/웹 대여 모두 정확히 매칭
-          const res = await returnGamesByRenter(null, userId, null, finalRentalId);
-          if (res.status === "success" && res.count > 0) {
-            showToast("반납되었습니다.", { type: "success" });
-            onReload();
-          } else {
-            showToast(`❌ 반납 실패`, { type: "error" });
+          try {
+            const res = await returnGamesByRenter(null, userId, null, finalRentalId);
+            if (res.count > 0) {
+              showToast("반납되었습니다.", { type: "success" });
+              onReload();
+            } else {
+              showToast(`❌ 반납 실패`, { type: "error" });
+            }
+          } catch (e) {
+            console.error('[DashboardTab] 반납 처리 실패:', e);
+            showToast(`❌ 반납 처리 실패: ${e.message || String(e)}`, { type: "error" });
           }
         }
       );
@@ -429,14 +436,18 @@ function DashboardTab({ games, loading, onReload }) {
         "일괄 반납 확인",
         `💡 [${firstRenter}] 님이 빌려간 게임이 총 ${totalUserRentals}개입니다.\n(다른 게임 포함)\n\n모두 한꺼번에 '반납' 처리하시겠습니까?`,
         async () => {
-          // [FIX] userId 전달로 renter_name 불일치 문제 해결 (키오스크=null, 웹='회원')
-          const res = await returnGamesByRenter(firstRenter, userId);
-          if (res.count > 0) {
-            showToast(`${res.count}건이 일괄 반납되었습니다.`, { type: "success" });
-          } else {
-            showToast("❌ 반납 처리 실패: 대여 기록을 찾을 수 없습니다.", { type: "error" });
+          try {
+            const res = await returnGamesByRenter(firstRenter, userId);
+            if (res.count > 0) {
+              showToast(`${res.count}건이 일괄 반납되었습니다.`, { type: "success" });
+            } else {
+              showToast("❌ 반납 처리 실패: 대여 기록을 찾을 수 없습니다.", { type: "error" });
+            }
+            onReload();
+          } catch (e) {
+            console.error('[DashboardTab] 일괄 반납 실패:', e);
+            showToast(`❌ 일괄 반납 실패: ${e.message || String(e)}`, { type: "error" });
           }
-          onReload();
         },
         "warning"
       );
@@ -455,12 +466,17 @@ function DashboardTab({ games, loading, onReload }) {
       if (daysStr === null) return;
       const days = parseInt(daysStr) || 7;
 
-      const res = await extendRentalsByRenter(null, userId, null, rentalId, days);
-      if (res.status === "success" && res.count > 0) {
-        showToast(`${days}일 연장 처리 완료! (${res.count}건)`, { type: "success" });
-        onReload();
-      } else {
-        showToast(`❌ 연장 처리 실패: ${res.message || '매칭되는 대여 기록 없음'}`, { type: "error" });
+      try {
+        const res = await extendRentalsByRenter(null, userId, null, rentalId, days);
+        if (res.count > 0) {
+          showToast(`${days}일 연장 처리 완료! (${res.count}건)`, { type: "success" });
+          onReload();
+        } else {
+          showToast(`❌ 연장 처리 실패: ${res.message || '매칭되는 대여 기록 없음'}`, { type: "error" });
+        }
+      } catch (e) {
+        console.error('[DashboardTab] 연장 처리 실패:', e);
+        showToast(`❌ 연장 처리 실패: ${e.message || String(e)}`, { type: "error" });
       }
       return;
     }
@@ -489,24 +505,34 @@ function DashboardTab({ games, loading, onReload }) {
       if (daysStr === null) return;
 
       const days = parseInt(daysStr) || 7;
-      const res = await extendRentalsByRenter(null, userId, null, finalRentalId, days);
-      if (res.status === "success" && res.count > 0) {
-        showToast(`${days}일 연장 완료!`, { type: "success" });
-        onReload();
-      } else {
-        showToast(`❌ 연장 실패: ${res.message}`, { type: "error" });
+      try {
+        const res = await extendRentalsByRenter(null, userId, null, finalRentalId, days);
+        if (res.count > 0) {
+          showToast(`${days}일 연장 완료!`, { type: "success" });
+          onReload();
+        } else {
+          showToast(`❌ 연장 실패: ${res.message}`, { type: "error" });
+        }
+      } catch (e) {
+        console.error('[DashboardTab] 연장 실패:', e);
+        showToast(`❌ 연장 실패: ${e.message || String(e)}`, { type: "error" });
       }
     } else {
       const daysStr = prompt(`💡 [${displayName}] 님이 빌려간 게임이 총 ${totalUserRentals}개입니다.\n모든 기록의 기한을 일괄 연장하시겠습니까?\n\n며칠 연장할까요? (기본 7일)`, "7");
       if (daysStr === null) return;
 
       const days = parseInt(daysStr) || 7;
-      const res = await extendRentalsByRenter(firstRenter, userId, null, null, days);
-      if (res.status === "success" && res.count > 0) {
-        showToast(`총 ${res.count}건이 ${days}일 일괄 연장되었습니다!`, { type: "success" });
-        onReload();
-      } else {
-        showToast(`❌ 일괄 연장 실패: ${res.message}`, { type: "error" });
+      try {
+        const res = await extendRentalsByRenter(firstRenter, userId, null, null, days);
+        if (res.count > 0) {
+          showToast(`총 ${res.count}건이 ${days}일 일괄 연장되었습니다!`, { type: "success" });
+          onReload();
+        } else {
+          showToast(`❌ 일괄 연장 실패: ${res.message}`, { type: "error" });
+        }
+      } catch (e) {
+        console.error('[DashboardTab] 일괄 연장 실패:', e);
+        showToast(`❌ 일괄 연장 실패: ${e.message || String(e)}`, { type: "error" });
       }
     }
   };
@@ -524,12 +550,10 @@ function DashboardTab({ games, loading, onReload }) {
         `[${game.name}] ${renterName}님의 수령을 확인하시겠습니까?`,
         async () => {
           try {
-            const res = await adminUpdateGame(game.id, "대여중", renterName, userId, rentalId);
-            if (res.status === "success") {
-              showToast("수령 처리되었습니다.", { type: "success" });
-              localStorage.removeItem('games_cache');
-              onReload();
-            }
+            await adminUpdateGame(game.id, "대여중", renterName, userId, rentalId);
+            showToast("수령 처리되었습니다.", { type: "success" });
+            localStorage.removeItem('games_cache');
+            onReload();
           } catch (e) {
             console.error('[DashboardTab] 수령 처리 실패:', e);
             showToast(`❌ 수령 처리 실패: ${e.message || '매칭되는 찜 기록이 없거나 DB 오류'}`, { type: "error" });
@@ -577,11 +601,14 @@ function DashboardTab({ games, loading, onReload }) {
         "수령 확인",
         `[${game.name}] 현장 수령 확인하시겠습니까?`,
         async () => {
-          const res = await adminUpdateGame(game.id, "대여중", renterNameInput, userId, finalRentalId);
-          if (res.status === "success") {
+          try {
+            await adminUpdateGame(game.id, "대여중", renterNameInput, userId, finalRentalId);
             showToast("수령 완료", { type: "success" });
             localStorage.removeItem('games_cache');
             onReload();
+          } catch (e) {
+            console.error('[DashboardTab] 수령 실패:', e);
+            showToast(`❌ 수령 실패: ${e.message || String(e)}`, { type: "error" });
           }
         },
         "info"
@@ -592,13 +619,18 @@ function DashboardTab({ games, loading, onReload }) {
         "일괄 수령 확인",
         `💡 [${renterNameInput}] 님이 예약한 게임이 총 ${totalUserDibs}개입니다.\n\n모두 한꺼번에 '대여중'으로 처리하시겠습니까?\n(취소 누르면 이 게임 하나만 처리합니다)`,
         async () => {
-          const res = await approveDibsByRenter(renterNameInput, userId);
-          if (res.count > 0) {
-            showToast(`${res.count}건 일괄 수령 완료!`, { type: "success" });
-            localStorage.removeItem('games_cache');
-            onReload();
-          } else {
-            showToast(`❌ 처리 실패`, { type: "error" });
+          try {
+            const res = await approveDibsByRenter(renterNameInput, userId);
+            if (res.count > 0) {
+              showToast(`${res.count}건 일괄 수령 완료!`, { type: "success" });
+              localStorage.removeItem('games_cache');
+              onReload();
+            } else {
+              showToast(`❌ 처리 실패`, { type: "error" });
+            }
+          } catch (e) {
+            console.error('[DashboardTab] 일괄 수령 실패:', e);
+            showToast(`❌ 일괄 수령 실패: ${e.message || String(e)}`, { type: "error" });
           }
         },
         "info"
@@ -643,16 +675,11 @@ function DashboardTab({ games, loading, onReload }) {
     setIsLogModalOpen(true);
 
     try {
-      const res = await fetchGameLogs(game.id);
-
-      if (res.status === "success") {
-        setGameLogs(res.logs);
-      } else {
-        showToast("로그를 불러오지 못했습니다.", { type: "error" });
-      }
+      const logs = await fetchGameLogs(game.id);
+      setGameLogs(logs);
     } catch (e) {
       console.error('[DashboardTab] 개별 게임 로그 로딩 실패:', e);
-      showToast("로그 로딩 에러", { type: "error" });
+      showToast("로그를 불러오지 못했습니다.", { type: "error" });
     }
   };
 
@@ -675,16 +702,11 @@ function DashboardTab({ games, loading, onReload }) {
     setIsLogModalOpen(true);
 
     try {
-      const res = await fetchAllLogs();
-
-      if (res.status === "success") {
-        setGameLogs(res.logs);
-      } else {
-        showToast("전체 로그를 불러오지 못했습니다.", { type: "error" });
-      }
+      const logs = await fetchAllLogs();
+      setGameLogs(logs);
     } catch (e) {
       console.error('[DashboardTab] 전체 로그 로딩 실패:', e);
-      showToast("전체 로그 로딩 에러", { type: "error" });
+      showToast("전체 로그를 불러오지 못했습니다.", { type: "error" });
     }
   };
 

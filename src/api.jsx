@@ -213,8 +213,7 @@ export const deleteReview = async (reviewId) => {
     .delete()
     .eq('review_id', reviewId);
 
-  if (error) return { status: "error", message: error.message };
-  return { status: "success" };
+  if (error) throw error;
 };
 
 /**
@@ -233,8 +232,7 @@ export const updateReview = async (reviewId, updatedData) => {
     })
     .eq('review_id', reviewId);
 
-  if (error) return { status: "error", message: error.message };
-  return { status: "success" };
+  if (error) throw error;
 };
 
 /**
@@ -695,8 +693,6 @@ export const saveConfig = async (newConfig) => {
 
   // [SWR] 관리자가 설정 변경 후 다음 홈 진입 시 즉시 반영되도록 캐시 무효화
   try { localStorage.removeItem('config_cache'); } catch (e) { /* ignore */ }
-
-  return { status: "success" };
 };
 
 /**
@@ -814,40 +810,29 @@ export const editGame = async (gameData) => {
 export const adminUpdateGame = async (gameId, newStatus, renterName, userId, rentalId) => {
   const statusKey = koreanToStatus(newStatus) || 'AVAILABLE';
 
-  try {
-    if (statusKey === 'RENTED') {
-      // 관리자 대여
-      const { data, error } = await supabase.rpc('admin_rent_game', {
-        p_game_id: gameId,
-        p_renter_name: renterName || (userId ? "회원" : "관리자"),
-        p_user_id: userId || null,
-        p_rental_id: rentalId
-      });
-      if (error) throw error;
-      if (!data.success) throw new Error(data.message);
-      return { status: "success" };
+  if (statusKey === 'RENTED') {
+    const { data, error } = await supabase.rpc('admin_rent_game', {
+      p_game_id: gameId,
+      p_renter_name: renterName || (userId ? "회원" : "관리자"),
+      p_user_id: userId || null,
+      p_rental_id: rentalId
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.message);
 
-    } else if (statusKey === 'AVAILABLE') {
-      // 관리자 반납
-      const { data, error } = await supabase.rpc('admin_return_game', {
-        p_game_id: gameId,
-        p_renter_name: renterName,
-        p_user_id: userId,
-        p_rental_id: rentalId
-      });
-      if (error) throw error;
-      if (!data.success) throw new Error(data.message);
+  } else if (statusKey === 'AVAILABLE') {
+    const { data, error } = await supabase.rpc('admin_return_game', {
+      p_game_id: gameId,
+      p_renter_name: renterName,
+      p_user_id: userId,
+      p_rental_id: rentalId
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.message);
 
-      return { status: "success" };
-    } else {
-      // 그 외 상태(분실, 수리중 등)는 available_count 조정
-      // 예: 분실 시 quantity 감소
-      await sendLog(gameId, 'STATUS_CHANGE', { status: newStatus });
-      return { status: "success" };
-    }
-  } catch (e) {
-    console.error("adminUpdateGame 실패:", e);
-    throw e;
+  } else {
+    // 그 외 상태(분실, 수리중 등) — 로그만 남김
+    await sendLog(gameId, 'STATUS_CHANGE', { status: newStatus });
   }
 };
 
@@ -865,60 +850,46 @@ export const adminUpdateGame = async (gameId, newStatus, renterName, userId, ren
  * @returns {Promise<Object>} 처리 결과 { status, count }
  */
 export const returnGamesByRenter = async (renterName, targetUserId, targetGameId, targetRentalId) => {
-  // targetGameId나 targetRentalId가 있으면 해당 건만, 없으면 해당 대여자의 모든 대여 건 반납
-  let activeRentals = [];
-
-  // 1. 회원 ID 또는 게임 ID로 조회 범위 설정
+  // 1. 활성 RENT 목록 조회
   const { data, error } = await supabase
     .from('rentals')
     .select('rental_id, game_id, user_id, renter_name')
     .is('returned_at', null)
     .eq('type', 'RENT');
 
-  if (error) {
-    console.error("대여 목록 조회 실패:", error);
-    return { status: "error", message: error.message };
-  }
+  if (error) throw error;
 
-  // 필터링: 특정 게임 + 특정 유저(또는 이름) 매칭
-  activeRentals = data.filter(r => {
+  // 2. 필터링: 특정 게임 + 특정 유저(또는 이름) 매칭
+  const activeRentals = data.filter(r => {
     const isRentalMatch = targetRentalId ? r.rental_id === targetRentalId : true;
     const isGameMatch = targetGameId ? r.game_id === targetGameId : true;
     const isUserMatch = targetUserId ? r.user_id === targetUserId : (renterName ? r.renter_name === renterName : true);
     return isRentalMatch && isGameMatch && isUserMatch;
   });
 
-  // 4. 반납 처리 (RPC 사용)
+  // 3. 반납 처리 (개별 실패는 swallow하고 count로 반영)
   let successCount = 0;
-  if (activeRentals.length > 0) {
-    for (const rental of activeRentals) {
-      try {
-        const gameId = rental.game_id;
-        const userId = rental.user_id;
-        const renter = rental.renter_name;
-        const rentalId = rental.rental_id;
+  for (const rental of activeRentals) {
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('admin_return_game', {
+        p_game_id: rental.game_id,
+        p_renter_name: rental.renter_name,
+        p_user_id: rental.user_id,
+        p_rental_id: rental.rental_id
+      });
 
-        // [RPC] 관리자 반납 (v2 함수는 game_id, renter_name, user_id 기반)
-        const { data: rpcData, error: rpcError } = await supabase.rpc('admin_return_game', {
-          p_game_id: gameId,
-          p_renter_name: renter,
-          p_user_id: userId,
-          p_rental_id: rentalId
-        });
-
-        if (rpcError) {
-          console.error(`[Error] Return RPC Failed(GameID: ${gameId})`, rpcError);
-        } else if (!rpcData.success) {
-          console.error(`[Fail] Return result false: ${rpcData.message}`);
-        } else {
-          successCount++;
-        }
-      } catch (e) {
-        console.error("반납 중 에러:", e);
+      if (rpcError) {
+        console.error(`[Error] Return RPC Failed(GameID: ${rental.game_id})`, rpcError);
+      } else if (!rpcData.success) {
+        console.error(`[Fail] Return result false: ${rpcData.message}`);
+      } else {
+        successCount++;
       }
+    } catch (e) {
+      console.error("반납 중 에러:", e);
     }
   }
-  return { status: "success", count: successCount };
+  return { count: successCount };
 };
 
 /**
@@ -940,11 +911,11 @@ export const extendRentalsByRenter = async (renterName, targetUserId, targetGame
     p_rental_id: targetRentalId || null,
     p_days: parseInt(days) || 7
   });
-  if (error) {
-    console.error("연장 중 에러:", error);
-    return { status: "error", message: error.message };
-  }
-  return { status: "success", count: data.success ? (data.message.match(/\d+/)?.[0] || 1) : 0, message: data.message };
+  if (error) throw error;
+  return {
+    count: data.success ? (parseInt(data.message.match(/\d+/)?.[0]) || 1) : 0,
+    message: data.message
+  };
 };
 
 /**
@@ -1001,7 +972,6 @@ export const approveDibsByRenter = async (renterName, userId) => {
   // 조기 반환: 처리할 찜이 없음
   if (uniqueRentals.length === 0) {
     return {
-      status: "success",
       count: 0,
       total: 0,
       failed: 0,
@@ -1067,7 +1037,6 @@ export const approveDibsByRenter = async (renterName, userId) => {
   });
 
   return {
-    status: "success",
     count: successCount,
     total: uniqueRentals.length,
     failed: failCount,
@@ -1134,19 +1103,16 @@ export const fetchGameLogs = async (gameId) => {
     .select('*, profiles(name, phone)')
     .eq('game_id', gameId)
     .order('created_at', { ascending: false });
-  if (error) return { status: "error" };
+  if (error) throw error;
 
-  // 로그 매핑 (type -> 한글 등)은 프론트에서 처리 중.
-  // 날짜 컬럼: created_at -> date (DashboardTab expects .date)
-  const formatted = data.map(log => ({
+  return data.map(log => ({
     ...log,
     date: log.created_at,
     type: log.action_type,
-    value: log.details, // details에 "→ [이름]" 형식이 있거나 단순 텍스트
+    value: log.details,
     userName: log.profiles?.name || null,
     userPhone: log.profiles?.phone || null
   }));
-  return { status: "success", logs: formatted };
 };
 
 export const fetchAllLogs = async () => {
@@ -1154,31 +1120,26 @@ export const fetchAllLogs = async () => {
     .from('logs')
     .select('*, games(name), profiles(name, phone)')
     .order('created_at', { ascending: false });
-  if (error) return { status: "error" };
+  if (error) throw error;
 
-  const formatted = data.map(log => ({
+  return data.map(log => ({
     ...log,
     date: log.created_at,
     type: log.action_type,
     value: log.details,
-    gameName: log.games?.name || "알 수 없음", // 조인된 게임 이름 추가
+    gameName: log.games?.name || "알 수 없음",
     userName: log.profiles?.name || null,
     userPhone: log.profiles?.phone || null
   }));
-  return { status: "success", logs: formatted };
 };
 
 // [MyPage]
+// 현재 로그인 사용자의 활성 대여(찜·대여 중) 목록 반환. 에러 시 throw.
 export const fetchMyRentals = async () => {
   // [SECURITY] 클라이언트가 임의의 userId를 넘기지 못하도록 auth.uid() 사용
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    console.error("사용자 인증 실패:", authError);
-    return { status: "error", message: "인증 오류" };
-  }
+  if (authError || !user) throw authError || new Error("인증 오류");
 
-  // rentals -> game_copies -> games (name)
-  // Supabase join syntax:
   const { data, error } = await supabase
     .from('rentals')
     .select(`
@@ -1193,51 +1154,33 @@ export const fetchMyRentals = async () => {
     .eq('user_id', user.id)
     .order('borrowed_at', { ascending: false });
 
-  if (error) {
-    console.error("내 대여 목록 로딩 실패:", error);
-    return { status: "error", message: error.message };
-  }
+  if (error) throw error;
 
   // 데이터 가공 (Flatten)
-  const formatted = data.map(r => ({
+  return data.map(r => ({
     rentalId: r.rental_id,
     borrowedAt: r.borrowed_at,
     dueDate: r.due_date,
     returnedAt: r.returned_at,
     type: r.type || 'RENT',
-
-    // [FIX] games 테이블 직접 참조
     gameId: r.game_id,
     gameName: r.games?.name || "알 수 없는 게임",
     gameImage: r.games?.image,
     videoUrl: r.games?.video_url,
     manualUrl: r.games?.manual_url,
-
     status: r.returned_at ? "반납완료" : (r.type === "DIBS" ? "찜(예약)" : "대여중")
-  }))
-    .filter(r => {
-      // 1. 이미 반납된 것은 제외 (여긴 원래 같음)
-      if (r.returnedAt) return false;
-
-      // [FIX] 2. 찜(DIBS)인데 만료된 것은 숨김
-      if (r.type === 'DIBS' && r.dueDate) {
-        const due = new Date(r.dueDate);
-        const now = new Date();
-        if (now > due) return false; // 만료됨 -> 안보여줌
-      }
-
-      return true; // 그 외에는 표시
-    });
-
-  return { status: "success", data: formatted };
+  })).filter(r => {
+    if (r.returnedAt) return false;
+    // 찜(DIBS) 만료분은 숨김
+    if (r.type === 'DIBS' && r.dueDate && new Date() > new Date(r.dueDate)) return false;
+    return true;
+  });
 };
 
+// 현재 로그인 사용자의 반납 완료 대여 이력 반환. 에러 시 throw.
 export const fetchMyRentalHistory = async () => {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    console.error("사용자 인증 실패:", authError);
-    return { status: "error", message: "인증 오류" };
-  }
+  if (authError || !user) throw authError || new Error("인증 오류");
 
   const { data, error } = await supabase
     .from('rentals')
@@ -1254,12 +1197,9 @@ export const fetchMyRentalHistory = async () => {
     .order('returned_at', { ascending: false })
     .limit(30);
 
-  if (error) {
-    console.error("대여 이력 로딩 실패:", error);
-    return { status: "error", message: error.message };
-  }
+  if (error) throw error;
 
-  const formatted = data.map(r => ({
+  return data.map(r => ({
     rentalId: r.rental_id,
     gameId: r.game_id,
     gameName: r.games?.name || "알 수 없는 게임",
@@ -1268,8 +1208,6 @@ export const fetchMyRentalHistory = async () => {
     returnedAt: r.returned_at,
     type: r.type || 'RENT',
   }));
-
-  return { status: "success", data: formatted };
 };
 
 
