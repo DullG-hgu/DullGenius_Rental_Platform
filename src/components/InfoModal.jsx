@@ -1,6 +1,7 @@
 // src/components/InfoModal.jsx
 import { useEffect, useId, useRef, useState } from 'react';
-import { CLUB_INFO, CONTACTS, LINKS, DEVELOPERS, TERMS_OF_SERVICE, USAGE_GUIDE } from '../infoData';
+import { useNavigate } from 'react-router-dom';
+import { CLUB_INFO, CONTACTS, LINKS, DEVELOPERS, TERMS_OF_SERVICE } from '../infoData';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext'; // [NEW] Auth Context
 import { useToast } from '../contexts/ToastContext'; // [NEW] Toast 알림
@@ -32,6 +33,13 @@ const formatText = (text) => {
 function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
     const { user } = useAuth(); // [NEW] 로그인 정보
     const { showToast } = useToast(); // [NEW] Toast 알림
+    const navigate = useNavigate();
+
+    // 가이드 내 내부 링크: 모달 닫고 라우팅
+    const goAndClose = (path) => {
+        onClose();
+        navigate(path);
+    };
     const [activeTab, setActiveTab] = useState(initialTab);
     const titleId = useId();
     const activeTabBtnRef = useRef(null);
@@ -177,9 +185,91 @@ function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
             case 'guide':
                 return (
                     <div style={styles.tabContent}>
-                        <div style={styles.termsBox}>
-                            {formatText(USAGE_GUIDE)}
-                        </div>
+                        {user ? (
+                            <>
+                                <h3 style={styles.guideTitle}>📖 보드게임 대여 방법</h3>
+                                <p style={styles.guideIntro}>
+                                    부원이라면 언제든 대여할 수 있어요. 아래 4단계만 기억해 주세요.
+                                </p>
+                                <ol style={styles.guideSteps}>
+                                    <li>
+                                        <strong>게임 검색</strong>
+                                        <span style={styles.guideStepDesc}>
+                                            카테고리 또는 검색으로 빌리고 싶은 게임을 찾아요.
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <strong>찜하기</strong>
+                                        <span style={styles.guideStepDesc}>
+                                            게임 상세 페이지에서 ❤️ 버튼을 눌러 찜 목록에 담아요.
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <strong>동아리에서 수령</strong>
+                                        <span style={styles.guideStepDesc}>
+                                            오피스아워에 동아리방({CLUB_INFO.location})에서 받아가세요.
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <strong>다음날 자정까지 반납</strong>
+                                        <span style={styles.guideStepDesc}>
+                                            동아리 태블릿으로 반납 처리. 파손/분실이 있다면 즉시 신고해 주세요.
+                                        </span>
+                                    </li>
+                                </ol>
+                                <button
+                                    onClick={() => setActiveTab('report')}
+                                    style={styles.guideSecondaryBtn}
+                                >
+                                    🚨 파손/분실 신고하기
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <h3 style={styles.guideTitle}>👋 처음 오셨나요?</h3>
+                                <p style={styles.guideIntro}>
+                                    덜지니어스 보드게임 대여는 <strong>한동대 동아리 부원</strong>이라면 언제든 이용할 수 있어요.
+                                </p>
+
+                                <div style={styles.guideBranch}>
+                                    <h4 style={styles.guideBranchTitle}>✅ 이미 부원이신가요?</h4>
+                                    <p style={styles.guideBranchDesc}>
+                                        사이트에 가입하고 로그인하시면 바로 게임을 빌릴 수 있어요.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => goAndClose('/signup')}
+                                        style={styles.guidePrimaryBtn}
+                                    >
+                                        ✨ 사이트 회원가입 →
+                                    </button>
+                                </div>
+
+                                <div style={styles.guideBranch}>
+                                    <h4 style={styles.guideBranchTitle}>🙋 아직 부원이 아니라면</h4>
+                                    <p style={styles.guideBranchDesc}>
+                                        동아리에 가입하시거나, 외부 단체·행사용이라면 단기 대여를 활용해 주세요.
+                                    </p>
+                                    <div style={styles.guideCtaGroup}>
+                                        <a
+                                            href={LINKS.recruit}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={styles.guideSecondaryBtn}
+                                        >
+                                            동아리 입부 신청 →
+                                        </a>
+                                        <button
+                                            type="button"
+                                            onClick={() => goAndClose('/org-rental')}
+                                            style={styles.guideSecondaryBtn}
+                                        >
+                                            단기 대여 안내 →
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                         <div style={styles.termsNotice}>
                             <span>본 서비스를 이용하면 </span>
                             <button
@@ -589,6 +679,80 @@ const styles = {
         cursor: 'pointer',
         fontSize: '0.85rem',
         textDecoration: 'underline',
+    },
+    guideTitle: {
+        margin: '0 0 12px',
+        fontSize: '1.15rem',
+    },
+    guideIntro: {
+        margin: '0 0 14px',
+        color: '#555',
+        fontSize: '0.95rem',
+    },
+    guideSteps: {
+        margin: '0 0 16px',
+        paddingLeft: '22px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        color: '#333',
+    },
+    guideStepDesc: {
+        display: 'block',
+        marginTop: '2px',
+        fontSize: '0.85rem',
+        color: '#666',
+        lineHeight: 1.45,
+    },
+    guideCtaGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        marginTop: '8px',
+    },
+    guidePrimaryBtn: {
+        display: 'inline-block',
+        textAlign: 'center',
+        padding: '12px 14px',
+        background: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        fontSize: '1rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        textDecoration: 'none',
+    },
+    guideSecondaryBtn: {
+        display: 'inline-block',
+        textAlign: 'center',
+        padding: '11px 14px',
+        background: '#f1f3f5',
+        color: '#333',
+        border: '1px solid #dee2e6',
+        borderRadius: '8px',
+        fontSize: '0.95rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        textDecoration: 'none',
+    },
+    guideBranch: {
+        marginBottom: '16px',
+        padding: '14px',
+        background: '#fafafa',
+        border: '1px solid #ececec',
+        borderRadius: '10px',
+    },
+    guideBranchTitle: {
+        margin: '0 0 6px',
+        fontSize: '1rem',
+        color: '#222',
+    },
+    guideBranchDesc: {
+        margin: '0 0 10px',
+        fontSize: '0.88rem',
+        color: '#555',
+        lineHeight: 1.5,
     },
 };
 

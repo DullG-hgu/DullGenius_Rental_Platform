@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGameData } from '../contexts/GameDataContext';
 import { getOptimizedImageUrl } from '../utils/imageOptimizer';
 import InfoBar from '../components/InfoBar';
+import InfoModal from '../components/InfoModal';
 import PoweredByBGG from '../components/PoweredByBGG';
 import Header from '../components/Header'; // [NEW] Header Component
 import LazyImage from '../components/common/LazyImage'; // [NEW] Lazy Image
@@ -14,6 +15,7 @@ const Home = () => {
     const { games, trending, loading } = useGameData();
     const [officeStatus, setOfficeStatus] = useState(null);
     const [officeHoursConfig, setOfficeHoursConfig] = useState(null);
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     // 오피스아워 운영 여부
     const isOfficeOpen = officeStatus?.open &&
@@ -73,6 +75,17 @@ const Home = () => {
         <div className="home-container">
             {/* [1] 헤더 (로고, 로그인, 입부신청) - [RESTORED] */}
             <Header />
+
+            {/* 처음 방문자용 가이드 진입점 — 모두에게 노출, 비강제 */}
+            <button
+                type="button"
+                onClick={() => setIsGuideOpen(true)}
+                className="home-guide-entry"
+            >
+                <span aria-hidden="true">🆕</span>
+                <span>처음이신가요? 이용 가이드</span>
+                <span aria-hidden="true" className="home-guide-entry-arrow">→</span>
+            </button>
 
             {/* 운영 예정 시간 안내 (오프라인일 때) */}
             {!isOfficeOpen && officeHoursConfig && (
@@ -224,6 +237,12 @@ const Home = () => {
                     <span className="home-footer-bgg-caption">Game data from BoardGameGeek</span>
                 </div>
             </footer>
+
+            <InfoModal
+                isOpen={isGuideOpen}
+                onClose={() => setIsGuideOpen(false)}
+                initialTab="guide"
+            />
         </div>
     );
 };
