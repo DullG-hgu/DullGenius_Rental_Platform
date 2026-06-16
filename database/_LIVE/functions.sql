@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 4. 29. PM 6:26:25
+-- 생성 시각: 2026. 6. 16. PM 4:01:08
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -164,6 +164,7 @@ CREATE OR REPLACE FUNCTION public._parse_duration(raw text)
  RETURNS integer
  LANGUAGE plpgsql
  IMMUTABLE
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE v_match text[];
 BEGIN
@@ -181,6 +182,7 @@ CREATE OR REPLACE FUNCTION public._parse_fee(raw text)
  RETURNS integer
  LANGUAGE plpgsql
  IMMUTABLE
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE v_match text[];
 BEGIN
@@ -198,6 +200,7 @@ CREATE OR REPLACE FUNCTION public._parse_game_count(raw text)
  RETURNS integer
  LANGUAGE plpgsql
  IMMUTABLE
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE v_match text[];
 BEGIN
@@ -215,6 +218,7 @@ CREATE OR REPLACE FUNCTION public._parse_pickup(raw text)
  RETURNS timestamp with time zone
  LANGUAGE plpgsql
  IMMUTABLE
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_date_match text;
@@ -292,6 +296,7 @@ CREATE OR REPLACE FUNCTION public.admin_extend_rentals(p_user_id uuid DEFAULT NU
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_new_due_date TIMESTAMP WITH TIME ZONE;
@@ -330,7 +335,7 @@ BEGIN
     END LOOP;
     
     IF v_count = 0 THEN
-        RETURN jsonb_build_object('success', false, 'message', '조건에 맞는 연장할 활성 대여 건이 ��습니다. 이미 반납되었거나 대상을 찾을 수 없습니다.');
+        RETURN jsonb_build_object('success', false, 'message', '조건에 맞는 연장할 활성 대여 건이 없습니다. 이미 반납되었거나 대상을 찾을 수 없습니다.');
     END IF;
     
     RETURN jsonb_build_object('success', true, 'message', v_count || '건 연장 처리 완료', 'new_due_date', v_new_due_date);
@@ -344,6 +349,7 @@ CREATE OR REPLACE FUNCTION public.admin_rent_game(p_game_id integer, p_renter_na
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_game_name TEXT;
@@ -351,7 +357,7 @@ DECLARE
     v_target_rental_id UUID;
 BEGIN
     IF NOT public.is_admin() THEN
-        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니다.');
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권���이 필요합니다.');
     END IF;
 
     SELECT name INTO v_game_name FROM public.games WHERE id = p_game_id;
@@ -414,6 +420,7 @@ CREATE OR REPLACE FUNCTION public.admin_return_game(p_game_id integer, p_renter_
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_affected INTEGER;
@@ -474,6 +481,7 @@ CREATE OR REPLACE FUNCTION public.cancel_dibs(p_game_id integer, p_user_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE v_affected INTEGER;
 BEGIN
@@ -499,6 +507,7 @@ CREATE OR REPLACE FUNCTION public.cleanup_expired_dibs()
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_dibs_count    INTEGER;
@@ -657,6 +666,7 @@ CREATE OR REPLACE FUNCTION public.dibs_any_copy(p_game_id integer, p_user_id uui
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$ BEGIN RETURN public.dibs_game(p_game_id, p_user_id); END; $function$
 
 -- ----------------------------------------------------------------
@@ -666,6 +676,7 @@ CREATE OR REPLACE FUNCTION public.dibs_game(p_game_id integer, p_user_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_game_name    TEXT;
@@ -729,6 +740,7 @@ CREATE OR REPLACE FUNCTION public.earn_points(p_user_id uuid, p_amount integer, 
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     INSERT INTO public.point_transactions (user_id, amount, type, reason) VALUES (p_user_id, p_amount, p_type, p_reason);
@@ -1415,6 +1427,7 @@ CREATE OR REPLACE FUNCTION public.fix_rental_data_consistency()
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_expired_dibs_count INTEGER := 0;
@@ -1569,6 +1582,7 @@ CREATE OR REPLACE FUNCTION public.get_overdue_stats(p_days integer DEFAULT 90)
  RETURNS TABLE(total_rentals bigint, overdue_count bigint, overdue_rate numeric, avg_overdue_hours numeric)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
@@ -1576,12 +1590,16 @@ BEGIN
 
     RETURN QUERY
     SELECT COUNT(*),
-        COUNT(*) FILTER (WHERE returned_at > due_date),
-        ROUND((COUNT(*) FILTER (WHERE returned_at > due_date)::numeric / NULLIF(COUNT(*), 0)) * 100, 1),
-        ROUND(AVG(CASE WHEN returned_at > due_date THEN EXTRACT(EPOCH FROM (returned_at - due_date)) / 3600 END)::numeric, 1)
-    FROM public.rentals
-    WHERE type = 'RENT' AND returned_at IS NOT NULL
-      AND borrowed_at >= now() - (p_days || ' days')::interval;
+        COUNT(*) FILTER (WHERE r.returned_at > r.due_date),
+        ROUND((COUNT(*) FILTER (WHERE r.returned_at > r.due_date)::numeric / NULLIF(COUNT(*), 0)) * 100, 1),
+        ROUND(AVG(CASE WHEN r.returned_at > r.due_date THEN EXTRACT(EPOCH FROM (r.returned_at - r.due_date)) / 3600 END)::numeric, 1)
+    FROM public.rentals r
+    WHERE r.type = 'RENT' AND r.returned_at IS NOT NULL
+      AND r.borrowed_at >= now() - (p_days || ' days')::interval
+      AND NOT EXISTS (
+        SELECT 1 FROM public.user_roles ur
+        WHERE ur.user_id = r.user_id AND ur.role_key = 'tester'
+      );
 END;
 $function$
 
@@ -1592,6 +1610,7 @@ CREATE OR REPLACE FUNCTION public.get_popular_searches(p_limit integer DEFAULT 2
  RETURNS TABLE(query text, search_count bigint)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
@@ -1599,12 +1618,16 @@ BEGIN
     IF p_limit <= 0 OR p_limit > 100 THEN RAISE EXCEPTION 'p_limit는 1~100 범위여야 합니다.'; END IF;
 
     RETURN QUERY
-    SELECT (details->>'query') AS query, COUNT(*) AS search_count
-    FROM public.logs
-    WHERE action_type = 'SEARCH'
-      AND created_at >= now() - (p_days || ' days')::interval
-      AND details->>'query' IS NOT NULL
-    GROUP BY details->>'query'
+    SELECT (l.details->>'query') AS query, COUNT(*) AS search_count
+    FROM public.logs l
+    WHERE l.action_type = 'SEARCH'
+      AND l.created_at >= now() - (p_days || ' days')::interval
+      AND l.details->>'query' IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM public.user_roles ur
+        WHERE ur.user_id = l.user_id AND ur.role_key = 'tester'
+      )
+    GROUP BY l.details->>'query'
     ORDER BY search_count DESC
     LIMIT p_limit;
 END;
@@ -1617,6 +1640,7 @@ CREATE OR REPLACE FUNCTION public.get_rental_source_breakdown(p_days integer DEF
  RETURNS TABLE(source text, count bigint, ratio numeric)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
@@ -1627,6 +1651,10 @@ BEGIN
         ROUND((COUNT(*)::numeric / NULLIF(SUM(COUNT(*)) OVER (), 0)) * 100, 1)
     FROM public.rentals r
     WHERE r.type = 'RENT' AND r.borrowed_at >= now() - (p_days || ' days')::interval
+      AND NOT EXISTS (
+        SELECT 1 FROM public.user_roles ur
+        WHERE ur.user_id = r.user_id AND ur.role_key = 'tester'
+      )
     GROUP BY r.source
     ORDER BY count DESC;
 END;
@@ -1639,6 +1667,7 @@ CREATE OR REPLACE FUNCTION public.get_rental_stats(p_days integer DEFAULT 30)
  RETURNS TABLE(date date, rent_count bigint, return_count bigint)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
@@ -1649,20 +1678,28 @@ BEGIN
         SELECT generate_series(current_date - (p_days - 1), current_date, '1 day'::interval)::date AS d
     ),
     rents AS (
-        SELECT borrowed_at::date AS d, COUNT(*) AS cnt
-        FROM public.rentals
-        WHERE type = 'RENT' AND borrowed_at >= current_date - (p_days - 1)
-        GROUP BY borrowed_at::date
+        SELECT r.borrowed_at::date AS d, COUNT(*) AS cnt
+        FROM public.rentals r
+        WHERE r.type = 'RENT' AND r.borrowed_at >= current_date - (p_days - 1)
+          AND NOT EXISTS (
+            SELECT 1 FROM public.user_roles ur
+            WHERE ur.user_id = r.user_id AND ur.role_key = 'tester'
+          )
+        GROUP BY r.borrowed_at::date
     ),
     returns AS (
-        SELECT returned_at::date AS d, COUNT(*) AS cnt
-        FROM public.rentals
-        WHERE returned_at IS NOT NULL AND returned_at >= current_date - (p_days - 1)
-        GROUP BY returned_at::date
+        SELECT r.returned_at::date AS d, COUNT(*) AS cnt
+        FROM public.rentals r
+        WHERE r.returned_at IS NOT NULL AND r.returned_at >= current_date - (p_days - 1)
+          AND NOT EXISTS (
+            SELECT 1 FROM public.user_roles ur
+            WHERE ur.user_id = r.user_id AND ur.role_key = 'tester'
+          )
+        GROUP BY r.returned_at::date
     )
-    SELECT ds.d, COALESCE(r.cnt, 0), COALESCE(rt.cnt, 0)
+    SELECT ds.d, COALESCE(rn.cnt, 0), COALESCE(rt.cnt, 0)
     FROM date_series ds
-    LEFT JOIN rents r ON ds.d = r.d
+    LEFT JOIN rents rn ON ds.d = rn.d
     LEFT JOIN returns rt ON ds.d = rt.d
     ORDER BY ds.d;
 END;
@@ -1675,6 +1712,7 @@ CREATE OR REPLACE FUNCTION public.get_top_rented_games(p_limit integer DEFAULT 1
  RETURNS TABLE(game_id integer, game_name text, rent_count bigint, avg_duration_hours numeric)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
@@ -1686,6 +1724,10 @@ BEGIN
         ROUND(AVG(EXTRACT(EPOCH FROM (COALESCE(r.returned_at, now()) - r.borrowed_at)) / 3600)::numeric, 1)
     FROM public.rentals r
     WHERE r.type = 'RENT' AND r.borrowed_at >= now() - (p_days || ' days')::interval
+      AND NOT EXISTS (
+        SELECT 1 FROM public.user_roles ur
+        WHERE ur.user_id = r.user_id AND ur.role_key = 'tester'
+      )
     GROUP BY r.game_id, r.game_name
     ORDER BY rent_count DESC
     LIMIT p_limit;
@@ -1699,6 +1741,7 @@ CREATE OR REPLACE FUNCTION public.get_trending_games()
  RETURNS TABLE(id integer, name text, image text, category text, weekly_views bigint)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     RETURN QUERY 
@@ -1724,6 +1767,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_allowed_name text;
@@ -1788,6 +1832,7 @@ CREATE OR REPLACE FUNCTION public.increment_view_count(p_game_id integer)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     -- 1. 전역 조회수 증가
@@ -2028,6 +2073,7 @@ CREATE OR REPLACE FUNCTION public.is_admin()
  RETURNS boolean
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
   RETURN EXISTS (
@@ -2075,6 +2121,7 @@ CREATE OR REPLACE FUNCTION public.is_kiosk_or_admin()
  RETURNS boolean
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
   RETURN EXISTS (
@@ -2091,6 +2138,7 @@ $function$
 CREATE OR REPLACE FUNCTION public.is_payment_check_enabled()
  RETURNS boolean
  LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
 AS $function$ BEGIN RETURN true; END; $function$
 
 -- ----------------------------------------------------------------
@@ -2099,6 +2147,7 @@ AS $function$ BEGIN RETURN true; END; $function$
 CREATE OR REPLACE FUNCTION public.is_user_payment_exempt(p_user_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
 AS $function$ 
 BEGIN RETURN EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = p_user_id AND role_key IN ('admin', 'executive', 'payment_exempt')); END; $function$
 
@@ -2109,6 +2158,7 @@ CREATE OR REPLACE FUNCTION public.kiosk_pickup(p_rental_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE v_game_id INTEGER; v_user_id UUID; v_type TEXT;
 BEGIN
@@ -2130,6 +2180,7 @@ CREATE OR REPLACE FUNCTION public.kiosk_rental(p_game_id integer, p_user_id uuid
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_game_name    TEXT;
@@ -2187,6 +2238,7 @@ CREATE OR REPLACE FUNCTION public.kiosk_return(p_game_id integer, p_user_id uuid
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_rental_id    UUID;
@@ -2262,6 +2314,7 @@ CREATE OR REPLACE FUNCTION public.register_match_result(p_game_id integer, p_pla
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE v_player_id UUID; v_is_winner BOOLEAN; v_points INTEGER; v_game_name TEXT;
 BEGIN
@@ -2365,6 +2418,7 @@ CREATE OR REPLACE FUNCTION public.rent_any_copy(p_game_id integer, p_user_id uui
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     RETURN public.rent_game(p_game_id, p_user_id, NULL);
@@ -2378,6 +2432,7 @@ CREATE OR REPLACE FUNCTION public.rent_game(p_game_id integer, p_user_id uuid, p
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE v_game_name TEXT; v_affected INTEGER;
 BEGIN
@@ -2468,6 +2523,7 @@ CREATE OR REPLACE FUNCTION public.reset_semester_payments()
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_reset_count INTEGER;
@@ -2565,6 +2621,7 @@ CREATE OR REPLACE FUNCTION public.return_game(p_game_id integer, p_user_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE v_affected INTEGER;
 BEGIN
@@ -2590,6 +2647,7 @@ CREATE OR REPLACE FUNCTION public.safe_delete_game(p_game_id integer)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     -- [SECURE] 권한 체크
@@ -2611,6 +2669,7 @@ CREATE OR REPLACE FUNCTION public.send_user_log(p_game_id integer DEFAULT NULL::
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
     INSERT INTO public.logs (game_id, user_id, action_type, details) VALUES (p_game_id, auth.uid(), p_action_type, p_details);
@@ -2645,6 +2704,7 @@ CREATE OR REPLACE FUNCTION public.update_my_semester(new_semester text)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
   v_user_id uuid := auth.uid();
@@ -2676,6 +2736,7 @@ CREATE OR REPLACE FUNCTION public.withdraw_user(p_user_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE v_penalty INTEGER;
 BEGIN
