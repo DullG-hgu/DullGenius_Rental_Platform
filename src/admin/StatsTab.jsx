@@ -137,6 +137,18 @@ export default function StatsTab() {
   return (
     <div style={{ color: 'var(--admin-text-main)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
+      {/* 안내: 개발자(tester) role 보유자의 활동은 모든 집계에서 제외됨 */}
+      <div style={{
+        fontSize: '0.8rem',
+        color: 'var(--admin-text-sub)',
+        background: 'rgba(142, 68, 173, 0.08)',
+        border: '1px solid var(--admin-border)',
+        borderRadius: '6px',
+        padding: '8px 12px',
+      }}>
+        🛠 <b>개발자(tester) role</b> 보유 계정의 대여·검색 활동은 모든 집계에서 제외됩니다.
+      </div>
+
       {/* 1. 기간 선택 버튼 */}
       <div style={{ display: 'flex', gap: '8px' }}>
         {[7, 30, 90].map((p) => (

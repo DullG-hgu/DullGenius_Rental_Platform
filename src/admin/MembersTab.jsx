@@ -43,6 +43,7 @@ const getRoleDisplayName = (roleKey) => {
         case 'admin': return '👑 관리자';
         case 'executive': return '⭐️ 운영진';
         case 'payment_exempt': return '🎖️ 회비 면제';
+        case 'tester': return '🛠 개발자';
         case 'member': return '일반 회원';
         default: return roleKey;
     }
@@ -65,6 +66,8 @@ const getRoleBadgeStyle = (roleKey) => {
             return { ...baseStyle, background: '#f39c12', color: 'white' };
         case 'payment_exempt':
             return { ...baseStyle, background: '#3498db', color: 'white' };
+        case 'tester':
+            return { ...baseStyle, background: '#8e44ad', color: 'white' };
         default:
             return { ...baseStyle, background: '#95a5a6', color: 'white' };
     }
@@ -616,6 +619,28 @@ function MembersTab() {
                                 />
                                 <div>
                                     <div style={{ fontWeight: 'bold' }}>🎖️ 회비 면제</div>
+                                </div>
+                            </div>
+
+                            <div
+                                style={{
+                                    ...styles.roleOption,
+                                    background: roleEditModal.selectedRoles.includes('tester') ? 'rgba(142, 68, 173, 0.1)' : 'transparent',
+                                    borderColor: roleEditModal.selectedRoles.includes('tester') ? '#8e44ad' : 'var(--admin-border)'
+                                }}
+                                onClick={() => handleToggleRole('tester')}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={roleEditModal.selectedRoles.includes('tester')}
+                                    readOnly
+                                    style={styles.roleCheckbox}
+                                />
+                                <div>
+                                    <div style={{ fontWeight: 'bold' }}>🛠 개발자 (Tester)</div>
+                                    <div style={{ fontSize: '0.8em', color: 'var(--admin-text-sub)' }}>
+                                        이 계정의 대여·검색 활동은 통계 집계에서 제외됩니다
+                                    </div>
                                 </div>
                             </div>
 
