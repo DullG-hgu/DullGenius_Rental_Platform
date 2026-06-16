@@ -3,28 +3,38 @@
 // 처음 관리자 페이지에 들어온 사람이 지금 무엇을 해야 하는지 한눈에 파악할 수 있도록 돕는다.
 
 import { useEffect, useState } from 'react';
-import { fetchDamageReports, fetchGameRequests } from '../api';
+import { fetchDamageReports, fetchGameRequests, fetchRentalRequests } from '../api';
 
-function AdminOverviewCard({ games = [], isOfficeOpen, onGoReports }) {
+function AdminOverviewCard({ games = [], isOfficeOpen, onGoReports, onGoRentalRequests }) {
     const [pendingReports, setPendingReports] = useState(null); // null = 로딩 중
     const [pendingRequests, setPendingRequests] = useState(null);
+    const [pendingRentals, setPendingRentals] = useState(null);
 
     useEffect(() => {
         let cancelled = false;
         const load = async () => {
             try {
-                const [reports, requests] = await Promise.all([
+                // 외부 대여 신청은 status 인자 없이 호출하면 기본 활성 상태(needs_review·auto_confirmed·pending)만 옴
+                const [reports, requests, rentals] = await Promise.all([
                     fetchDamageReports(),
                     fetchGameRequests(),
+                    fetchRentalRequests().catch((e) => {
+                        // 외부 대여 신청은 권한/RLS 이슈 시 실패할 수 있으므로 fail-soft
+                        console.warn('[AdminOverviewCard] 외부 대여 신청 카운트 실패:', e);
+                        return [];
+                    }),
                 ]);
                 if (cancelled) return;
                 setPendingReports((reports || []).filter(r => r.status === 'pending').length);
                 setPendingRequests((requests || []).filter(r => r.status === 'pending').length);
+                // 자동 확정(auto_confirmed)도 운영진이 한 번 눈으로 확인해야 하므로 카운트에 포함
+                setPendingRentals((rentals || []).length);
             } catch (e) {
                 console.error('[AdminOverviewCard] 신고/신청 카운트 로드 실패:', e);
                 if (cancelled) return;
                 setPendingReports(0);
                 setPendingRequests(0);
+                setPendingRentals(0);
             }
         };
         load();
@@ -40,6 +50,7 @@ function AdminOverviewCard({ games = [], isOfficeOpen, onGoReports }) {
     }).length;
 
     const totalPending = (pendingReports ?? 0) + (pendingRequests ?? 0);
+    const rentalCount = pendingRentals ?? 0;
 
     return (
         <div style={styles.wrap}>
@@ -75,6 +86,24 @@ function AdminOverviewCard({ games = [], isOfficeOpen, onGoReports }) {
                     tone={totalPending > 0 ? 'warn' : 'ok'}
                     actionLabel={totalPending > 0 ? '처리하러 가기' : null}
                     onAction={onGoReports}
+                />
+
+                <StatusCell
+                    icon="📝"
+                    label="외부 대여 신청"
+                    value={
+                        pendingRentals === null
+                            ? '불러오는 중…'
+                            : `${rentalCount}건 검토 대기`
+                    }
+                    hint={
+                        rentalCount > 0
+                            ? '"📝 외부 대여 신청" 탭에서 픽업일과 게임 매칭을 확인해주세요.'
+                            : '검토할 외부 대여 신청이 없습니다.'
+                    }
+                    tone={rentalCount > 0 ? 'warn' : 'ok'}
+                    actionLabel={rentalCount > 0 && onGoRentalRequests ? '검토하러 가기' : null}
+                    onAction={onGoRentalRequests}
                 />
 
                 <StatusCell

@@ -12,6 +12,7 @@ export const useGameFilter = (games, filters) => {
         onlyAvailable = false,
         renterFilter = "", // [Admin 전용]
         ownerFilter = "", // [NEW] Admin 전용 - 소유자 필터
+        onlyOverdue = false, // [Admin 전용] 연체 게임만 보기
         isAdmin = false // [NEW] Admin 플래그
     } = filters;
 
@@ -129,6 +130,14 @@ export const useGameFilter = (games, filters) => {
             // 상태 필터 (대여 가능만)
             if (onlyAvailable && game.status !== "대여가능") return false;
 
+            // [Admin 전용] 연체 필터: dueDate가 지났고 대여 중인 상태만
+            if (onlyOverdue) {
+                if (!game.dueDate) return false;
+                const isRentedOut = game.adminStatus === '대여중' || game.adminStatus === '일부대여중';
+                if (!isRentedOut) return false;
+                if (new Date(game.dueDate).getTime() >= Date.now()) return false;
+            }
+
             // 난이도 필터
             if (difficultyFilter !== "전체" && game.difficulty) {
                 const score = parseFloat(game.difficulty);
@@ -148,7 +157,7 @@ export const useGameFilter = (games, filters) => {
             if (filters.sortByName === false) return 0; // 정렬 안 함 (원본 순서 유지)
             return a.name.localeCompare(b.name, 'ko');
         });
-    }, [games, searchTerm, selectedCategory, onlyAvailable, difficultyFilter, playerFilter, renterFilter, ownerFilter, filters.sortByName, isAdmin]);
+    }, [games, searchTerm, selectedCategory, onlyAvailable, difficultyFilter, playerFilter, renterFilter, ownerFilter, onlyOverdue, filters.sortByName, isAdmin]);
 
     return filteredGames;
 };

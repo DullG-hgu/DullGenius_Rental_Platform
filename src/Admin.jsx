@@ -111,6 +111,9 @@ function Admin() {
     setOfficeStatus(status);
   }, []);
 
+  // 캐시 TTL: 10분. 다른 운영진이 처리한 변경을 너무 오래 못 보면 안 되므로 짧게.
+  const GAMES_CACHE_TTL_MS = 10 * 60 * 1000;
+
   // 인증 성공 시 데이터 최초 로드
   useEffect(() => {
     if (user && isAdmin) {
@@ -121,10 +124,16 @@ function Admin() {
           const parsedCache = JSON.parse(cachedGames);
           // [FIX] 변경된 캐시 구조 ({ data, timestamp }) 대응
           if (parsedCache.data && Array.isArray(parsedCache.data)) {
-            setGames(parsedCache.data);
+            const age = Date.now() - (parsedCache.timestamp || 0);
+            if (age < GAMES_CACHE_TTL_MS) {
+              setGames(parsedCache.data);
+            } else {
+              // TTL 초과 — 캐시 폐기 (오래된 데이터 깜빡임 방지)
+              localStorage.removeItem('games_cache');
+            }
           } else if (Array.isArray(parsedCache)) {
-            // 구버전 캐시 대응 (혹시 모를 하위 호환성)
-            setGames(parsedCache);
+            // 구버전 캐시 — 타임스탬프가 없으므로 안전하게 폐기
+            localStorage.removeItem('games_cache');
           }
         } catch (e) {
           console.warn("캐시 파싱 실패");
@@ -251,6 +260,7 @@ function Admin() {
               games={games}
               isOfficeOpen={isOfficeOpen}
               onGoReports={() => setActiveTab('reports')}
+              onGoRentalRequests={() => setActiveTab('rental_requests')}
             />
             <DashboardTab
               games={games}

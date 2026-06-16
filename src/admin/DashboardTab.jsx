@@ -4,6 +4,7 @@ import { adminUpdateGame, deleteGame, approveDibsByRenter, returnGamesByRenter, 
 import GameFormModal from './GameFormModal';
 import UserSelectModal from './UserSelectModal'; // [NEW]
 import ConfirmModal from '../components/ConfirmModal'; // [NEW]
+import PromptModal from '../components/PromptModal';
 import FilterBar from '../components/FilterBar';
 import { TEXTS, getStatusColor } from '../constants';
 import { useToast } from '../contexts/ToastContext';
@@ -59,6 +60,28 @@ function DashboardTab({ games, loading, onReload }) {
     setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: null, type: "info" });
   };
 
+  // 값 입력 모달 (window.prompt 대체)
+  const [promptModal, setPromptModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    defaultValue: "",
+    placeholder: "",
+    inputType: "text",
+    onConfirm: null,
+  });
+
+  const showPromptModal = (opts) => {
+    setPromptModal({ isOpen: true, ...opts });
+  };
+
+  const closePromptModal = () => {
+    setPromptModal({
+      isOpen: false, title: "", message: "", defaultValue: "",
+      placeholder: "", inputType: "text", onConfirm: null,
+    });
+  };
+
   const [allUsers, setAllUsers] = useState([]);
   // 필터 관련 변수
   const [inputValue, setInputValue] = useState("");
@@ -69,6 +92,8 @@ function DashboardTab({ games, loading, onReload }) {
   const [difficultyFilter, setDifficultyFilter] = useState("전체");
   const [playerFilter, setPlayerFilter] = useState("all");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [onlyOverdue, setOnlyOverdue] = useState(false); // [NEW] 연체만 보기
+  const [openContactId, setOpenContactId] = useState(null); // 📞 팝오버가 열린 game.id
 
 
   // ⭐ 페이지 로드 시 유저 목록 가져오기
@@ -136,17 +161,30 @@ function DashboardTab({ games, loading, onReload }) {
     ownerFilter, // [NEW] Admin 전용 - 소유자 필터
     selectedCategory,
     onlyAvailable,
+    onlyOverdue, // [NEW]
     difficultyFilter,
     playerFilter,
     sortByName: false, // [FIX] Admin.js에서 정한 중요도 순서(찜>대여가능)를 유지하기 위해 이름 정렬 끔
     isAdmin: true // [NEW] Admin 모드 활성화 - TRPG 필터링 해제
   });
 
+  // 연체 여부 계산 (목록의 dueDate는 가장 이른 반납 예정일)
+  const getOverdueDays = (game) => {
+    if (!game.dueDate) return 0;
+    const isRentedOut = game.adminStatus === '대여중' || game.adminStatus === '일부대여중';
+    if (!isRentedOut) return 0;
+    const diffMs = Date.now() - new Date(game.dueDate).getTime();
+    if (diffMs <= 0) return 0;
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  };
+
+  const overdueCount = games.reduce((acc, g) => acc + (getOverdueDays(g) > 0 ? 1 : 0), 0);
+
   // 필터 초기화 함수
   const resetFilters = () => {
     setInputValue(""); setSearchTerm(""); setRenterFilter(""); setOwnerFilter("");
     setSelectedCategory("전체"); setDifficultyFilter("전체");
-    setPlayerFilter("all"); setOnlyAvailable(false);
+    setPlayerFilter("all"); setOnlyAvailable(false); setOnlyOverdue(false);
   };
 
   // 여기까지 필터바 
@@ -227,34 +265,43 @@ function DashboardTab({ games, loading, onReload }) {
   };
 
   // 현장 대여 핸들러 추가
-  const handleDirectRent = async (game) => {
-    // 1. 대여자 이름 입력받기
+  const handleDirectRent = (game) => {
+    // 1. 대여자 이름 입력받기 (PromptModal)
     const promptMsg = TEXTS.ADMIN_RENT_PROMPT.replace("{gameName}", game.name);
-    const renterName = prompt(promptMsg);
-    if (!renterName || renterName.trim() === "") return;
 
-    // 2. 일치하는 유저들 찾기
-    const candidates = findMatchingUsers(renterName);
+    showPromptModal({
+      title: "현장 대여 — 대여자 입력",
+      message: promptMsg,
+      defaultValue: "",
+      placeholder: "이름을 입력하세요",
+      inputType: "text",
+      onConfirm: (renterName) => {
+        if (!renterName || renterName.trim() === "") return;
 
-    // [CASE 1] 2명 이상 -> 선택 모달 띄우기
-    if (candidates.length > 1) {
-      setUserSelectModal({
-        isOpen: true,
-        candidates: candidates,
-        game: game,
-        renterNameInput: renterName
-      });
-      return;
-    }
+        // 2. 일치하는 유저들 찾기
+        const candidates = findMatchingUsers(renterName);
 
-    // [CASE 2] 1명 -> 자동 선택 후 컨펌
-    if (candidates.length === 1) {
-      proceedRentWithUser(game, renterName, candidates[0]);
-      return;
-    }
+        // [CASE 1] 2명 이상 -> 선택 모달 띄우기
+        if (candidates.length > 1) {
+          setUserSelectModal({
+            isOpen: true,
+            candidates: candidates,
+            game: game,
+            renterNameInput: renterName
+          });
+          return;
+        }
 
-    // [CASE 3] 0명 -> 수기 대여 컨펌
-    proceedRentWithUser(game, renterName, null);
+        // [CASE 2] 1명 -> 자동 선택 후 컨펌
+        if (candidates.length === 1) {
+          proceedRentWithUser(game, renterName, candidates[0]);
+          return;
+        }
+
+        // [CASE 3] 0명 -> 수기 대여 컨펌
+        proceedRentWithUser(game, renterName, null);
+      },
+    });
   };
 
   // 실제 대여 처리 (컨펌 포함)
@@ -455,29 +502,35 @@ function DashboardTab({ games, loading, onReload }) {
   };
 
   // 4-1. [NEW] 기한 연장 로직 (자정 자동 마감)
-  const handleExtend = async (game, rentalId) => {
+  const handleExtend = (game, rentalId) => {
     // 1. 단일(개별) 연장
     if (rentalId) {
       const targetRental = game.rentals?.find(r => r.rental_id === rentalId);
       const renterName = targetRental?.renter_name || targetRental?.profiles?.name || "알 수 없음";
       const userId = targetRental?.user_id || null;
 
-      const daysStr = prompt(`[${renterName}] 님의 [${game.name}] 기한을 며칠 연장하시겠습니까?\n(입력한 일수의 자정 24시에 마감됩니다)\n\n기본값: 7일`, "7");
-      if (daysStr === null) return;
-      const days = parseInt(daysStr) || 7;
-
-      try {
-        const res = await extendRentalsByRenter(null, userId, null, rentalId, days);
-        if (res.count > 0) {
-          showToast(`${days}일 연장 처리 완료! (${res.count}건)`, { type: "success" });
-          onReload();
-        } else {
-          showToast(`❌ 연장 처리 실패: ${res.message || '매칭되는 대여 기록 없음'}`, { type: "error" });
-        }
-      } catch (e) {
-        console.error('[DashboardTab] 연장 처리 실패:', e);
-        showToast(`❌ 연장 처리 실패: ${e.message || String(e)}`, { type: "error" });
-      }
+      showPromptModal({
+        title: "기한 연장",
+        message: `[${renterName}] 님의 [${game.name}] 기한을 며칠 연장하시겠습니까?\n(입력한 일수의 자정 24시에 마감됩니다)\n\n기본값: 7일`,
+        defaultValue: "7",
+        inputType: "number",
+        min: 1,
+        onConfirm: async (daysStr) => {
+          const days = parseInt(daysStr) || 7;
+          try {
+            const res = await extendRentalsByRenter(null, userId, null, rentalId, days);
+            if (res.count > 0) {
+              showToast(`${days}일 연장 처리 완료! (${res.count}건)`, { type: "success" });
+              onReload();
+            } else {
+              showToast(`❌ 연장 처리 실패: ${res.message || '매칭되는 대여 기록 없음'}`, { type: "error" });
+            }
+          } catch (e) {
+            console.error('[DashboardTab] 연장 처리 실패:', e);
+            showToast(`❌ 연장 처리 실패: ${e.message || String(e)}`, { type: "error" });
+          }
+        },
+      });
       return;
     }
 
@@ -501,39 +554,51 @@ function DashboardTab({ games, loading, onReload }) {
       const targetRental = game.rentals?.find(r => r.type === 'RENT' && !r.returned_at) || game.rentals?.[0];
       const finalRentalId = targetRental?.rental_id;
 
-      const daysStr = prompt(`[${displayName}] 님의 [${game.name}] 기한을 며칠 연장하시겠습니까?\n\n기본값: 7일`, "7");
-      if (daysStr === null) return;
-
-      const days = parseInt(daysStr) || 7;
-      try {
-        const res = await extendRentalsByRenter(null, userId, null, finalRentalId, days);
-        if (res.count > 0) {
-          showToast(`${days}일 연장 완료!`, { type: "success" });
-          onReload();
-        } else {
-          showToast(`❌ 연장 실패: ${res.message}`, { type: "error" });
-        }
-      } catch (e) {
-        console.error('[DashboardTab] 연장 실패:', e);
-        showToast(`❌ 연장 실패: ${e.message || String(e)}`, { type: "error" });
-      }
+      showPromptModal({
+        title: "기한 연장",
+        message: `[${displayName}] 님의 [${game.name}] 기한을 며칠 연장하시겠습니까?\n\n기본값: 7일`,
+        defaultValue: "7",
+        inputType: "number",
+        min: 1,
+        onConfirm: async (daysStr) => {
+          const days = parseInt(daysStr) || 7;
+          try {
+            const res = await extendRentalsByRenter(null, userId, null, finalRentalId, days);
+            if (res.count > 0) {
+              showToast(`${days}일 연장 완료!`, { type: "success" });
+              onReload();
+            } else {
+              showToast(`❌ 연장 실패: ${res.message}`, { type: "error" });
+            }
+          } catch (e) {
+            console.error('[DashboardTab] 연장 실패:', e);
+            showToast(`❌ 연장 실패: ${e.message || String(e)}`, { type: "error" });
+          }
+        },
+      });
     } else {
-      const daysStr = prompt(`💡 [${displayName}] 님이 빌려간 게임이 총 ${totalUserRentals}개입니다.\n모든 기록의 기한을 일괄 연장하시겠습니까?\n\n며칠 연장할까요? (기본 7일)`, "7");
-      if (daysStr === null) return;
-
-      const days = parseInt(daysStr) || 7;
-      try {
-        const res = await extendRentalsByRenter(firstRenter, userId, null, null, days);
-        if (res.count > 0) {
-          showToast(`총 ${res.count}건이 ${days}일 일괄 연장되었습니다!`, { type: "success" });
-          onReload();
-        } else {
-          showToast(`❌ 일괄 연장 실패: ${res.message}`, { type: "error" });
-        }
-      } catch (e) {
-        console.error('[DashboardTab] 일괄 연장 실패:', e);
-        showToast(`❌ 일괄 연장 실패: ${e.message || String(e)}`, { type: "error" });
-      }
+      showPromptModal({
+        title: "일괄 연장",
+        message: `💡 [${displayName}] 님이 빌려간 게임이 총 ${totalUserRentals}개입니다.\n모든 기록의 기한을 일괄 연장하시겠습니까?\n\n며칠 연장할까요? (기본 7일)`,
+        defaultValue: "7",
+        inputType: "number",
+        min: 1,
+        onConfirm: async (daysStr) => {
+          const days = parseInt(daysStr) || 7;
+          try {
+            const res = await extendRentalsByRenter(firstRenter, userId, null, null, days);
+            if (res.count > 0) {
+              showToast(`총 ${res.count}건이 ${days}일 일괄 연장되었습니다!`, { type: "success" });
+              onReload();
+            } else {
+              showToast(`❌ 일괄 연장 실패: ${res.message}`, { type: "error" });
+            }
+          } catch (e) {
+            console.error('[DashboardTab] 일괄 연장 실패:', e);
+            showToast(`❌ 일괄 연장 실패: ${e.message || String(e)}`, { type: "error" });
+          }
+        },
+      });
     }
   };
 
@@ -716,11 +781,39 @@ function DashboardTab({ games, loading, onReload }) {
     return () => clearTimeout(timer);
   }, [logSearchInput]);
 
+  // 외부 클릭 시 연락 팝오버 닫기 (트리거의 stopPropagation이 자기 토글 보호)
+  useEffect(() => {
+    if (openContactId === null) return;
+    const handler = () => setOpenContactId(null);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [openContactId]);
+
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-        <h3>🚨 게임 관리 (총 {games.length}개)</h3>
-        <div style={{ display: "flex", gap: "10px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", flexWrap: "wrap", gap: "10px" }}>
+        <h3 style={{ margin: 0 }}>🚨 게임 관리 (총 {games.length}개)</h3>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          {/* 연체만 보기 토글 — 연체가 있을 때 강조 */}
+          <button
+            onClick={() => setOnlyOverdue(prev => !prev)}
+            aria-pressed={onlyOverdue}
+            title={overdueCount > 0 ? `연체 ${overdueCount}건` : "연체된 게임이 없습니다"}
+            style={{
+              padding: "8px 16px",
+              fontSize: "1.05em",
+              fontWeight: "bold",
+              cursor: overdueCount > 0 ? "pointer" : "default",
+              background: onlyOverdue ? "#e74c3c" : "var(--admin-card-bg)",
+              color: onlyOverdue ? "white" : (overdueCount > 0 ? "#e74c3c" : "var(--admin-text-sub)"),
+              border: `1px solid ${overdueCount > 0 ? "#e74c3c" : "var(--admin-border)"}`,
+              borderRadius: "5px",
+              opacity: overdueCount > 0 ? 1 : 0.6,
+            }}
+            disabled={overdueCount === 0 && !onlyOverdue}
+          >
+            ⚠️ 연체 {overdueCount}건 {onlyOverdue ? "(해제)" : "보기"}
+          </button>
           {/* [NEW] 전체 이력 조회 버튼 - 크게 변경 */}
           <button onClick={handleShowAllLogs} style={{ padding: "8px 16px", fontSize: "1.05em", fontWeight: "bold", cursor: "pointer", background: "var(--admin-primary)", color: "white", border: "none", borderRadius: "5px" }}>전체 이력 조회 📜</button>
           <button onClick={onReload} style={{ padding: "8px 16px", fontSize: "1.05em", fontWeight: "bold", cursor: "pointer", background: "var(--admin-card-bg)", color: "var(--admin-text-main)", border: "1px solid var(--admin-border)", borderRadius: "5px" }}>🔄 새로고침</button>
@@ -746,8 +839,22 @@ function DashboardTab({ games, loading, onReload }) {
         <div style={{ textAlign: "center", padding: "40px", color: "var(--admin-text-sub)" }}>데이터를 불러오는 중... ⏳</div>
       ) : (
         <div style={{ display: "grid", gap: "10px" }}>
-          {filteredGames.map(game => (
-            <div key={game.id} className="admin-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+          {filteredGames.map(game => {
+            const overdueDays = getOverdueDays(game);
+            const isOverdue = overdueDays > 0;
+            return (
+            <div
+              key={game.id}
+              className="admin-card"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "10px",
+                ...(isOverdue ? { border: "2px solid #e74c3c", boxShadow: "0 0 0 2px rgba(231, 76, 60, 0.15)" } : {}),
+              }}
+            >
               <div style={{ flex: 1, minWidth: "200px" }}>
                 <div style={{ fontWeight: "bold", fontSize: "1.05em" }}>
                   {game.name}
@@ -756,10 +863,98 @@ function DashboardTab({ games, loading, onReload }) {
                     {game.adminStatus}
                   </span>
 
+                  {/* 연체 뱃지 */}
+                  {isOverdue && (
+                    <span
+                      style={{
+                        marginLeft: "8px",
+                        fontSize: "0.8em",
+                        padding: "2px 8px",
+                        borderRadius: "12px",
+                        background: "#e74c3c",
+                        color: "white",
+                        fontWeight: "bold",
+                      }}
+                      title={`반납 예정일: ${new Date(game.dueDate).toLocaleDateString('ko-KR')}`}
+                    >
+                      ⚠️ {overdueDays}일 연체
+                    </span>
+                  )}
+
                   {/* [RESTORED] 대여자 이름 표시 (단일 대여 시 가시성 확보) */}
                   {game.renter && (
                     <span style={{ marginLeft: "10px", color: "var(--admin-primary)", fontSize: "0.9em" }}>
                       👤 {game.renter}
+                    </span>
+                  )}
+
+                  {/* 대여자 연락처 팝오버 — 연체된 사용자에게 빠르게 연락 */}
+                  {game.renter && (game.rentals?.length > 0) && (
+                    <span style={{ position: "relative", display: "inline-block", marginLeft: "6px" }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenContactId(prev => prev === game.id ? null : game.id);
+                        }}
+                        title="대여자 연락처 보기"
+                        aria-label="대여자 연락처 보기"
+                        aria-expanded={openContactId === game.id}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          fontSize: "1em",
+                          padding: "2px 6px",
+                          color: "var(--admin-primary)",
+                          borderRadius: "4px",
+                        }}
+                      >📞</button>
+                      {openContactId === game.id && (
+                        <div
+                          style={styles.contactPopover}
+                          onClick={(e) => e.stopPropagation()}
+                          role="dialog"
+                        >
+                          <div style={{ fontSize: "0.75em", color: "var(--admin-text-sub)", marginBottom: "6px" }}>
+                            대여자 연락처
+                          </div>
+                          {(game.rentals || []).map((r) => {
+                            const user = r.user_id ? allUsers.find(u => u.id === r.user_id) : null;
+                            const displayName = user?.name || r.renter_name || r.profiles?.name || '알 수 없음';
+                            const phone = user?.phone || r.profiles?.phone || null;
+                            return (
+                              <div key={r.rental_id} style={styles.contactRow}>
+                                <strong style={{ color: "var(--admin-text-main)" }}>{displayName}</strong>
+                                {phone ? (
+                                  <a
+                                    href={`tel:${phone}`}
+                                    style={{ color: "#3498db", marginLeft: "8px", textDecoration: "none" }}
+                                  >
+                                    {phone}
+                                  </a>
+                                ) : (
+                                  <span style={{ color: "var(--admin-text-sub)", marginLeft: "8px", fontSize: "0.9em" }}>
+                                    (비회원/번호 없음)
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                          <button
+                            onClick={() => setOpenContactId(null)}
+                            style={{
+                              marginTop: "8px",
+                              padding: "4px 10px",
+                              fontSize: "0.8em",
+                              background: "transparent",
+                              border: "1px solid var(--admin-border)",
+                              color: "var(--admin-text-sub)",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                            }}
+                          >닫기</button>
+                        </div>
+                      )}
                     </span>
                   )}
 
@@ -832,7 +1027,8 @@ function DashboardTab({ games, loading, onReload }) {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -1086,6 +1282,19 @@ function DashboardTab({ games, loading, onReload }) {
         message={confirmModal.message}
         type={confirmModal.type}
       />
+      {/* 값 입력 모달 (window.prompt 대체) */}
+      <PromptModal
+        isOpen={promptModal.isOpen}
+        onClose={closePromptModal}
+        onConfirm={(v) => promptModal.onConfirm && promptModal.onConfirm(v)}
+        title={promptModal.title}
+        message={promptModal.message}
+        defaultValue={promptModal.defaultValue}
+        placeholder={promptModal.placeholder}
+        inputType={promptModal.inputType}
+        min={promptModal.min}
+        max={promptModal.max}
+      />
       {/* [NEW] 유저 선택 모달 (분리됨) */}
       <UserSelectModal
         isOpen={userSelectModal.isOpen}
@@ -1129,7 +1338,24 @@ const styles = {
     zIndex: 9999
   },
   modalContent: { background: "var(--admin-card-bg)", color: "var(--admin-text-main)", padding: "25px", borderRadius: "15px", width: "90%", maxWidth: "800px", boxShadow: "0 5px 20px rgba(0,0,0,0.5)", maxHeight: "90vh", overflowY: "auto" },
-  cancelBtn: { padding: "10px 20px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.2)", background: "rgba(108, 117, 125, 0.9)", color: "white", fontWeight: "600", cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)" }
+  cancelBtn: { padding: "10px 20px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.2)", background: "rgba(108, 117, 125, 0.9)", color: "white", fontWeight: "600", cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)" },
+  contactPopover: {
+    position: "absolute",
+    top: "calc(100% + 4px)",
+    left: 0,
+    background: "var(--admin-card-bg)",
+    border: "1px solid var(--admin-border)",
+    padding: "10px 12px",
+    borderRadius: "8px",
+    boxShadow: "0 6px 16px rgba(0,0,0,0.4)",
+    minWidth: "220px",
+    zIndex: 50,
+  },
+  contactRow: {
+    padding: "6px 0",
+    fontSize: "0.9em",
+    borderBottom: "1px dashed var(--admin-border)",
+  },
 };
 
 export default DashboardTab;
