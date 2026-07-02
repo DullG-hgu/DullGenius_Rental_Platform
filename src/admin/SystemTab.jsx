@@ -13,7 +13,7 @@ const COLOR_PRESETS = [
     { label: '⬜ 회색', value: 'linear-gradient(135deg, #3a3a3a, #666666)' },
 ];
 
-function SystemTab() {
+function SystemTab({ users }) {
     const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -44,7 +44,9 @@ function SystemTab() {
         setLoading(true);
         try {
             const [members, paymentCheck, ohConfig] = await Promise.all([
-                fetchUsers(), fetchPaymentCheckEnabled(), fetchOfficeHoursConfig()
+                Array.isArray(users) ? Promise.resolve(users) : fetchUsers(),
+                fetchPaymentCheckEnabled(),
+                fetchOfficeHoursConfig()
             ]);
 
             // 통계 계산
@@ -66,7 +68,7 @@ function SystemTab() {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [users]);
 
     // 회비 검사 토글
     const handleTogglePaymentCheck = async () => {
@@ -109,7 +111,7 @@ function SystemTab() {
             '학기 종료 - 회비 일괄 초기화',
             `⚠️ 모든 일반 회원의 회비 납부 상태를 "미납"으로 초기화합니다.\n\n` +
             `• 전체 회원 수: ${stats.totalMembers}명\n` +
-            `• 관리자, OB, 면제 역할 보유자는 자동 제외\n\n` +
+            `• 관리자, 운영진, 회비 면제 역할 보유자는 자동 제외\n\n` +
             `이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`,
             async () => {
                 try {

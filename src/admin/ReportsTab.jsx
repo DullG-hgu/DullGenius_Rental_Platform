@@ -13,18 +13,17 @@ function ReportsTab() {
 
     useEffect(() => {
         loadData();
-    }, [activeSubTab]);
+    }, []);
 
     const loadData = async () => {
         setLoading(true);
         try {
-            if (activeSubTab === 'damage') {
-                const data = await fetchDamageReports();
-                setReports(data || []);
-            } else {
-                const data = await fetchGameRequests();
-                setRequests(data || []);
-            }
+            const [reportData, requestData] = await Promise.all([
+                fetchDamageReports(),
+                fetchGameRequests()
+            ]);
+            setReports(reportData || []);
+            setRequests(requestData || []);
         } catch (error) {
             console.error("Failed to load reports:", error);
             showToast("데이터 로딩 실패", { type: "error" });
@@ -68,7 +67,7 @@ function ReportsTab() {
                         <p><strong>연락처:</strong> {selectedReport.profiles?.phone || '없음'}</p>
                         <p><strong>날짜:</strong> {formatDate(selectedReport.created_at)}</p>
                         <p><strong>{isRequest ? '희망 게임:' : '게임명:'}</strong> {isRequest ? selectedReport.game_title : selectedReport.game_name}</p>
-                        <hr style={{ borderColor: '#ddd', margin: '15px 0' }} />
+                        <hr style={{ borderColor: 'var(--admin-border)', margin: '15px 0' }} />
                         <p><strong>{isRequest ? '신청 사유:' : '파손 내용:'}</strong></p>
                         <div style={styles.contentBox}>
                             {isRequest ? selectedReport.description : selectedReport.content}
@@ -128,7 +127,7 @@ function ReportsTab() {
                         <tbody>
                             {activeSubTab === 'damage' ? (
                                 reports.length === 0 ? (
-                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>데이터가 없습니다.</td></tr>
+                                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>데이터가 없습니다.</td></tr>
                                 ) : (
                                     reports.map(report => (
                                         <tr key={report.id}>
@@ -166,7 +165,7 @@ function ReportsTab() {
                                 )
                             ) : (
                                 requests.length === 0 ? (
-                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>데이터가 없습니다.</td></tr>
+                                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>데이터가 없습니다.</td></tr>
                                 ) : (
                                     requests.map(request => (
                                         <tr key={request.id}>
@@ -273,21 +272,22 @@ const styles = {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1000
     },
     modalContent: {
-        background: 'white',
+        background: 'var(--admin-card-bg)',
         padding: '20px',
         borderRadius: '8px',
         width: '90%',
         maxWidth: '500px',
-        color: '#333',
+        color: 'var(--admin-text-main)',
         position: 'relative',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+        border: '1px solid var(--admin-border)',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.45)'
     },
     modalBody: {
         marginTop: '15px',
@@ -295,10 +295,11 @@ const styles = {
         lineHeight: '1.6'
     },
     contentBox: {
-        background: '#f8f9fa',
+        background: 'var(--admin-bg)',
         padding: '10px',
         borderRadius: '5px',
-        border: '1px solid #eee',
+        border: '1px solid var(--admin-border)',
+        color: 'var(--admin-text-main)',
         whiteSpace: 'pre-wrap',
         maxHeight: '200px',
         overflowY: 'auto'

@@ -21,10 +21,10 @@ export const fetchGames = async () => {
     return rows.map(game => {
       const gameRentals = Array.isArray(game.rentals) ? game.rentals : [];
       const statusData = calculateGameStatus(game, gameRentals);
+      // statusData.rentals = 만료된 찜이 걸러진 유효 기록만 (버튼 노출 조건과 상태 계산의 일관성 보장)
       return {
         ...game,
-        ...statusData,
-        rentals: gameRentals
+        ...statusData
       };
     });
   } catch (e) {
@@ -641,35 +641,14 @@ export const checkGameExists = async (name) => {
   return [];
 };
 
-// [Admin] 기존 게임에 재고(Copy) 추가 [NEW]
-export const addGameCopy = async (gameId) => { // location removed (no column)
-  // 1. 현재 수량 가져오기
-  const { data: game, error: fetchError } = await supabase
-    .from('games')
-    .select('quantity, available_count')
-    .eq('id', gameId)
-    .single();
-
-  if (fetchError) {
-    console.error('[addGameCopy] Error fetching game:', fetchError);
-    throw fetchError;
-  }
-
-  // 2. 수량 증가
-  const newQty = (game.quantity || 0) + 1;
-  const newAvail = (game.available_count || 0) + 1;
-
-  // 3. 업데이트
-  const { data, error } = await supabase
-    .from('games')
-    .update({ quantity: newQty, available_count: newAvail })
-    .eq('id', gameId)
-    .select();
-
+// [Admin] 기존 게임에 재고(Copy) 추가 — 원자적 증가 RPC (동시 클릭 시 증가분 유실 방지)
+export const addGameCopy = async (gameId) => {
+  const { data, error } = await supabase.rpc('add_game_copy', { p_game_id: gameId });
   if (error) {
-    console.error('[addGameCopy] Error updating quantity:', error);
+    console.error('[addGameCopy] RPC error:', error);
     throw error;
   }
+  if (!data.success) throw new Error(data.message);
   return data;
 };
 
@@ -831,9 +810,48 @@ export const adminUpdateGame = async (gameId, newStatus, renterName, userId, ren
     if (!data.success) throw new Error(data.message);
 
   } else {
-    // 그 외 상태(분실, 수리중 등) — 로그만 남김
+    // 그 외 상태 — 로그만 남김 (분실은 markGameLost 사용)
     await sendLog(gameId, 'STATUS_CHANGE', { status: newStatus });
   }
+};
+
+/**
+ * 게임 분실 처리 (RPC 연동, 트랜잭션)
+ * 활성 대여 건을 종료하고 총 재고(quantity)를 1개 차감합니다.
+ * 남은 재고가 0이 되면 자동으로 '대여 불가'(is_rentable=false)로 전환됩니다.
+ *
+ * @param {number} gameId - 게임 ID
+ * @param {string} [rentalId] - 분실 대상 대여 기록 UUID (여러 건 대여 중이면 필수)
+ * @returns {Promise<Object>} { success, remaining_quantity, message }
+ * @throws {Error} RPC 오류 또는 처리 실패 시
+ */
+export const markGameLost = async (gameId, rentalId) => {
+  const { data, error } = await supabase.rpc('admin_mark_lost', {
+    p_game_id: gameId,
+    p_rental_id: rentalId || null
+  });
+  if (error) throw error;
+  if (!data.success) throw new Error(data.message);
+  return data;
+};
+
+/**
+ * 관리자 찜 취소 (RPC 연동)
+ * rental_id 단위로 정확히 한 건만 취소합니다. 수기 찜(user_id 없음)도 처리 가능.
+ *
+ * @param {number} gameId - 게임 ID
+ * @param {string} [rentalId] - 취소할 찜 기록 UUID (미지정 시 활성 찜 1건일 때만 자동 지정)
+ * @returns {Promise<Object>} { success, message }
+ * @throws {Error} RPC 오류 또는 처리 실패 시
+ */
+export const adminCancelDibs = async (gameId, rentalId) => {
+  const { data, error } = await supabase.rpc('admin_cancel_dibs', {
+    p_game_id: gameId,
+    p_rental_id: rentalId || null
+  });
+  if (error) throw error;
+  if (!data.success) throw new Error(data.message);
+  return data;
 };
 
 // [Deleted] adminRentSpecificCopy (Legacy)
@@ -850,22 +868,22 @@ export const adminUpdateGame = async (gameId, newStatus, renterName, userId, ren
  * @returns {Promise<Object>} 처리 결과 { status, count }
  */
 export const returnGamesByRenter = async (renterName, targetUserId, targetGameId, targetRentalId) => {
-  // 1. 활성 RENT 목록 조회
-  const { data, error } = await supabase
+  // 1. 활성 RENT 목록 조회 (서버 사이드 필터 — 전체 테이블 다운로드 방지)
+  let query = supabase
     .from('rentals')
     .select('rental_id, game_id, user_id, renter_name')
     .is('returned_at', null)
     .eq('type', 'RENT');
 
+  if (targetRentalId) query = query.eq('rental_id', targetRentalId);
+  if (targetGameId) query = query.eq('game_id', targetGameId);
+  if (targetUserId) query = query.eq('user_id', targetUserId);
+  else if (renterName) query = query.eq('renter_name', renterName);
+
+  const { data, error } = await query;
   if (error) throw error;
 
-  // 2. 필터링: 특정 게임 + 특정 유저(또는 이름) 매칭
-  const activeRentals = data.filter(r => {
-    const isRentalMatch = targetRentalId ? r.rental_id === targetRentalId : true;
-    const isGameMatch = targetGameId ? r.game_id === targetGameId : true;
-    const isUserMatch = targetUserId ? r.user_id === targetUserId : (renterName ? r.renter_name === renterName : true);
-    return isRentalMatch && isGameMatch && isUserMatch;
-  });
+  const activeRentals = data || [];
 
   // 3. 반납 처리 (개별 실패는 swallow하고 count로 반영)
   let successCount = 0;
@@ -913,7 +931,7 @@ export const extendRentalsByRenter = async (renterName, targetUserId, targetGame
   });
   if (error) throw error;
   return {
-    count: data.success ? (parseInt(data.message.match(/\d+/)?.[0]) || 1) : 0,
+    count: data.success ? (data.count ?? 1) : 0,
     message: data.message
   };
 };

@@ -215,7 +215,7 @@ const styles = {
     fontWeight: "bold"
   },
   deleteBtn: {
-    background: "#fff",
+    background: "transparent",
     border: "1px solid #e74c3c",
     color: "#e74c3c",
     borderRadius: "8px",

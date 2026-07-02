@@ -11,8 +11,10 @@ import React from 'react';
  * @param {Function} props.onReturn - 개별 반납 핸들러 (game, rentalId) => void
  * @param {Function} props.onReceive - 개별 수령 핸들러 (game, rentalId) => void
  * @param {Function} props.onExtend - 개별 연장 핸들러 (game, rentalId) => void
+ * @param {Function} props.onCancelDibs - 개별 찜 취소 핸들러 (game, rentalId) => void
+ * @param {Function} props.onMarkLost - 개별 분실 처리 핸들러 (game, rentalId) => void
  */
-const RentalInstanceList = ({ game, onReturn, onReceive, onExtend }) => {
+const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs, onMarkLost }) => {
     if (!game.rentals || game.rentals.length <= 1) return null;
 
     return (
@@ -60,12 +62,20 @@ const RentalInstanceList = ({ game, onReturn, onReceive, onExtend }) => {
                             </div>
 
                             {isDibs ? (
-                                <button
-                                    onClick={() => onReceive(game, r.rental_id)}
-                                    style={btnStyle("#f39c12")}
-                                >
-                                    수령 확인
-                                </button>
+                                <div style={{ display: 'flex', gap: '5px' }}>
+                                    <button
+                                        onClick={() => onReceive(game, r.rental_id)}
+                                        style={btnStyle("#f39c12")}
+                                    >
+                                        수령 확인
+                                    </button>
+                                    <button
+                                        onClick={() => onCancelDibs(game, r.rental_id)}
+                                        style={btnStyle("#c0392b")}
+                                    >
+                                        취소
+                                    </button>
+                                </div>
                             ) : (
                                 <div style={{ display: 'flex', gap: '5px' }}>
                                     <button
@@ -79,6 +89,12 @@ const RentalInstanceList = ({ game, onReturn, onReceive, onExtend }) => {
                                         style={btnStyle("#27ae60")}
                                     >
                                         반납 확인
+                                    </button>
+                                    <button
+                                        onClick={() => onMarkLost(game, r.rental_id)}
+                                        style={btnStyle("#7f8c8d")}
+                                    >
+                                        분실
                                     </button>
                                 </div>
                             )}

@@ -1,6 +1,6 @@
 // src/admin/DashboardTab.js
 import { useState, useEffect } from 'react';
-import { adminUpdateGame, deleteGame, approveDibsByRenter, returnGamesByRenter, extendRentalsByRenter, editGame, fetchGameLogs, fetchAllLogs, fetchUsers } from '../api';
+import { adminUpdateGame, deleteGame, approveDibsByRenter, returnGamesByRenter, extendRentalsByRenter, editGame, fetchGameLogs, fetchAllLogs, fetchUsers, adminCancelDibs, markGameLost } from '../api';
 import GameFormModal from './GameFormModal';
 import UserSelectModal from './UserSelectModal'; // [NEW]
 import ConfirmModal from '../components/ConfirmModal'; // [NEW]
@@ -11,7 +11,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useGameFilter } from '../hooks/useGameFilter';
 import RentalInstanceList from './components/RentalInstanceList'; // [QUALITY] Component Extracted
 
-function DashboardTab({ games, loading, onReload }) {
+function DashboardTab({ games, loading, onReload, users }) {
   const { showToast } = useToast();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -98,6 +98,11 @@ function DashboardTab({ games, loading, onReload }) {
 
   // ⭐ 페이지 로드 시 유저 목록 가져오기
   useEffect(() => {
+    if (Array.isArray(users)) {
+      setAllUsers(users);
+      return;
+    }
+
     const loadUsers = async () => {
       try {
         const users = await fetchUsers(); // api.js에 추가한 함수 호출
@@ -109,13 +114,7 @@ function DashboardTab({ games, loading, onReload }) {
       }
     };
     loadUsers();
-  }, []);
-
-  // ⭐ [헬퍼 함수] 이름으로 User ID 찾기 (단일 매칭 - 구버전 호환용)
-  const findUserId = (nameStr) => {
-    const matches = findMatchingUsers(nameStr);
-    return matches.length > 0 ? matches[0].id : null;
-  };
+  }, [users]);
 
   // ⭐ [NEW] 이름 포함하는 모든 유저 찾기
   const findMatchingUsers = (nameStr) => {
@@ -137,21 +136,6 @@ function DashboardTab({ games, loading, onReload }) {
     const timer = setTimeout(() => setSearchTerm(inputValue), 300);
     return () => clearTimeout(timer);
   }, [inputValue]);
-
-  /**
-   * [HELPER] Get Effective Rental ID
-   * @param {Object} game - The game object
-   * @param {string|null} rentalId - Provided rentalId (optional)
-   * @returns {string|null} - The detected rentalId if unique (INTERNAL USE ONLY)
-   */
-  const getEffectiveRentalId = (game, rentalId) => {
-    // rentalId가 명시적으로 있으면 최우선 (드롭다운/개별 버튼 선택 시)
-    if (rentalId) return rentalId;
-
-    // rentalId가 없고, 이 게임을 빌린 사람이 단 1명뿐일 때만 자동 지정
-    if (game.rentals?.length === 1) return game.rentals[0].rental_id;
-    return null;
-  };
 
   // --- 필터링 로직 (App.js에서 가져옴 + 대여자 필터 추가) ---
   // [개선] Custom Hook 사용
@@ -381,25 +365,79 @@ function DashboardTab({ games, loading, onReload }) {
 
 
 
-  const handleStatusChange = async (gameId, newStatus, gameName) => {
-    let msg = `[${gameName}] 상태를 '${newStatus}'(으)로 변경하시겠습니까?`;
-    if (newStatus === "대여중") msg = "현장 수령 확인하시겠습니까?";
-    // [FIX] "대여가능"으로 변경하려는 경우
-    if (newStatus === "대여가능") msg = "반납 처리하시겠습니까? (강제 반납)";
+  const handleCancelDibs = async (game, rentalId) => {
+    const activeDibs = (game.rentals || []).filter(r =>
+      r.type === 'DIBS' &&
+      !r.returned_at &&
+      (!rentalId || r.rental_id === rentalId)
+    );
+
+    if (activeDibs.length === 0) {
+      showToast("취소할 찜 기록이 없습니다.", { type: "warning" });
+      return;
+    }
+
+    const targetDibs = (rentalId || activeDibs.length === 1) ? activeDibs[0] : null;
+    if (!targetDibs) {
+      showToast("찜이 여러 건입니다. 개별 목록에서 취소할 예약을 선택해주세요.", { type: "warning" });
+      return;
+    }
+
+    const renterName = targetDibs.renter_name || targetDibs.profiles?.name || "알 수 없음";
 
     showConfirmModal(
-      "상태 변경",
-      msg,
+      "찜 취소 확인",
+      `[${game.name}] ${renterName}님의 찜을 취소하시겠습니까?`,
       async () => {
         try {
-          await adminUpdateGame(gameId, newStatus);
-          showToast("처리되었습니다.", { type: "success" });
+          await adminCancelDibs(game.id, targetDibs.rental_id);
+          showToast("찜이 취소되었습니다.", { type: "success" });
+          localStorage.removeItem('games_cache');
           onReload();
         } catch (e) {
-          console.error('[DashboardTab] 게임 상태 변경 실패:', e);
-          showToast("오류 발생: " + e, { type: "error" });
+          console.error('[DashboardTab] 찜 취소 실패:', e);
+          showToast(`❌ 찜 취소 실패: ${e.message || String(e)}`, { type: "error" });
         }
-      }
+      },
+      "warning"
+    );
+  };
+
+  const handleMarkLost = async (game, rentalId) => {
+    const activeRentals = (game.rentals || []).filter(r =>
+      r.type === 'RENT' &&
+      !r.returned_at &&
+      (!rentalId || r.rental_id === rentalId)
+    );
+
+    if (activeRentals.length === 0 && game.active_rental_count !== 1) {
+      showToast("분실 처리할 대여 기록이 없습니다.", { type: "warning" });
+      return;
+    }
+
+    const targetRental = (rentalId || activeRentals.length === 1) ? activeRentals[0] : null;
+    if (!targetRental && activeRentals.length > 1) {
+      showToast("대여 건이 여러 건입니다. 개별 목록에서 분실 처리할 대여 건을 선택해주세요.", { type: "warning" });
+      return;
+    }
+
+    const renterName = targetRental?.renter_name || targetRental?.profiles?.name || game.renter?.split(',')[0]?.trim() || "알 수 없음";
+
+    showConfirmModal(
+      "분실 처리 확인",
+      `[${game.name}] ${renterName}님의 대여 건을 분실 처리하시겠습니까?\n\n대여 기록이 종료되고 재고가 1개 차감됩니다.`,
+      async () => {
+        try {
+          const res = await markGameLost(game.id, targetRental?.rental_id || null);
+          showToast(res?.message || "분실 처리되었습니다.", { type: "success" });
+          localStorage.removeItem('games_cache');
+          onReload();
+        } catch (e) {
+          console.error('[DashboardTab] 분실 처리 실패:', e);
+          showToast(`❌ 분실 처리 실패: ${e.message || String(e)}`, { type: "error" });
+        }
+      },
+      "danger"
     );
   };
 
@@ -661,7 +699,8 @@ function DashboardTab({ games, loading, onReload }) {
 
     // 단일 수령 처리
     if (totalUserDibs <= 1) {
-      const finalRentalId = game.rentals?.[0]?.rental_id;
+      // [FIX] rentals[0]은 RENT일 수 있음 — 반드시 활성 DIBS를 찾아 지정 (오타겟 시 신규 대여가 생성됨)
+      const finalRentalId = game.rentals?.find(r => r.type === 'DIBS' && !r.returned_at)?.rental_id;
       showConfirmModal(
         "수령 확인",
         `[${game.name}] 현장 수령 확인하시겠습니까?`,
@@ -682,7 +721,7 @@ function DashboardTab({ games, loading, onReload }) {
       // 일괄 수령 처리
       showConfirmModal(
         "일괄 수령 확인",
-        `💡 [${renterNameInput}] 님이 예약한 게임이 총 ${totalUserDibs}개입니다.\n\n모두 한꺼번에 '대여중'으로 처리하시겠습니까?\n(취소 누르면 이 게임 하나만 처리합니다)`,
+        `💡 [${renterNameInput}] 님이 예약한 게임이 총 ${totalUserDibs}개입니다.\n\n모두 한꺼번에 '대여중'으로 처리하시겠습니까?`,
         async () => {
           try {
             const res = await approveDibsByRenter(renterNameInput, userId);
@@ -987,6 +1026,8 @@ function DashboardTab({ games, loading, onReload }) {
                     onReturn={handleReturn}
                     onReceive={handleReceive}
                     onExtend={handleExtend}
+                    onCancelDibs={handleCancelDibs}
+                    onMarkLost={handleMarkLost}
                   />
                 )}
               </div>
@@ -1003,7 +1044,7 @@ function DashboardTab({ games, loading, onReload }) {
                     <button onClick={() => handleReceive(game)} style={actionBtnStyle("#2980b9")} title="해당 사용자의 모든 예약 수령">
                       {game.rentals?.filter(r => r.type === 'DIBS').length > 1 ? "🤝 일괄수령" : "🤝 수령"}
                     </button>
-                    <button onClick={() => handleStatusChange(game.id, "대여가능", game.name)} style={actionBtnStyle("#c0392b")}>🚫 취소</button>
+                    <button onClick={() => handleCancelDibs(game)} style={actionBtnStyle("#c0392b")}>🚫 취소</button>
                   </>
                 )}
 
@@ -1017,7 +1058,7 @@ function DashboardTab({ games, loading, onReload }) {
                       <button onClick={() => handleReturn(game)} style={actionBtnStyle("#27ae60")} title="해당 사용자의 모든 대여 반납">
                         {game.rentals?.filter(r => r.type === 'RENT' && !r.returned_at).length > 1 ? "↩️ 일괄반납" : "↩️ 반납"}
                       </button>
-                      <button onClick={() => handleStatusChange(game.id, "분실", game.name)} style={actionBtnStyle("#7f8c8d")}>⚠️ 분실</button>
+                      <button onClick={() => handleMarkLost(game)} style={actionBtnStyle("#7f8c8d")}>⚠️ 분실</button>
                     </>
                   )}
 
@@ -1311,7 +1352,12 @@ function DashboardTab({ games, loading, onReload }) {
         }}
         onSelectManual={() => {
           setUserSelectModal({ ...userSelectModal, isOpen: false });
-          proceedRentWithUser(userSelectModal.game, userSelectModal.renterNameInput, null);
+          // [FIX] 수령 흐름에서는 수기 진행도 수령 경로로 — 대여 생성 경로로 빠지면 찜이 안 닫히고 중복 대여 발생
+          if (userSelectModal.actionType === 'receive') {
+            proceedReceiveWithUser(userSelectModal.game, userSelectModal.renterNameInput, null);
+          } else {
+            proceedRentWithUser(userSelectModal.game, userSelectModal.renterNameInput, null);
+          }
         }}
       />
     </div>

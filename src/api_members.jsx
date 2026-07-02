@@ -84,28 +84,14 @@ export const togglePaymentCheck = async (enabled) => {
     return { status: "success" };
 };
 
-// [Admin] 사용자 역할 업데이트
+// [Admin] 사용자 역할 업데이트 (원자적 RPC — 삭제 후 삽입 실패로 인한 역할 유실 방지)
 export const updateUserRoles = async (userId, roleKeys) => {
-    // 기존 역할 삭제
-    await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
-
-    // 새 역할 추가
-    if (roleKeys && roleKeys.length > 0) {
-        const roles = roleKeys.map(roleKey => ({
-            user_id: userId,
-            role_key: roleKey
-        }));
-
-        const { error } = await supabase
-            .from('user_roles')
-            .insert(roles);
-
-        if (error) throw error;
-    }
-
+    const { data, error } = await supabase.rpc('admin_update_user_roles', {
+        p_user_id: userId,
+        p_role_keys: roleKeys || []
+    });
+    if (error) throw error;
+    if (!data.success) throw new Error(data.message);
     return { status: "success" };
 };
 

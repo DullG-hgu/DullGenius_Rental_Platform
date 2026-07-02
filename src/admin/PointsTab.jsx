@@ -2,11 +2,10 @@
 // 포인트 시스템 대시보드 및 설정
 
 import { useState, useEffect } from 'react';
-import { useToast } from '../contexts/ToastContext';
 import { fetchGlobalPointHistory, fetchLeaderboard } from '../api';
 
 function PointsTab() {
-    const [selectedView, setSelectedView] = useState('dashboard'); // 'dashboard', 'info', 'vote'
+    const [selectedView, setSelectedView] = useState('dashboard'); // 'dashboard' or 'info'
 
     return (
         <div>
@@ -22,17 +21,11 @@ function PointsTab() {
                     isActive={selectedView === 'info'}
                     onClick={() => setSelectedView('info')}
                 />
-                <SubTabButton
-                    label="🗳️ 신규 게임 투표"
-                    isActive={selectedView === 'vote'}
-                    onClick={() => setSelectedView('vote')}
-                />
             </div>
 
             {/* 컨텐츠 영역 */}
             {selectedView === 'dashboard' && <DashboardView />}
             {selectedView === 'info' && <PointsInfoView />}
-            {selectedView === 'vote' && <VoteView />}
         </div>
     );
 }
@@ -133,10 +126,11 @@ function DashboardView() {
 
 // 헬퍼 함수들
 const getLogIcon = (reason) => {
-    if (reason.includes('RENTAL')) return '📦';
-    if (reason.includes('RETURN')) return '↩️';
-    if (reason.includes('MATCH')) return '⚔️';
-    if (reason.includes('REVIEW')) return '✍️';
+    const safeReason = reason || '';
+    if (safeReason.includes('RENTAL')) return '📦';
+    if (safeReason.includes('RETURN')) return '↩️';
+    if (safeReason.includes('MATCH')) return '⚔️';
+    if (safeReason.includes('REVIEW')) return '✍️';
     return '💰';
 };
 
@@ -151,10 +145,6 @@ const getReasonLabel = (reason) => {
         default: return reason;
     }
 };
-
-// ... (기존 PointsInfoView, VoteView 유지) ...
-// 기존 코드 복사 붙여넣기 생략을 위해 전체 구조를 다시 잡습니다.
-// 아래는 PointsInfoView와 VoteView를 포함한 전체 코드입니다.
 
 function PointsInfoView() {
     return (
@@ -187,69 +177,6 @@ function PointsInfoView() {
     );
 }
 
-function VoteView() {
-    const { showToast } = useToast();
-    const [proposalName, setProposalName] = useState('');
-    const [proposalLink, setProposalLink] = useState('');
-    const [proposals, setProposals] = useState([
-        { id: 1, name: '듄: 임페리움', link: 'https://boardgamegeek.com/boardgame/316554/dune-imperium', votes: 2500, voters: 5 },
-        { id: 2, name: '윙스팬', link: 'https://boardgamegeek.com/boardgame/266192/wingspan', votes: 1800, voters: 3 },
-        { id: 3, name: '테라포밍 마스', link: 'https://boardgamegeek.com/boardgame/167791/terraforming-mars', votes: 1200, voters: 2 },
-    ]);
-
-    const handleAddProposal = () => {
-        if (!proposalName.trim()) {
-            showToast('게임 이름을 입력해주세요. (체험판)', { type: "warning" });
-            return;
-        }
-        const newProposal = {
-            id: Date.now(),
-            name: proposalName,
-            link: proposalLink,
-            votes: 0,
-            voters: 0
-        };
-        setProposals([...proposals, newProposal]);
-        setProposalName('');
-        setProposalLink('');
-        showToast('[체험판] 게임이 제안되었습니다! (실제 저장되지 않음)', { type: "success" });
-    };
-
-    return (
-        <div className="admin-card">
-            <h2 style={styles.sectionTitle}>🗳️ 신규 게임 투표</h2>
-            <div style={styles.demoBanner}>
-                <span style={{ fontSize: '1.2em' }}>🚧</span>
-                <div>
-                    <strong>체험판 모드 (Demo Mode)</strong>
-                    <div style={{ fontSize: '0.9em', opacity: 0.9 }}>
-                        이 기능은 현재 개발 중입니다. 투표 및 제안 기능은 <strong>시뮬레이션</strong>이며,
-                        새로고침 시 데이터를 리셋합니다.
-                    </div>
-                </div>
-            </div>
-
-            <div style={styles.proposalForm}>
-                <h3 style={styles.subTitle}>➕ 새 게임 제안하기</h3>
-                <div style={styles.formRow}>
-                    <input type="text" placeholder="게임 이름" value={proposalName} onChange={(e) => setProposalName(e.target.value)} className="admin-input" style={{ flex: 1 }} />
-                    <input type="text" placeholder="BGG 링크 (선택)" value={proposalLink} onChange={(e) => setProposalLink(e.target.value)} className="admin-input" style={{ flex: 1 }} />
-                    <button onClick={handleAddProposal} style={styles.addBtn}>제안하기</button>
-                </div>
-            </div>
-
-            <div style={styles.voteList}>
-                <h3 style={styles.subTitle}>📊 현재 투표 현황</h3>
-                <div style={styles.proposalGrid}>
-                    {proposals.sort((a, b) => b.votes - a.votes).map((proposal, index) => (
-                        <ProposalCard key={proposal.id} proposal={proposal} rank={index + 1} />
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
 const EarnCard = ({ icon, title, points, description }) => (
     <div style={styles.earnCard}>
         <div style={styles.earnIcon}>{icon}</div>
@@ -272,39 +199,6 @@ const UseCard = ({ icon, title, points, description, highlight }) => (
     </div>
 );
 
-const ProposalCard = ({ proposal, rank }) => {
-    const { showToast } = useToast();
-    const [voteAmount, setVoteAmount] = useState('');
-
-    const handleVote = () => {
-        const amount = parseInt(voteAmount);
-        if (!amount || amount < 100) {
-            showToast('최소 100P부터 투표 가능합니다.', { type: "warning" });
-            return;
-        }
-        showToast(`[체험판] ${proposal.name}에 ${amount}P 투표했습니다!`, { type: "success" });
-        setVoteAmount('');
-    };
-
-    return (
-        <div className="admin-card" style={{ padding: "20px" }}>
-            <div style={styles.proposalHeader}>
-                <span style={styles.proposalRank}>{rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : `${rank}위`}</span>
-                <span style={styles.proposalName}>{proposal.name}</span>
-            </div>
-            {proposal.link && <a href={proposal.link} target="_blank" rel="noopener noreferrer" style={styles.proposalLink}>📎 BGG 보기</a>}
-            <div style={styles.proposalStats}>
-                <strong style={{ fontSize: '1.5em', color: 'var(--admin-primary)' }}>{proposal.votes.toLocaleString()}P</strong>
-                <div style={{ fontSize: '0.8em', color: 'var(--admin-text-sub)' }}>{proposal.voters}명 투표</div>
-            </div>
-            <div style={styles.voteInput}>
-                <input type="number" placeholder="포인트" value={voteAmount} onChange={(e) => setVoteAmount(e.target.value)} className="admin-input" style={{ flex: 1 }} min="100" step="100" />
-                <button onClick={handleVote} style={styles.voteBtn}>투표</button>
-            </div>
-        </div>
-    );
-};
-
 const styles = {
     subTabContainer: { display: 'flex', gap: '10px', marginBottom: '30px', borderBottom: '2px solid var(--admin-border)', paddingBottom: '10px' },
     subTab: { padding: '10px 20px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem', transition: 'all 0.2s' },
@@ -323,20 +217,6 @@ const styles = {
     useTitle: { fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px', color: 'var(--admin-text-main)' },
     usePoints: { fontSize: '1.3em', fontWeight: 'bold', color: 'var(--admin-primary)', marginBottom: '5px' },
     useDesc: { fontSize: '0.85em', color: 'var(--admin-text-sub)' },
-    demoBanner: { background: 'linear-gradient(45deg, #FF512F, #DD2476)', color: 'white', padding: '15px 20px', borderRadius: '10px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px', boxShadow: '0 4px 15px rgba(221, 36, 118, 0.3)' },
-    proposalForm: { background: 'rgba(255, 255, 255, 0.05)', padding: '20px', borderRadius: '10px', marginBottom: '30px' },
-    formRow: { display: 'flex', gap: '10px', marginTop: '15px' },
-    addBtn: { padding: '12px 24px', background: 'var(--admin-primary)', color: '#121212', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', whiteSpace: 'nowrap' },
-    voteList: { marginTop: '30px' },
-    proposalGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', marginTop: '20px' },
-    proposalHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' },
-    proposalRank: { fontSize: '1.5em', fontWeight: 'bold' },
-    proposalName: { fontSize: '1.2em', fontWeight: 'bold', color: 'var(--admin-text-main)' },
-    proposalLink: { display: 'inline-block', fontSize: '0.9em', color: 'var(--admin-primary)', textDecoration: 'none', marginBottom: '15px' },
-    proposalStats: { padding: '15px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center', marginBottom: '15px' },
-    voteInput: { display: 'flex', gap: '10px' },
-    voteBtn: { padding: '10px 20px', background: '#27ae60', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' },
-
     // Dashboard Styles
     dashboardGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' },
     cardTitle: { fontSize: '1.4em', marginBottom: '15px', color: 'var(--admin-text-main)', borderBottom: '1px solid var(--admin-border)', paddingBottom: '10px' },

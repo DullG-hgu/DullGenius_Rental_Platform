@@ -1,5 +1,5 @@
 // src/admin/AddGameTab.js
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { searchNaver, addGame, checkGameExists, addGameCopy } from '../api';
 import GameFormModal from './GameFormModal';
 import ConfirmModal from '../components/ConfirmModal'; // [NEW]
@@ -23,8 +23,12 @@ function AddGameTab({ onGameAdded }) {
     onConfirm: null,
     type: "info"
   });
+  const skipConfirmCancelRef = useRef(false);
+
+  const stripHtml = (value = "") => value.replace(/<[^>]*>?/g, '');
 
   const showConfirmModal = (title, message, onConfirm, type = "info", onCancel = null) => {
+    skipConfirmCancelRef.current = false;
     setConfirmModal({ isOpen: true, title, message, onConfirm, type, onCancel });
   };
 
@@ -103,7 +107,7 @@ function AddGameTab({ onGameAdded }) {
   // 검색 결과 선택 시 모달 열기
   const openAddModal = (item) => {
     const initialData = {
-      name: item.title.replace(/<[^>]*>?/g, ''),
+      name: stripHtml(item.title),
       category: "보드게임",
       min_players: 2,
       max_players: 4,
@@ -156,11 +160,9 @@ function AddGameTab({ onGameAdded }) {
         async () => {
           try {
             let finalImage = formData.image;
-            console.log("1. Initial formData.image:", finalImage);
 
             // 2-1. 이미지 최적화 및 업로드 (Supabase Storage)
             // 외부 이미지(네이버 등)인 경우에만 처리
-            console.log("2. Condition check:", !!finalImage, finalImage?.startsWith('http'), !finalImage?.includes('supabase.co'));
             if (finalImage && finalImage.startsWith('http') && !finalImage.includes('supabase.co')) {
               try {
                 // [IMPROVED] 단계별 진행률 표시
@@ -169,17 +171,14 @@ function AddGameTab({ onGameAdded }) {
                 // weserv.nl을 통해 리사이징된 이미지(WebP, 600px) Fetch
                 const cleanUrl = finalImage.replace(/^https?:\/\//, '');
                 const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}&w=600&output=webp&il`;
-                console.log("3. Fetching from proxyUrl:", proxyUrl);
 
                 const response = await fetch(proxyUrl);
-                console.log("4. Fetch response status:", response.status);
 
                 if (!response.ok) {
                   throw new Error(`이미지 최적화 서버 응답 에러: ${response.status}`);
                 }
 
                 const blob = await response.blob();
-                console.log("5. Blob size:", blob.size);
 
                 // [IMPROVED] 업로드 진행 표시
                 showToast("☁️ 이미지를 업로드하고 있습니다...", { type: "info" });
@@ -193,7 +192,7 @@ function AddGameTab({ onGameAdded }) {
                   .upload(fileName, blob, { contentType: 'image/webp' });
 
                 if (uploadError) {
-                  console.error("6. Upload Error details:", uploadError);
+                  console.error("[AddGameTab] 이미지 업로드 실패:", uploadError);
                   throw uploadError;
                 }
 
@@ -202,14 +201,12 @@ function AddGameTab({ onGameAdded }) {
                   .from('game-images')
                   .getPublicUrl(fileName);
 
-                console.log("7. Acquired publicUrl:", publicUrl);
 
                 // 이미지 URL 교체
                 finalImage = publicUrl;
-                console.log("8. finalImage successfully updated to:", finalImage);
 
               } catch (imgError) {
-                console.error("9. Image optimization catch block reached:", imgError);
+                console.error("[AddGameTab] 이미지 최적화 실패:", imgError);
                 showToast("⚠️ 이미지 최적화 실패 (원본 사용)", { type: "warning" });
                 // 실패해도 원본 URL로 계속 진행
               }
@@ -217,7 +214,6 @@ function AddGameTab({ onGameAdded }) {
 
             // 2-2. 신규 게임 DB 저장
             // id는 DB에서 생성되므로 제거하고 보냄
-            console.log("10. Final payload image before addGame:", finalImage);
             const { id, ...rest } = formData;
             await addGame({ ...rest, image: finalImage });
             showToast("추가되었습니다!", { type: "success" });
@@ -276,7 +272,7 @@ function AddGameTab({ onGameAdded }) {
         {results.map((item) => (
           <div key={item.productId} className="admin-card" style={{ padding: "10px", textAlign: "center" }}>
             <img src={item.image} alt="cover" style={styles.cardImage} />
-            <div style={styles.cardTitle} dangerouslySetInnerHTML={{ __html: item.title }} />
+            <div style={styles.cardTitle}>{stripHtml(item.title)}</div>
             <button onClick={() => openAddModal(item)} style={styles.selectBtn}>선택</button>
           </div>
         ))}
@@ -295,12 +291,16 @@ function AddGameTab({ onGameAdded }) {
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         onClose={() => {
-          if (confirmModal.onCancel) {
+          if (!skipConfirmCancelRef.current && confirmModal.onCancel) {
             confirmModal.onCancel();
           }
+          skipConfirmCancelRef.current = false;
           closeConfirmModal();
         }}
-        onConfirm={confirmModal.onConfirm}
+        onConfirm={() => {
+          skipConfirmCancelRef.current = true;
+          return confirmModal.onConfirm?.();
+        }}
         title={confirmModal.title}
         message={confirmModal.message}
         type={confirmModal.type}

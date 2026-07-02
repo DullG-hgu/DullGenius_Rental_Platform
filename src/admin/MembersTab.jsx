@@ -3,9 +3,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { fetchUsers, fetchUserProfile } from '../api';
-import { updatePaymentStatus, updateUserProfile, getUserRoles, updateUserRoles, resetUserPassword } from '../api_members';
+import { updatePaymentStatus, updateUserProfile, updateUserRoles, resetUserPassword } from '../api_members';
 import { useToast } from '../contexts/ToastContext';
-import { supabase } from '../lib/supabaseClient';
 import ConfirmModal from '../components/ConfirmModal';
 import { DEFAULT_SEMESTER, getCurrentSemester, compareSemester } from '../constants';
 
@@ -30,12 +29,6 @@ const TABS = [
     { key: 'exempt',      label: '면제',     emoji: '🎖️', color: '#3498db' },
     { key: 'withdrawn',   label: '탈퇴',     emoji: '🚪', color: '#e74c3c' },
 ];
-
-// 유틸 함수: 전화번호 마스킹
-const maskPhone = (phone) => {
-    if (!phone) return '-';
-    return `${phone.slice(0, 3)}-****-${phone.slice(-4)}`;
-};
 
 // 헬퍼: 역할 이름 표시
 const getRoleDisplayName = (roleKey) => {
@@ -95,7 +88,7 @@ const calculateDuration = (joinedSemester) => {
     }
 };
 
-function MembersTab() {
+function MembersTab({ users, onUsersReload }) {
     const { showToast } = useToast();
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -130,22 +123,24 @@ function MembersTab() {
         setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null, type: 'info' });
     };
 
+    const applyMembers = (data) => {
+        setMembers(data || []);
+
+        const rolesMap = {};
+        if (data) {
+            data.forEach(member => {
+                rolesMap[member.id] = member.roles || [];
+            });
+        }
+        setMemberRoles(rolesMap);
+    };
+
     // 회원 목록 로드
     const loadMembers = async () => {
         setLoading(true);
         try {
             const data = await fetchUsers();
-            setMembers(data || []);
-
-            // [Optimized] fetchUsers에서 roles를 이미 가져오므로 추가 호출 불필요
-            // rolesMap을 생성하여 memberRoles 상태 업데이트
-            const rolesMap = {};
-            if (data) {
-                data.forEach(member => {
-                    rolesMap[member.id] = member.roles || [];
-                });
-            }
-            setMemberRoles(rolesMap);
+            applyMembers(data);
         } catch (e) {
             console.error('[MembersTab] 회원 목록 로딩 실패:', e);
             showToast('회원 목록 로딩 실패', { type: 'error' });
@@ -154,9 +149,29 @@ function MembersTab() {
         }
     };
 
+    const refreshMembers = async () => {
+        if (!onUsersReload) {
+            await loadMembers();
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const data = await onUsersReload();
+            applyMembers(data);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        loadMembers();
-    }, []);
+        if (Array.isArray(users)) {
+            applyMembers(users);
+            setLoading(false);
+        } else {
+            loadMembers();
+        }
+    }, [users]);
 
     // 정렬 처리
     const handleSort = (field) => {
@@ -240,7 +255,7 @@ function MembersTab() {
                 try {
                     await updatePaymentStatus(member.id, newStatus);
                     showToast('회비 상태가 변경되었습니다.', { type: 'success' });
-                    loadMembers();
+                    refreshMembers();
                 } catch (e) {
                     console.error('[MembersTab] 회비 상태 변경 실패:', e);
                     showToast('회비 상태 변경 실패: ' + e.message, { type: 'error' });
@@ -314,7 +329,7 @@ function MembersTab() {
             }
 
             // 목록 갱신
-            loadMembers();
+            refreshMembers();
             handleCloseRoleEdit();
         } catch (e) {
             console.error('[MembersTab] 역할 수정 실패:', e);
@@ -417,7 +432,7 @@ function MembersTab() {
                         <tbody>
                             {filteredAndSortedMembers.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--admin-text-sub)' }}>
+                                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--admin-text-sub)' }}>
                                         검색 결과가 없습니다.
                                     </td>
                                 </tr>
@@ -451,7 +466,7 @@ function MembersTab() {
                                             </td>
                                             <td>{member.student_id || '-'}</td>
                                             <td style={{ fontSize: '0.9em' }}>
-                                                <div style={{ fontWeight: 'bold', color: '#2c3e50' }}>{calculateDuration(member.joined_semester)}</div>
+                                                <div style={{ fontWeight: 'bold', color: 'var(--admin-text-main)' }}>{calculateDuration(member.joined_semester)}</div>
                                                 <div style={{ fontSize: '0.8em', color: '#7f8c8d' }}>{member.joined_semester || '-'}</div>
                                             </td>
                                             <td>
@@ -536,7 +551,7 @@ function MembersTab() {
                 <p><strong>💡 사용 안내:</strong></p>
                 <ul style={{ margin: '10px 0', paddingLeft: '20px', lineHeight: '1.6' }}>
                     <li>회비 버튼을 클릭하여 납부 상태를 변경할 수 있습니다.</li>
-                    <li>비밀번호 재설정 시 사용자에게 재설정 이메일이 발송됩니다.</li>
+                    <li>비밀번호 재설정 시 사용자 비밀번호가 즉시 12345678로 초기화됩니다.</li>
                 </ul>
             </div>
 
@@ -645,7 +660,7 @@ function MembersTab() {
                             </div>
 
                             {/* [NEW] 가입 학기 수정 섹션 */}
-                            <div style={{ marginBottom: '20px', padding: '15px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px' }}>
+                            <div style={{ marginBottom: '20px', padding: '15px', background: 'var(--admin-bg)', borderRadius: '8px' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '0.95em' }}>📅 가입 학기 수정</div>
                                 <div style={{ display: 'flex', gap: '10px' }}>
                                     <input
@@ -667,7 +682,7 @@ function MembersTab() {
                                                     ...prev,
                                                     member: { ...prev.member, joined_semester: val }
                                                 }));
-                                                loadMembers(); // 리스트 갱신
+                                                refreshMembers(); // 리스트 갱신
                                             } catch (e) {
                                                 console.error('[MembersTab] 가입학기 수정 실패:', e);
                                                 showToast('수정 실패: ' + e.message, { type: 'error' });
@@ -681,7 +696,7 @@ function MembersTab() {
                             </div>
 
                             {/* [NEW] 전화번호 수정 섹션 */}
-                            <div style={{ marginBottom: '20px', padding: '15px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px' }}>
+                            <div style={{ marginBottom: '20px', padding: '15px', background: 'var(--admin-bg)', borderRadius: '8px' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '0.95em' }}>📞 전화번호 수정</div>
                                 <div style={{ display: 'flex', gap: '10px' }}>
                                     <input
@@ -702,7 +717,7 @@ function MembersTab() {
                                                     ...prev,
                                                     member: { ...prev.member, phone: val }
                                                 }));
-                                                loadMembers(); // 리스트 갱신
+                                                refreshMembers(); // 리스트 갱신
                                             } catch (e) {
                                                 console.error('[MembersTab] 전화번호 수정 실패:', e);
                                                 showToast('수정 실패: ' + e.message, { type: 'error' });

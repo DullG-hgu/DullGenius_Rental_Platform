@@ -16,7 +16,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchGames, fetchConfig, fetchOfficeStatus } from './api';
+import { fetchGames, fetchConfig, fetchOfficeStatus, fetchUsers } from './api';
 import { useAuth } from './contexts/AuthContext'; // [SECURITY] Supabase 권한 기반 인증
 import { useToast } from './contexts/ToastContext';
 import './Admin.css'; // [NEW] 다크 모드 스타일 임포트
@@ -52,6 +52,7 @@ function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [games, setGames] = useState([]);
   const [config, setConfig] = useState([]);
+  const [adminUsers, setAdminUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [officeStatus, setOfficeStatus] = useState(null);
 
@@ -74,9 +75,9 @@ function Admin() {
         return; // 에러 시 중단
       }
 
-      // 정렬 로직 (우선순위: 예약됨 > 대여중 > 일부대여중 > 대여가능 > 분실)
+      // 정렬 로직 (우선순위: 예약됨 > 대여중 > 일부대여중 > 대여가능)
       // [FIX] 반납/수령 처리를 위해 '예약됨(찜)', '대여중'을 상위로 이동
-      const priority = { "예약됨": 1, "대여중": 2, "일부대여중": 3, "대여가능": 4, "분실": 5, "수리중": 6 };
+      const priority = { "예약됨": 1, "대여중": 2, "일부대여중": 3, "대여가능": 4 };
 
       const sortedGames = validGames.sort((a, b) => {
         // 1. 상태 우선순위 비교 (관리자용 adminStatus 기준)
@@ -102,6 +103,20 @@ function Admin() {
       showToast("데이터 로딩 실패 (인터넷 연결 확인)", { type: "error" });
     } finally {
       setLoading(false);
+    }
+  }, [showToast]);
+
+  const loadAdminUsers = useCallback(async () => {
+    try {
+      const usersData = await fetchUsers();
+      const validUsers = Array.isArray(usersData) ? usersData : [];
+      setAdminUsers(validUsers);
+      return validUsers;
+    } catch (e) {
+      console.error('[Admin] 회원 데이터 로딩 실패:', e);
+      showToast("회원 데이터 로딩 실패", { type: "error" });
+      setAdminUsers([]);
+      return [];
     }
   }, [showToast]);
 
@@ -140,9 +155,10 @@ function Admin() {
         }
       }
       loadData();
+      loadAdminUsers();
       loadOfficeStatus();
     }
-  }, [user?.id, isAdmin, loadData, loadOfficeStatus]);
+  }, [user?.id, isAdmin, loadData, loadAdminUsers, loadOfficeStatus]);
 
 
   // --- 3. 로딩 및 권한 체크 ---
@@ -266,6 +282,7 @@ function Admin() {
               games={games}
               loading={loading}
               onReload={loadData}
+              users={adminUsers}
             />
           </>
         )}
@@ -292,7 +309,7 @@ function Admin() {
         )}
 
         {activeTab === "system" && ( // [NEW]
-          <SystemTab />
+          <SystemTab users={adminUsers} />
         )}
 
         {activeTab === "points" && (
@@ -300,7 +317,7 @@ function Admin() {
         )}
 
         {activeTab === "members" && ( // [NEW]
-          <MembersTab />
+          <MembersTab users={adminUsers} onUsersReload={loadAdminUsers} />
         )}
 
         {activeTab === "stats" && (

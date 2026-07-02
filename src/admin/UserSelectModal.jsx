@@ -8,20 +8,20 @@ const UserSelectModal = ({ isOpen, onClose, candidates, onSelectUser, onSelectMa
             <div style={styles.modalContent}>
                 <h3>👥 동명이인 선택</h3>
                 <p>검색된 사용자가 여러 명입니다. 대상 유저를 선택해주세요.</p>
-                <div style={{ maxHeight: "300px", overflowY: "auto", border: "1px solid #eee", borderRadius: "8px" }}>
+                <div style={{ maxHeight: "300px", overflowY: "auto", border: "1px solid var(--admin-border)", borderRadius: "8px" }}>
                     {candidates.map(u => (
                         <div
                             key={u.id}
                             onClick={() => onSelectUser(u)}
                             style={styles.userItem}
-                            onMouseEnter={(e) => e.currentTarget.style.background = "#f8f9fa"}
-                            onMouseLeave={(e) => e.currentTarget.style.background = "#fff"}
+                            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+                            onMouseLeave={(e) => e.currentTarget.style.background = "var(--admin-bg)"}
                         >
                             <div>
                                 <div style={{ fontWeight: "bold", fontSize: "1.1em" }}>{u.name}</div>
-                                <div style={{ fontSize: "0.9em", color: "#666" }}>학번: {u.student_id || "-"}</div>
+                                <div style={{ fontSize: "0.9em", color: "var(--admin-text-sub)" }}>학번: {u.student_id || "-"}</div>
                             </div>
-                            <div style={{ fontSize: "0.9em", color: "#888" }}>{u.phone || "전화번호 없음"}</div>
+                            <div style={{ fontSize: "0.9em", color: "var(--admin-text-sub)" }}>{u.phone || "전화번호 없음"}</div>
                         </div>
                     ))}
                 </div>
@@ -64,7 +64,7 @@ const UserSelectModal = ({ isOpen, onClose, candidates, onSelectUser, onSelectMa
 const styles = {
     modalOverlay: {
         position: "fixed",
-        top: 0, alert: 0,
+        top: 0,
         left: 0,
         right: 0,
         bottom: 0,
@@ -77,7 +77,7 @@ const styles = {
         zIndex: 9999
     },
     modalContent: {
-        background: "var(--admin-card-bg, #fff)", // fallback check
+        background: "var(--admin-card-bg, #fff)",
         color: "var(--admin-text-main, #333)",
         padding: "25px",
         borderRadius: "15px",
@@ -89,12 +89,12 @@ const styles = {
     },
     userItem: {
         padding: "15px",
-        borderBottom: "1px solid #eee",
+        borderBottom: "1px solid var(--admin-border)",
         cursor: "pointer",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        background: "#fff"
+        background: "var(--admin-bg)"
     },
     actionBtn: { padding: "10px 15px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.2)", background: "rgba(52, 152, 219, 0.95)", color: "white", fontWeight: "600", cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)" },
     cancelBtn: { padding: "10px 15px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.2)", background: "rgba(108, 117, 125, 0.9)", color: "white", fontWeight: "600", cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)" }

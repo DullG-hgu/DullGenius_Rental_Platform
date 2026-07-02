@@ -86,9 +86,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
   const applyBggData = async (bggId) => {
     setBggFetching(true);
     try {
-      console.log('🔍 fetchBGGGame 호출:', bggId);
       const detail = await fetchBGGGame(bggId);
-      console.log('📋 fetchBGGGame 반환값:', detail);
       if (!detail) throw new Error("게임 정보를 찾을 수 없습니다.");
 
       setFormData(prev => ({

@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 6. 16. PM 4:01:08
+-- 생성 시각: 2026. 7. 2. PM 2:47:25
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 67개 함수
+-- 총 71개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _event_calc_fee
@@ -290,6 +290,106 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: add_game_copy
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.add_game_copy(p_game_id integer)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+    v_new_quantity INTEGER;
+BEGIN
+    IF NOT public.is_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니다.');
+    END IF;
+
+    UPDATE public.games
+    SET quantity = COALESCE(quantity, 0) + 1,
+        available_count = COALESCE(available_count, 0) + 1
+    WHERE id = p_game_id
+    RETURNING quantity INTO v_new_quantity;
+
+    IF v_new_quantity IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
+    END IF;
+
+    RETURN jsonb_build_object('success', true, 'quantity', v_new_quantity, 'message', '재고가 추가되었습니다. (현재 ' || v_new_quantity || '개)');
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: admin_cancel_dibs
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.admin_cancel_dibs(p_game_id integer, p_rental_id uuid DEFAULT NULL::uuid, p_user_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+    v_target_rental_id UUID;
+    v_renter_name TEXT;
+    v_user_id UUID;
+    v_affected INTEGER;
+BEGIN
+    IF NOT public.is_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니다.');
+    END IF;
+
+    -- 대상 찜 결정: rental_id > user_id > (미지정 시 활성 찜이 정확히 1건일 때만)
+    IF p_rental_id IS NOT NULL THEN
+        SELECT rental_id, renter_name, user_id INTO v_target_rental_id, v_renter_name, v_user_id
+        FROM public.rentals
+        WHERE rental_id = p_rental_id AND game_id = p_game_id
+          AND type = 'DIBS' AND returned_at IS NULL;
+    ELSIF p_user_id IS NOT NULL THEN
+        SELECT rental_id, renter_name, user_id INTO v_target_rental_id, v_renter_name, v_user_id
+        FROM public.rentals
+        WHERE game_id = p_game_id AND user_id = p_user_id
+          AND type = 'DIBS' AND returned_at IS NULL
+        ORDER BY borrowed_at ASC
+        LIMIT 1;
+    ELSE
+        SELECT COUNT(*) INTO v_affected
+        FROM public.rentals
+        WHERE game_id = p_game_id AND type = 'DIBS' AND returned_at IS NULL;
+
+        IF v_affected > 1 THEN
+            RETURN jsonb_build_object('success', false, 'message', '찜이 여러 건입니다. 취소할 예약을 지정해주세요.');
+        END IF;
+
+        SELECT rental_id, renter_name, user_id INTO v_target_rental_id, v_renter_name, v_user_id
+        FROM public.rentals
+        WHERE game_id = p_game_id AND type = 'DIBS' AND returned_at IS NULL
+        LIMIT 1;
+    END IF;
+
+    IF v_target_rental_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '취소할 찜 기록을 찾을 수 없습니다.');
+    END IF;
+
+    -- 정확히 한 건만 종료 (재고 증가도 종료 건수와 1:1)
+    UPDATE public.rentals SET returned_at = now()
+    WHERE rental_id = v_target_rental_id AND returned_at IS NULL;
+    GET DIAGNOSTICS v_affected = ROW_COUNT;
+
+    IF v_affected = 0 THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 처리된 찜입니다.');
+    END IF;
+
+    UPDATE public.games SET available_count = available_count + 1 WHERE id = p_game_id;
+
+    INSERT INTO public.logs (game_id, user_id, action_type, details)
+    VALUES (p_game_id, v_user_id, 'CANCEL_DIBS',
+            jsonb_build_object('message', '관리자 찜 취소', 'renter', COALESCE(v_renter_name, 'Unknown'), 'rental_id', v_target_rental_id));
+
+    RETURN jsonb_build_object('success', true, 'message', '찜 취소 완료');
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: admin_extend_rentals
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.admin_extend_rentals(p_user_id uuid DEFAULT NULL::uuid, p_renter_name text DEFAULT NULL::text, p_game_id integer DEFAULT NULL::integer, p_rental_id uuid DEFAULT NULL::uuid, p_days integer DEFAULT 7)
@@ -303,42 +403,117 @@ DECLARE
     r RECORD;
     v_count INTEGER := 0;
 BEGIN
+    -- [안전장치 0] 관리자 확인
+    IF NOT public.is_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니다.', 'count', 0);
+    END IF;
+
     -- [안전장치 1] 타 렌탈 건 침해 방지: 조건이 모두 NULL이면 전체 업데이트 위험이 있으므로 즉시 차단
     IF p_user_id IS NULL AND p_renter_name IS NULL AND p_game_id IS NULL AND p_rental_id IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '연장 대상을 특정할 수 없습니다. (모든 식별자가 비어있음)');
+        RETURN jsonb_build_object('success', false, 'message', '연장 대상을 특정할 수 없습니다. (모든 식별자가 비어있음)', 'count', 0);
     END IF;
     -- 현재 시간의 날짜(자정 00:00:00) 기준으로 N일을 더한 뒤, 23시간 59분 59초를 더해 해당일 밤 12시 세팅
     v_new_due_date := date_trunc('day', now()) + (p_days || ' days')::interval + interval '23 hours 59 minutes 59 seconds';
-    FOR r IN 
-        SELECT rental_id, game_id, user_id, renter_name 
+    FOR r IN
+        SELECT rental_id, game_id, user_id, renter_name
         FROM public.rentals
-        WHERE type = 'RENT' 
+        WHERE type = 'RENT'
           AND returned_at IS NULL
           AND (p_rental_id IS NULL OR rental_id = p_rental_id)
           AND (p_game_id IS NULL OR game_id = p_game_id)
           -- [안전장치 2] user_id와 renter_name 조건 최적화
-          -- user_id가 있으면 user_id만 확실하게 매칭하고, 없으면 renter_name 매칭으로 우회하여 동명이나 권한 겹침 오류 최소화
           AND (
               (p_user_id IS NOT NULL AND user_id = p_user_id) OR
               (p_user_id IS NULL AND p_renter_name IS NOT NULL AND renter_name = p_renter_name) OR
               (p_user_id IS NULL AND p_renter_name IS NULL)
           )
     LOOP
-        -- 기한 수정
         UPDATE public.rentals SET due_date = v_new_due_date WHERE rental_id = r.rental_id;
-        
-        -- 연장 로그 기록 추가
+
         INSERT INTO public.logs (game_id, user_id, action_type, details)
         VALUES (r.game_id, r.user_id, 'EXTEND', jsonb_build_object('message', COALESCE(p_days, 7) || '일 기한 연장', 'days', p_days, 'new_due_date', v_new_due_date, 'renter', COALESCE(r.renter_name, 'Unknown')));
-        
+
         v_count := v_count + 1;
     END LOOP;
-    
+
     IF v_count = 0 THEN
-        RETURN jsonb_build_object('success', false, 'message', '조건에 맞는 연장할 활성 대여 건이 없습니다. 이미 반납되었거나 대상을 찾을 수 없습니다.');
+        RETURN jsonb_build_object('success', false, 'message', '조건에 맞는 연장할 활성 대여 건이 없습니다. 이미 반납되었거나 대상을 찾을 수 없습니다.', 'count', 0);
     END IF;
-    
-    RETURN jsonb_build_object('success', true, 'message', v_count || '건 연장 처리 완료', 'new_due_date', v_new_due_date);
+
+    RETURN jsonb_build_object('success', true, 'message', v_count || '건 연장 처리 완료', 'new_due_date', v_new_due_date, 'count', v_count);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: admin_mark_lost
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.admin_mark_lost(p_game_id integer, p_rental_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+    v_target_rental_id UUID;
+    v_renter_name TEXT;
+    v_user_id UUID;
+    v_new_quantity INTEGER;
+    v_affected INTEGER;
+BEGIN
+    IF NOT public.is_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니다.');
+    END IF;
+
+    -- 대상 대여 건 결정 (미지정 시 해당 게임의 활성 RENT가 정확히 1건일 때만 자동 지정)
+    IF p_rental_id IS NOT NULL THEN
+        SELECT rental_id, renter_name, user_id INTO v_target_rental_id, v_renter_name, v_user_id
+        FROM public.rentals
+        WHERE rental_id = p_rental_id AND game_id = p_game_id
+          AND type = 'RENT' AND returned_at IS NULL;
+    ELSE
+        SELECT COUNT(*) INTO v_affected
+        FROM public.rentals
+        WHERE game_id = p_game_id AND type = 'RENT' AND returned_at IS NULL;
+
+        IF v_affected > 1 THEN
+            RETURN jsonb_build_object('success', false, 'message', '여러 건이 대여 중입니다. 분실 대상 대여 건을 지정해주세요.');
+        END IF;
+
+        SELECT rental_id, renter_name, user_id INTO v_target_rental_id, v_renter_name, v_user_id
+        FROM public.rentals
+        WHERE game_id = p_game_id AND type = 'RENT' AND returned_at IS NULL
+        LIMIT 1;
+    END IF;
+
+    IF v_target_rental_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '분실 처리할 활성 대여 건을 찾을 수 없습니다.');
+    END IF;
+
+    -- 대여 건 종료
+    UPDATE public.rentals SET returned_at = now()
+    WHERE rental_id = v_target_rental_id AND returned_at IS NULL;
+    GET DIAGNOSTICS v_affected = ROW_COUNT;
+    IF v_affected = 0 THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 처리된 대여 건입니다.');
+    END IF;
+
+    -- 총 재고 1개 차감 (0 미만 방지), 0이 되면 대여 불가 전환
+    UPDATE public.games
+    SET quantity = GREATEST(COALESCE(quantity, 1) - 1, 0),
+        is_rentable = CASE WHEN GREATEST(COALESCE(quantity, 1) - 1, 0) = 0 THEN false ELSE is_rentable END
+    WHERE id = p_game_id
+    RETURNING quantity INTO v_new_quantity;
+
+    INSERT INTO public.logs (game_id, user_id, action_type, details)
+    VALUES (p_game_id, v_user_id, 'LOST',
+            jsonb_build_object('message', '분실 처리', 'renter', COALESCE(v_renter_name, 'Unknown'), 'rental_id', v_target_rental_id, 'remaining_quantity', v_new_quantity));
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'remaining_quantity', v_new_quantity,
+        'message', '분실 처리 완료 (남은 재고 ' || v_new_quantity || '개' ||
+                   CASE WHEN v_new_quantity = 0 THEN ', 대여 불가로 전환됨' ELSE '' END || ')'
+    );
 END;
 $function$
 
@@ -357,7 +532,7 @@ DECLARE
     v_target_rental_id UUID;
 BEGIN
     IF NOT public.is_admin() THEN
-        RETURN jsonb_build_object('success', false, 'message', '관리자 권���이 필요합니다.');
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니다.');
     END IF;
 
     SELECT name INTO v_game_name FROM public.games WHERE id = p_game_id;
@@ -471,6 +646,38 @@ BEGIN
     VALUES (v_game_id, p_user_id, 'RETURN', jsonb_build_object('action', 'ADMIN RETURN'));
 
     RETURN jsonb_build_object('success', true, 'message', '반납 완료');
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: admin_update_user_roles
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.admin_update_user_roles(p_user_id uuid, p_role_keys text[])
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+    IF NOT public.is_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니다.');
+    END IF;
+
+    IF p_user_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '대상 사용자가 지정되지 않았습니다.');
+    END IF;
+
+    DELETE FROM public.user_roles WHERE user_id = p_user_id;
+
+    IF p_role_keys IS NOT NULL AND array_length(p_role_keys, 1) > 0 THEN
+        INSERT INTO public.user_roles (user_id, role_key)
+        SELECT p_user_id, unnest(p_role_keys);
+        -- 존재하지 않는 role_key는 FK 제약으로 전체 롤백됨 (기존 역할 보존)
+    END IF;
+
+    RETURN jsonb_build_object('success', true, 'message', '역할이 수정되었습니다.');
+EXCEPTION WHEN foreign_key_violation THEN
+    RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 역할이 포함되어 있습니다.');
 END;
 $function$
 
