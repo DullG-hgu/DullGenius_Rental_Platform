@@ -265,7 +265,7 @@ function Admin() {
         <TabButton label="🎨 홈페이지 설정" id="config" activeTab={activeTab} onClick={setActiveTab}
           hint="홈 화면에 노출되는 배너/문구/색상 등을 수정" />
         <TabButton label="📊 통계" id="stats" activeTab={activeTab} onClick={setActiveTab}
-          hint="대여 건수, 인기 게임, 회원 활동 통계" />
+          hint="기간·회원·게임·행동별 대여, 찜, 로그 분석" />
       </div>
 
       {/* 탭 컨텐츠 영역 */}

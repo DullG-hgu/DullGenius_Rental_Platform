@@ -7,6 +7,7 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 import { supabase } from '../lib/supabaseClient.jsx';
+import AdminAnalytics from './AdminAnalytics.jsx';
 
 const CARD_STYLE = {
   background: 'var(--admin-card-bg)',
@@ -148,6 +149,12 @@ export default function StatsTab() {
       }}>
         🛠 <b>개발자(tester) role</b> 보유 계정의 대여·검색 활동은 모든 집계에서 제외됩니다.
       </div>
+
+      <AdminAnalytics />
+
+      {/* 기존 운영 요약 */}
+      <div style={{ borderTop: '1px solid var(--admin-border)', paddingTop: '24px' }}>
+        <h3 style={{ margin: '0 0 -8px', color: 'var(--admin-text-main)' }}>운영 요약</h3>
 
       {/* 1. 기간 선택 버튼 */}
       <div style={{ display: 'flex', gap: '8px' }}>
@@ -327,6 +334,7 @@ export default function StatsTab() {
             </table>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

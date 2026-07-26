@@ -224,6 +224,144 @@
   color: var(--admin-text-main) !important;
 }
 
+/* 고급 통계: 작은 화면에서도 필터와 표를 안전하게 표시 */
+.analytics-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.analytics-filter-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--admin-text-sub);
+  font-size: 0.82rem;
+}
+
+.analytics-filter-grid .admin-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.analytics-action-chip,
+.analytics-preset-button,
+.analytics-clear-button {
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  background: #2b2b2b;
+  color: var(--admin-text-main);
+  font-size: 0.82rem;
+  padding: 6px 10px;
+}
+
+.analytics-action-chip {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.analytics-action-chip input {
+  accent-color: #667eea;
+  margin: 0;
+}
+
+.analytics-action-chip.is-selected {
+  background: rgba(102, 126, 234, 0.25);
+  border-color: #667eea;
+}
+
+.analytics-preset-button,
+.analytics-clear-button {
+  cursor: pointer;
+}
+
+.analytics-preset-button:hover,
+.analytics-clear-button:hover {
+  border-color: var(--admin-primary);
+}
+
+.analytics-preset-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.analytics-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.analytics-ranking-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.analytics-table-wrap {
+  overflow-x: auto;
+}
+
+.analytics-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.analytics-table th,
+.analytics-table td {
+  border-bottom: 1px solid var(--admin-border);
+  padding: 9px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.analytics-table th {
+  color: var(--admin-text-sub);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.analytics-table td {
+  color: var(--admin-text-main);
+}
+
+.analytics-table small {
+  display: block;
+  margin-top: 3px;
+  color: var(--admin-text-sub);
+  word-break: break-word;
+}
+
+.analytics-error {
+  border: 1px solid #cf6679;
+  border-radius: 7px;
+  background: rgba(207, 102, 121, 0.12);
+  color: #ffb4c0;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+}
+
+@media (max-width: 900px) {
+  .analytics-filter-grid,
+  .analytics-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-ranking-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .analytics-filter-grid,
+  .analytics-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Specific component fixes */
 .admin-config-card {
   background: var(--admin-card-bg) !important;
