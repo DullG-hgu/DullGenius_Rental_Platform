@@ -8,7 +8,7 @@ import { takePendingRoute } from '../lib/pendingRoute'; // 보호 경로에서 �
 
 function Login() {
   const navigate = useNavigate();
-  const { login, restoreAccount } = useAuth(); // [NEW] restoreAccount 추가
+  const { login } = useAuth();
   const { showToast } = useToast(); // [NEW]
 
   const [studentId, setStudentId] = useState(""); // [CHANGE] 이메일 -> 학번
@@ -31,24 +31,16 @@ function Login() {
     } catch (error) {
       console.error("Login Error:", error);
 
-      // [NEW] 탈퇴한 회원 복구 로직
-      if (error.code === 'WITHDRAWN_USER') {
-        const confirmRestore = window.confirm("탈퇴한 계정입니다. 계정을 복구하시겠습니까?");
-        if (confirmRestore) {
-          try {
-            await restoreAccount(`${studentId}@handong.ac.kr`, password); // 복구 시도
-            showToast("계정이 복구되었습니다! 환영합니다.", { type: "success" });
-            navigate(takePendingRoute() || "/");
-            return;
-          } catch (restoreError) {
-            console.error("Restore Error:", restoreError);
-            showToast("계정 복구 실패: " + restoreError.message, { type: "error" });
-          }
-        }
-      } else {
-        // 구체적인 에러 메시지 표시 (디버깅용 -> 사용자 친화적 문구로 변경)
-        showToast(getAuthErrorMessage(error), { type: "error" });
-      }
+      // 여기 있던 "탈퇴 계정 복구" 분기는 제거했다 (2026-08-02).
+      //
+      // error.code === 'WITHDRAWN_USER' 를 검사했지만 그 코드를 던지는 곳이
+      // 코드베이스 어디에도 없어 도달할 수 없는 분기였고, 그 안에서 호출하던
+      // restoreAccount 는 AuthContext 가 제공하지도 않는 함수였다.
+      //
+      // 계정 복구를 실제로 붙이려면 탈퇴 모델부터 정리해야 한다.
+      // 현재 withdraw_user() 는 profiles 행을 DELETE 하지만 auth.users 는 남겨두고,
+      // 그와 별개로 profiles.status='withdrawn' 인 레코드도 존재해 두 방식이 섞여 있다.
+      showToast(getAuthErrorMessage(error), { type: "error" });
     } finally {
       setLoading(false);
     }
