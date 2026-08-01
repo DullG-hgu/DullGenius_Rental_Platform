@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 7. 26. PM 5:20:19
+-- 생성 시각: 2026. 8. 2. AM 3:44:54
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 75개 함수
+-- 총 78개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _event_calc_fee
@@ -312,7 +312,7 @@ BEGIN
     RETURNING quantity INTO v_new_quantity;
 
     IF v_new_quantity IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
+        RETURN jsonb_build_object('success', false, 'message', '존재하�� 않는 게임입니다.');
     END IF;
 
     RETURN jsonb_build_object('success', true, 'quantity', v_new_quantity, 'message', '재고가 추가되었습니다. (현재 ' || v_new_quantity || '개)');
@@ -756,7 +756,7 @@ BEGIN
 
     v_hold_count := COALESCE(array_length(v_affected_ids, 1), 0);
 
-    -- 3) HOLD 만료로 영향 받은 게임의 available_count 재계산
+    -- 3) HOLD 만료로 영��� 받은 게임의 available_count 재계산
     --    (7일 lookahead 윈도우 기준)
     IF v_hold_count > 0 THEN
         UPDATE public.games g
@@ -1954,7 +1954,7 @@ BEGIN
       AND (p_user_id IS NULL OR l.user_id = p_user_id)
       AND NOT EXISTS (SELECT 1 FROM public.user_roles ur WHERE ur.user_id = l.user_id AND ur.role_key = 'tester')
   )
-  -- rentals와 logs를 같은 날에 직접 조인하면 행 수가 서로 곱해지므로,
+  -- rentals와 logs를 같은 날에 직접 조인���면 행 수가 서로 곱해지므로,
   -- 각 날짜별 집계를 LATERAL 서브쿼리로 분리합니다.
   SELECT d.day,
     rc.rent_count,
@@ -1984,6 +1984,92 @@ BEGIN
     WHERE l.created_at >= d.day AND l.created_at < d.day + 1
   ) lc
   ORDER BY d.day;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: get_admin_game_purchase_requests
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_admin_game_purchase_requests(p_start_date date, p_end_date date, p_user_id uuid DEFAULT NULL::uuid, p_game_id integer DEFAULT NULL::integer, p_limit integer DEFAULT 100)
+ RETURNS TABLE(request_id uuid, created_at timestamp with time zone, user_id uuid, user_name text, game_title text, description text, status text, total_count bigint)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+  IF p_start_date IS NULL OR p_end_date IS NULL OR p_start_date > p_end_date OR p_end_date - p_start_date > 365 THEN
+    RAISE EXCEPTION '조회 기간은 올바른 날짜 범위(최대 366일)여야 합니다.';
+  END IF;
+  IF p_limit < 1 OR p_limit > 500 THEN RAISE EXCEPTION 'p_limit는 1~500 범위여야 합니다.'; END IF;
+
+  RETURN QUERY
+  SELECT q.id,
+    q.created_at,
+    q.user_id,
+    COALESCE(p.name, '탈퇴 회원'),
+    q.game_title,
+    q.description,
+    COALESCE(q.status, 'pending'),
+    COUNT(*) OVER ()::bigint
+  FROM public.game_requests q
+  LEFT JOIN public.profiles p ON p.id = q.user_id
+  WHERE q.created_at >= p_start_date
+    AND q.created_at < p_end_date + 1
+    AND (p_user_id IS NULL OR q.user_id = p_user_id)
+    -- 게임 필터는 신청 제목과 현재 게임명이 정확히 일치하는 요청에만 적용합니다.
+    AND (
+      p_game_id IS NULL
+      OR EXISTS (
+        SELECT 1 FROM public.games g
+        WHERE g.id = p_game_id AND lower(trim(g.name)) = lower(trim(q.game_title))
+      )
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM public.user_roles ur
+      WHERE ur.user_id = q.user_id AND ur.role_key = 'tester'
+    )
+  ORDER BY q.created_at DESC
+  LIMIT p_limit;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: get_admin_unavailable_game_views
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_admin_unavailable_game_views(p_start_date date, p_end_date date, p_user_id uuid DEFAULT NULL::uuid, p_game_id integer DEFAULT NULL::integer, p_limit integer DEFAULT 20)
+ RETURNS TABLE(game_id integer, game_name text, unavailable_click_count bigint, last_clicked_at timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+  IF p_start_date IS NULL OR p_end_date IS NULL OR p_start_date > p_end_date OR p_end_date - p_start_date > 365 THEN
+    RAISE EXCEPTION '조회 기간은 올바른 날짜 범위(최대 366일)여야 합니다.';
+  END IF;
+  IF p_limit < 1 OR p_limit > 100 THEN RAISE EXCEPTION 'p_limit는 1~100 범위여야 합니다.'; END IF;
+
+  RETURN QUERY
+  SELECT l.game_id,
+    COALESCE(g.name, '알 수 없는 게임'),
+    COUNT(*)::bigint,
+    MAX(l.created_at)
+  FROM public.logs l
+  LEFT JOIN public.games g ON g.id = l.game_id
+  WHERE l.action_type = 'VIEW'
+    AND l.details ->> 'availability' = 'unavailable'
+    AND l.created_at >= p_start_date
+    AND l.created_at < p_end_date + 1
+    AND (p_user_id IS NULL OR l.user_id = p_user_id)
+    AND (p_game_id IS NULL OR l.game_id = p_game_id)
+    AND NOT EXISTS (
+      SELECT 1 FROM public.user_roles ur
+      WHERE ur.user_id = l.user_id AND ur.role_key = 'tester'
+    )
+  GROUP BY l.game_id, g.name
+  ORDER BY unavailable_click_count DESC, last_clicked_at DESC
+  LIMIT p_limit;
 END;
 $function$
 
@@ -2305,13 +2391,45 @@ CREATE OR REPLACE FUNCTION public.increment_view_count(p_game_id integer)
  SECURITY DEFINER
  SET search_path TO 'public', 'pg_temp'
 AS $function$
+DECLARE
+  v_available_count integer;
+  v_is_rentable boolean;
 BEGIN
-    -- 1. 전역 조회수 증가
-    UPDATE public.games SET total_views = total_views + 1 WHERE id = p_game_id;
-    -- 2. 일별 통계 증가 (트렌드용)
-    INSERT INTO public.game_daily_stats (game_id, date, view_count) VALUES (p_game_id, current_date, 1) ON CONFLICT (game_id, date) DO UPDATE SET view_count = game_daily_stats.view_count + 1;
-    -- 3. 로그 테이블 기록 (사후 분석용)
-    INSERT INTO public.logs (game_id, user_id, action_type, details) VALUES (p_game_id, auth.uid(), 'VIEW', to_jsonb('Page view'::text));
+  SELECT
+    GREATEST(0, COALESCE(g.quantity, 1) - COUNT(r.rental_id)::integer),
+    COALESCE(g.is_rentable, true)
+  INTO v_available_count, v_is_rentable
+  FROM public.games g
+  LEFT JOIN public.rentals r ON r.game_id = g.id
+    AND r.returned_at IS NULL
+    AND (
+      r.type = 'RENT'
+      OR (r.type = 'DIBS' AND r.due_date > now())
+    )
+  WHERE g.id = p_game_id
+  GROUP BY g.quantity, g.is_rentable;
+
+  IF NOT FOUND THEN RAISE EXCEPTION '게임을 찾을 수 없습니다.'; END IF;
+
+  UPDATE public.games SET total_views = COALESCE(total_views, 0) + 1 WHERE id = p_game_id;
+
+  INSERT INTO public.game_daily_stats (game_id, date, view_count)
+  VALUES (p_game_id, current_date, 1)
+  ON CONFLICT (game_id, date)
+  DO UPDATE SET view_count = game_daily_stats.view_count + 1;
+
+  INSERT INTO public.logs (game_id, user_id, action_type, details)
+  VALUES (
+    p_game_id,
+    auth.uid(),
+    'VIEW',
+    jsonb_build_object(
+      'value', 'Page view',
+      'availability', CASE WHEN NOT v_is_rentable OR v_available_count = 0 THEN 'unavailable' ELSE 'available' END,
+      'available_count', v_available_count,
+      'is_rentable', v_is_rentable
+    )
+  );
 END;
 $function$
 
@@ -2621,6 +2739,27 @@ CREATE OR REPLACE FUNCTION public.is_user_payment_exempt(p_user_id uuid)
  SET search_path TO 'public', 'pg_temp'
 AS $function$ 
 BEGIN RETURN EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = p_user_id AND role_key IN ('admin', 'executive', 'payment_exempt')); END; $function$
+
+-- ----------------------------------------------------------------
+-- 함수: kiosk_list_users
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.kiosk_list_users()
+ RETURNS TABLE(id uuid, name text, student_id text)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+  IF NOT public.is_kiosk_or_admin() THEN
+    RAISE EXCEPTION '권한이 없습니다.';
+  END IF;
+
+  RETURN QUERY
+  SELECT p.id, p.name, p.student_id
+  FROM public.profiles p
+  ORDER BY p.name;
+END;
+$function$
 
 -- ----------------------------------------------------------------
 -- 함수: kiosk_pickup
