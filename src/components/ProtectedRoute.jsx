@@ -1,11 +1,21 @@
 import React from 'react';
-import { Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { stashPendingRoute } from '../lib/pendingRoute';
 
+// 보호 경로에 도달한 사람을 세 갈래로 나눈다.
+//
+//  1) 권한 있는 로그인 유저   → 통과
+//  2) 로그아웃 상태           → 로그인으로. 원래 가려던 경로를 저장해 로그인 후 되돌린다.
+//  3) 로그인했지만 권한 없음   → 아무 단서 없이 홈으로
+//
+// 예전에는 2·3번에서 "🔒 로그인이 필요합니다" / "🚫 접근 권한이 없습니다" 안내를 띄웠다.
+// 그 화면 자체가 "이 경로에 관리자 페이지가 실제로 있다"는 확인을 해주는 셈이라 없앴다.
+// 지금은 아무 설명 없이 이동시킨다 — 정상 사용자는 로그인 후 자동 복귀하므로
+// 안내가 없어도 불편하지 않고, 경로를 찔러보는 쪽에는 아무 정보도 주지 않는다.
 const ProtectedRoute = ({ allowedRoles = [] }) => {
     const { user, hasRole, loading } = useAuth();
-    // hooks는 항상 동일 순서/개수로 호출되어야 함 — early return 이전에 호출
-    const navigate = useNavigate();
+    const location = useLocation();
 
     if (loading) {
         return (
@@ -16,55 +26,18 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
         );
     }
 
-    // 1. 로그인 안 된 경우
     if (!user) {
-        return (
-            <div className="auth-error-container" style={{ textAlign: 'center', marginTop: '100px', padding: '20px' }}>
-                <h2 style={{ fontSize: '2em', marginBottom: '20px' }}>🔒 로그인이 필요합니다</h2>
-                <p style={{ marginBottom: '30px', color: '#666' }}>관리자 페이지에 접근하려면 먼저 로그인해주세요.</p>
-                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-                    <button
-                        onClick={() => navigate(-1)}
-                        style={{ padding: '10px 20px', fontSize: '1.1em', cursor: 'pointer', background: '#f1f2f6', border: '1px solid #ddd', borderRadius: '5px' }}
-                    >
-                        🔙 뒤로가기
-                    </button>
-                    <button
-                        onClick={() => navigate('/login')}
-                        style={{ padding: '10px 20px', fontSize: '1.1em', cursor: 'pointer', background: '#3498db', color: 'white', border: 'none', borderRadius: '5px' }}
-                    >
-                        로그인 하러 가기
-                    </button>
-                </div>
-            </div>
-        );
+        // 로그인 후 원래 가려던 관리자 경로로 되돌리기 위해 저장.
+        // URL 쿼리(?next=)를 쓰지 않는 이유는 그게 경로 존재를 노출하기 때문.
+        stashPendingRoute(location.pathname);
+        return <Navigate to="/login" replace />;
     }
 
     const hasPermission = allowedRoles.length === 0 ||
         allowedRoles.some(role => hasRole(role));
 
-    // 2. 권한 없는 경우
     if (!hasPermission) {
-        return (
-            <div className="auth-error-container" style={{ textAlign: 'center', marginTop: '100px', padding: '20px' }}>
-                <h2 style={{ fontSize: '2em', marginBottom: '20px', color: '#e74c3c' }}>🚫 접근 권한이 없습니다</h2>
-                <p style={{ marginBottom: '30px', color: '#666' }}>이 페이지를 볼 수 있는 권한이 없습니다.</p>
-                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-                    <button
-                        onClick={() => navigate(-1)}
-                        style={{ padding: '10px 20px', fontSize: '1.1em', cursor: 'pointer', background: '#f1f2f6', border: '1px solid #ddd', borderRadius: '5px' }}
-                    >
-                        🔙 뒤로가기
-                    </button>
-                    <button
-                        onClick={() => navigate('/')}
-                        style={{ padding: '10px 20px', fontSize: '1.1em', cursor: 'pointer', background: '#3498db', color: 'white', border: 'none', borderRadius: '5px' }}
-                    >
-                        🏠 메인으로
-                    </button>
-                </div>
-            </div>
-        );
+        return <Navigate to="/" replace />;
     }
 
     return <Outlet />;

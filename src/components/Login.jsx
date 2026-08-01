@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext'; // [NEW] Context 사용
 import { useToast } from '../contexts/ToastContext'; // [NEW]
 import { getAuthErrorMessage } from '../constants'; // [NEW] 에러 메시지 헬퍼
+import { takePendingRoute } from '../lib/pendingRoute'; // 보호 경로에서 튕겨온 경우 복귀용
 
 function Login() {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ function Login() {
       await login(email, password);
 
       showToast(`환영합니다!`, { type: "success" });
-      navigate("/");
+      navigate(takePendingRoute() || "/");
 
     } catch (error) {
       console.error("Login Error:", error);
@@ -37,7 +38,7 @@ function Login() {
           try {
             await restoreAccount(`${studentId}@handong.ac.kr`, password); // 복구 시도
             showToast("계정이 복구되었습니다! 환영합니다.", { type: "success" });
-            navigate("/");
+            navigate(takePendingRoute() || "/");
             return;
           } catch (restoreError) {
             console.error("Restore Error:", restoreError);
