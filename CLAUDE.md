@@ -23,7 +23,7 @@ React + Vite + Supabase / 배포: Netlify (`netlify.toml`)
 | `src/contexts/ToastContext.jsx` | 알림 Context — `useToast()` → `showToast(msg, { type })` |
 | `src/Admin.jsx` | 관리자 페이지 컨테이너 (탭 라우팅) |
 | `src/admin/` | 관리자 탭 컴포넌트들 |
-| `src/kiosk/KioskPage.jsx` | 키오스크 메인 (Supabase kiosk 계정 자동 로그인) |
+| `src/kiosk/KioskPage.jsx` | 키오스크 메인 (기기 마스터키 → 서버 세션 발급, 아래 참고) |
 | `src/pages/` | 일반 사용자 페이지 |
 | `src/components/` | 공용 컴포넌트 |
 
@@ -38,7 +38,7 @@ React + Vite + Supabase / 배포: Netlify (`netlify.toml`)
 /login, /signup, /reset-password
 /admin-secret       → Admin (ProtectedRoute: admin, executive)
 /org-rental         → OrgRental
-/kiosk              → KioskPage (kiosk 계정 자동 로그인)
+/kiosk              → KioskPage (기기 마스터키로 세션 자동 복구)
 ```
 
 ---
@@ -92,4 +92,53 @@ var(--admin-border)      // 테두리
 ## 이용자 특성
 - 일반 사용자: 주로 모바일
 - 관리자/운영진: 주로 PC
-- 키오스크: `kiosk@handong.ac.kr` 계정으로 자동 로그인 (env: `VITE_KIOSK_EMAIL`, `VITE_KIOSK_PASSWORD`)
+- 키오스크: 전용 Supabase 계정 (`kiosk` role) — 인증 방식은 아래 참고
+
+---
+
+## 키오스크 인증 구조
+
+**⚠️ 프론트엔드에서 키오스크 계정 자격증명을 절대 읽지 말 것.**
+
+예전에는 `KioskPage`가 `import.meta.env.VITE_KIOSK_EMAIL` / `VITE_KIOSK_PASSWORD`로
+직접 로그인했다. `VITE_` 접두 환경변수는 **빌드 시 번들에 문자열로 박히므로**,
+배포된 JS를 열면 키오스크 계정의 아이디·비밀번호가 그대로 보였다.
+Netlify env에 넣어둬도 마찬가지고, 비밀번호만 바꾸면 다음 빌드에 새 값이 똑같이 박힌다.
+
+현재 구조:
+
+```
+키오스크 기기 (localStorage: kiosk_device_key)
+   │  마스터키만 전송
+   ▼
+netlify/functions/kiosk-session.js   ← 계정 자격증명은 여기(서버)에만 존재
+   │  마스터키 검증 → Supabase 로그인
+   ▼
+access_token / refresh_token 반환 → supabase.auth.setSession()
+```
+
+- 세션이 만료돼도 저장된 마스터키로 **무인 자동 복구**된다 (오피스아워가 학기 초에만 열림)
+- 새 기기·캐시 초기화 시에만 "기기 등록" 화면이 뜨고, `KIOSK_MASTER_KEY`를 1회 입력한다
+
+**서버 전용 환경변수 (전부 `VITE_` 없이):**
+
+| 변수 | 용도 |
+|------|------|
+| `KIOSK_EMAIL` | 키오스크 계정 이메일 |
+| `KIOSK_PASSWORD` | 키오스크 계정 비밀번호 (Supabase 계정 값과 일치해야 함) |
+| `KIOSK_MASTER_KEY` | 기기 등록 키. 길고 무작위하게 (`openssl rand -base64 32`) |
+
+실제 값은 저장소에 두지 않는다. **Netlify 환경변수**(Production 컨텍스트)와
+**Supabase → Authentication → Users** 에서 확인·변경한다.
+비밀번호를 바꿀 땐 Supabase와 Netlify를 함께 고쳐야 하고, 함수 env는 **재배포해야 반영**된다.
+
+**회원 목록은 `kiosk_list_users()` RPC로만 조회한다.**
+`fetchUsers()`는 `phone` 등 키오스크가 쓰지 않는 개인정보까지 내려주며,
+그 값이 `localStorage`에 평문으로 쌓인다. 전화번호는 계정 복구 정보와 겹치므로 특히 위험.
+
+### 환경변수 일반 규칙
+
+- **`VITE_` 가 붙으면 그 값은 공개된다.** 자격증명에는 절대 붙이지 말 것
+- 공개돼도 되는 것: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`(publishable) — RLS가 실제 관문
+- Netlify `SECRETS_SCAN_ENABLED=true`가 이를 강제한다. 시크릿이 번들에 들어가면 빌드가 실패함
+- 서버에서만 쓸 값은 `netlify/functions/`에서 `process.env`로 읽는다
