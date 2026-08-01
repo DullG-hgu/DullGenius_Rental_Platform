@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 8. 2. AM 3:44:54
+-- 생성 시각: 2026. 8. 2. AM 4:22:23
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -312,7 +312,7 @@ BEGIN
     RETURNING quantity INTO v_new_quantity;
 
     IF v_new_quantity IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '존재하�� 않는 게임입니다.');
+        RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
     END IF;
 
     RETURN jsonb_build_object('success', true, 'quantity', v_new_quantity, 'message', '재고가 추가되었습니다. (현재 ' || v_new_quantity || '개)');
@@ -440,7 +440,7 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', '조건에 맞는 연장할 활성 대여 건이 없습니다. 이미 반납되었거나 대상을 찾을 수 없습니다.', 'count', 0);
     END IF;
 
-    RETURN jsonb_build_object('success', true, 'message', v_count || '건 연장 처리 완료', 'new_due_date', v_new_due_date, 'count', v_count);
+    RETURN jsonb_build_object('success', true, 'message', v_count || '건 연��� 처리 완료', 'new_due_date', v_new_due_date, 'count', v_count);
 END;
 $function$
 
@@ -476,7 +476,7 @@ BEGIN
         WHERE game_id = p_game_id AND type = 'RENT' AND returned_at IS NULL;
 
         IF v_affected > 1 THEN
-            RETURN jsonb_build_object('success', false, 'message', '여러 건이 대여 중입니다. 분실 대상 대여 건을 지정해주세요.');
+            RETURN jsonb_build_object('success', false, 'message', '여러 건이 대여 중입니다. 분실 대상 대여 ��을 지정해주세요.');
         END IF;
 
         SELECT rental_id, renter_name, user_id INTO v_target_rental_id, v_renter_name, v_user_id
@@ -756,7 +756,7 @@ BEGIN
 
     v_hold_count := COALESCE(array_length(v_affected_ids, 1), 0);
 
-    -- 3) HOLD 만료로 영��� 받은 게임의 available_count 재계산
+    -- 3) HOLD 만료로 영향 받은 게임의 available_count 재계산
     --    (7일 lookahead 윈도우 기준)
     IF v_hold_count > 0 THEN
         UPDATE public.games g
@@ -3171,7 +3171,7 @@ BEGIN
         SELECT 1 FROM public.user_roles 
         WHERE user_id = v_operator_id AND role_key = 'admin'
     ) THEN
-        -- 보안 감사 로그: 권한 없는 시도 기록
+        -- 보안 감�� 로그: 권한 없는 시도 기록
         INSERT INTO public.logs (game_id, user_id, action_type, details)
         VALUES (NULL, v_operator_id, 'SECURITY_ALERT', jsonb_build_object('error', 'Unauthorized password reset attempt'));
         

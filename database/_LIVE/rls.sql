@@ -1,12 +1,12 @@
 -- ================================================================
 -- RLS POLICIES — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 8. 2. AM 3:45:12
+-- 생성 시각: 2026. 8. 2. AM 4:22:40
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 46개 정책
+-- 총 45개 정책
 
 -- ----------------------------------------------------------------
 -- 테이블: app_config  (2개 정책)
@@ -275,7 +275,7 @@ CREATE POLICY "Deny All" ON public.private_config
 ;
 
 -- ----------------------------------------------------------------
--- 테이블: profiles  (5개 정책)
+-- 테이블: profiles  (4개 정책)
 -- ----------------------------------------------------------------
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
@@ -291,15 +291,6 @@ CREATE POLICY "Admin Read All Profiles" ON public.profiles
   FOR SELECT
   TO public
   USING (is_admin())
-;
-
-CREATE POLICY "Kiosk read all profiles" ON public.profiles
-  AS PERMISSIVE
-  FOR SELECT
-  TO authenticated
-  USING ((EXISTS ( SELECT 1
-   FROM user_roles
-  WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role_key = 'kiosk'::text)))))
 ;
 
 CREATE POLICY "Read Own Profile" ON public.profiles
