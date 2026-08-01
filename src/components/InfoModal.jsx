@@ -105,32 +105,44 @@ function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
 
             if (error) throw error;
 
-            // [NEW] 디스코드 알림 전송 로직 추가
-            try {
-                const discordUrl = import.meta.env.VITE_DISCORD_WEBHOOK_URL;
-                if (discordUrl) {
-                    const userName = user.user_metadata?.name || '알 수 없는 부원';
-                    const userPhone = user.user_metadata?.phone || '알 수 없는 전화번호';
-
-                    await fetch(discordUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            username: import.meta.env.VITE_DISCORD_BOT_NAME || "덜지니어스 알림봇",
-                            avatar_url: import.meta.env.VITE_DISCORD_AVATAR_URL || "",
-                            embeds: [{
-                                title: "🚨 파손/분실 신고 접수",
-                                description: `### ${reportSearch}에 대한 파손 신고가 적용되었습니다.\n\n**신고자** : ${userName} (${userPhone})\n**대상 게임** : ${reportSearch}\n**파손 내용** : ${reportContent}`,
-                                color: 15158332, // Red
-                                timestamp: new Date().toISOString()
-                            }]
-                        })
-                    });
-                }
-            } catch (discordError) {
-                console.error("디스코드 알림 전송 실패:", discordError);
-                // 디스코드 전송 실패해도 사용자에게는 정상 접수되었다고 안내
-            }
+            // ⚠️ 디스코드 알림 비활성화 (2026-08-02) — 프론트에서 웹훅을 호출하지 않는다.
+            //
+            // 이유: VITE_ 접두 환경변수는 빌드 시 번들에 "문자열로 박힌다".
+            //       런타임에 서버로 값을 물어보는 게 아니라 빌드 시점 텍스트 치환이므로,
+            //       Netlify env 에 넣어둬도 배포된 JS 를 열면 그대로 보인다.
+            //       웹훅 URL 이 새면 누구나 username/avatar_url 을 지정해
+            //       공식 공지와 구분 불가능한 메시지를 동아리 채널에 쏠 수 있다.
+            //       (해당 웹훅은 폐기 완료)
+            //
+            // 다시 켜려면: netlify/functions 에 서버 측 함수를 만들고 프론트는 그 함수만
+            //             호출할 것. 웹훅 URL 은 VITE_ 없는 서버 전용 env 로 둔다.
+            // 그때까지 파손 신고는 damage_reports 테이블 + 관리자 페이지에서 확인한다.
+            //
+            // try {
+            //     const discordUrl = import.meta.env.VITE_DISCORD_WEBHOOK_URL;
+            //     if (discordUrl) {
+            //         const userName = user.user_metadata?.name || '알 수 없는 부원';
+            //         const userPhone = user.user_metadata?.phone || '알 수 없는 전화번호';
+            //
+            //         await fetch(discordUrl, {
+            //             method: 'POST',
+            //             headers: { 'Content-Type': 'application/json' },
+            //             body: JSON.stringify({
+            //                 username: import.meta.env.VITE_DISCORD_BOT_NAME || "덜지니어스 알림봇",
+            //                 avatar_url: import.meta.env.VITE_DISCORD_AVATAR_URL || "",
+            //                 embeds: [{
+            //                     title: "🚨 파손/분실 신고 접수",
+            //                     description: `### ${reportSearch}에 대한 파손 신고가 적용되었습니다.\n\n**신고자** : ${userName} (${userPhone})\n**대상 게임** : ${reportSearch}\n**파손 내용** : ${reportContent}`,
+            //                     color: 15158332, // Red
+            //                     timestamp: new Date().toISOString()
+            //                 }]
+            //             })
+            //         });
+            //     }
+            // } catch (discordError) {
+            //     console.error("디스코드 알림 전송 실패:", discordError);
+            //     // 디스코드 전송 실패해도 사용자에게는 정상 접수되었다고 안내
+            // }
 
             showToast("파손 신고가 접수되었습니다. 빠른 시일 내에 확인하겠습니다.");
             onClose();

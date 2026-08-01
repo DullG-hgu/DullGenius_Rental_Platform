@@ -147,6 +147,57 @@ function PasswordReset() {
         }
     };
 
+    // ⚠️ 셀프 비밀번호 재설정 임시 중단 (2026-08-02)
+    //
+    // 기존 방식은 학번 + 이름 + 전화번호 세 값만 맞으면 임의 계정의 비밀번호를
+    // 덮어썼고, 시도 횟수 제한이 없었다. 세 값 모두 동아리 안에서는 서로 아는
+    // 정보라 사실상 누구나 남의 계정을 가져갈 수 있는 상태였다.
+    //
+    // DB 쪽에서도 reset_own_password 의 EXECUTE 권한을 회수해 두었으므로,
+    // 이 폼을 그대로 두면 제출 시 권한 오류만 나고 아무 일도 일어나지 않는다.
+    // 그래서 화면 자체를 안내로 바꾼다.
+    //
+    // 재개하려면: 시도 횟수 제한 + 본인 확인(OTP 등)을 붙이고,
+    //            DB 에서 GRANT EXECUTE 를 되돌린 뒤 아래 플래그를 false 로.
+    //            (api_members.jsx 의 OTP 함수들이 이미 준비돼 있다)
+    //
+    // 아래 폼 코드는 재개할 때 다시 쓰기 위해 지우지 않고 남겨둔다.
+    const SELF_RESET_DISABLED = true;
+
+    if (SELF_RESET_DISABLED) {
+        return (
+            <div style={styles.container}>
+                <div style={{ marginBottom: "20px" }}>
+                    <Link to="/login" style={{ textDecoration: "none", color: "#666", fontSize: "0.9em", fontWeight: "bold" }}>← 로그인으로 돌아가기</Link>
+                </div>
+
+                <h2 style={{ textAlign: "center", marginBottom: "15px" }}>🔑 비밀번호 재설정</h2>
+
+                <div style={{
+                    background: "#fff8e1",
+                    border: "1px solid #ffe082",
+                    borderRadius: "8px",
+                    padding: "20px",
+                    lineHeight: "1.7",
+                    color: "#5d4037",
+                    fontSize: "0.92em",
+                }}>
+                    <p style={{ margin: "0 0 12px", fontWeight: "bold" }}>
+                        현재 셀프 재설정 기능을 점검 중입니다.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                        비밀번호를 잊으셨다면 <strong>개발자 김범근</strong>에게 연락해 주세요.
+                        본인 확인 후 직접 재설정해 드립니다.
+                    </p>
+                </div>
+
+                <p style={{ textAlign: "center", fontSize: "0.8em", color: "#999", marginTop: "20px", lineHeight: "1.5" }}>
+                    보안 강화를 위한 조치이며,<br />본인 확인 절차를 보완한 뒤 다시 열 예정입니다.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div style={styles.container}>
             <div style={{ marginBottom: "20px" }}>

@@ -1311,8 +1311,30 @@ export const updateMySemester = async (newSemester) => {
 };
 
 /**
+ * 키오스크 대여자 선택 목록을 가져옵니다.
+ *
+ * fetchUsers() 를 쓰지 않는 이유:
+ *   fetchUsers 는 phone·is_paid·joined_semester·status·last_paid_semester·역할까지
+ *   전부 내려주는데, 키오스크가 실제로 쓰는 건 id / name / student_id 뿐이다.
+ *   그 데이터는 localStorage('kiosk_users')에 평문 JSON 으로 저장되므로,
+ *   필요 없는 개인정보(특히 전화번호)를 태블릿에 쌓아둘 이유가 없다.
+ *
+ * @returns {Promise<Array<{id: string, name: string, student_id: string}>>}
+ */
+export const kioskListUsers = async () => {
+  const { data, error } = await supabase.rpc('kiosk_list_users');
+
+  if (error) {
+    console.error("Kiosk List Users Error:", error);
+    throw error;
+  }
+
+  return data || [];
+};
+
+/**
  * 키오스크용 간편 반납 처리 함수입니다.
- * 
+ *
  * @param {number} gameId - 게임 ID
  * @param {string} userId - 사용자 UUID
  * @param {string} [rentalId] - 특정 대여 기록 UUID

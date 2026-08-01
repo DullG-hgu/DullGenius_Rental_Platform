@@ -75,18 +75,87 @@ function KioskPage() {
         }
     };
 
-    const [loginError, setLoginError] = useState(null);
-    const [manualEmail, setManualEmail] = useState('');
-    const [manualPassword, setManualPassword] = useState('');
-    const [manualLoading, setManualLoading] = useState(false);
+    // ── 키오스크 기기 인증 ──────────────────────────────────────────
+    //
+    // 예전에는 VITE_KIOSK_EMAIL / VITE_KIOSK_PASSWORD 로 여기서 바로 로그인했다.
+    // 그런데 VITE_ 접두 환경변수는 빌드 시 번들에 문자열로 박히기 때문에,
+    // 배포된 JS 를 열면 키오스크 계정 아이디·비밀번호가 그대로 보였다.
+    // 비밀번호를 바꿔도 다음 빌드에 새 비밀번호가 똑같이 박히므로 구조를 바꿨다.
+    //
+    // 지금은 기기에 저장된 "마스터키"만 서버로 보내고,
+    // 서버(netlify/functions/kiosk-session.js)가 대신 로그인해 세션 토큰만 돌려준다.
+    // 계정 자격증명은 서버에만 존재한다.
+    //
+    // 마스터키가 없으면(새 기기·초기화 후) 운영진이 1회 입력하는 화면을 띄운다.
+    const DEVICE_KEY_STORAGE = 'kiosk_device_key';
 
-    const handleManualLogin = async (e) => {
+    const [loginError, setLoginError] = useState(null);
+    const [deviceKeyInput, setDeviceKeyInput] = useState('');
+    const [provisioning, setProvisioning] = useState(false);
+    const [needsDeviceKey, setNeedsDeviceKey] = useState(false);
+    // 세션 요청이 effect 재실행으로 중복 발사되는 것을 막는다
+    const sessionRequestedRef = useRef(false);
+
+    const readDeviceKey = () => {
+        try {
+            return localStorage.getItem(DEVICE_KEY_STORAGE);
+        } catch {
+            return null;
+        }
+    };
+
+    const requestKioskSession = async (key, { persist = false } = {}) => {
+        setProvisioning(true);
+        setLoginError(null);
+
+        try {
+            const response = await fetch('/.netlify/functions/kiosk-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key }),
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || !data.success) {
+                // 키가 틀렸으면 저장된 값을 지워 재입력을 유도한다
+                if (response.status === 401) {
+                    try { localStorage.removeItem(DEVICE_KEY_STORAGE); } catch { /* 무시 */ }
+                }
+                setNeedsDeviceKey(true);
+                setLoginError(data?.message || '기기 인증에 실패했습니다.');
+                return;
+            }
+
+            const { error } = await supabase.auth.setSession({
+                access_token: data.access_token,
+                refresh_token: data.refresh_token,
+            });
+
+            if (error) {
+                setNeedsDeviceKey(true);
+                setLoginError(`세션 적용 실패: ${error.message}`);
+                return;
+            }
+
+            if (persist) {
+                try { localStorage.setItem(DEVICE_KEY_STORAGE, key); } catch { /* 무시 */ }
+            }
+            setNeedsDeviceKey(false);
+            setDeviceKeyInput('');
+        } catch (err) {
+            // 네트워크 오류는 키 문제가 아니므로 저장된 키를 지우지 않는다
+            setNeedsDeviceKey(true);
+            setLoginError(`연결 오류: ${err.message}`);
+        } finally {
+            setProvisioning(false);
+        }
+    };
+
+    const handleDeviceKeySubmit = async (e) => {
         e.preventDefault();
-        setManualLoading(true);
-        const { error } = await supabase.auth.signInWithPassword({ email: manualEmail, password: manualPassword });
-        setManualLoading(false);
-        if (error) setLoginError(`로그인 실패: ${error.message}`);
-        else setLoginError(null);
+        if (!deviceKeyInput.trim()) return;
+        sessionRequestedRef.current = true;
+        await requestKioskSession(deviceKeyInput.trim(), { persist: true });
     };
 
     // [Effect] manifest link 교체 — SPA 라우팅으로 /kiosk 진입 시 index.html의 document.write가 다시 실행되지 않으므로,
@@ -105,22 +174,31 @@ function KioskPage() {
         };
     }, []);
 
-    // [Effect] Kiosk 자동 로그인: 세션 없을 때만 env var 계정으로 자동 sign-in
+    // [Effect] Kiosk 세션 자동 복구
+    //
+    // 기기에 저장된 마스터키로 서버에 세션을 요청한다. 무인 상태에서 세션이 만료되거나
+    // 재부팅돼도 사람 없이 스스로 복구되는 것이 이 방식의 목적이다.
+    // 저장된 키가 없으면(새 기기·캐시 초기화 후) 운영진이 1회 입력하는 화면을 띄운다.
     useEffect(() => {
         if (authLoading) return;
-        if (!user) {
-            const email = import.meta.env.VITE_KIOSK_EMAIL;
-            const password = import.meta.env.VITE_KIOSK_PASSWORD;
-            if (!email || !password) {
-                setLoginError('환경변수(VITE_KIOSK_EMAIL, VITE_KIOSK_PASSWORD)가 설정되지 않았습니다.');
-                return;
-            }
-            supabase.auth.signInWithPassword({ email, password })
-                .then(({ error }) => {
-                    if (error) setLoginError(`로그인 실패: ${error.message}`);
-                })
-                .catch((err) => setLoginError(`연결 오류: ${err.message}`));
+
+        if (user) {
+            // 세션이 살아있으면 다음 만료에 대비해 재시도 플래그를 풀어둔다
+            sessionRequestedRef.current = false;
+            return;
         }
+
+        if (sessionRequestedRef.current) return;
+        sessionRequestedRef.current = true;
+
+        const storedKey = readDeviceKey();
+        if (!storedKey) {
+            setNeedsDeviceKey(true);
+            return;
+        }
+
+        requestKioskSession(storedKey);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authLoading, user]);
 
     // [Effect 1a] 새 SW 활성 시 자동 reload — 새벽 4시 reload로 SW가 갱신되면
@@ -240,31 +318,31 @@ function KioskPage() {
                 </div>
             );
         }
-        // 에러 발생 시
-        if (loginError) {
+        // 기기 등록이 필요하거나 인증에 실패한 경우 — 운영진이 마스터키를 1회 입력한다.
+        // 한 번 등록하면 이후에는 세션이 만료돼도 자동으로 복구되므로 다시 뜨지 않는다.
+        if (needsDeviceKey || loginError) {
             return (
                 <div className="activation-screen">
-                    <h1 style={{ marginBottom: "20px" }}>⚠️ 오류</h1>
-                    <p style={{ color: "#e74c3c", fontSize: "0.95rem", maxWidth: "400px", textAlign: "center", marginBottom: "24px" }}>{loginError}</p>
-                    <form onSubmit={handleManualLogin} style={{ display: "flex", flexDirection: "column", gap: "10px", width: "280px" }}>
-                        <input
-                            type="email"
-                            placeholder="이메일"
-                            value={manualEmail}
-                            onChange={(e) => setManualEmail(e.target.value)}
-                            style={{ padding: "10px 14px", borderRadius: "6px", border: "1px solid #444", background: "#1a1a2e", color: "#fff", fontSize: "0.95rem" }}
-                            required
-                        />
+                    <h1 style={{ marginBottom: "12px" }}>🔧 키오스크 기기 등록</h1>
+                    <p style={{ color: "#888", fontSize: "0.9rem", maxWidth: "420px", textAlign: "center", marginBottom: loginError ? "12px" : "24px" }}>
+                        이 태블릿을 키오스크로 사용하려면 운영진용 기기 등록 키를 한 번만 입력하세요.
+                        이후에는 자동으로 로그인됩니다.
+                    </p>
+                    {loginError && (
+                        <p style={{ color: "#e74c3c", fontSize: "0.9rem", maxWidth: "420px", textAlign: "center", marginBottom: "20px" }}>{loginError}</p>
+                    )}
+                    <form onSubmit={handleDeviceKeySubmit} style={{ display: "flex", flexDirection: "column", gap: "10px", width: "300px" }}>
                         <input
                             type="password"
-                            placeholder="비밀번호"
-                            value={manualPassword}
-                            onChange={(e) => setManualPassword(e.target.value)}
+                            placeholder="기기 등록 키"
+                            value={deviceKeyInput}
+                            onChange={(e) => setDeviceKeyInput(e.target.value)}
+                            autoComplete="off"
                             style={{ padding: "10px 14px", borderRadius: "6px", border: "1px solid #444", background: "#1a1a2e", color: "#fff", fontSize: "0.95rem" }}
                             required
                         />
-                        <button type="submit" disabled={manualLoading} style={{ padding: "10px 24px", background: "#667eea", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", opacity: manualLoading ? 0.7 : 1 }}>
-                            {manualLoading ? "로그인 중..." : "로그인"}
+                        <button type="submit" disabled={provisioning} style={{ padding: "10px 24px", background: "#667eea", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", opacity: provisioning ? 0.7 : 1 }}>
+                            {provisioning ? "등록 중..." : "등록"}
                         </button>
                     </form>
                     <button onClick={() => window.location.reload()} style={{ marginTop: "12px", padding: "8px 20px", background: "transparent", color: "#888", border: "1px solid #444", borderRadius: "6px", cursor: "pointer", fontSize: "0.85rem" }}>새로고침</button>
@@ -274,7 +352,7 @@ function KioskPage() {
         return (
             <div className="activation-screen">
                 <h1 style={{ marginBottom: "20px" }}>🎲 덜지니어스 키오스크</h1>
-                <p style={{ color: "#888", fontSize: "1rem" }}>키오스크 계정으로 로그인하는 중...</p>
+                <p style={{ color: "#888", fontSize: "1rem" }}>키오스크 세션을 준비하는 중...</p>
                 <div className="spinner" style={{ marginTop: "20px" }} />
             </div>
         );
