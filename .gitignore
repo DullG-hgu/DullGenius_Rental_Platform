@@ -11,12 +11,16 @@
 # testing & coverage
 /coverage
 
+# 로컬 에이전트 작업 도구 (제품 코드 아님)
+.agent/
+
 # environment variables
+# 접두/접미가 붙은 변형(.env.backup, .env.local.bak.20260802 등)도 반드시 걸리게 한다.
+# 과거에 .env 가 커밋돼 공개 저장소 히스토리에 시크릿이 남은 적이 있다.
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+*.env
+!.env.example
 
 # Supabase CLI
 supabase/.temp/
