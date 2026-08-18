@@ -25,10 +25,11 @@
 //
 // ── 필요한 환경변수 (전부 VITE_ 접두 없이 = 서버 전용) ────────────
 //   KIOSK_MASTER_KEY   기기 인증용. 길고 무작위여야 함(32자 이상 권장)
+//   KIOSK_MASTER_KEY_PREVIOUS  키 회전 중에만 허용할 이전 키 (선택)
 //   KIOSK_EMAIL        키오스크 계정 이메일
 //   KIOSK_PASSWORD     키오스크 계정 비밀번호
 //   SUPABASE_URL       (없으면 VITE_SUPABASE_URL 로 대체)
-//   SUPABASE_ANON_KEY  (없으면 VITE_SUPABASE_ANON_KEY 로 대체. 공개 키라 노출 무방)
+//   SUPABASE_PUBLISHABLE_KEY  (기존 *_ANON_KEY 변수명은 전환 기간에만 대체 사용)
 //
 // ⚠️ KIOSK_EMAIL / KIOSK_PASSWORD 에 절대 VITE_ 를 붙이지 말 것.
 //    붙이는 순간 다시 번들에 박힌다.
@@ -119,10 +120,14 @@ exports.handler = async function (event) {
     }
 
     const masterKey = process.env.KIOSK_MASTER_KEY;
+    const previousMasterKey = process.env.KIOSK_MASTER_KEY_PREVIOUS;
     const email = process.env.KIOSK_EMAIL;
     const password = process.env.KIOSK_PASSWORD;
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY
+        || process.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        || process.env.SUPABASE_ANON_KEY
+        || process.env.VITE_SUPABASE_ANON_KEY;
 
     if (!masterKey || !email || !password || !supabaseUrl || !supabaseKey) {
         // 설정 누락은 서버 로그에만 남긴다. 어떤 값이 빠졌는지 응답에 싣지 않는다.
@@ -140,7 +145,12 @@ exports.handler = async function (event) {
         };
     }
 
-    if (typeof key !== 'string' || !safeEqual(key, masterKey)) {
+    const matchesCurrentKey = typeof key === 'string' && safeEqual(key, masterKey);
+    const matchesPreviousKey = typeof key === 'string'
+        && !!previousMasterKey
+        && safeEqual(key, previousMasterKey);
+
+    if (!matchesCurrentKey && !matchesPreviousKey) {
         return {
             statusCode: 401,
             headers: corsHeaders,
@@ -178,6 +188,8 @@ exports.handler = async function (event) {
                 success: true,
                 access_token: data.access_token,
                 refresh_token: data.refresh_token,
+                // 이전 키로 접속한 기기는 세션을 유지하되 새 키 재등록을 요청한다.
+                key_rotation_required: matchesPreviousKey,
             }),
         };
     } catch (error) {

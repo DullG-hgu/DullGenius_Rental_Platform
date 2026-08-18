@@ -13,6 +13,9 @@ import MurderMysteryTimerModal from './MurderMysteryTimerModal'; // [NEW] 머더
 // [Constants]
 const IDLE_TIMEOUT_MS = 180000; // 3분 (번인 방지)
 const REFRESH_HOUR = 4; // 새벽 4시 자동 새로고침
+const DEVICE_KEY_STORAGE = 'kiosk_device_key';
+const LEGACY_KIOSK_HOST = 'dullgboardgamerent.netlify.app';
+const CANONICAL_KIOSK_ORIGIN = 'https://dullgrental.netlify.app';
 
 function KioskPage() {
     const { showToast } = useToast();
@@ -87,8 +90,6 @@ function KioskPage() {
     // 계정 자격증명은 서버에만 존재한다.
     //
     // 마스터키가 없으면(새 기기·초기화 후) 운영진이 1회 입력하는 화면을 띄운다.
-    const DEVICE_KEY_STORAGE = 'kiosk_device_key';
-
     const [loginError, setLoginError] = useState(null);
     const [deviceKeyInput, setDeviceKeyInput] = useState('');
     const [provisioning, setProvisioning] = useState(false);
@@ -122,7 +123,10 @@ function KioskPage() {
                     try { localStorage.removeItem(DEVICE_KEY_STORAGE); } catch { /* 무시 */ }
                 }
                 setNeedsDeviceKey(true);
-                setLoginError(data?.message || '기기 인증에 실패했습니다.');
+                const message = response.status === 405
+                    ? '이전 배포 주소에서는 기기 등록 요청이 전달되지 않습니다. 새 키오스크 주소로 다시 접속해 주세요.'
+                    : data?.message || '기기 인증에 실패했습니다.';
+                setLoginError(message);
                 return;
             }
 
@@ -140,6 +144,15 @@ function KioskPage() {
             if (persist) {
                 try { localStorage.setItem(DEVICE_KEY_STORAGE, key); } catch { /* 무시 */ }
             }
+
+            if (data.key_rotation_required) {
+                // 이전 키의 유예 접속은 허용하되, 다음 만료 전에 현재 키로 재등록하게 한다.
+                try { localStorage.removeItem(DEVICE_KEY_STORAGE); } catch { /* 무시 */ }
+                setNeedsDeviceKey(true);
+                setLoginError('기기 등록 키가 교체되었습니다. 운영진에게 새 키를 받아 다시 등록해 주세요.');
+                return;
+            }
+
             setNeedsDeviceKey(false);
             setDeviceKeyInput('');
         } catch (err) {
@@ -161,6 +174,12 @@ function KioskPage() {
     // [Effect] manifest link 교체 — SPA 라우팅으로 /kiosk 진입 시 index.html의 document.write가 다시 실행되지 않으므로,
     // 여기서 직접 /manifest-kiosk.json 으로 교체해야 PWA 설치 시 키오스크 매니페스트(start_url=/kiosk)가 적용됨
     useEffect(() => {
+        if (window.location.hostname === LEGACY_KIOSK_HOST) {
+            const nextUrl = `${CANONICAL_KIOSK_ORIGIN}${window.location.pathname}${window.location.search}${window.location.hash}`;
+            window.location.replace(nextUrl);
+            return;
+        }
+
         const link = document.querySelector('link[rel="manifest"]');
         if (!link) return;
         const previousHref = link.getAttribute('href');
@@ -180,6 +199,8 @@ function KioskPage() {
     // 재부팅돼도 사람 없이 스스로 복구되는 것이 이 방식의 목적이다.
     // 저장된 키가 없으면(새 기기·캐시 초기화 후) 운영진이 1회 입력하는 화면을 띄운다.
     useEffect(() => {
+        // 옛 origin의 301은 POST를 GET으로 바꿀 수 있으므로 세션 요청보다 주소 이전을 우선한다.
+        if (window.location.hostname === LEGACY_KIOSK_HOST) return;
         if (authLoading) return;
 
         if (user) {
@@ -200,20 +221,6 @@ function KioskPage() {
         requestKioskSession(storedKey);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authLoading, user]);
-
-    // [Effect 1a] 새 SW 활성 시 자동 reload — 새벽 4시 reload로 SW가 갱신되면
-    // controllerchange가 발화하므로 한 번 더 reload해서 새 precache의 index.html을 받아옴
-    useEffect(() => {
-        if (!('serviceWorker' in navigator)) return;
-        let reloaded = false;
-        const onChange = () => {
-            if (reloaded) return;
-            reloaded = true;
-            window.location.reload();
-        };
-        navigator.serviceWorker.addEventListener('controllerchange', onChange);
-        return () => navigator.serviceWorker.removeEventListener('controllerchange', onChange);
-    }, []);
 
     // [Effect 1] 자동 새로고침 스케줄러
     useEffect(() => {
@@ -299,6 +306,37 @@ function KioskPage() {
     // [Views]
     const isAuthorized = !authLoading && user && (hasRole('kiosk') || hasRole('admin') || hasRole('executive'));
 
+    // 이전 키로 세션이 살아난 경우에도 현재 키 재등록 화면을 우선 표시한다.
+    if (needsDeviceKey || loginError) {
+        return (
+            <div className="activation-screen">
+                <h1 style={{ marginBottom: "12px" }}>🔧 키오스크 기기 등록</h1>
+                <p style={{ color: "#888", fontSize: "0.9rem", maxWidth: "420px", textAlign: "center", marginBottom: loginError ? "12px" : "24px" }}>
+                    이 태블릿을 키오스크로 사용하려면 운영진용 기기 등록 키를 한 번만 입력하세요.
+                    이후에는 자동으로 로그인됩니다.
+                </p>
+                {loginError && (
+                    <p style={{ color: "#e74c3c", fontSize: "0.9rem", maxWidth: "420px", textAlign: "center", marginBottom: "20px" }}>{loginError}</p>
+                )}
+                <form onSubmit={handleDeviceKeySubmit} style={{ display: "flex", flexDirection: "column", gap: "10px", width: "300px" }}>
+                    <input
+                        type="password"
+                        placeholder="기기 등록 키"
+                        value={deviceKeyInput}
+                        onChange={(e) => setDeviceKeyInput(e.target.value)}
+                        autoComplete="off"
+                        style={{ padding: "10px 14px", borderRadius: "6px", border: "1px solid #444", background: "#1a1a2e", color: "#fff", fontSize: "0.95rem" }}
+                        required
+                    />
+                    <button type="submit" disabled={provisioning} style={{ padding: "10px 24px", background: "#667eea", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", opacity: provisioning ? 0.7 : 1 }}>
+                        {provisioning ? "등록 중..." : "등록"}
+                    </button>
+                </form>
+                <button onClick={() => window.location.reload()} style={{ marginTop: "12px", padding: "8px 20px", background: "transparent", color: "#888", border: "1px solid #444", borderRadius: "6px", cursor: "pointer", fontSize: "0.85rem" }}>새로고침</button>
+            </div>
+        );
+    }
+
     if (!isAuthorized) {
         // 로그인은 됐지만 kiosk role이 아닌 경우 (일반 유저가 /kiosk 접근)
         if (!authLoading && user && !hasRole('kiosk')) {
@@ -315,37 +353,6 @@ function KioskPage() {
                         </button>
                         <a href="/" style={{ color: "#666", fontSize: "0.85rem" }}>홈으로 돌아가기</a>
                     </div>
-                </div>
-            );
-        }
-        // 기기 등록이 필요하거나 인증에 실패한 경우 — 운영진이 마스터키를 1회 입력한다.
-        // 한 번 등록하면 이후에는 세션이 만료돼도 자동으로 복구되므로 다시 뜨지 않는다.
-        if (needsDeviceKey || loginError) {
-            return (
-                <div className="activation-screen">
-                    <h1 style={{ marginBottom: "12px" }}>🔧 키오스크 기기 등록</h1>
-                    <p style={{ color: "#888", fontSize: "0.9rem", maxWidth: "420px", textAlign: "center", marginBottom: loginError ? "12px" : "24px" }}>
-                        이 태블릿을 키오스크로 사용하려면 운영진용 기기 등록 키를 한 번만 입력하세요.
-                        이후에는 자동으로 로그인됩니다.
-                    </p>
-                    {loginError && (
-                        <p style={{ color: "#e74c3c", fontSize: "0.9rem", maxWidth: "420px", textAlign: "center", marginBottom: "20px" }}>{loginError}</p>
-                    )}
-                    <form onSubmit={handleDeviceKeySubmit} style={{ display: "flex", flexDirection: "column", gap: "10px", width: "300px" }}>
-                        <input
-                            type="password"
-                            placeholder="기기 등록 키"
-                            value={deviceKeyInput}
-                            onChange={(e) => setDeviceKeyInput(e.target.value)}
-                            autoComplete="off"
-                            style={{ padding: "10px 14px", borderRadius: "6px", border: "1px solid #444", background: "#1a1a2e", color: "#fff", fontSize: "0.95rem" }}
-                            required
-                        />
-                        <button type="submit" disabled={provisioning} style={{ padding: "10px 24px", background: "#667eea", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", opacity: provisioning ? 0.7 : 1 }}>
-                            {provisioning ? "등록 중..." : "등록"}
-                        </button>
-                    </form>
-                    <button onClick={() => window.location.reload()} style={{ marginTop: "12px", padding: "8px 20px", background: "transparent", color: "#888", border: "1px solid #444", borderRadius: "6px", cursor: "pointer", fontSize: "0.85rem" }}>새로고침</button>
                 </div>
             );
         }
