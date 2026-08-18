@@ -367,34 +367,55 @@ export const sendMiss = async (gameId) => {
 export const loginUser = async () => { throw new Error("useAuth().login을 사용하세요."); };
 export const signupUser = async () => { throw new Error("useAuth().signup을 사용하세요."); };
 
-// [Admin] 검색용 네이버 API (Proxy 사용)
-export const searchNaver = async (query) => {
-  if (!query) return { items: [] };
+// [Admin] 한국판 표지 검색용 NAVER API HUB 이미지 검색
+export const searchKoreanImages = async (query) => {
+  if (!query?.trim()) return [];
 
   try {
-    let url;
-    // [FIX] 환경에 따른 URL 분기
-    // 개발 환경(npm start): setupProxy.js가 가로채는 '/v1' 경로 사용
-    // 배포 환경(Netlify): Serverless Function 경로 사용
-    if (import.meta.env.DEV) {
-      url = `/v1/search/shop.json?query=${encodeURIComponent(query)}&display=10`;
-    } else {
-      url = `/.netlify/functions/naver-proxy?query=${encodeURIComponent(query)}`;
+    const params = new URLSearchParams({
+      query: query.trim(),
+      display: '10',
+      start: '1',
+      sort: 'sim',
+      filter: 'large',
+      format: 'json',
+    });
+    const isDev = import.meta.env.DEV;
+    const url = isDev
+      ? `/naver-image-search?${params}`
+      : `/.netlify/functions/naver-image-proxy?query=${encodeURIComponent(query.trim())}`;
+
+    const headers = {};
+    if (!isDev) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('관리자 로그인이 필요합니다.');
+      headers.Authorization = `Bearer ${session.access_token}`;
     }
 
-    const response = await fetch(url);
-
+    const response = await fetch(url, { headers });
+    const data = await response.json().catch(() => null);
     if (!response.ok) {
-      const errText = await response.text();
-      console.error("Naver API Error:", errText);
-      throw new Error(`API 호출 실패(${response.status})`);
+      console.error('[관리자 게임 추가][NAVER 이미지 검색 실패]', {
+        query: query.trim(),
+        status: response.status,
+        statusText: response.statusText,
+        response: data,
+      });
+      throw new Error(data?.errorMessage || data?.error?.message || data?.error || `이미지 검색 실패(${response.status})`);
     }
 
-    const data = await response.json();
-
-    return data;
+    const items = Array.isArray(data?.items) ? data.items : [];
+    return items
+      .filter(item => (item.image || item.link) && item.thumbnail)
+      .map(item => ({
+        title: item.title || '',
+        image: item.image || item.link,
+        thumbnail: item.thumbnail,
+        width: Number(item.width || item.sizewidth) || null,
+        height: Number(item.height || item.sizeheight) || null,
+      }));
   } catch (e) {
-    console.error("검색 중 오류:", e);
+    console.error('한국판 이미지 검색 중 오류:', e);
     throw e;
   }
 };
@@ -487,6 +508,13 @@ export const searchBGG = async (query) => {
       response = await fetch(url);
 
       if (!response.ok) {
+        const responseBody = await response.text().catch(() => '');
+        console.error('[관리자 게임 추가][BGG 이름 검색 실패]', {
+          query,
+          status: response.status,
+          statusText: response.statusText,
+          response: responseBody.slice(0, 500),
+        });
         throw new Error(`BGG 요청 실패: ${response.status}`);
       }
 
@@ -502,6 +530,13 @@ export const searchBGG = async (query) => {
       }
 
       if (!response.ok) {
+        const responseBody = await response.text().catch(() => '');
+        console.error('[관리자 게임 추가][BGG 이름 검색 실패]', {
+          query,
+          status: response.status,
+          statusText: response.statusText,
+          response: responseBody.slice(0, 500),
+        });
         throw new Error(`BGG 요청 실패: ${response.status}`);
       }
 
@@ -529,6 +564,13 @@ export const fetchBGGGame = async (bggId) => {
       response = await fetch(url);
 
       if (!response.ok) {
+        const responseBody = await response.text().catch(() => '');
+        console.error('[관리자 게임 추가][BGG 상세 조회 실패]', {
+          bggId,
+          status: response.status,
+          statusText: response.statusText,
+          response: responseBody.slice(0, 500),
+        });
         throw new Error(`BGG 요청 실패: ${response.status}`);
       }
 
@@ -555,6 +597,13 @@ export const fetchBGGGame = async (bggId) => {
       }
 
       if (!response.ok) {
+        const responseBody = await response.text().catch(() => '');
+        console.error('[관리자 게임 추가][BGG 상세 조회 실패]', {
+          bggId,
+          status: response.status,
+          statusText: response.statusText,
+          response: responseBody.slice(0, 500),
+        });
         throw new Error(`BGG 요청 실패: ${response.status}`);
       }
 

@@ -119,7 +119,6 @@ function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
             // 그때까지 파손 신고는 damage_reports 테이블 + 관리자 페이지에서 확인한다.
             //
             // try {
-            //     const discordUrl = import.meta.env.VITE_DISCORD_WEBHOOK_URL;
             //     if (discordUrl) {
             //         const userName = user.user_metadata?.name || '알 수 없는 부원';
             //         const userPhone = user.user_metadata?.phone || '알 수 없는 전화번호';
@@ -128,8 +127,6 @@ function InfoModal({ isOpen, onClose, initialTab = 'guide' }) {
             //             method: 'POST',
             //             headers: { 'Content-Type': 'application/json' },
             //             body: JSON.stringify({
-            //                 username: import.meta.env.VITE_DISCORD_BOT_NAME || "덜지니어스 알림봇",
-            //                 avatar_url: import.meta.env.VITE_DISCORD_AVATAR_URL || "",
             //                 embeds: [{
             //                     title: "🚨 파손/분실 신고 접수",
             //                     description: `### ${reportSearch}에 대한 파손 신고가 적용되었습니다.\n\n**신고자** : ${userName} (${userPhone})\n**대상 게임** : ${reportSearch}\n**파손 내용** : ${reportContent}`,

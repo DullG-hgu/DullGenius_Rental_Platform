@@ -224,6 +224,127 @@
   color: var(--admin-text-main) !important;
 }
 
+.game-form-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.game-modal-workspace {
+  width: min(98vw, 1480px);
+  max-height: 90vh;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 14px;
+}
+
+.admin-container .game-form-modal {
+  flex: 1;
+  width: auto !important;
+  max-width: 1100px !important;
+}
+
+.admin-container .game-bgg-side-modal {
+  width: 320px !important;
+  max-width: 320px !important;
+  max-height: 90vh;
+  overflow-y: auto;
+  flex: 0 0 320px;
+  padding: 20px;
+  gap: 12px;
+}
+
+.game-bgg-results {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.game-bgg-results button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--admin-border);
+  border-radius: 7px;
+  background: rgba(52, 152, 219, 0.08);
+  color: var(--admin-text-main);
+  text-align: left;
+  cursor: pointer;
+}
+
+.game-bgg-results button span {
+  color: var(--admin-text-sub);
+  font-size: 0.75em;
+}
+
+.game-bgg-results button.is-selected {
+  border-color: #3498db;
+  background: rgba(52, 152, 219, 0.22);
+}
+
+.game-bgg-web-button {
+  width: 100%;
+  padding: 8px;
+  background: #555;
+  color: white;
+  border: 1px solid #777;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.game-form-fields,
+.game-image-panel {
+  min-width: 0;
+}
+
+.game-image-panel {
+  position: sticky;
+  top: 0;
+}
+
+.game-image-results {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  max-height: 430px;
+  overflow-y: auto;
+}
+
+@media (max-width: 800px) {
+  .game-modal-workspace {
+    display: block;
+    width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .admin-container .game-bgg-side-modal,
+  .admin-container .game-form-modal {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .admin-container .game-bgg-side-modal {
+    max-height: 320px;
+    margin-bottom: 12px;
+  }
+
+  .game-form-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .game-image-panel {
+    position: static;
+  }
+}
+
 /* 고급 통계: 작은 화면에서도 필터와 표를 안전하게 표시 */
 .analytics-filter-grid {
   display: grid;

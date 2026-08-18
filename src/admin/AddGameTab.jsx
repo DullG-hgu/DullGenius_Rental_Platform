@@ -1,6 +1,6 @@
 // src/admin/AddGameTab.js
 import { useRef, useState } from 'react';
-import { searchNaver, addGame, checkGameExists, addGameCopy } from '../api';
+import { addGame, checkGameExists, addGameCopy } from '../api';
 import GameFormModal from './GameFormModal';
 import ConfirmModal from '../components/ConfirmModal'; // [NEW]
 import { useToast } from '../contexts/ToastContext';
@@ -8,7 +8,6 @@ import { useToast } from '../contexts/ToastContext';
 function AddGameTab({ onGameAdded }) {
   const { showToast } = useToast();
   const [keyword, setKeyword] = useState("");
-  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // 모달 상태
@@ -24,8 +23,6 @@ function AddGameTab({ onGameAdded }) {
     type: "info"
   });
   const skipConfirmCancelRef = useRef(false);
-
-  const stripHtml = (value = "") => value.replace(/<[^>]*>?/g, '');
 
   const showConfirmModal = (title, message, onConfirm, type = "info", onCancel = null) => {
     skipConfirmCancelRef.current = false;
@@ -48,7 +45,7 @@ function AddGameTab({ onGameAdded }) {
     return { exactMatch, message };
   };
 
-  const handleSearch = async () => {
+  const handleRegister = async () => {
     if (!keyword) return;
     setLoading(true);
     try {
@@ -68,7 +65,6 @@ function AddGameTab({ onGameAdded }) {
             try {
               await addGameCopy(exactMatch.id);
               showToast("기존 게임에 재고가 추가되었습니다!", { type: "success" });
-              setResults([]);
               setKeyword("");
               if (onGameAdded) onGameAdded();
             } catch (e) {
@@ -77,27 +73,18 @@ function AddGameTab({ onGameAdded }) {
             }
           },
           "warning",
-          async () => {
-            // 취소했을 때 네이버 검색 진행
-            try {
-              const data = await searchNaver(keyword);
-              if (data.items) setResults(data.items);
-              else { showToast("결과 없음", { type: "info" }); setResults([]); }
-            } catch (e) {
-              console.error(e);
-              showToast("검색 오류", { type: "error" });
-            }
-          }
+          () => openAddModal()
         );
-        return; // 확인창을 띄우고 네이버 검색은 중단
+        return;
       }
 
-      // 2. 중복이 없으면 정상적으로 네이버 검색 진행
-      const data = await searchNaver(keyword);
-      if (data.items) setResults(data.items);
-      else { showToast("결과 없음", { type: "info" }); setResults([]); }
+      // 중복이 없으면 입력한 이름으로 등록 모달을 연다.
+      openAddModal();
     } catch (e) {
-      console.error(e);
+      console.error('[관리자 게임 추가][이름 검색 실패]', {
+        keyword,
+        error: e,
+      });
       showToast("오류 발생", { type: "error" });
     } finally {
       setLoading(false);
@@ -105,19 +92,8 @@ function AddGameTab({ onGameAdded }) {
   };
 
   // 검색 결과 선택 시 모달 열기
-  const openAddModal = (item) => {
-    const initialData = {
-      name: stripHtml(item.title),
-      category: "보드게임",
-      min_players: 2,
-      max_players: 4,
-      tags: "",
-      difficulty: "",
-      genres: null,
-      image: item.image,
-      naverId: item.productId
-    };
-    setSelectedGame(initialData);
+  const openAddModal = () => {
+    setSelectedGame({ name: keyword, category: "보드게임", image: "" });
     setIsModalOpen(true);
   };
 
@@ -140,7 +116,6 @@ function AddGameTab({ onGameAdded }) {
               await addGameCopy(exactMatch.id);
               showToast("기존 게임에 재고가 추가되었습니다!", { type: "success" });
               setIsModalOpen(false);
-              setResults([]);
               setKeyword("");
               if (onGameAdded) onGameAdded();
             } catch (e) {
@@ -218,7 +193,6 @@ function AddGameTab({ onGameAdded }) {
             await addGame({ ...rest, image: finalImage });
             showToast("추가되었습니다!", { type: "success" });
             setIsModalOpen(false);
-            setResults([]);
             setKeyword("");
             if (onGameAdded) onGameAdded();
           } catch (e) {
@@ -238,45 +212,24 @@ function AddGameTab({ onGameAdded }) {
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
         <input
           value={keyword} onChange={(e) => setKeyword(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          placeholder="네이버 검색 (예: 스플렌더)"
+          onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
+          placeholder="등록할 게임 이름"
           className="admin-input"
           style={{ width: "100%" }}
         />
-        <button onClick={handleSearch} style={styles.searchBtn}>검색</button>
-        <button
-          onClick={() => openAddModal({ title: "", image: "", productId: "manual" })}
-          style={{ ...styles.searchBtn, background: "#2ecc71", marginLeft: "auto" }}
-        >
-          ➕ 직접 추가
-        </button>
+        <button onClick={handleRegister} style={{ ...styles.searchBtn, background: "#2ecc71" }}>등록</button>
       </div>
 
-      {loading && <div style={{ textAlign: "center", padding: "20px", color: "var(--admin-text-sub)" }}>네이버에서 검색 중... ⏳</div>}
+      {loading && <div style={{ textAlign: "center", padding: "20px", color: "var(--admin-text-sub)" }}>기존 게임을 확인하는 중... ⏳</div>}
 
-      {!loading && results.length === 0 && !keyword && (
+      {!loading && !keyword && (
         <div style={{ marginBottom: "20px", padding: "15px", backgroundColor: "rgba(52, 152, 219, 0.1)", borderLeft: "4px solid #3498db", borderRadius: "5px", color: "var(--admin-text-main)", fontSize: "0.95em", lineHeight: "1.6" }}>
           💡 <strong>빠르고 간편한 게임 추가 & 재고 관리 팁</strong><br />
-          검색창에 게임 이름을 정확히 입력하고 <strong>[검색]</strong> 버튼(또는 Enter)을 눌러주세요.<br />
-          동아리에 이미 등록된 게임일 경우, 네이버 검색 목록을 고를 필요 없이 <strong>단 한 번의 클릭으로 즉시 재고를 +1 추가</strong>할 수 있습니다.
+          게임 이름을 입력하고 <strong>[등록]</strong> 버튼(또는 Enter)을 눌러주세요.<br />
+          동아리에 이미 등록된 게임이면 <strong>단 한 번의 클릭으로 재고를 +1 추가</strong>할 수 있습니다.<br />
+          등록 창 왼쪽에서 <strong>BGG 정보 검색</strong>, 오른쪽에서 <strong>한국판 이미지 검색</strong>을 사용할 수 있습니다.
         </div>
       )}
-
-      {!loading && results.length === 0 && keyword && (
-        <div style={{ textAlign: "center", color: "var(--admin-text-sub)", padding: "20px" }}>
-          검색 결과가 없습니다. '직접 추가' 버튼을 사용해보세요.
-        </div>
-      )}
-
-      <div style={styles.gridContainer}>
-        {results.map((item) => (
-          <div key={item.productId} className="admin-card" style={{ padding: "10px", textAlign: "center" }}>
-            <img src={item.image} alt="cover" style={styles.cardImage} />
-            <div style={styles.cardTitle}>{stripHtml(item.title)}</div>
-            <button onClick={() => openAddModal(item)} style={styles.selectBtn}>선택</button>
-          </div>
-        ))}
-      </div>
 
       {/* 공통 모달 사용 */}
       <GameFormModal
@@ -312,10 +265,6 @@ function AddGameTab({ onGameAdded }) {
 const styles = {
   // input style removed in favor of className
   searchBtn: { padding: "10px 20px", background: "#333", color: "white", border: "1px solid #555", borderRadius: "8px", cursor: "pointer" },
-  gridContainer: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "15px" },
-  cardImage: { width: "100%", height: "120px", objectFit: "contain", marginBottom: "10px" },
-  cardTitle: { fontSize: "0.9em", height: "40px", overflow: "hidden", marginBottom: "10px", color: "var(--admin-text-main)" },
-  selectBtn: { width: "100%", padding: "10px", background: "#3498db", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" }
 };
 
 export default AddGameTab;
