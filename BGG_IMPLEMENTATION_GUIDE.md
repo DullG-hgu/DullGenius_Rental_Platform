@@ -236,7 +236,7 @@ node scripts/bgg_collect_and_validate.mjs  # 데이터 수집
 ### 프로덕션 환경
 ```bash
 NODE_ENV=production \
-API_BASE=https://dullgboardgamerent.netlify.app \
+API_BASE=https://dullgrental.netlify.app \
 node scripts/bgg_collect_and_validate.mjs
 ```
 
@@ -250,7 +250,7 @@ node scripts/bgg_collect_and_validate.mjs
 ## ⚠️ 주의사항
 
 ### 1. BGG API 토큰
-- **위치**: `.env.local`의 `VITE_BGG_API_TOKEN`
+- **위치**: `.env.local`의 서버 전용 `BGG_API_TOKEN`
 - **경고**: 공개 저장소에 노출 금지
 - **갱신**: 정기적으로 토큰 로테이션 권장
 
@@ -367,4 +367,3 @@ rm -f database/bgg_api_update_*.sql (선택사항: 히스토리로 남길 경우
 ---
 
 **상태**: ✅ 프로토타입 준비 완료, 실행 대기 중
-

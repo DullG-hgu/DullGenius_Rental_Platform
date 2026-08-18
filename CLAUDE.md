@@ -127,6 +127,7 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 | `KIOSK_EMAIL` | 키오스크 계정 이메일 |
 | `KIOSK_PASSWORD` | 키오스크 계정 비밀번호 (Supabase 계정 값과 일치해야 함) |
 | `KIOSK_MASTER_KEY` | 기기 등록 키. 길고 무작위하게 (`openssl rand -base64 32`) |
+| `KIOSK_MASTER_KEY_PREVIOUS` | 키 회전 유예용 이전 키(선택). 기기 재등록 후 즉시 제거 |
 
 실제 값은 저장소에 두지 않는다. **Netlify 환경변수**(Production 컨텍스트)와
 **Supabase → Authentication → Users** 에서 확인·변경한다.
@@ -142,3 +143,5 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 - 공개돼도 되는 것: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`(publishable) — RLS가 실제 관문
 - Netlify `SECRETS_SCAN_ENABLED=true`가 이를 강제한다. 시크릿이 번들에 들어가면 빌드가 실패함
 - 서버에서만 쓸 값은 `netlify/functions/`에서 `process.env`로 읽는다
+- `npm run validate:env`로 배포 전 필수값·금지된 `VITE_` secret 이름을 검사한다
+- 키오스크 운영 주소는 `https://dullgrental.netlify.app/kiosk`다. 예전 주소의 PWA는 제거 후 재설치한다

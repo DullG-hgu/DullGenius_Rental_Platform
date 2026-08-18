@@ -6,13 +6,14 @@
 // 트리거: Form > On form submit > onFormSubmit (Form-bound)
 // Script Properties 필요 (Project Settings > Script Properties):
 //   SUPABASE_GAS_SECRET = (private_config.gas_shared_secret 와 동일한 값)
+//   SUPABASE_PUBLISHABLE_KEY = Supabase의 활성 sb_publishable_ 키
 // ============================================================
 
 
-// Supabase 프로젝트 URL과 anon key는 공개되어도 되는 값이라 하드코딩.
-// (실제 보호는 SUPABASE_GAS_SECRET + RPC 내부 시크릿 검증으로 함)
+// 프로젝트 URL은 공개값이다. 공개 키도 비밀은 아니지만 회전 시 배포된 스크립트가
+// 구 키에 묶이지 않도록 Script Properties에서 읽는다.
+// 실제 요청 보호는 SUPABASE_GAS_SECRET + RPC 내부 시크릿 검증으로 한다.
 const SUPABASE_URL = 'https://hptvqangstiaatdtusrg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwdHZxYW5nc3RpYWF0ZHR1c3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNjcyNDIsImV4cCI6MjA4NDg0MzI0Mn0.zUA1hXHeEblta3kQG6A3ltbKgRfzByDLc6suC_D3ZZc';
 
 
 // ============================================================
@@ -144,6 +145,11 @@ function extractAnswers(e) {
 // Supabase RPC 호출
 // ------------------------------------------------------------
 function postRentalRequestToSupabase(e) {
+  const publishableKey = PropertiesService.getScriptProperties().getProperty('SUPABASE_PUBLISHABLE_KEY');
+  if (!publishableKey) {
+    throw new Error('Script Property SUPABASE_PUBLISHABLE_KEY가 없습니다.');
+  }
+
   const SUPABASE_GAS_SECRET = PropertiesService.getScriptProperties().getProperty('SUPABASE_GAS_SECRET');
 
   if (!SUPABASE_GAS_SECRET) {
@@ -176,8 +182,8 @@ function postRentalRequestToSupabase(e) {
     method: 'post',
     contentType: 'application/json',
     headers: {
-      'apikey':        SUPABASE_ANON_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'apikey':        publishableKey,
+      'Authorization': 'Bearer ' + publishableKey,
     },
     payload: JSON.stringify({ p_payload: payload }),
     muteHttpExceptions: true,

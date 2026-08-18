@@ -4,12 +4,17 @@ const { createClient } = require('@supabase/supabase-js');
 // const fetch = require('node-fetch');
 
 // 1. Supabase Client 설정
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
 if (!supabaseUrl || !supabaseKey) {
     console.error("❌ Error: Missing Supabase Environment Variables");
+    process.exit(1);
+}
+
+if (!discordWebhookUrl) {
+    console.error("❌ Error: Missing DISCORD_WEBHOOK_URL");
     process.exit(1);
 }
 
@@ -38,7 +43,7 @@ async function checkOverdueRentals() {
 
     if (error) {
         console.error("❌ Supabase Error:", error);
-        return [];
+        throw error;
     }
 
     return rentals || [];
@@ -46,13 +51,6 @@ async function checkOverdueRentals() {
 
 // 3. 디스코드 알림 발송 함수
 async function sendDiscordNotification(overdueList) {
-    if (!discordWebhookUrl) {
-        console.log("⚠️ Warning: DISCORD_WEBHOOK_URL is not set. Skipping notification.");
-        console.log("--- Local Debug Output ---");
-        console.log(JSON.stringify(overdueList, null, 2));
-        return;
-    }
-
     if (overdueList.length === 0) {
         console.log("✅ No overdue rentals found.");
         return;
@@ -82,22 +80,18 @@ async function sendDiscordNotification(overdueList) {
         embeds: embeds
     };
 
-    try {
-        const response = await fetch(discordWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+    const response = await fetch(discordWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
 
-        if (response.ok) {
-            console.log("✅ Discord Notification Sent Successfully!");
-        } else {
-            const errText = await response.text();
-            console.error(`❌ Failed to send Discord notification: ${response.status} ${errText}`);
-        }
-    } catch (e) {
-        console.error("❌ Network Error:", e);
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Discord notification failed: ${response.status} ${errText}`);
     }
+
+    console.log("✅ Discord Notification Sent Successfully!");
 }
 
 // 4. 실행

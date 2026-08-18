@@ -30,15 +30,15 @@ envContent.split('\n').forEach(line => {
 
 // Supabase 초기화
 const supabaseUrl = env.VITE_SUPABASE_URL;
-const supabaseKey = env.VITE_SUPABASE_ANON_KEY;
+const supabaseKey = env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // BGG 토큰
-const bggToken = env.VITE_BGG_API_TOKEN;
+const bggToken = env.BGG_API_TOKEN;
 
 // API 기본 URL (프로덕션)
 const isProduction = process.env.NODE_ENV === 'production';
-const API_BASE = process.env.API_BASE || 'https://dullgboardgamerent.netlify.app';
+const API_BASE = process.env.API_BASE || 'https://dullgrental.netlify.app';
 
 /**
  * BGG XML 파싱 (상세 정보)

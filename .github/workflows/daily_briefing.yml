@@ -10,14 +10,10 @@ name: Daily Overdue Briefing
 #      디스코드에 아무것도 보내지 않았을 가능성이 크다.
 #   3. 현재 연체 확인은 Admin 대시보드로 하고 있어 당장 필요하지 않다.
 #
-# 되살릴 때 할 일 (anon 키 복구만으로는 반쪽이다):
-#   - 키를 SUPABASE_SERVICE_ROLE_KEY 로 바꿀 것. anon 키로는 profiles 를 못 읽어
-#     (RLS: Read Own Profile / Admin Read All Profiles) 연체자 이름·전화번호가
-#     전부 null 로 내려온다. cleanup.yml 이 같은 이유로 service_role 을 쓴다.
-#   - DISCORD_WEBHOOK_URL 시크릿 등록 (.env.local 에 값 있음).
-#   - daily_briefing.js 가 웹훅 없을 때 exit 1 하도록 고칠 것.
-#     안 그러면 또 초록불로 조용히 무동작한다.
-#   - 아래 schedule 주석 해제.
+# 재개 준비는 코드에 반영됨:
+#   - SUPABASE_SERVICE_ROLE_KEY 사용 (profiles RLS 우회가 필요한 관리자 작업)
+#   - Supabase/Discord 조회·발송 실패 시 exit 1
+# 재개 전 GitHub Actions 시크릿 3개와 아래 schedule 주석 해제 여부를 확인할 것.
 on:
   # schedule:
   #   # 매일 한국 시간 오전 9시 (UTC 00:00)
@@ -44,5 +40,5 @@ jobs:
         run: node admin_notifications/daily_briefing.js
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

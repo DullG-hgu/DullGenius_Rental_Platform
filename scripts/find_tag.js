@@ -2,10 +2,10 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+    console.error('Missing Supabase URL or publishable key');
     process.exit(1);
 }
 

@@ -34,7 +34,7 @@ envContent.split('\n').forEach(line => {
 
 // Supabase 초기화
 const supabaseUrl = env.VITE_SUPABASE_URL;
-const supabaseKey = env.VITE_SUPABASE_ANON_KEY;
+const supabaseKey = env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 설정
@@ -56,7 +56,7 @@ console.log('📝 주의: 개발 환경에서는 "npm run dev" 후 실행하세�
 async function fetchBGGGameDirect(bggId) {
   try {
     const url = `https://www.boardgamegeek.com/xmlapi2/thing?id=${bggId}&type=boardgame&stats=1`;
-    const bggToken = env.VITE_BGG_API_TOKEN;
+    const bggToken = env.BGG_API_TOKEN;
 
     const response = await fetch(url, {
       headers: {

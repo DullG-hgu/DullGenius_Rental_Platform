@@ -10,7 +10,8 @@ from supabase import create_client, Client
 SUPABASE_URL = os.getenv("VITE_SUPABASE_URL")
 # 주의: 스토리지 업로드 및 DB 수정을 위해 'Service Role Key'가 권장됩니다.
 # Anon Key로는 RLS 정책에 따라 막힐 수 있습니다.
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("VITE_SUPABASE_ANON_KEY")
+SUPABASE_KEY = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_PUBLISHABLE_KEY")
+                or os.getenv("VITE_SUPABASE_PUBLISHABLE_KEY") or os.getenv("VITE_SUPABASE_ANON_KEY"))
 
 BUCKET_NAME = "game-images"
 

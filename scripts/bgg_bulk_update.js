@@ -235,8 +235,9 @@ async function main() {
   try {
     const env = loadEnv();
     const supabaseUrl = env.VITE_SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_ANON_KEY;
-    const bggToken = env.VITE_BGG_API_TOKEN || env.BGG_API_TOKEN;
+    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_PUBLISHABLE_KEY
+      || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY;
+    const bggToken = env.BGG_API_TOKEN;
 
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('VITE_SUPABASE_URL 또는 SUPABASE_SERVICE_ROLE_KEY가 없습니다');

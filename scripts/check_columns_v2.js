@@ -10,7 +10,10 @@ envContent.split('\n').forEach(line => {
     if (key && val) env[key.trim()] = val.trim();
 });
 
-const supabase = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY);
+const supabase = createClient(
+    env.VITE_SUPABASE_URL,
+    env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY,
+);
 
 async function checkSchema() {
     console.log("🔍 Checking 'game_copies' for 'condition' column...");

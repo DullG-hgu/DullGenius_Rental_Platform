@@ -22,9 +22,11 @@
   },
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/validate_env.mjs",
     "build": "vite build",
     "preview": "vite preview",
-    "pull-schema": "node scripts/pull_schema.js"
+    "pull-schema": "node scripts/pull_schema.js",
+    "validate:env": "node scripts/validate_env.mjs --strict"
   },
   "eslintConfig": {
     "extends": [

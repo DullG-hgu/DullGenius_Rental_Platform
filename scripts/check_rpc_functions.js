@@ -16,7 +16,7 @@ fs.readFileSync(envPath, 'utf8').split('\n').forEach(l => {
 });
 
 const SUPABASE_URL     = env.VITE_SUPABASE_URL;
-const ANON_KEY         = env.VITE_SUPABASE_ANON_KEY;
+const ANON_KEY         = env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY;
 const SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 
 // ── 로컬 SQL에서 기대되는 함수 목록 ──────────────────

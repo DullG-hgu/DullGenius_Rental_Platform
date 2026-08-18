@@ -12,7 +12,8 @@ envContent.split('\n').forEach(line => {
 });
 
 const supabaseUrl = env.REACT_APP_SUPABASE_URL;
-const supabaseKey = env.REACT_APP_SUPABASE_ANON_KEY;
+const supabaseKey = env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY
+    || env.VITE_SUPABASE_ANON_KEY || env.REACT_APP_SUPABASE_ANON_KEY;
 // IMPORTANT: Use SERVICE_ROLE key if available for deletions, otherwise ANON key with RLS might fail 
 // if the user is not the owner. But assuming local dev environment or admin rights context.
 // Actually, RLS usually blocks delete for anon. We might need to rely on the fact user is an admin or we have a service role key.

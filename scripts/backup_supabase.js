@@ -72,15 +72,17 @@ async function main() {
     // URL
     const supabaseUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL;
     // Key: Try Service Role first (for full access), then generic Key, then Anon
-    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_KEY || env.VITE_SUPABASE_KEY || env.VITE_SUPABASE_ANON_KEY;
+    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_KEY
+      || env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY
+      || env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
         log.error("Missing credentials in .env.local.local file.");
-        log.info("Please ensure VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or VITE_SUPABASE_KEY) are set.");
+        log.info("Please ensure VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_KEY) are set.");
         process.exit(1);
     }
 
-    if (!env.SUPABASE_SERVICE_ROLE_KEY && !env.VITE_SUPABASE_SERVICE_ROLE_KEY) {
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
         log.warn("Running with Anon/Public Key. Some tables (like profiles) may be incomplete due to RLS.");
         log.warn("For a full backup, please add SUPABASE_SERVICE_ROLE_KEY to your .env.local file.");
     }

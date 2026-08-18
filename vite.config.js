@@ -50,23 +50,17 @@ export default defineConfig(({ mode }) => {
         server: {
             port: 3000,
             proxy: {
-                '/v1': {
-                    target: 'https://openapi.naver.com',
+                '/naver-image-search': {
+                    target: 'https://naverapihub.apigw.ntruss.com',
                     changeOrigin: true,
-                    // v1 is kept in path, so no rewrite needed typically if target is openapi.naver.com
-                    // But original proxy had target 'https://openapi.naver.com/v1', so we need to be careful.
-                    // Original: target: 'https://openapi.naver.com/v1', path: '/v1' -> result: 'https://openapi.naver.com/v1/v1...' if not handled?
-                    // Express proxy default behavior: /v1/search -> https://target/v1/search
-                    // Let's match typical Vite behavior.
-                    rewrite: (path) => path.replace(/^\/v1/, '/v1'), // maintain /v1
+                    rewrite: (path) => path.replace(/^\/naver-image-search/, '/search/v1/image'),
                     configure: (proxy, _options) => {
-                        proxy.on('proxyReq', (proxyReq, req, _res) => {
-                            const clientId = env.VITE_NAVER_CLIENT_ID
-                            const clientSecret = env.VITE_NAVER_CLIENT_SECRET
+                        proxy.on('proxyReq', (proxyReq) => {
+                            const clientId = env.NAVER_API_HUB_CLIENT_ID
+                            const clientSecret = env.NAVER_API_HUB_CLIENT_SECRET
                             if (clientId && clientSecret) {
-                                proxyReq.setHeader('X-Naver-Client-Id', clientId)
-                                proxyReq.setHeader('X-Naver-Client-Secret', clientSecret)
-                                // console.log(`[Proxy] API Key injected for ${req.url}`)
+                                proxyReq.setHeader('X-NCP-APIGW-API-KEY-ID', clientId)
+                                proxyReq.setHeader('X-NCP-APIGW-API-KEY', clientSecret)
                             }
                         })
                     },
@@ -77,7 +71,7 @@ export default defineConfig(({ mode }) => {
                     rewrite: (path) => path.replace(/^\/bgg-search/, '/xmlapi2/search'),
                     configure: (proxy, _options) => {
                         proxy.on('proxyReq', (proxyReq, req, _res) => {
-                            const bggToken = env.VITE_BGG_API_TOKEN
+                            const bggToken = env.BGG_API_TOKEN
                             if (bggToken) {
                                 proxyReq.setHeader('Authorization', `Bearer ${bggToken}`)
                             }
@@ -90,7 +84,7 @@ export default defineConfig(({ mode }) => {
                     rewrite: (path) => path.replace(/^\/bgg-thing/, '/xmlapi2/thing'),
                     configure: (proxy, _options) => {
                         proxy.on('proxyReq', (proxyReq, req, _res) => {
-                            const bggToken = env.VITE_BGG_API_TOKEN
+                            const bggToken = env.BGG_API_TOKEN
                             if (bggToken) {
                                 proxyReq.setHeader('Authorization', `Bearer ${bggToken}`)
                             }
