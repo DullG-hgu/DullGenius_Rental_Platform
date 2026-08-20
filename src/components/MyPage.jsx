@@ -3,6 +3,7 @@ import { fetchMyRentals, fetchUserPoints, fetchPointHistory, withdrawAccount, ca
 import MyEventsCard from '../event/MyEventsCard';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabaseClient';
 
@@ -10,6 +11,7 @@ const MyPage = () => {
   const { user, profile, loading: authLoading, refreshProfile, logout } = useAuth(); // [NEW]
   const navigate = useNavigate();
   const { showToast } = useToast(); // [NEW]
+  const { refreshGames } = useGameData(); // 찜 취소 후 전역 목록 갱신
 
   const [rentals, setRentals] = useState([]);
   const [rentalHistory, setRentalHistory] = useState([]);
@@ -158,7 +160,10 @@ const MyPage = () => {
       const result = await cancelDibsGame(gameId, user.id);
       if (result.success) {
         showToast("찜이 취소되었습니다.");
-        setRentals(prev => prev.filter(r => r.gameId !== gameId));
+        // [FIX] gameId 만으로 거르면 같은 게임의 '대여중' 기록까지 화면에서 사라진다.
+        //       취소된 것은 찜(DIBS) 뿐이므로 타입까지 확인한다.
+        setRentals(prev => prev.filter(r => !(r.gameId === gameId && r.type === 'DIBS')));
+        refreshGames();
       } else {
         showToast(result.message || "취소 실패", { type: "error" });
       }

@@ -1,9 +1,11 @@
 // src/kiosk/ReservationModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { kioskPickup } from '../api';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
+import { subscribeToGameChanges } from '../lib/gamesRealtime';
+import { buildReservationGroups, removeProcessed, pruneSelection } from './kioskListUtils';
 import './Kiosk.css';
 
 function ReservationModal({ onClose }) {
@@ -32,48 +34,50 @@ function ReservationModal({ onClose }) {
     };
 
     // Load active reservations (DIBS) grouped by user
-    useEffect(() => {
-        const loadReservations = async () => {
-            const { data, error } = await supabase
-                .from('rentals')
-                .select(`
-                    rental_id,
-                    game_id,
-                    borrowed_at,
-                    type,
-                    profiles:user_id (id, name, student_id),
-                    game:games (id, name, image)
-                `)
-                .eq('type', 'DIBS') // 예약(찜)만 조회
-                .is('returned_at', null); // 아직 수령/취소 안된 것
+    const loadReservations = useCallback(async () => {
+        const { data, error } = await supabase
+            .from('rentals')
+            .select(`
+                rental_id,
+                game_id,
+                borrowed_at,
+                due_date,
+                type,
+                profiles:user_id (id, name, student_id),
+                game:games (id, name, image)
+            `)
+            .eq('type', 'DIBS') // 예약(찜)만 조회
+            .is('returned_at', null) // 아직 수령/취소 안된 것
+            .gt('due_date', new Date().toISOString()); // 30분이 지난 찜은 제외
 
-            if (error) {
-                console.error(error);
-                showToast("예약 목록을 불러오지 못했습니다.", { type: "error" });
-                setLoading(false);
-                return;
-            }
-
-            // Group by user
-            const valid = data.filter(r => r.game && r.profiles);
-            const grouped = {};
-
-            valid.forEach(rental => {
-                const userId = rental.profiles.id;
-                if (!grouped[userId]) {
-                    grouped[userId] = {
-                        user: rental.profiles,
-                        reservations: []
-                    };
-                }
-                grouped[userId].reservations.push(rental);
-            });
-
-            setUserReservations(Object.values(grouped));
+        if (error) {
+            console.error(error);
+            showToast("예약 목록을 불러오지 못했습니다.", { type: "error" });
             setLoading(false);
-        };
-        loadReservations();
+            return;
+        }
+
+        // 서버 필터를 통과했더라도 목록을 열어둔 사이 만료될 수 있어 화면에서도 거른다
+        const groups = buildReservationGroups(data);
+        setUserReservations(groups);
+        setSelectedRentalIds(prev => pruneSelection(groups, 'reservations', prev));
+        setLoading(false);
     }, [showToast]);
+
+    useEffect(() => {
+        loadReservations();
+    }, [loadReservations]);
+
+    // [REALTIME] 모달이 열려 있는 동안 다른 기기의 대여·찜·반납을 따라간다.
+    // (게임 상태가 바뀌면 games 가 UPDATE 되므로 그것을 신호로 쓴다)
+    useEffect(() => {
+        const unsubscribe = subscribeToGameChanges({
+            channelName: 'games-sync-kiosk-reservation',
+            onChange: loadReservations,
+            onReconnect: loadReservations
+        });
+        return unsubscribe;
+    }, [loadReservations]);
 
     const toggleUser = (userId) => {
         setExpandedUserId(expandedUserId === userId ? null : userId);
@@ -104,6 +108,7 @@ function ReservationModal({ onClose }) {
                 let successCount = 0;
                 let failCount = 0;
                 const failedItems = [];
+                const succeededIds = new Set(); // 성공한 것만 목록에서 지운다
 
                 // Process each selected reservation
                 for (const rentalId of selectedRentalIds) {
@@ -121,6 +126,7 @@ function ReservationModal({ onClose }) {
                         const result = await kioskPickup(rentalId);
                         if (result.success) {
                             successCount++;
+                            succeededIds.add(rentalId);
                         } else {
                             failCount++;
                             failedItems.push({ name: targetName, reason: result.message });
@@ -136,17 +142,13 @@ function ReservationModal({ onClose }) {
 
                 if (successCount > 0) {
                     showToast(`✅ ${successCount}개 수령 완료! 즐거운 시간 되세요.`, { type: "success" });
+                }
 
-                    // Remove processed items from UI
-                    const remainingUsers = userReservations
-                        .map(ug => ({
-                            ...ug,
-                            reservations: ug.reservations.filter(r => !selectedRentalIds.has(r.rental_id))
-                        }))
-                        .filter(ug => ug.reservations.length > 0);
-
+                if (succeededIds.size > 0) {
+                    // 성공한 건만 지운다. 실패한 건은 남겨 다시 시도할 수 있게 한다.
+                    const remainingUsers = removeProcessed(userReservations, 'reservations', succeededIds);
                     setUserReservations(remainingUsers);
-                    setSelectedRentalIds(new Set());
+                    setSelectedRentalIds(prev => pruneSelection(remainingUsers, 'reservations', prev));
 
                     if (remainingUsers.length === 0) {
                         onClose();

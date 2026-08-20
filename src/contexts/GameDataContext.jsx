@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { fetchGames, fetchTrending, fetchConfig } from '../api';
+import { subscribeToGameChanges } from '../lib/gamesRealtime';
 
 const GameDataContext = createContext(null);
 
@@ -122,6 +123,18 @@ export const GameProvider = ({ children }) => {
     }, [loadData]);
 
     const refreshGames = useCallback(() => loadData(true), [loadData]);
+
+    // [REALTIME] 다른 기기(키오스크·관리자·다른 회원)의 대여·찜·반납을 따라간다.
+    // 본인 조작은 각 화면이 refreshGames() 를 직접 불러 즉시 반영하고,
+    // 여기는 남의 조작을 데우는 용도다. 둘은 겹쳐도 무해하다(읽기 전용).
+    useEffect(() => {
+        const unsubscribe = subscribeToGameChanges({
+            channelName: 'games-sync-app',
+            onChange: refreshGames,
+            onReconnect: refreshGames
+        });
+        return unsubscribe;
+    }, [refreshGames]);
 
     return (
         <GameDataContext.Provider value={{ games, trending, config, loading, error, refreshGames }}>

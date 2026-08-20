@@ -1,9 +1,11 @@
 // src/kiosk/ReturnModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { kioskReturn } from '../api';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal'; // [NEW] 커스텀 확인 모달
+import { subscribeToGameChanges } from '../lib/gamesRealtime';
+import { buildRentalGroups, removeProcessed, pruneSelection } from './kioskListUtils';
 import './Kiosk.css';
 
 function ReturnModal({ onClose }) {
@@ -32,47 +34,47 @@ function ReturnModal({ onClose }) {
     };
 
     // Load active rentals grouped by user
-    useEffect(() => {
-        const loadRentals = async () => {
-            const { data, error } = await supabase
-                .from('rentals')
-                .select(`
-                    rental_id,
-                    game_id,
-                    borrowed_at,
-                    profiles:user_id (id, name, student_id),
-                    game:games (id, name, image)
-                `)
-                .eq('type', 'RENT')
-                .is('returned_at', null);
+    const loadRentals = useCallback(async () => {
+        const { data, error } = await supabase
+            .from('rentals')
+            .select(`
+                rental_id,
+                game_id,
+                borrowed_at,
+                renter_name,
+                profiles:user_id (id, name, student_id),
+                game:games (id, name, image)
+            `)
+            .eq('type', 'RENT')
+            .is('returned_at', null);
 
-            if (error) {
-                console.error(error);
-                showToast("대여 목록을 불러오지 못했습니다.", { type: "error" });
-                setLoading(false);
-                return;
-            }
-
-            // Group by user (비회원 현장대여는 profiles가 null → renter_name 기반 그룹핑)
-            const valid = data.filter(r => r.game);
-            const grouped = {};
-
-            valid.forEach(rental => {
-                const groupKey = rental.profiles?.id || ('anon:' + (rental.renter_name || 'unknown'));
-                if (!grouped[groupKey]) {
-                    grouped[groupKey] = {
-                        user: rental.profiles || { id: groupKey, name: rental.renter_name || '비회원(수기)', student_id: null },
-                        rentals: []
-                    };
-                }
-                grouped[groupKey].rentals.push(rental);
-            });
-
-            setUserRentals(Object.values(grouped));
+        if (error) {
+            console.error(error);
+            showToast("대여 목록을 불러오지 못했습니다.", { type: "error" });
             setLoading(false);
-        };
-        loadRentals();
+            return;
+        }
+
+        // Group by user (비회원 현장대여는 profiles가 null → renter_name 기반 그룹핑)
+        const groups = buildRentalGroups(data);
+        setUserRentals(groups);
+        setSelectedRentals(prev => pruneSelection(groups, 'rentals', prev));
+        setLoading(false);
     }, [showToast]);
+
+    useEffect(() => {
+        loadRentals();
+    }, [loadRentals]);
+
+    // [REALTIME] 모달이 열려 있는 동안 다른 기기의 대여·반납을 따라간다.
+    useEffect(() => {
+        const unsubscribe = subscribeToGameChanges({
+            channelName: 'games-sync-kiosk-return',
+            onChange: loadRentals,
+            onReconnect: loadRentals
+        });
+        return unsubscribe;
+    }, [loadRentals]);
 
     const toggleUser = (userId) => {
         setExpandedUserId(expandedUserId === userId ? null : userId);
@@ -103,6 +105,7 @@ function ReturnModal({ onClose }) {
                 let successCount = 0;
                 let failCount = 0;
                 const failedItems = []; // 실패한 항목 추적
+                const succeededIds = new Set(); // 성공한 것만 목록에서 지운다
 
                 // Process each selected rental
                 for (const rentalId of selectedRentals) {
@@ -122,6 +125,7 @@ function ReturnModal({ onClose }) {
                         const result = await kioskReturn(targetRental.game_id, targetRental.profiles?.id || null, rentalId);
                         if (result.success) {
                             successCount++;
+                            succeededIds.add(rentalId);
                         } else {
                             failCount++;
                             failedItems.push({
@@ -144,17 +148,13 @@ function ReturnModal({ onClose }) {
                 // 피드백 개선
                 if (successCount > 0) {
                     showToast(`✅ ${successCount}개 반납 완료! 각 건당 100P 지급되었습니다.`, { type: "success" });
+                }
 
-                    // Remove returned rentals from UI
-                    const remainingUsers = userRentals
-                        .map(ug => ({
-                            ...ug,
-                            rentals: ug.rentals.filter(r => !selectedRentals.has(r.rental_id))
-                        }))
-                        .filter(ug => ug.rentals.length > 0);
-
+                if (succeededIds.size > 0) {
+                    // 성공한 건만 지운다. 실패한 건은 남겨 다시 시도할 수 있게 한다.
+                    const remainingUsers = removeProcessed(userRentals, 'rentals', succeededIds);
                     setUserRentals(remainingUsers);
-                    setSelectedRentals(new Set());
+                    setSelectedRentals(prev => pruneSelection(remainingUsers, 'rentals', prev));
 
                     if (remainingUsers.length === 0) {
                         onClose();

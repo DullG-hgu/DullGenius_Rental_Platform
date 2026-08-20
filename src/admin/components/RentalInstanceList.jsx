@@ -36,6 +36,9 @@ const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs,
                 {game.rentals.map(r => {
                     const name = r.renter_name || r.profiles?.name || "알 수 없음";
                     const isDibs = r.type === 'DIBS';
+                    // HOLD = 외부 단체대여 예약. 여기서는 반납/연장 대상이 아니다
+                    // (해당 건은 '단체대여 신청' 탭에서 승인/거절로 다룬다).
+                    const isHold = r.type === 'HOLD';
                     const targetDate = new Date(r.due_date || r.borrowed_at);
                     const diffDays = ~~((targetDate - new Date()) / (1000 * 60 * 60 * 24));
 
@@ -51,8 +54,8 @@ const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs,
                         }}>
                             <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: "0.9em", fontWeight: "bold", display: "flex", alignItems: "center", gap: "5px" }}>
-                                    <span style={{ color: isDibs ? "#f39c12" : "#3498db", fontSize: "0.8em" }}>
-                                        {isDibs ? "⚡ 찜" : "📦 대여"}
+                                    <span style={{ color: isHold ? "#16a085" : isDibs ? "#f39c12" : "#3498db", fontSize: "0.8em" }}>
+                                        {isHold ? "🏷️ 단체" : isDibs ? "⚡ 찜" : "📦 대여"}
                                     </span>
                                     {name}
                                 </div>
@@ -61,7 +64,11 @@ const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs,
                                 </div>
                             </div>
 
-                            {isDibs ? (
+                            {isHold ? (
+                                <div style={{ fontSize: "0.7em", color: "var(--admin-text-sub)" }}>
+                                    단체대여 신청 탭에서 관리
+                                </div>
+                            ) : isDibs ? (
                                 <div style={{ display: 'flex', gap: '5px' }}>
                                     <button
                                         onClick={() => onReceive(game, r.rental_id)}

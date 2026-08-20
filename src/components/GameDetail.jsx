@@ -4,6 +4,7 @@ import { fetchGames, fetchGameById, sendMiss, fetchReviews, addReview, updateRev
 import { TEXTS } from '../constants';
 import { translateGenre } from '../constants/genreMap';
 import { useAuth } from '../contexts/AuthContext';
+import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from './ConfirmModal';
 import InfoModal from './InfoModal';
@@ -17,6 +18,10 @@ function GameDetail() {
   const location = useLocation();
   const { user, profile } = useAuth();
   const { showToast } = useToast();
+  // 찜/취소 후 전역 게임 목록을 서버 기준으로 다시 읽는다.
+  // localStorage 만 지우면 이미 마운트된 GameProvider 의 state 는 그대로라
+  // 뒤로가기 했을 때 목록이 옛 상태로 남는다.
+  const { refreshGames } = useGameData();
 
   const [game, setGame] = useState(location.state?.game || null);
   const [reviews, setReviews] = useState([]);
@@ -176,7 +181,7 @@ function GameDetail() {
           const result = await dibsGame(game.id, user.id);
 
           if (result.success) {
-            localStorage.removeItem('games_cache'); // [FIX] 전역 캐시 초기화하여 목록/검색에 즉시 반영
+            refreshGames(); // [FIX] 전역 목록을 서버 기준으로 갱신 (캐시 + in-memory state 모두)
             showToast("찜 완료! 30분 내에 수령해주세요.", {
               showButton: true,
               buttonText: "마이페이지로 가기",
@@ -209,7 +214,7 @@ function GameDetail() {
         try {
           const result = await cancelDibsGame(game.id, user.id);
           if (result.success) {
-            localStorage.removeItem('games_cache'); // [FIX] 전역 캐시 초기화
+            refreshGames(); // [FIX] 전역 목록을 서버 기준으로 갱신
             showToast("찜이 취소되었습니다.");
             // [FIX] 로컬 추정 대신 서버에서 최신 상태 재조회 (동시성 안전)
             const updatedGame = await fetchGameById(game.id);
