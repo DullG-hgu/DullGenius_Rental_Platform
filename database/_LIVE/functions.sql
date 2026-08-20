@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 8. 20. PM 3:04:05
+-- 생성 시각: 2026. 8. 20. PM 4:19:55
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -421,7 +421,7 @@ BEGIN
           AND returned_at IS NULL
           AND (p_rental_id IS NULL OR rental_id = p_rental_id)
           AND (p_game_id IS NULL OR game_id = p_game_id)
-          -- [안전장치 2] user_id와 renter_name ���건 최적화
+          -- [안전장치 2] user_id와 renter_name 조건 최적화
           AND (
               (p_user_id IS NOT NULL AND user_id = p_user_id) OR
               (p_user_id IS NULL AND p_renter_name IS NOT NULL AND renter_name = p_renter_name) OR
@@ -485,7 +485,7 @@ BEGIN
     END IF;
 
     IF v_target_rental_id IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '분실 처리할 활성 대여 건을 찾을 수 없습���다.');
+        RETURN jsonb_build_object('success', false, 'message', '분실 처리할 활성 대여 건을 찾을 수 없습니다.');
     END IF;
 
     UPDATE public.rentals SET returned_at = now()
@@ -534,7 +534,7 @@ DECLARE
     v_expired    BOOLEAN := false;
 BEGIN
     IF NOT public.is_admin() THEN
-        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니다.');
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니���.');
     END IF;
 
     SELECT name, quantity INTO v_game_name, v_quantity
@@ -751,11 +751,16 @@ CREATE OR REPLACE FUNCTION public.cleanup_expired_dibs()
 AS $function$
 DECLARE
     v_gid        INTEGER;
+    v_hold_row   UUID;
+    v_req_id     UUID;
+    v_hold_ids   UUID[];
     v_dibs_count INTEGER := 0;
     v_hold_count INTEGER := 0;
+    v_rejected   INTEGER := 0;
     v_recalced   INTEGER := 0;
     v_n          INTEGER;
 BEGIN
+    -- [1] 만료 DIBS/HOLD 정리 — 게임 단위로 games 락 선획득 (락 순서: games→rentals)
     FOR v_gid IN
         SELECT DISTINCT game_id FROM public.rentals
         WHERE returned_at IS NULL AND type IN ('DIBS','HOLD') AND due_date < now()
@@ -774,13 +779,52 @@ BEGIN
         v_hold_count := v_hold_count + v_n;
     END LOOP;
 
-    -- 만료 정리분 + 7일 창 진입 HOLD + 타 경로 드리프트를 한 번에 보정
+    -- [2] needs_review 5일 경과 자동 반려 (2026-08-20 회장 확정 유예)
+    --     조건부 UPDATE 선점: 그 사이 관리자가 confirm/reject 했��면 0행 → 건너뜀.
+    --     RETURNING이 선점 시점의 hold_rental_ids를 주므로 옛 스냅샷 문제 없음.
+    FOR v_req_id IN
+        SELECT id FROM public.rental_requests
+        WHERE status = 'needs_review'
+          AND received_at < now() - interval '5 days'
+        ORDER BY received_at
+    LOOP
+        UPDATE public.rental_requests
+        SET status = 'rejected',
+            review_note = COALESCE(review_note || ' | ', '') || '자동 반려: 검토 대기 5일 경과',
+            reviewed_at = now()
+        WHERE id = v_req_id AND status = 'needs_review'
+        RETURNING hold_rental_ids INTO v_hold_ids;
+
+        IF NOT FOUND THEN
+            CONTINUE;
+        END IF;
+
+        FOR v_hold_row, v_gid IN
+            SELECT r.rental_id, r.game_id FROM public.rentals r
+            WHERE r.rental_id = ANY(COALESCE(v_hold_ids, '{}'))
+              AND r.returned_at IS NULL
+            ORDER BY r.game_id
+        LOOP
+            PERFORM 1 FROM public.games WHERE id = v_gid FOR UPDATE;
+            UPDATE public.rentals SET returned_at = now()
+            WHERE rental_id = v_hold_row AND returned_at IS NULL;
+        END LOOP;
+
+        INSERT INTO public.logs (game_id, user_id, action_type, details)
+        VALUES (NULL, NULL, 'RENTAL_REQUEST_AUTO_REJECT',
+                jsonb_build_object('request_id', v_req_id, 'reason', 'needs_review 5일 경과'));
+
+        v_rejected := v_rejected + 1;
+    END LOOP;
+
+    -- [3] 만료 정리분 + 7일 창 진입 HOLD + 타 경로 드리프트 일괄 보정
     v_recalced := public.recalc_all_game_availability();
 
     RETURN jsonb_build_object(
         'success', true,
         'cancelled_count', v_dibs_count,
         'expired_hold_count', v_hold_count,
+        'auto_rejected_count', v_rejected,
         'availability_fixed', v_recalced
     );
 END;
@@ -808,6 +852,7 @@ DECLARE
     v_borrowed_at    timestamptz;
     v_due_date       timestamptz;
     v_note           text;
+    v_claimed        int;
 BEGIN
     IF NOT public.is_admin() THEN
         RAISE EXCEPTION '관리자 권한이 필요합니다.';
@@ -831,7 +876,7 @@ BEGIN
     v_due_date    := p_pickup_at + (p_duration_days || ' days')::interval;
     v_note        := 'HOLD request:' || v_req.id::text;
 
-    -- [1패스] 게임별 락(id 오름차순) + 존재·기간 재고 검증. 하나라도 부족하면 아무것도 만들지 않는다.
+    -- [1패스] 게임별 락(id 오름차순) + 존재·기간 재고 검증
     FOR v_gid, v_needed IN
         SELECT t.gid, COUNT(*)::int FROM unnest(p_game_ids) AS t(gid) GROUP BY t.gid ORDER BY t.gid
     LOOP
@@ -865,6 +910,17 @@ BEGIN
         );
     END IF;
 
+    -- [선점] 크론 자동 반려·다른 관리자와의 경합 차단: 상태 조건부 전이가 성공한 쪽만 진행
+    UPDATE public.rental_requests
+    SET status = 'manual_confirmed',
+        reviewed_by = auth.uid(),
+        reviewed_at = now()
+    WHERE id = p_request_id AND status IN ('pending', 'needs_review');
+    GET DIAGNOSTICS v_claimed = ROW_COUNT;
+    IF v_claimed = 0 THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 처리된 요청입니다. (동시 처리 감지)');
+    END IF;
+
     -- [2패스] HOLD 생성 (중복 id = 복수 부수 유지, id 오름차순)
     FOR v_gid IN SELECT t.gid FROM unnest(p_game_ids) AS t(gid) ORDER BY t.gid LOOP
         INSERT INTO public.rentals (
@@ -884,13 +940,10 @@ BEGIN
     END LOOP;
 
     UPDATE public.rental_requests
-    SET status = 'manual_confirmed',
-        matched_game_ids = p_game_ids,
+    SET matched_game_ids = p_game_ids,
         pickup_at = p_pickup_at,
         duration_days = p_duration_days,
-        hold_rental_ids = v_hold_ids,
-        reviewed_by = auth.uid(),
-        reviewed_at = now()
+        hold_rental_ids = v_hold_ids
     WHERE id = p_request_id;
 
     INSERT INTO public.logs (game_id, user_id, action_type, details)
@@ -966,6 +1019,15 @@ BEGIN
           AND type = 'DIBS' AND returned_at IS NULL AND due_date > now()
     ) THEN
         RETURN jsonb_build_object('success', false, 'message', '이미 찜한 게임입니다.');
+    END IF;
+
+    -- [운영 방침] 같은 게임은 1인 1부 — 대여 중이면 추가 찜 불가
+    IF EXISTS (
+        SELECT 1 FROM public.rentals
+        WHERE game_id = p_game_id AND user_id = p_user_id
+          AND type = 'RENT' AND returned_at IS NULL
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 대여 중인 게임입니다.');
     END IF;
 
     IF COALESCE(v_quantity, 0) - public.count_active_occupancy(p_game_id) <= 0 THEN
@@ -2048,7 +2110,7 @@ CREATE OR REPLACE FUNCTION public.get_admin_unavailable_game_views(p_start_date 
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
-  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 ���한이 필요합니다.'; END IF;
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
   IF p_start_date IS NULL OR p_end_date IS NULL OR p_start_date > p_end_date OR p_end_date - p_start_date > 365 THEN
     RAISE EXCEPTION '조회 기간은 올바른 날짜 범위(최대 366일)여야 합니다.';
   END IF;
@@ -2276,7 +2338,7 @@ CREATE OR REPLACE FUNCTION public.get_top_rented_games(p_limit integer DEFAULT 1
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
-    IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 ���한이 필요합니다.'; END IF;
+    IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
     IF p_days <= 0 OR p_days > 365 THEN RAISE EXCEPTION 'p_days는 1~365 범위여야 합니다.'; END IF;
     IF p_limit <= 0 OR p_limit > 100 THEN RAISE EXCEPTION 'p_limit는 1~100 범위여야 합니다.'; END IF;
 
@@ -2814,10 +2876,18 @@ BEGIN
 
     SELECT quantity INTO v_quantity FROM public.games WHERE id = v_game_id FOR UPDATE;
 
+    -- [운영 방침] 같은 게임은 1인 1부 — 이미 대여 중이면 수령 거부 (찜은 정리)
+    IF v_user_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.rentals
+        WHERE game_id = v_game_id AND user_id = v_user_id
+          AND returned_at IS NULL AND type = 'RENT'
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 이 게임을 대여 중입니다. 추가 대여는 운영진에게 문의해주세요.');
+    END IF;
+
     v_expired := (v_due IS NULL OR v_due <= now());
 
     -- 만료된 예약이어도 지금 재고가 남아 있으면 수령을 허용한다(사실상 일반 대여).
-    -- 재고가 없을 때만 거부해 중복 대여를 막는다.
     IF v_expired AND COALESCE(v_quantity, 0) - public.count_active_occupancy(v_game_id) <= 0 THEN
         PERFORM public.recalc_game_availability(v_game_id);
         RETURN jsonb_build_object('success', false, 'message', '예약 시간이 지났고 남은 재고가 없습니다. 운영진에게 문의해주세요.');
@@ -2871,6 +2941,25 @@ BEGIN
 
     IF v_game_name IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
+    END IF;
+
+    -- [운영 방침] 같은 게임은 1인 1부. 예외 대여는 관리자 경로(admin_rent_game)로만.
+    -- (p_user_id가 NULL인 비회원 대여는 판정 불가라 통과)
+    IF p_user_id IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM public.rentals
+            WHERE game_id = p_game_id AND user_id = p_user_id
+              AND returned_at IS NULL AND type = 'RENT'
+        ) THEN
+            RETURN jsonb_build_object('success', false, 'message', '이미 이 게임을 대여 중입니다. 다른 게임도 만나보세요!');
+        END IF;
+        IF EXISTS (
+            SELECT 1 FROM public.rentals
+            WHERE game_id = p_game_id AND user_id = p_user_id
+              AND returned_at IS NULL AND type = 'DIBS' AND due_date > now()
+        ) THEN
+            RETURN jsonb_build_object('success', false, 'message', '이 게임에 예약(찜)이 있습니다. 예약 수령으로 진행해주세요.');
+        END IF;
     END IF;
 
     IF COALESCE(v_quantity, 0) - public.count_active_occupancy(p_game_id) <= 0 THEN
@@ -3054,34 +3143,12 @@ CREATE OR REPLACE FUNCTION public.reject_rental_request(p_request_id uuid, p_rea
  SET search_path TO 'public'
 AS $function$
 DECLARE
-    v_req     public.rental_requests%ROWTYPE;
-    v_hold_id uuid;
-    v_game_id int;
+    v_hold_ids uuid[];
+    v_hold_row uuid;
+    v_gid      int;
 BEGIN
     IF NOT public.is_admin() THEN
         RAISE EXCEPTION '관리자 권한이 필요합니다.';
-    END IF;
-
-    SELECT * INTO v_req FROM public.rental_requests WHERE id = p_request_id;
-    IF v_req.id IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '요청을 찾을 수 없습니다.');
-    END IF;
-    IF v_req.status IN ('rejected', 'cancelled') THEN
-        RETURN jsonb_build_object('success', false, 'message', '이미 처리된 요청입니다.');
-    END IF;
-
-    IF v_req.hold_rental_ids IS NOT NULL AND array_length(v_req.hold_rental_ids, 1) > 0 THEN
-        FOR v_hold_id IN SELECT unnest(v_req.hold_rental_ids) LOOP
-            UPDATE public.rentals
-            SET returned_at = now()
-            WHERE rental_id = v_hold_id AND returned_at IS NULL
-            RETURNING game_id INTO v_game_id;
-
-            IF v_game_id IS NOT NULL THEN
-                PERFORM public.recalc_game_availability(v_game_id);
-                v_game_id := NULL;
-            END IF;
-        END LOOP;
     END IF;
 
     UPDATE public.rental_requests
@@ -3089,7 +3156,24 @@ BEGIN
         review_note = p_reason,
         reviewed_by = auth.uid(),
         reviewed_at = now()
-    WHERE id = p_request_id;
+    WHERE id = p_request_id AND status NOT IN ('rejected', 'cancelled')
+    RETURNING hold_rental_ids INTO v_hold_ids;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'message', '요청이 없거나 이미 처리되었습니다.');
+    END IF;
+
+    FOR v_hold_row, v_gid IN
+        SELECT r.rental_id, r.game_id FROM public.rentals r
+        WHERE r.rental_id = ANY(COALESCE(v_hold_ids, '{}'))
+          AND r.returned_at IS NULL
+        ORDER BY r.game_id
+    LOOP
+        PERFORM 1 FROM public.games WHERE id = v_gid FOR UPDATE;
+        UPDATE public.rentals SET returned_at = now()
+        WHERE rental_id = v_hold_row AND returned_at IS NULL;
+        PERFORM public.recalc_game_availability(v_gid);
+    END LOOP;
 
     INSERT INTO public.logs (game_id, user_id, action_type, details)
     VALUES (
@@ -3138,6 +3222,15 @@ BEGIN
 
     IF v_game_name IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
+    END IF;
+
+    -- [운영 방침] 같은 게임은 1인 1부 — 이미 대여 중이면 추가 대여 불가 (예외는 관리자 경로)
+    IF EXISTS (
+        SELECT 1 FROM public.rentals
+        WHERE game_id = p_game_id AND user_id = p_user_id
+          AND type = 'RENT' AND returned_at IS NULL
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 대여 중인 게임입니다.');
     END IF;
 
     -- 본인의 '유효한' 찜을 대여로 전환 — 이미 점유 중이므로 재고 재검사 불필요.
@@ -3213,7 +3306,7 @@ BEGIN
         v_user_id, 
         'SELF_RESET_PW', 
         jsonb_build_object(
-            'description', '사용자가 정보를 ���조하여 비밀번호를 직접 재설정함'
+            'description', '사용자가 정보를 대조하여 비밀번호를 직접 재설정함'
         )
     );
     RETURN jsonb_build_object('success', true, 'message', '비밀번호가 성공적으로 변경되었습니다.');
