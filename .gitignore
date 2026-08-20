@@ -60,6 +60,9 @@ scrape_*.log
 get_bgg_data.py
 validate_bgg_data.py
 
+# Local data backups (scripts/backup_supabase.js output — 회원 개인정보 포함, 절대 커밋 금지)
+Supabase backup/
+
 # Database backup and migration files
 database/games_backup_*.csv
 database/bgg_*.sql

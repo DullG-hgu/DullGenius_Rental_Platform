@@ -112,19 +112,23 @@ async function main() {
         process.stdout.write(`${colors.dim}Downloading [${table}]... ${colors.reset}`);
 
         try {
-            const { data, error } = await supabase
-                .from(table)
-                .select('*');
-
-            if (error) {
-                process.stdout.write(`\n`);
-                log.error(`Failed to fetch ${table}: ${error.message}`);
-                continue;
+            // PostgREST는 요청당 최대 1000행만 반환하므로 range로 전량 페이지네이션한다.
+            const PAGE_SIZE = 1000;
+            const data = [];
+            let fetchError = null;
+            for (let offset = 0; ; offset += PAGE_SIZE) {
+                const { data: page, error } = await supabase
+                    .from(table)
+                    .select('*')
+                    .range(offset, offset + PAGE_SIZE - 1);
+                if (error) { fetchError = error; break; }
+                data.push(...(page || []));
+                if (!page || page.length < PAGE_SIZE) break;
             }
 
-            if (!data) {
+            if (fetchError) {
                 process.stdout.write(`\n`);
-                log.warn(`No data returned for ${table}`);
+                log.error(`Failed to fetch ${table}: ${fetchError.message}`);
                 continue;
             }
 
