@@ -120,18 +120,14 @@ async function syncInventory() {
             // Validate: If DB has 1 but CSV has 0? If name changed?
             // Assuming names match.
 
-            const activeCount = rentalCounts[game.id] || 0;
             const newQuantity = csvCount;
-            const newAvailable = Math.max(0, newQuantity - activeCount); // Don't go below 0
 
-            // Update only if changed
-            if (game.quantity !== newQuantity || game.available_count !== newAvailable) {
+            // available_count는 여기서 직접 쓰지 않는다 — DIBS/HOLD 창을 무시한 제3의 공식이 되어
+            // 드리프트를 재발시킨다. quantity만 맞추고 아래에서 recalc RPC로 일괄 재계산한다.
+            if (game.quantity !== newQuantity) {
                 const { error: updateError } = await supabase
                     .from('games')
-                    .update({
-                        quantity: newQuantity,
-                        available_count: newAvailable
-                    })
+                    .update({ quantity: newQuantity })
                     .eq('id', game.id);
 
                 if (updateError) {
@@ -142,6 +138,15 @@ async function syncInventory() {
                     updatedCount++;
                 }
             }
+        }
+
+        // quantity 변경분을 단일 공식(quantity - 활성 점유)으로 재계산 — service_role 키 필요
+        const { data: recalced, error: recalcError } = await supabase.rpc('recalc_all_game_availability');
+        if (recalcError) {
+            console.error(`❌ available_count 재계산 실패: ${recalcError.message} (service_role 키로 실행했는지 확인)`);
+            errorCount++;
+        } else {
+            console.log(`♻️ available_count 재계산 완료 (보정 ${recalced}건)`);
         }
 
         console.log(`🎉 Sync Complete! Updated: ${updatedCount}, Errors: ${errorCount}`);

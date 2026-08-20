@@ -14,6 +14,12 @@
 # 하지만 Netlify Functions는 기본적으로 /.netlify/functions/ 경로로 접근 가능하므로
 # 프론트엔드 api.js에서 경로를 분기처리하는 것이 더 명확합니다.
 
+# Supabase 무료 티어는 API 요청 기준 7일 무활동 시 프로젝트를 일시정지한다.
+# pg_cron은 내부 실행이라 활동으로 집계되지 않으므로 매일 REST 핑을 넣는다.
+# (일시정지 유예가 7일이라 하루 1회로 충분 — 한두 번 실패해도 여유가 있다)
+[functions."supabase-keepalive"]
+  schedule = "0 3 * * *"
+
 [[headers]]
   for = "/*"
   [headers.values]
