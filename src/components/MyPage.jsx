@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { fetchMyRentals, fetchUserPoints, fetchPointHistory, withdrawAccount, cancelDibsGame, fetchMyRentalHistory } from '../api';
 import MyEventsCard from '../event/MyEventsCard';
 import { Link, useNavigate } from 'react-router-dom';
@@ -6,6 +6,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabaseClient';
+
+const RENTAL_HISTORY_DATE_ANOMALY_LABELS = {
+  MISSING_BORROWED_AT: "대여 시각 없음",
+  MISSING_RETURNED_AT: "반납 시각 없음",
+  INVALID_BORROWED_AT: "대여 시각 형식 오류",
+  INVALID_RETURNED_AT: "반납 시각 형식 오류",
+  RETURNED_BEFORE_BORROWED: "반납 시각이 대여보다 빠름",
+};
 
 const MyPage = () => {
   const { user, profile, loading: authLoading, refreshProfile, logout } = useAuth(); // [NEW]
@@ -17,11 +25,14 @@ const MyPage = () => {
   const [rentalHistory, setRentalHistory] = useState([]);
   const [pointHistory, setPointHistory] = useState([]);
   const [currentPoints, setCurrentPoints] = useState(0);
+  const [rentalHistoryError, setRentalHistoryError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [pointsOpen, setPointsOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [videoId, setVideoId] = useState(null);
+  const loadRequestRef = useRef(0);
+  const previousUserIdRef = useRef(null);
 
   // [PW] 비밀번호 변경 상태
   const [pwForm, setPwForm] = useState({ newPw: '', confirmPw: '' });
@@ -63,9 +74,27 @@ const MyPage = () => {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
+    const requestId = ++loadRequestRef.current;
+    let cancelled = false;
+    const isCurrentRequest = () => !cancelled && requestId === loadRequestRef.current;
+    const nextUserId = user?.id || null;
+    const userChanged = previousUserIdRef.current !== nextUserId;
+    previousUserIdRef.current = nextUserId;
+
+    if (userChanged) {
+      setRentals([]);
+      setRentalHistory([]);
+      setRentalHistoryError(null);
+      setPointHistory([]);
+      setCurrentPoints(0);
+    }
+
     const loadData = async () => {
       // 로그인이 안 되어 있거나 user 객체가 없으면 중단
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
       try {
@@ -78,24 +107,34 @@ const MyPage = () => {
           fetchMyRentalHistory()
         ]);
 
+        if (!isCurrentRequest()) return;
+
         if (rentalsRes.status === "fulfilled") setRentals(rentalsRes.value);
         else console.error("❌ [MyPage] Rental fetch error:", rentalsRes.reason);
 
         if (pointsRes.status === "fulfilled") setCurrentPoints(pointsRes.value);
         if (historyRes.status === "fulfilled") setPointHistory(historyRes.value || []);
 
-        if (rentalHistoryRes.status === "fulfilled") setRentalHistory(rentalHistoryRes.value);
-        else console.error("❌ [MyPage] Rental history fetch error:", rentalHistoryRes.reason);
+        if (rentalHistoryRes.status === "fulfilled") {
+          setRentalHistory(rentalHistoryRes.value);
+          setRentalHistoryError(null);
+        } else {
+          console.error("❌ [MyPage] Rental history fetch error:", rentalHistoryRes.reason);
+          setRentalHistoryError("대여 이력을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+        }
 
       } catch (e) {
         console.error("❌ [MyPage] Fetch failed:", e);
+      } finally {
+        if (isCurrentRequest()) setLoading(false);
       }
-      setLoading(false);
     };
 
-    if (user) {
-      loadData();
-    }
+    loadData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   // [PW] 비밀번호 변경 처리
@@ -354,35 +393,56 @@ const MyPage = () => {
         </h3>
         {historyOpen && (loading ? (
           <div style={{ padding: "20px", textAlign: "center", color: "#888" }}>로딩 중...</div>
+        ) : rentalHistoryError && rentalHistory.length === 0 ? (
+          <div style={{ padding: "20px", textAlign: "center", color: "#c0392b" }}>
+            {rentalHistoryError}
+          </div>
         ) : rentalHistory.length === 0 ? (
           <div style={{ padding: "20px", textAlign: "center", color: "#95a5a6" }}>
             아직 반납한 게임이 없습니다.
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {rentalHistory.map((item) => (
-              <div key={item.rentalId} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "10px 12px", background: "#f8f9fa", borderRadius: "8px",
-                border: "1px solid #eee"
-              }}>
-                <div>
-                  <div style={{ fontWeight: "bold", color: "#2c3e50", fontSize: "0.95em" }}>
-                    {item.gameName}
-                  </div>
-                  <div style={{ fontSize: "0.8em", color: "#7f8c8d", marginTop: "2px" }}>
-                    {formatDate(item.borrowedAt)} → {formatDate(item.returnedAt)}
-                  </div>
-                </div>
-                <span style={{
-                  fontSize: "0.75em", padding: "3px 8px", borderRadius: "10px",
-                  background: "#ecf0f1", color: "#7f8c8d", fontWeight: "bold"
-                }}>
-                  반납완료
-                </span>
+          <>
+            {rentalHistoryError && (
+              <div style={{ padding: "8px 12px", marginBottom: "8px", color: "#8a6d3b", background: "#fcf8e3", border: "1px solid #faebcc", borderRadius: "8px", fontSize: "0.85em" }}>
+                {rentalHistoryError} 이전에 불러온 이력을 표시하고 있습니다.
               </div>
-            ))}
-          </div>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {rentalHistory.map((item) => {
+                const isLost = item.closureStatus === 'LOST';
+                const isUnknownClosure = item.closureStatus !== 'LOST' && item.closureStatus !== 'RETURNED';
+                const closureLabel = isLost ? '분실처리' : isUnknownClosure ? '상태 확인 필요' : '반납완료';
+
+                return (
+                  <div key={item.rentalId} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "10px 12px", background: "#f8f9fa", borderRadius: "8px",
+                    border: "1px solid #eee"
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: "bold", color: "#2c3e50", fontSize: "0.95em" }}>
+                        {item.gameName}
+                      </div>
+                      <div style={{ fontSize: "0.8em", color: item.dateAnomaly ? "#c0392b" : "#7f8c8d", marginTop: "2px" }}>
+                        {item.dateAnomaly
+                          ? (RENTAL_HISTORY_DATE_ANOMALY_LABELS[item.dateAnomalyReason] || "대여·반납 시각 확인 필요")
+                          : `${formatDate(item.borrowedAt)} → ${formatDate(item.returnedAt)}`}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: "0.75em", padding: "3px 8px", borderRadius: "10px",
+                      background: isLost ? "#fdecea" : isUnknownClosure ? "#fcf8e3" : "#ecf0f1",
+                      color: isLost ? "#c0392b" : isUnknownClosure ? "#8a6d3b" : "#7f8c8d",
+                      fontWeight: "bold"
+                    }}>
+                      {closureLabel}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         ))}
       </section>
 
@@ -492,6 +552,7 @@ const getDDayString = (dueDateString, type = 'RENT') => {
 const formatDate = (dateString) => {
   if (!dateString) return "";
   const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "날짜 확인 필요";
   // 오늘 날짜면 시간만 표시? 아니면 그냥 날짜+시간
   // 심플하게: "1. 28. (18:30)" 포맷
   const Month = date.getMonth() + 1;

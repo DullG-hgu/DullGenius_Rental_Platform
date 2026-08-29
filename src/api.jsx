@@ -1244,37 +1244,57 @@ export const fetchMyRentals = async () => {
   });
 };
 
-// 현재 로그인 사용자의 반납 완료 대여 이력 반환. 에러 시 throw.
+const MY_RENTAL_HISTORY_CLOSURE_STATUSES = new Set(['RETURNED', 'LOST']);
+const MY_RENTAL_HISTORY_TYPES = new Set(['RENT']);
+
+const getRentalDateAnomalyReason = (borrowedAt, returnedAt) => {
+  if (!borrowedAt) return 'MISSING_BORROWED_AT';
+  if (!returnedAt) return 'MISSING_RETURNED_AT';
+
+  const borrowedTime = Date.parse(borrowedAt);
+  const returnedTime = Date.parse(returnedAt);
+
+  if (!Number.isFinite(borrowedTime)) return 'INVALID_BORROWED_AT';
+  if (!Number.isFinite(returnedTime)) return 'INVALID_RETURNED_AT';
+  if (returnedTime < borrowedTime) return 'RETURNED_BEFORE_BORROWED';
+
+  return null;
+};
+
+// 현재 로그인 사용자의 대여 이력 반환. 에러 시 throw.
 export const fetchMyRentalHistory = async () => {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) throw authError || new Error("인증 오류");
 
-  const { data, error } = await supabase
-    .from('rentals')
-    .select(`
-      rental_id,
-      borrowed_at,
-      returned_at,
-      type,
-      game_id,
-      games (id, name, image)
-    `)
-    .eq('user_id', user.id)
-    .not('returned_at', 'is', null)
-    .order('returned_at', { ascending: false })
-    .limit(30);
+  const { data, error } = await supabase.rpc('get_my_rental_history');
 
   if (error) throw error;
+  if (!Array.isArray(data)) throw new Error("대여 이력 응답 형식이 올바르지 않습니다.");
 
-  return data.map(r => ({
-    rentalId: r.rental_id,
-    gameId: r.game_id,
-    gameName: r.games?.name || "알 수 없는 게임",
-    gameImage: r.games?.image,
-    borrowedAt: r.borrowed_at,
-    returnedAt: r.returned_at,
-    type: r.type || 'RENT',
-  }));
+  return data.map(r => {
+    if (!r || typeof r !== 'object' || !r.rental_id) {
+      throw new Error("대여 이력 행 형식이 올바르지 않습니다.");
+    }
+
+    const closureStatus = MY_RENTAL_HISTORY_CLOSURE_STATUSES.has(r.closure_status)
+      ? r.closure_status
+      : 'UNKNOWN';
+    const rentalType = MY_RENTAL_HISTORY_TYPES.has(r.type) ? r.type : 'UNKNOWN';
+    const dateAnomalyReason = getRentalDateAnomalyReason(r.borrowed_at, r.returned_at);
+
+    return {
+      rentalId: r.rental_id,
+      gameId: r.game_id,
+      gameName: r.game_name || "알 수 없는 게임",
+      gameImage: r.game_image,
+      borrowedAt: r.borrowed_at,
+      returnedAt: r.returned_at,
+      type: rentalType,
+      closureStatus,
+      dateAnomaly: dateAnomalyReason !== null,
+      dateAnomalyReason,
+    };
+  });
 };
 
 
