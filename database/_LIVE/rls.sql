@@ -1,7 +1,7 @@
 -- ================================================================
 -- RLS POLICIES — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 8. 22. AM 8:14:44
+-- 생성 시각: 2026. 8. 29. PM 7:11:03
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -16,7 +16,7 @@ ALTER TABLE public.app_config ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Config" ON public.app_config
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
@@ -35,7 +35,7 @@ ALTER TABLE public.damage_reports ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Reports" ON public.damage_reports
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
@@ -61,7 +61,7 @@ ALTER TABLE public.event_payment_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "event_payment_logs_admin" ON public.event_payment_logs
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
   WITH CHECK (is_admin())
 ;
@@ -74,7 +74,7 @@ ALTER TABLE public.event_registrations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "event_regs_admin_write" ON public.event_registrations
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
   WITH CHECK (is_admin())
 ;
@@ -82,7 +82,7 @@ CREATE POLICY "event_regs_admin_write" ON public.event_registrations
 CREATE POLICY "event_regs_self_read" ON public.event_registrations
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING ((is_admin() OR (user_id = auth.uid()) OR ((team_id IS NOT NULL) AND is_event_team_leader(team_id))))
 ;
 
@@ -94,7 +94,7 @@ ALTER TABLE public.event_teams ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "event_teams_admin_write" ON public.event_teams
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
   WITH CHECK (is_admin())
 ;
@@ -102,7 +102,7 @@ CREATE POLICY "event_teams_admin_write" ON public.event_teams
 CREATE POLICY "event_teams_read" ON public.event_teams
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING ((is_admin() OR (leader_user_id = auth.uid()) OR is_event_team_member(id)))
 ;
 
@@ -114,14 +114,14 @@ ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "events_admin_read" ON public.events
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
 CREATE POLICY "events_admin_write" ON public.events
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
   WITH CHECK (is_admin())
 ;
@@ -141,7 +141,7 @@ ALTER TABLE public.game_daily_stats ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Stats" ON public.game_daily_stats
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
@@ -160,7 +160,7 @@ ALTER TABLE public.game_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Requests" ON public.game_requests
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
@@ -186,7 +186,7 @@ ALTER TABLE public.games ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Games" ON public.games
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
@@ -205,14 +205,14 @@ ALTER TABLE public.logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Logs" ON public.logs
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
 CREATE POLICY "Admin View Logs" ON public.logs
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
@@ -224,14 +224,14 @@ ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Matches" ON public.matches
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
 CREATE POLICY "User View Own Matches" ON public.matches
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING (((players @> to_jsonb(auth.uid())) OR (winner_id = auth.uid()) OR is_admin()))
 ;
 
@@ -243,14 +243,14 @@ ALTER TABLE public.point_transactions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Points" ON public.point_transactions
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
 CREATE POLICY "Admin View All Points" ON public.point_transactions
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
@@ -282,14 +282,14 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Profiles" ON public.profiles
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
 CREATE POLICY "Admin Read All Profiles" ON public.profiles
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
@@ -315,7 +315,7 @@ ALTER TABLE public.rental_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Rental Requests" ON public.rental_requests
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
   WITH CHECK (is_admin())
 ;
@@ -328,7 +328,7 @@ ALTER TABLE public.rentals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Rentals" ON public.rentals
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
@@ -342,7 +342,7 @@ CREATE POLICY "Public view active rentals" ON public.rentals
 CREATE POLICY "Read Rentals for Owner or Admin" ON public.rentals
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING (((auth.uid() = user_id) OR is_admin()))
 ;
 
@@ -354,7 +354,7 @@ ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Reviews" ON public.reviews
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 
@@ -392,7 +392,7 @@ ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin Manage Roles" ON public.user_roles
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING (is_admin())
 ;
 

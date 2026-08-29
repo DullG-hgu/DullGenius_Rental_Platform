@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 8. 22. AM 8:14:25
+-- 생성 시각: 2026. 8. 29. PM 7:10:48
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 82개 함수
+-- 총 85개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _event_calc_fee
@@ -412,7 +412,7 @@ BEGIN
     IF p_user_id IS NULL AND p_renter_name IS NULL AND p_game_id IS NULL AND p_rental_id IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '연장 대상을 특정할 수 없습니다. (모든 식별자가 비어있음)', 'count', 0);
     END IF;
-    -- 현재 시간의 날짜(자정 00:00:00) 기준으로 N일을 더한 뒤, 23시간 59분 59초를 더해 해당일 밤 12시 세팅
+    -- 현재 시��의 날짜(자정 00:00:00) 기준으로 N일을 더한 뒤, 23시간 59분 59초를 더해 해당일 밤 12시 세팅
     v_new_due_date := date_trunc('day', now()) + (p_days || ' days')::interval + interval '23 hours 59 minutes 59 seconds';
     FOR r IN
         SELECT rental_id, game_id, user_id, renter_name
@@ -421,7 +421,7 @@ BEGIN
           AND returned_at IS NULL
           AND (p_rental_id IS NULL OR rental_id = p_rental_id)
           AND (p_game_id IS NULL OR game_id = p_game_id)
-          -- [안전장치 2] user_id와 renter_name ��건 최적화
+          -- [안전장치 2] user_id와 renter_name 조건 최적화
           AND (
               (p_user_id IS NOT NULL AND user_id = p_user_id) OR
               (p_user_id IS NULL AND p_renter_name IS NOT NULL AND renter_name = p_renter_name) OR
@@ -485,7 +485,7 @@ BEGIN
     END IF;
 
     IF v_target_rental_id IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '분실 처리할 활성 대여 건을 찾을 수 없습��다.');
+        RETURN jsonb_build_object('success', false, 'message', '분실 처리할 활성 대여 건을 찾을 수 없습니다.');
     END IF;
 
     UPDATE public.rentals SET returned_at = now()
@@ -541,7 +541,7 @@ BEGIN
     FROM public.games WHERE id = p_game_id FOR UPDATE;
 
     IF v_game_name IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
+        RETURN jsonb_build_object('success', false, 'message', '존��하지 않는 게임입니다.');
     END IF;
 
     -- 대상 찜 선정. returned_at IS NULL 필수(부활 차단),
@@ -998,19 +998,26 @@ CREATE OR REPLACE FUNCTION public.dibs_game(p_game_id integer, p_user_id uuid)
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-    v_game_name TEXT;
-    v_quantity  INTEGER;
+    v_game_name   TEXT;
+    v_quantity    INTEGER;
+    v_is_rentable BOOLEAN;
 BEGIN
     IF auth.uid() IS NULL OR (auth.uid() != p_user_id AND NOT public.is_admin()) THEN
         RETURN jsonb_build_object('success', false, 'message', '권한이 없습니다.');
     END IF;
 
     -- 같은 게임에 대한 동시 요청을 직렬화한다
-    SELECT name, quantity INTO v_game_name, v_quantity
+    SELECT name, quantity, is_rentable
+    INTO v_game_name, v_quantity, v_is_rentable
     FROM public.games WHERE id = p_game_id FOR UPDATE;
 
     IF v_game_name IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
+    END IF;
+
+    -- NULL은 기존 UI의 동작과 호환되도록 기본값 true로 취급한다.
+    IF NOT COALESCE(v_is_rentable, true) THEN
+        RETURN jsonb_build_object('success', false, 'message', '현재 대여할 수 없는 게임입니다.');
     END IF;
 
     IF EXISTS (
@@ -1212,7 +1219,7 @@ BEGIN
         cancel_reason = p_reason
     WHERE id = p_registration_id;
 
-  -- 팀장이 취소하면 팀 status를 cancelled로 변경 (팀원도 모두 취소될지는 운영판단)
+  -- 팀장이 취��하면 팀 status를 cancelled로 변경 (팀원도 모두 취소될지는 운영판단)
   IF v_reg.team_id IS NOT NULL THEN
     IF EXISTS (SELECT 1 FROM public.event_teams WHERE id = v_reg.team_id AND leader_user_id = v_user_id) THEN
       UPDATE public.event_teams SET status = 'cancelled' WHERE id = v_reg.team_id;
@@ -2181,6 +2188,45 @@ AS $function$
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: get_my_rental_history
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_my_rental_history()
+ RETURNS TABLE(rental_id uuid, game_id integer, game_name text, game_image text, borrowed_at timestamp with time zone, returned_at timestamp with time zone, type text, closure_status text)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION '로그인이 필요합니다.';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        r.rental_id,
+        r.game_id,
+        COALESCE(g.name, r.game_name, '알 수 없는 게임'),
+        g.image,
+        r.borrowed_at,
+        r.returned_at,
+        r.type,
+        CASE WHEN EXISTS (
+            SELECT 1
+            FROM public.logs AS l
+            WHERE l.action_type = 'LOST'
+              AND l.details->>'rental_id' = r.rental_id::text
+        ) THEN 'LOST' ELSE 'RETURNED' END
+    FROM public.rentals AS r
+    LEFT JOIN public.games AS g ON g.id = r.game_id
+    WHERE r.user_id = auth.uid()
+      AND r.type = 'RENT'
+      AND r.returned_at IS NOT NULL
+    ORDER BY r.returned_at DESC, r.rental_id DESC
+    LIMIT 30;
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: get_my_roles
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_my_roles()
@@ -2816,6 +2862,83 @@ AS $function$
 BEGIN RETURN EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = p_user_id AND role_key IN ('admin', 'executive', 'payment_exempt')); END; $function$
 
 -- ----------------------------------------------------------------
+-- 함수: kiosk_list_active_rentals
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.kiosk_list_active_rentals()
+ RETURNS TABLE(rental_id uuid, user_id uuid, game_id integer, borrowed_at timestamp with time zone, due_date timestamp with time zone, returned_at timestamp with time zone, type text, renter_name text, profile_id uuid, profile_name text, profile_student_id text, game_name text, game_image text)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+    IF NOT public.is_kiosk_or_admin() THEN
+        RAISE EXCEPTION '키오스크 권한이 필요합니다.';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        r.rental_id,
+        r.user_id,
+        r.game_id,
+        r.borrowed_at,
+        r.due_date,
+        r.returned_at,
+        r.type,
+        r.renter_name,
+        p.id,
+        p.name,
+        p.student_id,
+        g.name,
+        g.image
+    FROM public.rentals AS r
+    LEFT JOIN public.profiles AS p ON p.id = r.user_id
+    INNER JOIN public.games AS g ON g.id = r.game_id
+    WHERE r.type = 'RENT'
+      AND r.returned_at IS NULL
+    ORDER BY p.name NULLS LAST, r.renter_name NULLS LAST, r.borrowed_at ASC, r.rental_id;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: kiosk_list_active_reservations
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.kiosk_list_active_reservations()
+ RETURNS TABLE(rental_id uuid, user_id uuid, game_id integer, borrowed_at timestamp with time zone, due_date timestamp with time zone, returned_at timestamp with time zone, type text, renter_name text, profile_id uuid, profile_name text, profile_student_id text, game_name text, game_image text)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+    IF NOT public.is_kiosk_or_admin() THEN
+        RAISE EXCEPTION '키오스크 권한이 필요합니다.';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        r.rental_id,
+        r.user_id,
+        r.game_id,
+        r.borrowed_at,
+        r.due_date,
+        r.returned_at,
+        r.type,
+        r.renter_name,
+        p.id,
+        p.name,
+        p.student_id,
+        g.name,
+        g.image
+    FROM public.rentals AS r
+    LEFT JOIN public.profiles AS p ON p.id = r.user_id
+    INNER JOIN public.games AS g ON g.id = r.game_id
+    WHERE r.type = 'DIBS'
+      AND r.returned_at IS NULL
+      AND r.due_date > now()
+    ORDER BY p.name NULLS LAST, r.due_date ASC, r.rental_id;
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: kiosk_list_users
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.kiosk_list_users()
@@ -2846,14 +2969,15 @@ CREATE OR REPLACE FUNCTION public.kiosk_pickup(p_rental_id uuid)
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-    v_game_id   INTEGER;
-    v_user_id   UUID;
-    v_type      TEXT;
-    v_returned  TIMESTAMPTZ;
-    v_due       TIMESTAMPTZ;
-    v_quantity  INTEGER;
-    v_expired   BOOLEAN;
-    v_affected  INTEGER;
+    v_game_id      INTEGER;
+    v_user_id      UUID;
+    v_type         TEXT;
+    v_returned     TIMESTAMPTZ;
+    v_due          TIMESTAMPTZ;
+    v_quantity     INTEGER;
+    v_is_rentable  BOOLEAN;
+    v_expired      BOOLEAN;
+    v_affected     INTEGER;
 BEGIN
     IF NOT public.is_kiosk_or_admin() THEN
         RETURN jsonb_build_object('success', false, 'message', '키오스크 권한이 필요합니다.');
@@ -2874,7 +2998,14 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', '이미 취소되었거나 만료 정리된 예약입니다.');
     END IF;
 
-    SELECT quantity INTO v_quantity FROM public.games WHERE id = v_game_id FOR UPDATE;
+    SELECT quantity, is_rentable
+    INTO v_quantity, v_is_rentable
+    FROM public.games WHERE id = v_game_id FOR UPDATE;
+
+    -- 예약 후 운영진이 대여 불가로 전환한 게임은 새 RENT로 전환하지 않는다.
+    IF NOT COALESCE(v_is_rentable, true) THEN
+        RETURN jsonb_build_object('success', false, 'message', '현재 대여할 수 없는 게임입니다. 운영진에게 문의해주세요.');
+    END IF;
 
     -- [운영 방침] 같은 게임은 1인 1부 — 이미 대여 중이면 수령 거부 (찜은 정리)
     IF v_user_id IS NOT NULL AND EXISTS (
@@ -2923,24 +3054,30 @@ CREATE OR REPLACE FUNCTION public.kiosk_rental(p_game_id integer, p_user_id uuid
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-    v_game_name TEXT;
-    v_quantity  INTEGER;
+    v_game_name   TEXT;
+    v_quantity    INTEGER;
+    v_is_rentable BOOLEAN;
 BEGIN
     IF NOT public.is_kiosk_or_admin() THEN
         RETURN jsonb_build_object('success', false, 'message', '키오스크 권한이 필요합니다.');
+    END IF;
+
+    SELECT name, quantity, is_rentable
+    INTO v_game_name, v_quantity, v_is_rentable
+    FROM public.games WHERE id = p_game_id FOR UPDATE;
+
+    IF v_game_name IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
+    END IF;
+
+    IF NOT COALESCE(v_is_rentable, true) THEN
+        RETURN jsonb_build_object('success', false, 'message', '현재 대여할 수 없는 게임입니다.');
     END IF;
 
     IF is_payment_check_enabled() AND NOT is_user_payment_exempt(p_user_id) THEN
         IF NOT COALESCE((SELECT is_paid FROM public.profiles WHERE id = p_user_id), false) THEN
             RETURN jsonb_build_object('success', false, 'message', '회비 납부가 필요합니다.');
         END IF;
-    END IF;
-
-    SELECT name, quantity INTO v_game_name, v_quantity
-    FROM public.games WHERE id = p_game_id FOR UPDATE;
-
-    IF v_game_name IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
     END IF;
 
     -- [운영 방침] 같은 게임은 1인 1부. 예외 대여는 관리자 경로(admin_rent_game)로만.
@@ -3209,19 +3346,25 @@ CREATE OR REPLACE FUNCTION public.rent_game(p_game_id integer, p_user_id uuid, p
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-    v_game_name TEXT;
-    v_quantity  INTEGER;
-    v_affected  INTEGER;
+    v_game_name   TEXT;
+    v_quantity    INTEGER;
+    v_is_rentable BOOLEAN;
+    v_affected    INTEGER;
 BEGIN
     IF auth.uid() IS NULL OR (auth.uid() != p_user_id AND NOT public.is_admin()) THEN
         RETURN jsonb_build_object('success', false, 'message', '권한이 없습니다.');
     END IF;
 
-    SELECT name, quantity INTO v_game_name, v_quantity
+    SELECT name, quantity, is_rentable
+    INTO v_game_name, v_quantity, v_is_rentable
     FROM public.games WHERE id = p_game_id FOR UPDATE;
 
     IF v_game_name IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
+    END IF;
+
+    IF NOT COALESCE(v_is_rentable, true) THEN
+        RETURN jsonb_build_object('success', false, 'message', '현재 대여할 수 없는 게임입니다.');
     END IF;
 
     -- [운영 방침] 같은 게임은 1인 1부 — 이미 대여 중이면 추가 대여 불가 (예외는 관리자 경로)
@@ -3290,7 +3433,7 @@ BEGIN
       AND name = p_name 
       AND REPLACE(phone, '-', '') = REPLACE(p_phone, '-', '');
     IF v_user_id IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '입력하신 정보와 일치하는 회원을 찾을 수 없습니다.');
+        RETURN jsonb_build_object('success', false, 'message', '입력하신 정보와 일치��는 회원을 찾을 수 없습니다.');
     END IF;
     -- 2. 해당 유저의 이메일 확인
     SELECT email INTO v_target_email FROM auth.users WHERE id = v_user_id;
