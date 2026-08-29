@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 8. 20. PM 4:19:55
+-- 생성 시각: 2026. 8. 22. AM 8:14:25
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 81개 함수
+-- 총 82개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _event_calc_fee
@@ -421,7 +421,7 @@ BEGIN
           AND returned_at IS NULL
           AND (p_rental_id IS NULL OR rental_id = p_rental_id)
           AND (p_game_id IS NULL OR game_id = p_game_id)
-          -- [안전장치 2] user_id와 renter_name 조건 최적화
+          -- [안전장치 2] user_id와 renter_name ��건 최적화
           AND (
               (p_user_id IS NOT NULL AND user_id = p_user_id) OR
               (p_user_id IS NULL AND p_renter_name IS NOT NULL AND renter_name = p_renter_name) OR
@@ -485,7 +485,7 @@ BEGIN
     END IF;
 
     IF v_target_rental_id IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '분실 처리할 활성 대여 건을 찾을 수 없습니다.');
+        RETURN jsonb_build_object('success', false, 'message', '분실 처리할 활성 대여 건을 찾을 수 없습��다.');
     END IF;
 
     UPDATE public.rentals SET returned_at = now()
@@ -534,7 +534,7 @@ DECLARE
     v_expired    BOOLEAN := false;
 BEGIN
     IF NOT public.is_admin() THEN
-        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니���.');
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니다.');
     END IF;
 
     SELECT name, quantity INTO v_game_name, v_quantity
@@ -780,7 +780,7 @@ BEGIN
     END LOOP;
 
     -- [2] needs_review 5일 경과 자동 반려 (2026-08-20 회장 확정 유예)
-    --     조건부 UPDATE 선점: 그 사이 관리자가 confirm/reject 했��면 0행 → 건너뜀.
+    --     조건부 UPDATE 선점: 그 사이 관리자가 confirm/reject 했으면 0행 → 건너뜀.
     --     RETURNING이 선점 시점의 hold_rental_ids를 주므로 옛 스냅샷 문제 없음.
     FOR v_req_id IN
         SELECT id FROM public.rental_requests
@@ -3503,6 +3503,34 @@ BEGIN
     VALUES (p_key, p_value, now())
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
 END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: tg_profiles_guard_columns
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.tg_profiles_guard_columns()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF current_user NOT IN ('authenticated','anon') THEN
+    RETURN new;
+  END IF;
+  IF public.is_admin() THEN
+    RETURN new;
+  END IF;
+  new.is_paid            := old.is_paid;
+  new.penalty            := old.penalty;
+  new.current_points     := old.current_points;
+  new.activity_point     := old.activity_point;
+  new.status             := old.status;
+  new.student_id         := old.student_id;
+  new.is_semester_fixed  := old.is_semester_fixed;
+  new.joined_semester    := old.joined_semester;
+  new.last_paid_semester := old.last_paid_semester;
+  RETURN new;
+END
 $function$
 
 -- ----------------------------------------------------------------
