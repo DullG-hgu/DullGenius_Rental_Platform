@@ -1,7 +1,6 @@
 // src/kiosk/ReservationModal.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { kioskPickup } from '../api';
+import { kioskListActiveReservations, kioskPickup } from '../api';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
 import { subscribeToGameChanges } from '../lib/gamesRealtime';
@@ -35,33 +34,19 @@ function ReservationModal({ onClose }) {
 
     // Load active reservations (DIBS) grouped by user
     const loadReservations = useCallback(async () => {
-        const { data, error } = await supabase
-            .from('rentals')
-            .select(`
-                rental_id,
-                game_id,
-                borrowed_at,
-                due_date,
-                type,
-                profiles:user_id (id, name, student_id),
-                game:games (id, name, image)
-            `)
-            .eq('type', 'DIBS') // 예약(찜)만 조회
-            .is('returned_at', null) // 아직 수령/취소 안된 것
-            .gt('due_date', new Date().toISOString()); // 30분이 지난 찜은 제외
+        try {
+            const data = await kioskListActiveReservations();
 
-        if (error) {
+            // 서버 필터를 통과했더라도 목록을 열어둔 사이 만료될 수 있어 화면에서도 거른다
+            const groups = buildReservationGroups(data);
+            setUserReservations(groups);
+            setSelectedRentalIds(prev => pruneSelection(groups, 'reservations', prev));
+            setLoading(false);
+        } catch (error) {
             console.error(error);
             showToast("예약 목록을 불러오지 못했습니다.", { type: "error" });
             setLoading(false);
-            return;
         }
-
-        // 서버 필터를 통과했더라도 목록을 열어둔 사이 만료될 수 있어 화면에서도 거른다
-        const groups = buildReservationGroups(data);
-        setUserReservations(groups);
-        setSelectedRentalIds(prev => pruneSelection(groups, 'reservations', prev));
-        setLoading(false);
     }, [showToast]);
 
     useEffect(() => {

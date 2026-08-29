@@ -1,7 +1,6 @@
 // src/kiosk/ReturnModal.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { kioskReturn } from '../api';
+import { kioskListActiveRentals, kioskReturn } from '../api';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal'; // [NEW] 커스텀 확인 모달
 import { subscribeToGameChanges } from '../lib/gamesRealtime';
@@ -35,31 +34,19 @@ function ReturnModal({ onClose }) {
 
     // Load active rentals grouped by user
     const loadRentals = useCallback(async () => {
-        const { data, error } = await supabase
-            .from('rentals')
-            .select(`
-                rental_id,
-                game_id,
-                borrowed_at,
-                renter_name,
-                profiles:user_id (id, name, student_id),
-                game:games (id, name, image)
-            `)
-            .eq('type', 'RENT')
-            .is('returned_at', null);
+        try {
+            const data = await kioskListActiveRentals();
 
-        if (error) {
+            // Group by user (비회원 현장대여는 profiles가 null → renter_name 기반 그룹핑)
+            const groups = buildRentalGroups(data);
+            setUserRentals(groups);
+            setSelectedRentals(prev => pruneSelection(groups, 'rentals', prev));
+            setLoading(false);
+        } catch (error) {
             console.error(error);
             showToast("대여 목록을 불러오지 못했습니다.", { type: "error" });
             setLoading(false);
-            return;
         }
-
-        // Group by user (비회원 현장대여는 profiles가 null → renter_name 기반 그룹핑)
-        const groups = buildRentalGroups(data);
-        setUserRentals(groups);
-        setSelectedRentals(prev => pruneSelection(groups, 'rentals', prev));
-        setLoading(false);
     }, [showToast]);
 
     useEffect(() => {

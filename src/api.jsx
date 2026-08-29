@@ -1401,6 +1401,51 @@ export const kioskListUsers = async () => {
   return data || [];
 };
 
+const normalizeKioskRentalRows = (rows) => (rows || []).map((row) => ({
+  rental_id: row.rental_id,
+  user_id: row.user_id,
+  game_id: row.game_id,
+  borrowed_at: row.borrowed_at,
+  due_date: row.due_date,
+  returned_at: row.returned_at,
+  type: row.type,
+  renter_name: row.renter_name,
+  profiles: row.profile_id ? {
+    id: row.profile_id,
+    name: row.profile_name,
+    student_id: row.profile_student_id
+  } : null,
+  game: {
+    id: row.game_id,
+    name: row.game_name,
+    image: row.game_image
+  }
+}));
+
+/** 키오스크 예약 수령 목록을 권한 제한 RPC로 가져옵니다. */
+export const kioskListActiveReservations = async () => {
+  const { data, error } = await supabase.rpc('kiosk_list_active_reservations');
+
+  if (error) {
+    console.error("Kiosk Active Reservations Error:", error);
+    throw error;
+  }
+
+  return normalizeKioskRentalRows(data);
+};
+
+/** 키오스크 반납 목록을 권한 제한 RPC로 가져옵니다. */
+export const kioskListActiveRentals = async () => {
+  const { data, error } = await supabase.rpc('kiosk_list_active_rentals');
+
+  if (error) {
+    console.error("Kiosk Active Rentals Error:", error);
+    throw error;
+  }
+
+  return normalizeKioskRentalRows(data);
+};
+
 /**
  * 키오스크용 간편 반납 처리 함수입니다.
  *
