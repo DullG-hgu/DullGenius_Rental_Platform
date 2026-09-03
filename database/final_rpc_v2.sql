@@ -7,7 +7,9 @@
 -- ============================================================
 -- 0. 유틸리티 및 설정
 -- ============================================================
-CREATE OR REPLACE FUNCTION public.is_payment_check_enabled() RETURNS boolean AS $$ BEGIN RETURN true; END; $$ LANGUAGE plpgsql;
+-- [2026-09-03] is_payment_check_enabled() 스텁(RETURN true) 삭제.
+--   이 한 줄이 payment_management.sql 의 실제 구현을 덮어써 회비 검사 토글이 7개월간 무효였다.
+--   현행 정의는 database/20260903_fix_is_payment_check_enabled.sql / _LIVE/functions.sql 참조. 이 파일을 통째로 재실행하지 말 것.
 CREATE OR REPLACE FUNCTION public.is_user_payment_exempt(p_user_id UUID) RETURNS boolean AS $$ 
 BEGIN RETURN EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = p_user_id AND role_key IN ('admin', 'executive', 'payment_exempt')); END; $$ LANGUAGE plpgsql;
 

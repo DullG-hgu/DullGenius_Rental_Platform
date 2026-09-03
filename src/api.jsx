@@ -42,21 +42,16 @@ export const fetchGames = async () => {
  */
 export const fetchGameById = async (gameId) => {
   try {
-    const [gameRes, rentalsRes] = await Promise.all([
-      supabase.from('games').select('*').eq('id', gameId).single(),
-      supabase.from('rentals')
-        .select('rental_id, game_id, user_id, renter_name, type, returned_at, due_date, borrowed_at')
-        .eq('game_id', gameId)
-        .is('returned_at', null)
-    ]);
+    // [SECURITY] rentals 직접 조회 대신 마스킹 RPC 사용.
+    // 비회원에게는 user_id/renter_name이 내려오지 않고, 본인 행·관리자만 채워진다.
+    // 반환 형태는 get_games_with_rentals의 한 row와 동일 (game_columns || { rentals: [...] }).
+    const { data, error } = await supabase.rpc('get_game_with_rentals', { p_game_id: gameId });
+    if (error) throw error;
+    if (!data) return null;
 
-    if (gameRes.error) throw gameRes.error;
-
-    const game = gameRes.data;
-    const gameRentals = rentalsRes.data || [];
-
-    const statusData = calculateGameStatus(game, gameRentals);
-    return { ...game, ...statusData };
+    const gameRentals = Array.isArray(data.rentals) ? data.rentals : [];
+    const statusData = calculateGameStatus(data, gameRentals);
+    return { ...data, ...statusData };
   } catch (e) {
     console.error("fetchGameById 실패:", e);
     return null;
@@ -345,7 +340,12 @@ export const fetchPaymentCheckEnabled = async () => {
     .select('value')
     .eq('key', 'payment_check_enabled')
     .single();
-  return data?.value === 'true';
+  // value 는 jsonb — 문자열 "true" 와 boolean true 둘 다 허용 (DB 함수 is_payment_check_enabled 와 동일 기준).
+  // 행이 없거나 형식이 이상하면 DB 함수처럼 "검사 켜짐"(true)으로 본다 — 화면이 "꺼짐"으로 오표시되지 않게.
+  const v = data?.value;
+  if (v === true || v === false) return v;
+  if (typeof v === 'string') return v.toLowerCase() !== 'false';
+  return true;
 };
 
 // 오피스아워 배너 설정 저장
