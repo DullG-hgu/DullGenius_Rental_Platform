@@ -9,6 +9,7 @@
  *   database/current/schema.sql     — 모든 테이블 + 컬럼
  *   database/current/rls.sql        — 모든 RLS 정책
  *   database/current/types.sql      — 커스텀 Enum 타입
+ *   database/current/grants.sql     — anon/authenticated 실효 권한 (함수·테이블·컬럼)
  *
  * 실행: node scripts/pull_schema.js  (또는 npm run pull-schema)
  */
@@ -59,9 +60,12 @@ function query(sql) {
             },
         };
         const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
+            // 청크를 문자열로 이어 붙이면 멀티바이트(한글) 경계가 잘려 깨진다.
+            // Buffer로 모았다가 한 번에 디코딩한다.
+            const chunks = [];
+            res.on('data', chunk => chunks.push(chunk));
             res.on('end', () => {
+                const data = Buffer.concat(chunks).toString('utf8');
                 if (res.statusCode >= 400) {
                     reject(new Error(`쿼리 실패 (${res.statusCode}): ${data.slice(0, 300)}`));
                     return;
@@ -304,6 +308,91 @@ async function pullTypes() {
     console.log(`  ✓ types.sql   — ${typeNames.length}개 타입`);
 }
 
+// ── grants.sql ─────────────────────────────────────────────────────────────────
+// anon / authenticated 가 실제로 무엇을 할 수 있는지 (RLS 이전 단계의 GRANT).
+// 함수 EXECUTE, 테이블 권한, 컬럼 단위 권한을 한 파일에 담는다.
+async function pullGrants() {
+    const fnRows = await query(`
+        SELECT
+            p.proname,
+            pg_get_function_identity_arguments(p.oid) AS args,
+            p.prosecdef AS secdef,
+            p.proacl IS NULL AS default_acl,
+            EXISTS (SELECT 1 FROM aclexplode(p.proacl) x WHERE x.grantee = 0) AS public_exec,
+            EXISTS (SELECT 1 FROM aclexplode(p.proacl) x JOIN pg_roles r ON r.oid = x.grantee
+                    WHERE r.rolname = 'anon' AND x.privilege_type = 'EXECUTE') AS anon_exec,
+            EXISTS (SELECT 1 FROM aclexplode(p.proacl) x JOIN pg_roles r ON r.oid = x.grantee
+                    WHERE r.rolname = 'authenticated' AND x.privilege_type = 'EXECUTE') AS auth_exec
+        FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public' AND p.prokind = 'f'
+        ORDER BY p.proname, args
+    `);
+
+    const tableRows = await query(`
+        SELECT table_name, grantee,
+               string_agg(privilege_type, ', ' ORDER BY privilege_type) AS privs
+        FROM information_schema.role_table_grants
+        WHERE table_schema = 'public' AND grantee IN ('anon', 'authenticated')
+        GROUP BY table_name, grantee
+        ORDER BY table_name, grantee
+    `);
+
+    // 테이블 단위 권한이 없는데 컬럼 단위로만 열린 것 (예: rentals → anon)
+    const colRows = await query(`
+        SELECT c.table_name, c.grantee, c.privilege_type,
+               string_agg(c.column_name, ', ' ORDER BY c.column_name) AS cols
+        FROM information_schema.role_column_grants c
+        WHERE c.table_schema = 'public' AND c.grantee IN ('anon', 'authenticated')
+          AND NOT EXISTS (
+              SELECT 1 FROM information_schema.role_table_grants t
+              WHERE t.table_schema = c.table_schema AND t.table_name = c.table_name
+                AND t.grantee = c.grantee AND t.privilege_type = c.privilege_type
+          )
+        GROUP BY c.table_name, c.grantee, c.privilege_type
+        ORDER BY c.table_name, c.grantee, c.privilege_type
+    `);
+
+    const lines = [
+        fileHeader('GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)'),
+        '-- 읽는 법:',
+        '--   anon=Y 인 SECURITY DEFINER 함수는 비로그인으로 호출 가능하다. 의도된 것만 남아야 한다.',
+        '--   (is_admin/is_kiosk_or_admin 은 정책 평가용으로 anon=Y 가 정상. 회수 금지)',
+        '--   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.',
+        '',
+        '-- ----------------------------------------------------------------',
+        `-- 함수 EXECUTE  (${fnRows.length}개)`,
+        '-- ----------------------------------------------------------------',
+        '-- anon  auth  security  function',
+    ];
+    for (const f of fnRows) {
+        const anon = f.default_acl || f.public_exec || f.anon_exec ? 'Y' : '-';
+        const auth = f.default_acl || f.public_exec || f.auth_exec ? 'Y' : '-';
+        const sec  = f.secdef ? 'DEFINER' : 'INVOKER';
+        lines.push(`--  ${anon}     ${auth}    ${sec.padEnd(8)}  ${f.proname}(${f.args})`);
+    }
+
+    lines.push('');
+    lines.push('-- ----------------------------------------------------------------');
+    lines.push(`-- 테이블 권한  (${tableRows.length}개)`);
+    lines.push('-- ----------------------------------------------------------------');
+    for (const t of tableRows) {
+        lines.push(`GRANT ${t.privs} ON public.${t.table_name} TO ${t.grantee};`);
+    }
+
+    lines.push('');
+    lines.push('-- ----------------------------------------------------------------');
+    lines.push(`-- 컬럼 단위 권한 (테이블 권한 없이 컬럼만 열린 것, ${colRows.length}개)`);
+    lines.push('-- ----------------------------------------------------------------');
+    for (const c of colRows) {
+        lines.push(`GRANT ${c.privilege_type} (${c.cols}) ON public.${c.table_name} TO ${c.grantee};`);
+    }
+    lines.push('');
+
+    fs.writeFileSync(path.join(OUTPUT_DIR, 'grants.sql'), lines.join('\n'), 'utf8');
+    console.log(`  ✓ grants.sql  — 함수 ${fnRows.length}개 / 테이블 권한 ${tableRows.length}개 / 컬럼 권한 ${colRows.length}개`);
+}
+
 // ── README ────────────────────────────────────────────────────────────────────
 function writeReadme(stats) {
     const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
@@ -321,6 +410,7 @@ function writeReadme(stats) {
         '| `schema.sql`    | 모든 테이블 + 컬럼 정의  | 쿼리 작성, 관계 파악 |',
         '| `rls.sql`       | 모든 RLS 정책            | 보안/권한 문제 디버깅 |',
         '| `types.sql`     | 커스텀 Enum 타입         | 타입 관련 작업 |',
+        '| `grants.sql`    | anon/authenticated 실효 권한 (함수 EXECUTE·테이블·컬럼) | 권한 회귀 점검, 비회원 노출 면 확인 |',
         '',
         '## 마지막 갱신',
         '',
@@ -350,6 +440,7 @@ async function main() {
     await Promise.all([
         pullPolicies(),
         pullTypes(),
+        pullGrants(),
     ]);
 
     writeReadme({ functions: fnCount, tables: tableCount });

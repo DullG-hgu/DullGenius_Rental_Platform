@@ -1,7 +1,7 @@
 -- ================================================================
 -- RLS POLICIES — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 8. 29. PM 7:11:03
+-- 생성 시각: 2026. 9. 3. AM 9:45:39
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -23,7 +23,7 @@ CREATE POLICY "Admin Manage Config" ON public.app_config
 CREATE POLICY "Allow public read access" ON public.app_config
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO anon,authenticated
   USING (true)
 ;
 
@@ -42,14 +42,14 @@ CREATE POLICY "Admin Manage Reports" ON public.damage_reports
 CREATE POLICY "User Create Report" ON public.damage_reports
   AS PERMISSIVE
   FOR INSERT
-  TO public
+  TO authenticated
   WITH CHECK ((auth.uid() = user_id))
 ;
 
 CREATE POLICY "User View Own Report" ON public.damage_reports
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING ((auth.uid() = user_id))
 ;
 
@@ -129,7 +129,7 @@ CREATE POLICY "events_admin_write" ON public.events
 CREATE POLICY "events_public_read" ON public.events
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO anon,authenticated
   USING (((deleted_at IS NULL) AND (status <> ALL (ARRAY['draft'::text, 'archived'::text]))))
 ;
 
@@ -148,7 +148,7 @@ CREATE POLICY "Admin Manage Stats" ON public.game_daily_stats
 CREATE POLICY "Public Read Stats" ON public.game_daily_stats
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO anon,authenticated
   USING (true)
 ;
 
@@ -167,14 +167,14 @@ CREATE POLICY "Admin Manage Requests" ON public.game_requests
 CREATE POLICY "User Create Request" ON public.game_requests
   AS PERMISSIVE
   FOR INSERT
-  TO public
+  TO authenticated
   WITH CHECK ((auth.uid() = user_id))
 ;
 
 CREATE POLICY "User View Own Request" ON public.game_requests
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING ((auth.uid() = user_id))
 ;
 
@@ -193,7 +193,7 @@ CREATE POLICY "Admin Manage Games" ON public.games
 CREATE POLICY "Allow public read access" ON public.games
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO anon,authenticated
   USING (true)
 ;
 
@@ -257,7 +257,7 @@ CREATE POLICY "Admin View All Points" ON public.point_transactions
 CREATE POLICY "View Own Points" ON public.point_transactions
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING ((auth.uid() = user_id))
 ;
 
@@ -296,14 +296,14 @@ CREATE POLICY "Admin Read All Profiles" ON public.profiles
 CREATE POLICY "Read Own Profile" ON public.profiles
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING ((auth.uid() = id))
 ;
 
 CREATE POLICY "Update Own Profile" ON public.profiles
   AS PERMISSIVE
   FOR UPDATE
-  TO public
+  TO authenticated
   USING ((auth.uid() = id))
 ;
 
@@ -335,7 +335,7 @@ CREATE POLICY "Admin Manage Rentals" ON public.rentals
 CREATE POLICY "Public view active rentals" ON public.rentals
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO anon
   USING ((returned_at IS NULL))
 ;
 
@@ -361,14 +361,14 @@ CREATE POLICY "Admin Manage Reviews" ON public.reviews
 CREATE POLICY "Manage Own Reviews" ON public.reviews
   AS PERMISSIVE
   FOR ALL
-  TO public
+  TO authenticated
   USING ((auth.uid() = user_id))
 ;
 
 CREATE POLICY "Public Read" ON public.reviews
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO anon,authenticated
   USING (true)
 ;
 
@@ -380,7 +380,7 @@ ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public Read" ON public.roles
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO anon,authenticated
   USING (true)
 ;
 
@@ -407,7 +407,7 @@ CREATE POLICY "Admins can do everything on user_roles" ON public.user_roles
 CREATE POLICY "Read Own Roles" ON public.user_roles
   AS PERMISSIVE
   FOR SELECT
-  TO public
+  TO authenticated
   USING ((auth.uid() = user_id))
 ;
 

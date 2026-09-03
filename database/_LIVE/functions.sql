@@ -1,12 +1,48 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 8. 29. PM 7:10:48
+-- 생성 시각: 2026. 9. 3. AM 9:45:17
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 85개 함수
+-- 총 87개 함수
+
+-- ----------------------------------------------------------------
+-- 함수: _active_rentals_json
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT COALESCE(
+    (
+      SELECT jsonb_agg(
+        jsonb_build_object(
+          'rental_id',   r.rental_id,
+          'game_id',     r.game_id,
+          'user_id',     CASE WHEN p_admin OR r.user_id = p_uid THEN r.user_id END,
+          'renter_name', CASE WHEN p_admin OR r.user_id = p_uid THEN r.renter_name END,
+          'type',        r.type,
+          'returned_at', r.returned_at,
+          'due_date',    r.due_date,
+          'borrowed_at', r.borrowed_at,
+          'profiles',    CASE WHEN (p_admin OR r.user_id = p_uid) AND p.id IS NOT NULL
+                              THEN jsonb_build_object('name', p.name) END
+        )
+        ORDER BY r.borrowed_at
+      )
+      FROM public.rentals r
+      LEFT JOIN public.profiles p
+        ON (p_admin OR r.user_id = p_uid) AND p.id = r.user_id
+      WHERE r.game_id = p_game_id
+        AND r.returned_at IS NULL
+    ),
+    '[]'::jsonb
+  );
+$function$
 
 -- ----------------------------------------------------------------
 -- 함수: _event_calc_fee
@@ -412,7 +448,7 @@ BEGIN
     IF p_user_id IS NULL AND p_renter_name IS NULL AND p_game_id IS NULL AND p_rental_id IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '연장 대상을 특정할 수 없습니다. (모든 식별자가 비어있음)', 'count', 0);
     END IF;
-    -- 현재 시��의 날짜(자정 00:00:00) 기준으로 N일을 더한 뒤, 23시간 59분 59초를 더해 해당일 밤 12시 세팅
+    -- 현재 시간의 날짜(자정 00:00:00) 기준으로 N일을 더한 뒤, 23시간 59분 59초를 더해 해당일 밤 12시 세팅
     v_new_due_date := date_trunc('day', now()) + (p_days || ' days')::interval + interval '23 hours 59 minutes 59 seconds';
     FOR r IN
         SELECT rental_id, game_id, user_id, renter_name
@@ -541,7 +577,7 @@ BEGIN
     FROM public.games WHERE id = p_game_id FOR UPDATE;
 
     IF v_game_name IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '존��하지 않는 게임입니다.');
+        RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
     END IF;
 
     -- 대상 찜 선정. returned_at IS NULL 필수(부활 차단),
@@ -1219,7 +1255,7 @@ BEGIN
         cancel_reason = p_reason
     WHERE id = p_registration_id;
 
-  -- 팀장이 취��하면 팀 status를 cancelled로 변경 (팀원도 모두 취소될지는 운영판단)
+  -- 팀장이 취소하면 팀 status를 cancelled로 변경 (팀원도 모두 취소될지는 운영판단)
   IF v_reg.team_id IS NOT NULL THEN
     IF EXISTS (SELECT 1 FROM public.event_teams WHERE id = v_reg.team_id AND leader_user_id = v_user_id) THEN
       UPDATE public.event_teams SET status = 'cancelled' WHERE id = v_reg.team_id;
@@ -2147,44 +2183,48 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: get_game_with_rentals
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_game_with_rentals(p_game_id integer)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+    v_uid   uuid    := auth.uid();
+    v_admin boolean := public.is_admin();
+    v_row   jsonb;
+BEGIN
+    SELECT to_jsonb(g.*)
+        || jsonb_build_object('rentals', public._active_rentals_json(g.id, v_uid, v_admin))
+    INTO v_row
+    FROM public.games g
+    WHERE g.id = p_game_id;
+
+    RETURN v_row;
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: get_games_with_rentals
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_games_with_rentals()
  RETURNS SETOF jsonb
- LANGUAGE sql
- STABLE
- SET search_path TO 'public'
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
-  SELECT to_jsonb(g.*) || jsonb_build_object(
-    'rentals', COALESCE(
-      (
-        SELECT jsonb_agg(
-          jsonb_build_object(
-            'rental_id', r.rental_id,
-            'game_id', r.game_id,
-            'user_id', r.user_id,
-            'renter_name', r.renter_name,
-            'type', r.type,
-            'returned_at', r.returned_at,
-            'due_date', r.due_date,
-            'borrowed_at', r.borrowed_at,
-            'profiles', CASE
-              WHEN p.id IS NOT NULL THEN jsonb_build_object('name', p.name)
-              ELSE NULL
-            END
-          )
-          ORDER BY r.borrowed_at
-        )
-        FROM public.rentals r
-        LEFT JOIN public.profiles p ON p.id = r.user_id
-        WHERE r.game_id = g.id
-          AND r.returned_at IS NULL
-      ),
-      '[]'::jsonb
-    )
-  )
-  FROM public.games g
-  ORDER BY g.name;
+DECLARE
+    v_uid   uuid    := auth.uid();
+    v_admin boolean := public.is_admin();
+BEGIN
+    RETURN QUERY
+    SELECT to_jsonb(g.*)
+        || jsonb_build_object('rentals', public._active_rentals_json(g.id, v_uid, v_admin))
+    FROM public.games g
+    ORDER BY g.name;
+END;
 $function$
 
 -- ----------------------------------------------------------------
@@ -2847,9 +2887,23 @@ $function$
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.is_payment_check_enabled()
  RETURNS boolean
- LANGUAGE plpgsql
+ LANGUAGE sql
+ STABLE
  SET search_path TO 'public', 'pg_temp'
-AS $function$ BEGIN RETURN true; END; $function$
+AS $function$
+  SELECT COALESCE(
+    (
+      SELECT CASE jsonb_typeof(c.value)
+               WHEN 'boolean' THEN (c.value)::boolean
+               WHEN 'string'  THEN lower(c.value #>> '{}') = 'true'
+               ELSE true
+             END
+      FROM public.app_config c
+      WHERE c.key = 'payment_check_enabled'
+    ),
+    true
+  );
+$function$
 
 -- ----------------------------------------------------------------
 -- 함수: is_user_payment_exempt
@@ -2983,8 +3037,8 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', '키오스크 권한이 필요합니다.');
     END IF;
 
-    SELECT game_id, user_id, type, returned_at, due_date
-    INTO v_game_id, v_user_id, v_type, v_returned, v_due
+    SELECT game_id, user_id, type, returned_at
+    INTO v_game_id, v_user_id, v_type, v_returned
     FROM public.rentals WHERE rental_id = p_rental_id;
 
     IF v_game_id IS NULL THEN
@@ -2996,6 +3050,14 @@ BEGIN
     -- 이미 취소/정리된 예약을 되살리지 않는다
     IF v_returned IS NOT NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '이미 취소되었거나 만료 정리된 예약입니다.');
+    END IF;
+
+    -- 회비 검사: 간편 대여(kiosk_rental)와 동일 기준. 찜은 허용하되 수령에서 막는다.
+    IF v_user_id IS NOT NULL
+       AND is_payment_check_enabled() AND NOT is_user_payment_exempt(v_user_id) THEN
+        IF NOT COALESCE((SELECT is_paid FROM public.profiles WHERE id = v_user_id), false) THEN
+            RETURN jsonb_build_object('success', false, 'message', '회비 납부가 필요합니다.');
+        END IF;
     END IF;
 
     SELECT quantity, is_rentable
@@ -3016,6 +3078,10 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', '이미 이 게임을 대여 중입니다. 추가 대여는 운영진에게 문의해주세요.');
     END IF;
 
+    -- 만료 판정은 games 락을 잡은 뒤에 한다.
+    -- 락 대기 중 찜이 만료되면 count_active_occupancy가 이 찜을 점유로 세지 않으므로,
+    -- 락 이전 값으로 판정하면 재고 검사를 건너뛰어 수량을 초과할 수 있다.
+    SELECT due_date INTO v_due FROM public.rentals WHERE rental_id = p_rental_id;
     v_expired := (v_due IS NULL OR v_due <= now());
 
     -- 만료된 예약이어도 지금 재고가 남아 있으면 수령을 허용한다(사실상 일반 대여).
@@ -3062,6 +3128,12 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', '키오스크 권한이 필요합니다.');
     END IF;
 
+    -- 키오스크 대여는 반드시 회원 계정에 귀속한다.
+    -- 비회원·수기 대여는 관리자 경로(admin_rent_game)로만 처리한다.
+    IF p_user_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '회원을 선택해주세요. 비회원 대여는 운영진에게 문의해주세요.');
+    END IF;
+
     SELECT name, quantity, is_rentable
     INTO v_game_name, v_quantity, v_is_rentable
     FROM public.games WHERE id = p_game_id FOR UPDATE;
@@ -3081,22 +3153,19 @@ BEGIN
     END IF;
 
     -- [운영 방침] 같은 게임은 1인 1부. 예외 대여는 관리자 경로(admin_rent_game)로만.
-    -- (p_user_id가 NULL인 비회원 대여는 판정 불가라 통과)
-    IF p_user_id IS NOT NULL THEN
-        IF EXISTS (
-            SELECT 1 FROM public.rentals
-            WHERE game_id = p_game_id AND user_id = p_user_id
-              AND returned_at IS NULL AND type = 'RENT'
-        ) THEN
-            RETURN jsonb_build_object('success', false, 'message', '이미 이 게임을 대여 중입니다. 다른 게임도 만나보세요!');
-        END IF;
-        IF EXISTS (
-            SELECT 1 FROM public.rentals
-            WHERE game_id = p_game_id AND user_id = p_user_id
-              AND returned_at IS NULL AND type = 'DIBS' AND due_date > now()
-        ) THEN
-            RETURN jsonb_build_object('success', false, 'message', '이 게임에 예약(찜)이 있습니다. 예약 수령으로 진행해주세요.');
-        END IF;
+    IF EXISTS (
+        SELECT 1 FROM public.rentals
+        WHERE game_id = p_game_id AND user_id = p_user_id
+          AND returned_at IS NULL AND type = 'RENT'
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 이 게임을 대여 중입니다. 다른 게임도 만나보세요!');
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM public.rentals
+        WHERE game_id = p_game_id AND user_id = p_user_id
+          AND returned_at IS NULL AND type = 'DIBS' AND due_date > now()
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', '이 게임에 예약(찜)이 있습니다. 예약 수령으로 진행해주세요.');
     END IF;
 
     IF COALESCE(v_quantity, 0) - public.count_active_occupancy(p_game_id) <= 0 THEN
@@ -3433,7 +3502,7 @@ BEGIN
       AND name = p_name 
       AND REPLACE(phone, '-', '') = REPLACE(p_phone, '-', '');
     IF v_user_id IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', '입력하신 정보와 일치��는 회원을 찾을 수 없습니다.');
+        RETURN jsonb_build_object('success', false, 'message', '입력하신 정보와 일치하는 회원을 찾을 수 없습니다.');
     END IF;
     -- 2. 해당 유저의 이메일 확인
     SELECT email INTO v_target_email FROM auth.users WHERE id = v_user_id;
@@ -3470,15 +3539,18 @@ AS $function$
 DECLARE
     v_reset_count INTEGER;
 BEGIN
+    IF NOT public.is_admin() THEN
+        RETURN jsonb_build_object('success', false, 'message', '관리자 권한이 필요합니다.');
+    END IF;
+
     UPDATE public.profiles SET is_paid = false
     WHERE id NOT IN (SELECT user_id FROM public.user_roles WHERE role_key IN ('admin', 'executive', 'payment_exempt'));
-    
+
     GET DIAGNOSTICS v_reset_count = ROW_COUNT;
-    
-    -- [FIX] to_jsonb() 추가
-    INSERT INTO public.logs (action_type, details)
-    VALUES ('SEMESTER_RESET', to_jsonb('학기 초기화: ' || v_reset_count || '명의 회비 상태 초기화'));
-    
+
+    INSERT INTO public.logs (user_id, action_type, details)
+    VALUES (auth.uid(), 'SEMESTER_RESET', to_jsonb('학기 초기화: ' || v_reset_count || '명의 회비 상태 초기화'));
+
     RETURN jsonb_build_object('success', true, 'reset_count', v_reset_count, 'message', v_reset_count || '명의 회비 상태가 초기화되었습니다.');
 END;
 $function$
@@ -3623,7 +3695,23 @@ CREATE OR REPLACE FUNCTION public.send_user_log(p_game_id integer DEFAULT NULL::
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 BEGIN
-    INSERT INTO public.logs (game_id, user_id, action_type, details) VALUES (p_game_id, auth.uid(), p_action_type, p_details);
+    IF auth.uid() IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '로그인이 필요합니다.');
+    END IF;
+
+    IF p_action_type IS NULL OR p_action_type NOT IN (
+        'ACTION', 'VIEW', 'SEARCH', 'FILTER_CHANGE', 'MISS', 'STOCK_REQUEST',
+        'OUT_OF_STOCK_VIEW', 'RESOURCE_CLICK', 'STATUS_CHANGE'
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', '허용되지 않은 로그 유형입니다.');
+    END IF;
+
+    IF p_details IS NOT NULL AND pg_column_size(p_details) > 4096 THEN
+        RETURN jsonb_build_object('success', false, 'message', '로그 상세가 너무 큽니다.');
+    END IF;
+
+    INSERT INTO public.logs (game_id, user_id, action_type, details)
+    VALUES (p_game_id, auth.uid(), p_action_type, p_details);
     RETURN jsonb_build_object('success', true);
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('success', false, 'message', SQLERRM);
 END;
