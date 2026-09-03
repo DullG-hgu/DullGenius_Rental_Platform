@@ -1,5 +1,6 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap.jsx';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock.jsx';
 import ModalButton from './ModalButton.jsx';
 
 /**
@@ -28,11 +29,20 @@ function PromptModal({
         if (isOpen) setValue(defaultValue);
     }, [isOpen, defaultValue]);
 
-    useEffect(() => {
-        if (!isOpen) return;
-        document.body.style.overflow = 'hidden';
-        return () => { document.body.style.overflow = 'unset'; };
-    }, [isOpen]);
+    useBodyScrollLock(isOpen);
+
+    // 오버레이 탭으로 닫기 — pointerdown/up 모두 오버레이에서 일어났을 때만.
+    // 입력값이 있으면 닫지 않는다: 모바일에서 키보드를 내리려고 바깥을 탭했다가
+    // 적던 대여자 이름이 통째로 사라지는 사고를 막는다.
+    const overlayPressRef = useRef(false);
+    const handleOverlayPointerDown = (e) => { overlayPressRef.current = e.target === e.currentTarget; };
+    const handleOverlayPointerUp = (e) => {
+        const onOverlay = overlayPressRef.current && e.target === e.currentTarget;
+        overlayPressRef.current = false;
+        if (!onOverlay) return;
+        if (String(value ?? '').trim() !== '') return;
+        onClose();
+    };
 
     const containerRef = useFocusTrap({
         active: isOpen,
@@ -55,12 +65,17 @@ function PromptModal({
     };
 
     return (
-        <div className="modal-overlay" style={styles.overlay} onClick={onClose}>
+        <div
+            className="modal-overlay"
+            style={styles.overlay}
+            onPointerDown={handleOverlayPointerDown}
+            onPointerUp={handleOverlayPointerUp}
+            onPointerCancel={() => { overlayPressRef.current = false; }}
+        >
             <div
                 ref={containerRef}
                 className="modal-content"
                 style={styles.modal}
-                onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
@@ -90,6 +105,7 @@ function PromptModal({
                         placeholder={placeholder}
                         min={min}
                         max={max}
+                        inputMode={inputType === 'number' ? 'numeric' : undefined}
                         autoFocus
                         style={styles.input}
                     />
@@ -127,7 +143,7 @@ const styles = {
     closeBtn: {
         background: 'none', border: 'none', fontSize: '1.5em',
         color: '#95a5a6', cursor: 'pointer', padding: 0,
-        width: '30px', height: '30px',
+        width: '36px', height: '36px', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         borderRadius: '50%', transition: 'all 0.2s',
     },
@@ -147,7 +163,7 @@ const styles = {
         boxSizing: 'border-box',
     },
     footer: {
-        display: 'flex', gap: '12px', padding: '20px 24px',
+        display: 'flex', gap: '12px', padding: '20px 24px', flexWrap: 'wrap',
     },
 };
 

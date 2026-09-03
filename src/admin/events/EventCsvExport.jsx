@@ -87,8 +87,11 @@ export default function EventCsvExport({ event, registrations }) {
     a.download = `${event.slug || 'event'}_신청자_${dateStr}.csv`;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // click() 직후 바로 revoke 하면 일부 브라우저(특히 iOS Safari)에서 다운로드가 시작되기 전에 URL 이 무효화된다
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 1000);
   };
 
   const previewCsv = useMemo(() => {
@@ -100,7 +103,8 @@ export default function EventCsvExport({ event, registrations }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      {/* 좁은 화면에서는 옵션 → 미리보기 순으로 세로 배치 */}
+      <div className="admin-grid-auto" style={{ '--min': '300px', gap: 16 }}>
         {/* 좌측: 옵션 */}
         <div style={card}>
           <h4 style={h4}>1. 범위 선택</h4>
@@ -111,9 +115,9 @@ export default function EventCsvExport({ event, registrations }) {
           </select>
 
           <h4 style={{ ...h4, marginTop: 16 }}>2. 컬럼 선택</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+          <div className="admin-grid-auto" style={{ '--min': '140px', gap: 4 }}>
             {COLUMNS.map(([key, label]) => (
-              <label key={key} style={{ display: 'flex', gap: 6, alignItems: 'center', padding: 4, color: 'var(--admin-text-main)', fontSize: '0.85rem', cursor: 'pointer' }}>
+              <label key={key} style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '8px 4px', color: 'var(--admin-text-main)', fontSize: '0.85rem', cursor: 'pointer' }}>
                 <input type="checkbox" checked={selected.has(key)} onChange={() => toggle(key)} />
                 {label}
               </label>
@@ -149,7 +153,7 @@ export default function EventCsvExport({ event, registrations }) {
   );
 }
 
-const card = { background: 'var(--admin-card-bg)', border: '1px solid var(--admin-border)', borderRadius: 8, padding: 16 };
+const card = { background: 'var(--admin-card-bg)', border: '1px solid var(--admin-border)', borderRadius: 8, padding: 16, minWidth: 0 };
 const h4 = { margin: '0 0 8px', color: 'var(--admin-text-main)', fontSize: '0.95rem' };
 const input = { padding: '8px 10px', background: 'var(--admin-bg)', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, fontSize: '0.9rem' };
 const btnPrimary = { padding: '6px 14px', background: 'var(--admin-primary)', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' };

@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { listEvents, createEvent, cloneEvent, softDeleteEvent } from './api_events';
 import EventTutorial from './EventTutorial';
+import ConfirmModal from '../../components/ConfirmModal';
 import '../../Admin.css';
 
 const STATUS_BADGE = {
@@ -33,6 +34,7 @@ export default function EventsListPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [cloneSourceId, setCloneSourceId] = useState(null);
   const [tutorialSection, setTutorialSection] = useState(null); // null = closed
+  const [deleteTarget, setDeleteTarget] = useState(null); // 삭제 확인 모달 대상
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,8 +52,12 @@ export default function EventsListPage() {
     if (!authLoading && isAdmin) load();
   }, [authLoading, isAdmin, load]);
 
-  const handleDelete = async (ev) => {
-    if (!confirm(`"${ev.title}"을(를) 삭제하시겠습니까? (soft delete — 복구 가능)`)) return;
+  // 네이티브 confirm 은 모바일 "대화상자 차단"에 걸리면 조용히 false → 모달로
+  const handleDelete = (ev) => setDeleteTarget(ev);
+
+  const runDelete = async () => {
+    const ev = deleteTarget;
+    if (!ev) return;
     try {
       await softDeleteEvent(ev.id);
       showToast('삭제되었습니다.', { type: 'success' });
@@ -71,7 +77,7 @@ export default function EventsListPage() {
           <Link to="/admin-secret" style={{ color: 'var(--admin-text-sub)', fontSize: '0.85rem', textDecoration: 'none' }}>← 관리자 홈</Link>
           <h2 style={{ margin: '4px 0 0' }}>🎪 행사 관리</h2>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="admin-header-actions">
           <button onClick={() => setTutorialSection('overview')} className="admin-btn" title="행사 시스템 사용법">📖 튜토리얼</button>
           <button onClick={() => setCreateOpen(true)} className="admin-btn" style={{ background: 'var(--admin-primary)', color: '#000' }}>+ 새 행사</button>
         </div>
@@ -84,22 +90,23 @@ export default function EventsListPage() {
           <div style={empty}>
             <p style={{ margin: 0, fontSize: '1rem' }}>아직 등록된 행사가 없습니다.</p>
             <p style={{ margin: 0, fontSize: '0.85rem' }}>처음이라면 튜토리얼을 먼저 훑어보세요 — 5분이면 전체 흐름을 익힐 수 있어요.</p>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="admin-btn-row" style={{ justifyContent: 'center' }}>
               <button onClick={() => setTutorialSection('overview')} className="admin-btn">📖 튜토리얼 보기</button>
               <button onClick={() => setCreateOpen(true)} className="admin-btn" style={{ background: 'var(--admin-primary)', color: '#000' }}>첫 행사 만들기</button>
             </div>
           </div>
         ) : (
+          <div className="admin-table-wrap">
           <table style={table}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
                 <th style={th}>행사명</th>
+                <th style={th}>액션</th>
                 <th style={th}>슬러그</th>
                 <th style={th}>상태</th>
                 <th style={th}>모집</th>
                 <th style={th}>행사 시작</th>
                 <th style={th}>정원</th>
-                <th style={th}>액션</th>
               </tr>
             </thead>
             <tbody>
@@ -107,9 +114,18 @@ export default function EventsListPage() {
                 const badge = STATUS_BADGE[ev.status] || { text: ev.status, bg: '#666' };
                 return (
                   <tr key={ev.id} style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                    <td style={td}>
+                    <td style={{ ...td, whiteSpace: 'normal', minWidth: 160 }}>
                       <Link to={`/admin-secret/events/${ev.id}`} style={{ color: 'var(--admin-text-main)', fontWeight: 600, textDecoration: 'none' }}>{ev.title}</Link>
                       {ev.subtitle && <div style={{ color: 'var(--admin-text-sub)', fontSize: '0.8rem' }}>{ev.subtitle}</div>}
+                    </td>
+                    {/* 액션을 행사명 옆에 — 폰에서 스와이프 없이 닿게 */}
+                    <td style={{ ...td, whiteSpace: 'normal', minWidth: 150 }}>
+                      <div className="admin-btn-row">
+                        <button onClick={() => navigate(`/admin-secret/events/${ev.id}`)} style={btn}>관리</button>
+                        <a href={`/event/${ev.slug}`} target="_blank" rel="noopener noreferrer" style={{ ...btn, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }} title="새 탭에서 공개 페이지 열기">보기 ↗</a>
+                        <button onClick={() => setCloneSourceId(ev.id)} style={btn}>복제</button>
+                        <button onClick={() => handleDelete(ev)} style={{ ...btn, color: 'var(--admin-danger)' }}>삭제</button>
+                      </div>
                     </td>
                     <td style={td}><code style={{ color: 'var(--admin-text-sub)', fontSize: '0.8rem' }}>{ev.slug}</code></td>
                     <td style={td}>
@@ -118,21 +134,25 @@ export default function EventsListPage() {
                     <td style={td}><span style={small}>{fmt(ev.recruit_start_at)}<br />~ {fmt(ev.recruit_end_at)}</span></td>
                     <td style={td}><span style={small}>{fmt(ev.event_start_at)}</span></td>
                     <td style={td}>{ev.capacity == null ? '∞' : `${ev.capacity}${ev.capacity_unit === 'team' ? '팀' : '명'}`}</td>
-                    <td style={td}>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => navigate(`/admin-secret/events/${ev.id}`)} style={btn}>관리</button>
-                        <a href={`/event/${ev.slug}`} target="_blank" rel="noopener noreferrer" style={{ ...btn, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }} title="새 탭에서 공개 페이지 열기">보기 ↗</a>
-                        <button onClick={() => setCloneSourceId(ev.id)} style={btn}>복제</button>
-                        <button onClick={() => handleDelete(ev)} style={{ ...btn, color: 'var(--admin-danger)' }}>삭제</button>
-                      </div>
-                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={runDelete}
+        title="🗑️ 행사 삭제"
+        message={deleteTarget ? `"${deleteTarget.title}"을(를) 삭제하시겠습니까?\n(soft delete — 복구 가능)` : ''}
+        confirmText="삭제"
+        cancelText="취소"
+        type="danger"
+      />
 
       {createOpen && (
         <CreateEventModal
@@ -274,13 +294,13 @@ function Modal({ title, onClose, children }) {
 }
 
 // --- styles ---
-const empty = { textAlign: 'center', padding: 60, background: 'var(--admin-card-bg)', border: '1px dashed var(--admin-border)', borderRadius: 8, color: 'var(--admin-text-sub)', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' };
+const empty = { textAlign: 'center', padding: '40px 20px', background: 'var(--admin-card-bg)', border: '1px dashed var(--admin-border)', borderRadius: 8, color: 'var(--admin-text-sub)', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' };
 const table = { width: '100%', borderCollapse: 'collapse', background: 'var(--admin-card-bg)', borderRadius: 8 };
-const th = { padding: '12px', textAlign: 'left', color: 'var(--admin-text-sub)', fontSize: '0.85rem', fontWeight: 600 };
-const td = { padding: '12px', color: 'var(--admin-text-main)', fontSize: '0.9rem', verticalAlign: 'top' };
+const th = { padding: '12px', textAlign: 'left', color: 'var(--admin-text-sub)', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap' };
+const td = { padding: '12px', color: 'var(--admin-text-main)', fontSize: '0.9rem', verticalAlign: 'top', whiteSpace: 'nowrap' };
 const small = { fontSize: '0.8rem', color: 'var(--admin-text-sub)' };
-const btn = { padding: '4px 10px', background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' };
+const btn = { padding: '6px 10px', background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' };
 const btnPrimary = { padding: '8px 16px', background: 'var(--admin-primary)', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600 };
 const btnSecondary = { padding: '8px 16px', background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, cursor: 'pointer' };
 const modalField = { display: 'flex', flexDirection: 'column', gap: 4, color: 'var(--admin-text-sub)', fontSize: '0.85rem' };
-const modalInput = { padding: '8px 10px', background: 'var(--admin-bg)', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, fontSize: '0.9rem' };
+const modalInput = { padding: '8px 10px', background: 'var(--admin-bg)', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4 };

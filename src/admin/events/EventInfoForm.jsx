@@ -340,7 +340,8 @@ export default function EventInfoForm({ event, onSaved, onCancel }) {
         </label>
       </Section>
 
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', borderTop: '1px solid var(--admin-border)', paddingTop: 20 }}>
+      {/* 저장 바는 화면 하단에 붙어 따라온다 — 긴 폼을 폰에서 끝까지 내리지 않아도 저장 가능 */}
+      <div style={{ position: 'sticky', bottom: 0, zIndex: 2, display: 'flex', gap: 12, justifyContent: 'flex-end', flexWrap: 'wrap', borderTop: '1px solid var(--admin-border)', padding: '12px 0', background: 'var(--admin-card-bg)', boxShadow: '0 -6px 12px rgba(0,0,0,0.25)' }}>
         {onCancel && <button type="button" onClick={onCancel} style={btnSecondary}>취소</button>}
         <button type="submit" disabled={saving || uploading} style={btnPrimary}>
           {saving ? '저장 중…' : isEdit ? '저장' : '행사 생성'}
@@ -361,12 +362,13 @@ const Section = ({ title, hint, children }) => (
   </div>
 );
 
+// 고정 N열 대신 반응형 — 좁은 화면에서는 자동으로 1열로 접힌다 (.admin-grid-auto, Admin.css)
 const Grid = ({ cols = 2, children }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 14 }}>{children}</div>
+  <div className="admin-grid-auto" style={{ '--min': cols >= 3 ? '180px' : '240px', gap: 14 }}>{children}</div>
 );
 
 const Field = ({ label, children, full }) => (
-  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: full ? `1 / -1` : undefined }}>
+  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, gridColumn: full ? `1 / -1` : undefined }}>
     <span style={{ fontSize: '0.85rem', color: 'var(--admin-text-sub)' }}>{label}</span>
     {children}
   </label>
@@ -380,6 +382,7 @@ const input = {
   borderRadius: 4,
   fontSize: '0.9rem',
   width: '100%',
+  minWidth: 0, // datetime-local 등 네이티브 컨트롤이 그리드 셀보다 커지려는 것을 막는다
   boxSizing: 'border-box',
 };
 const checkLabel = { display: 'flex', alignItems: 'center', gap: 6, color: 'var(--admin-text-main)', fontSize: '0.9rem' };

@@ -37,8 +37,9 @@ function ConfigTab({ config, onReload }) {
 
   // 1. 설정값 변경 (입력창 수정 시)
   const handleChange = (idx, field, value) => {
+    // 얕은 복사 후 요소를 직접 변이하면 부모의 config 원본까지 바뀐다 → 불변 갱신
     const newItems = [...items];
-    newItems[idx][field] = value;
+    newItems[idx] = { ...newItems[idx], [field]: value };
     setItems(newItems);
   };
 
@@ -60,9 +61,11 @@ function ConfigTab({ config, onReload }) {
       return;
     }
 
+    const target = items[idx];
+    const label = (target?.label || '').replace(/\n/g, ' ').trim() || '(이름 없음)';
     showConfirmModal(
       "버튼 삭제",
-      "이 추천 버튼을 삭제하시겠습니까?",
+      `"${label}" 버튼을 삭제하시겠습니까?`,
       () => {
         const newItems = items.filter((_, i) => i !== idx);
         setItems(newItems);
@@ -115,7 +118,7 @@ function ConfigTab({ config, onReload }) {
             </div>
 
             {/* 2. 텍스트 입력 필드 */}
-            <div style={styles.inputContainer}>
+            <div className="admin-grid-auto" style={styles.inputContainer}>
               <div>
                 <label style={styles.label}>버튼 이름 (\n 줄바꿈)</label>
                 <input
@@ -143,6 +146,7 @@ function ConfigTab({ config, onReload }) {
                 onClick={() => handleDelete(idx)}
                 style={styles.deleteBtn}
                 title="이 버튼 삭제"
+                aria-label={`"${(item.label || '').replace(/\n/g, ' ').trim() || '(이름 없음)'}" 버튼 삭제`}
               >
                 🗑️
               </button>
@@ -152,7 +156,7 @@ function ConfigTab({ config, onReload }) {
       </div>
 
       {/* 하단 액션 버튼들 */}
-      <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "20px" }}>
         <button onClick={handleAdd} style={styles.addBtn}>
           ➕ 버튼 추가
         </button>
@@ -178,6 +182,7 @@ function ConfigTab({ config, onReload }) {
 const styles = {
   cardLayout: {
     display: "flex",
+    flexWrap: "wrap",
     gap: "15px",
     alignItems: "center",
   },
@@ -201,10 +206,11 @@ const styles = {
     opacity: 0,
     cursor: "pointer"
   },
+  // 고정 2열 → .admin-grid-auto (좁으면 1열). --min 이 최소 열 폭
   inputContainer: {
-    flex: 1,
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    flex: "1 1 240px",
+    minWidth: 0,
+    "--min": "160px",
     gap: "15px"
   },
   label: {
@@ -228,7 +234,7 @@ const styles = {
     justifyContent: "center"
   },
   addBtn: {
-    flex: 1,
+    flex: "1 1 160px",
     padding: "15px",
     background: "#95a5a6",
     color: "white",
@@ -240,7 +246,7 @@ const styles = {
     boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
   },
   saveBtn: {
-    flex: 2,
+    flex: "2 1 240px",
     padding: "15px",
     background: "#3498db",
     color: "white",

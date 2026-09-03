@@ -14,9 +14,26 @@ const SECTIONS = [
   { id: 'tips',          icon: '💡', title: '자주 묻는 질문 · 팁' },
 ];
 
+// 좁은 화면(폰) 여부 — 사이드바를 상단 가로 목차로 바꾸는 기준
+function useIsNarrow(query = '(max-width: 700px)') {
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = (e) => setNarrow(e.matches);
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else mq.addListener(onChange);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else mq.removeListener(onChange);
+    };
+  }, [query]);
+  return narrow;
+}
+
 export default function EventTutorial({ initialSection = 'overview', onClose }) {
   const [active, setActive] = useState(initialSection);
   const contentRef = useRef(null);
+  const narrow = useIsNarrow();
 
   useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [active]);
 
@@ -43,14 +60,18 @@ export default function EventTutorial({ initialSection = 'overview', onClose }) 
           <button onClick={onClose} style={closeBtn} title="닫기 (ESC)">✕</button>
         </div>
 
-        <div style={body}>
-          {/* 좌측 목차 */}
-          <nav style={sidebar}>
+        <div style={{ ...body, ...(narrow ? { flexDirection: 'column' } : {}) }}>
+          {/* 목차 — 데스크톱은 좌측 세로, 폰은 상단 가로 스크롤 (240px 사이드바가 본문을 다 먹는 것 방지) */}
+          <nav style={narrow ? sidebarNarrow : sidebar}>
             {SECTIONS.map((s) => (
               <button
                 key={s.id}
                 onClick={() => setActive(s.id)}
-                style={{ ...sideItem, ...(s.id === active ? sideItemActive : {}) }}
+                style={{
+                  ...sideItem,
+                  ...(narrow ? sideItemNarrow : {}),
+                  ...(s.id === active ? (narrow ? sideItemActiveNarrow : sideItemActive) : {}),
+                }}
               >
                 <span style={{ width: 22, display: 'inline-block' }}>{s.icon}</span>
                 <span>{s.title.replace(/^\d+단계 · /, '')}</span>
@@ -461,14 +482,19 @@ const FAQ = ({ q, children }) => (
 
 // === 스타일 ===
 const overlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 };
-const modal = { background: 'var(--admin-card-bg)', border: '1px solid var(--admin-border)', borderRadius: 10, width: '100%', maxWidth: 980, height: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', color: 'var(--admin-text-main)' };
-const header = { padding: '14px 20px', borderBottom: '1px solid var(--admin-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 };
-const closeBtn = { width: 32, height: 32, borderRadius: 4, background: 'transparent', border: '1px solid var(--admin-border)', color: 'var(--admin-text-main)', cursor: 'pointer', fontSize: '1rem' };
+// height 는 dvh(모바일 주소창 제외 높이). dvh 미지원 브라우저는 그 선언만 버리고 maxHeight 90vh 로 동작한다
+const modal = { background: 'var(--admin-card-bg)', border: '1px solid var(--admin-border)', borderRadius: 10, width: '100%', maxWidth: 980, maxHeight: '90vh', height: '90dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', color: 'var(--admin-text-main)' };
+const header = { padding: '14px 20px', borderBottom: '1px solid var(--admin-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexShrink: 0 };
+const closeBtn = { width: 36, height: 36, flexShrink: 0, borderRadius: 4, background: 'transparent', border: '1px solid var(--admin-border)', color: 'var(--admin-text-main)', cursor: 'pointer', fontSize: '1rem' };
 const body = { flex: 1, display: 'flex', minHeight: 0 };
 const sidebar = { width: 240, background: 'var(--admin-bg)', borderRight: '1px solid var(--admin-border)', padding: 12, overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2 };
+// 폰: 상단 가로 스크롤 목차
+const sidebarNarrow = { width: '100%', background: 'var(--admin-bg)', borderBottom: '1px solid var(--admin-border)', padding: '8px 10px', overflowX: 'auto', overflowY: 'hidden', flexShrink: 0, display: 'flex', flexDirection: 'row', gap: 4, WebkitOverflowScrolling: 'touch' };
 const sideItem = { display: 'flex', gap: 8, alignItems: 'center', padding: '8px 10px', background: 'transparent', border: 'none', borderRadius: 4, color: 'var(--admin-text-sub)', cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem', lineHeight: 1.4 };
+const sideItemNarrow = { whiteSpace: 'nowrap', flexShrink: 0, borderBottom: '3px solid transparent', borderRadius: 0 };
 const sideItemActive = { background: 'var(--admin-card-bg)', color: 'var(--admin-text-main)', fontWeight: 600, borderLeft: '3px solid var(--admin-primary)' };
-const content = { flex: 1, padding: 24, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14 };
-const navRow = { marginTop: 'auto', paddingTop: 20, display: 'flex', justifyContent: 'space-between', gap: 8, borderTop: '1px solid var(--admin-border)' };
+const sideItemActiveNarrow = { color: 'var(--admin-text-main)', fontWeight: 600, borderBottom: '3px solid var(--admin-primary)' };
+const content = { flex: 1, padding: 24, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 };
+const navRow = { marginTop: 'auto', paddingTop: 20, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, borderTop: '1px solid var(--admin-border)' };
 const navBtn = { padding: '8px 14px', background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, cursor: 'pointer', fontSize: '0.85rem' };
 const navBtnPrimary = { padding: '8px 16px', background: 'var(--admin-primary)', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' };

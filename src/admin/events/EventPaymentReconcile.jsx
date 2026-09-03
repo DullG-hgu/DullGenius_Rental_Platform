@@ -1,6 +1,7 @@
 // 입금 매칭 — 입금 대기 목록 + 일괄 확인 + 미입금 만료
 import React, { useState, useMemo } from 'react';
 import { useToast } from '../../contexts/ToastContext';
+import ConfirmModal from '../../components/ConfirmModal';
 import { markPaid, expireUnpaid } from './api_events';
 
 const fmt = (iso) => iso ? new Date(iso).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
@@ -13,6 +14,8 @@ export default function EventPaymentReconcile({ event, registrations, reload }) 
   const [selected, setSelected] = useState(new Set());
   const [busy, setBusy] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const [progress, setProgress] = useState(null); // { done, total } — 일괄 처리 진행률
+  const [confirmAction, setConfirmAction] = useState(null); // 'bulk' | 'expire' | null
 
   const pending = useMemo(
     () => registrations
@@ -69,12 +72,18 @@ export default function EventPaymentReconcile({ event, registrations, reload }) 
     }
   };
 
-  const confirmSelected = async () => {
+  // 네이티브 confirm 은 모바일 브라우저의 "대화상자 차단"에 걸리면 조용히 false → 모달로 확인받는다
+  const confirmSelected = () => {
     if (selected.size === 0) return showToast('선택된 항목이 없습니다.', { type: 'error' });
-    if (!confirm(`${selected.size}건을 입금 완료로 처리합니다. 계속할까요?`)) return;
+    setConfirmAction('bulk');
+  };
+
+  const runConfirmSelected = async () => {
+    const ids = [...selected];
     setBusy(true);
+    setProgress({ done: 0, total: ids.length });
     let ok = 0, fail = 0;
-    for (const id of selected) {
+    for (const id of ids) {
       try {
         const actual = matchedFromBulk.get(id) || null;
         await markPaid(id, actual);
@@ -82,15 +91,18 @@ export default function EventPaymentReconcile({ event, registrations, reload }) 
       } catch {
         fail++;
       }
+      setProgress({ done: ok + fail, total: ids.length });
     }
     setBusy(false);
+    setProgress(null);
     setSelected(new Set());
     showToast(`완료: ${ok}건, 실패: ${fail}건`, { type: fail ? 'error' : 'success' });
     await reload();
   };
 
-  const handleExpire = async () => {
-    if (!confirm('마감 시간이 지난 미입금 신청을 모두 만료 처리합니다. 계속할까요?')) return;
+  const handleExpire = () => setConfirmAction('expire');
+
+  const runExpire = async () => {
     setBusy(true);
     try {
       const n = await expireUnpaid(event.id);
@@ -115,7 +127,8 @@ export default function EventPaymentReconcile({ event, registrations, reload }) 
         <button onClick={handleExpire} disabled={busy} style={btnDanger}>⏰ 미입금 만료 처리</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) 2fr', gap: 16 }}>
+      {/* 좁은 화면에서는 붙여넣기 카드와 대기 목록이 세로로 쌓인다 */}
+      <div className="admin-grid-auto" style={{ '--min': '300px', gap: 16 }}>
         {/* 좌측: 일괄 매칭 */}
         <div style={card}>
           <h4 style={h4}>📋 입금자명 붙여넣기</h4>
@@ -127,7 +140,7 @@ export default function EventPaymentReconcile({ event, registrations, reload }) 
             rows={10}
             style={{ ...input, width: '100%', fontFamily: 'monospace', resize: 'vertical' }}
           />
-          <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <span style={{ color: 'var(--admin-text-sub)', fontSize: '0.85rem' }}>
               매칭됨: <strong style={{ color: '#27ae60' }}>{matchedFromBulk.size}</strong>건
             </span>
@@ -137,23 +150,23 @@ export default function EventPaymentReconcile({ event, registrations, reload }) 
 
         {/* 우측: 대기 목록 */}
         <div style={card}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="이름·학번·입금자명 검색"
-              style={{ ...input, flex: 1 }}
+              style={{ ...input, flex: '1 1 160px', minWidth: 0 }}
             />
             <button
               onClick={confirmSelected}
               disabled={busy || selected.size === 0}
               style={selected.size === 0 ? { ...btn, opacity: 0.5 } : btnPrimary}
             >
-              ✓ 선택 {selected.size}건 입금 확인
+              {progress ? `처리 중 ${progress.done}/${progress.total}` : `✓ 선택 ${selected.size}건 입금 확인`}
             </button>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
+          <div className="admin-table-wrap">
             <table style={table}>
               <thead>
                 <tr>
@@ -208,18 +221,39 @@ export default function EventPaymentReconcile({ event, registrations, reload }) 
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmAction === 'bulk'}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={runConfirmSelected}
+        title="💳 일괄 입금 확인"
+        message={`${selected.size}건을 입금 완료로 처리합니다. 계속할까요?`}
+        confirmText="입금 확인"
+        cancelText="취소"
+        type="warning"
+      />
+      <ConfirmModal
+        isOpen={confirmAction === 'expire'}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={runExpire}
+        title="⏰ 미입금 만료 처리"
+        message="마감 시간이 지난 미입금 신청을 모두 만료 처리합니다. 계속할까요?"
+        confirmText="만료 처리"
+        cancelText="취소"
+        type="danger"
+      />
     </div>
   );
 }
 
-const card = { background: 'var(--admin-card-bg)', border: '1px solid var(--admin-border)', borderRadius: 8, padding: 14 };
+const card = { background: 'var(--admin-card-bg)', border: '1px solid var(--admin-border)', borderRadius: 8, padding: 14, minWidth: 0 };
 const h4 = { margin: '0 0 8px', color: 'var(--admin-text-main)', fontSize: '0.95rem' };
 const hint = { margin: '0 0 8px', color: 'var(--admin-text-sub)', fontSize: '0.8rem', lineHeight: 1.5 };
 const table = { width: '100%', borderCollapse: 'collapse' };
-const th = { padding: '8px 10px', textAlign: 'left', color: 'var(--admin-text-sub)', fontSize: '0.75rem', fontWeight: 600, borderBottom: '1px solid var(--admin-border)' };
-const td = { padding: '8px 10px', color: 'var(--admin-text-main)', fontSize: '0.85rem' };
+const th = { padding: '8px 10px', textAlign: 'left', color: 'var(--admin-text-sub)', fontSize: '0.75rem', fontWeight: 600, borderBottom: '1px solid var(--admin-border)', whiteSpace: 'nowrap' };
+const td = { padding: '8px 10px', color: 'var(--admin-text-main)', fontSize: '0.85rem', whiteSpace: 'nowrap' };
 const input = { padding: '8px 10px', background: 'var(--admin-bg)', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, fontSize: '0.9rem' };
 const btn = { padding: '6px 12px', background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, cursor: 'pointer', fontSize: '0.85rem' };
-const btnSm = { padding: '4px 8px', background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, cursor: 'pointer', fontSize: '0.78rem' };
+const btnSm = { padding: '6px 10px', background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, cursor: 'pointer', fontSize: '0.78rem' };
 const btnPrimary = { padding: '6px 14px', background: 'var(--admin-primary)', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' };
 const btnDanger = { padding: '6px 12px', background: 'transparent', color: 'var(--admin-danger, #e74c3c)', border: '1px solid var(--admin-danger, #e74c3c)', borderRadius: 4, cursor: 'pointer', fontSize: '0.85rem' };

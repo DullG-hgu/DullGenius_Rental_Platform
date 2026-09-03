@@ -1,7 +1,7 @@
 // src/admin/StatsTab.jsx
 // 설명: 관리자 통계 탭 — 대여 현황, 인기 게임, 채널별 비율, 인기 검색어
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -43,6 +43,26 @@ function formatDate(dateStr) {
   return `${mm}/${dd}`;
 }
 
+// 좁은 화면(폰) 여부 — 차트 축 폭·라벨을 줄이는 데 쓴다
+function useIsNarrow(query = '(max-width: 600px)') {
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const handler = (e) => setNarrow(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [query]);
+  return narrow;
+}
+
+// 긴 게임명은 폰에서 축 라벨이 차트를 다 먹으므로 말줄임
+function truncateLabel(value, max) {
+  const s = String(value ?? '');
+  return s.length > max ? `${s.slice(0, max)}…` : s;
+}
+
 export default function StatsTab() {
   const [period, setPeriod] = useState(30);
   const [rentalStats, setRentalStats] = useState([]);
@@ -51,6 +71,9 @@ export default function StatsTab() {
   const [sourceBreakdown, setSourceBreakdown] = useState([]);
   const [popularSearches, setPopularSearches] = useState([]);
   const [loading, setLoading] = useState(false);
+  const isNarrow = useIsNarrow();
+  // 기간 버튼 연타 시 늦게 도착한 이전 요청이 최신 데이터를 덮어쓰지 않도록
+  const requestIdRef = useRef(0);
 
   // 한 번만 로드되는 집계 카드 데이터
   const [currentlyRented, setCurrentlyRented] = useState(null);
@@ -82,6 +105,7 @@ export default function StatsTab() {
   // period 변경 시 RPC 동시 호출
   useEffect(() => {
     async function loadStats() {
+      const requestId = ++requestIdRef.current;
       setLoading(true);
       try {
         const [
@@ -97,6 +121,9 @@ export default function StatsTab() {
           supabase.rpc('get_rental_source_breakdown', { p_days: period }),
           supabase.rpc('get_popular_searches', { p_limit: 20, p_days: period }),
         ]);
+
+        // 이미 다른 기간으로 바뀌었으면 이 응답은 버린다
+        if (requestId !== requestIdRef.current) return;
 
         if (rentalStatsRes.error) console.error('get_rental_stats error:', rentalStatsRes.error);
         else setRentalStats(rentalStatsRes.data ?? []);
@@ -115,7 +142,7 @@ export default function StatsTab() {
       } catch (e) {
         console.error('StatsTab loadStats error:', e);
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) setLoading(false);
       }
     }
 
@@ -157,7 +184,7 @@ export default function StatsTab() {
         <h3 style={{ margin: '0 0 -8px', color: 'var(--admin-text-main)' }}>운영 요약</h3>
 
       {/* 1. 기간 선택 버튼 */}
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {[7, 30, 90].map((p) => (
           <button
             key={p}
@@ -224,16 +251,17 @@ export default function StatsTab() {
               <BarChart
                 layout="vertical"
                 data={topGames}
-                margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                margin={{ top: 5, right: isNarrow ? 12 : 30, left: isNarrow ? 0 : 10, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--admin-border)" />
                 <XAxis type="number" stroke="#a0a0a0" tick={{ fill: '#a0a0a0', fontSize: 12 }} />
                 <YAxis
                   type="category"
                   dataKey="game_name"
-                  width={140}
+                  width={isNarrow ? 90 : 140}
                   stroke="#a0a0a0"
-                  tick={{ fill: '#a0a0a0', fontSize: 12 }}
+                  tick={{ fill: '#a0a0a0', fontSize: isNarrow ? 11 : 12 }}
+                  tickFormatter={(v) => (isNarrow ? truncateLabel(v, 8) : v)}
                 />
                 <Tooltip
                   {...TOOLTIP_STYLE}
@@ -258,16 +286,20 @@ export default function StatsTab() {
             <div style={{ color: 'var(--admin-text-sub)', textAlign: 'center', padding: '40px' }}>데이터 수집 중</div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '32px', flexWrap: 'wrap' }}>
-              <ResponsiveContainer width={220} height={220}>
+              {/* 고정 220px 대신 부모 폭 기준 — 폰에서는 라벨이 잘리므로 퍼센트만 표시하고 이름은 범례로 */}
+              <div style={{ flex: '0 1 260px', minWidth: 200, maxWidth: 260 }}>
+              <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie
                     data={pieData}
                     cx="50%"
                     cy="50%"
-                    outerRadius={90}
+                    outerRadius={isNarrow ? 70 : 90}
                     dataKey="value"
                     nameKey="name"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => (
+                      isNarrow ? `${(percent * 100).toFixed(0)}%` : `${name} ${(percent * 100).toFixed(0)}%`
+                    )}
                     labelLine={{ stroke: '#a0a0a0' }}
                   >
                     {pieData.map((entry, index) => (
@@ -280,6 +312,7 @@ export default function StatsTab() {
                   <Tooltip {...TOOLTIP_STYLE} />
                 </PieChart>
               </ResponsiveContainer>
+              </div>
               {/* 범례 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {pieData.map((entry) => (
@@ -301,6 +334,7 @@ export default function StatsTab() {
           {popularSearches.length === 0 ? (
             <div style={{ color: 'var(--admin-text-sub)', textAlign: 'center', padding: '40px' }}>아직 검색 로그가 없습니다.</div>
           ) : (
+            <div className="admin-table-wrap">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
@@ -332,6 +366,7 @@ export default function StatsTab() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

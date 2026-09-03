@@ -820,13 +820,20 @@ function DashboardTab({ games, loading, onReload, users }) {
     return () => clearTimeout(timer);
   }, [logSearchInput]);
 
-  // 외부 클릭 시 연락 팝오버 닫기 (트리거의 stopPropagation이 자기 토글 보호)
+  // 외부 탭 시 연락 팝오버 닫기.
+  // click 대신 pointerdown: iOS Safari는 클릭 핸들러 없는 요소를 탭해도 click을 document까지 올리지 않는다.
   useEffect(() => {
     if (openContactId === null) return;
-    const handler = () => setOpenContactId(null);
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
+    const handler = (e) => {
+      if (e.target.closest?.('[data-contact-popover]')) return;
+      setOpenContactId(null);
+    };
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
   }, [openContactId]);
+
+  // 좁은 화면에서는 팝오버를 앵커 대신 화면 하단 시트로 띄운다 (오른쪽 밖으로 잘리는 문제)
+  const isNarrowScreen = typeof window !== 'undefined' && window.innerWidth < 600;
 
   return (
     <div>
@@ -929,7 +936,7 @@ function DashboardTab({ games, loading, onReload, users }) {
 
                   {/* 대여자 연락처 팝오버 — 연체된 사용자에게 빠르게 연락 */}
                   {game.renter && (game.rentals?.length > 0) && (
-                    <span style={{ position: "relative", display: "inline-block", marginLeft: "6px" }}>
+                    <span style={{ position: "relative", display: "inline-block", marginLeft: "6px" }} data-contact-popover>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -943,14 +950,14 @@ function DashboardTab({ games, loading, onReload, users }) {
                           border: "none",
                           cursor: "pointer",
                           fontSize: "1em",
-                          padding: "2px 6px",
+                          padding: "8px 10px",
                           color: "var(--admin-primary)",
                           borderRadius: "4px",
                         }}
                       >📞</button>
                       {openContactId === game.id && (
                         <div
-                          style={styles.contactPopover}
+                          style={isNarrowScreen ? styles.contactSheet : styles.contactPopover}
                           onClick={(e) => e.stopPropagation()}
                           role="dialog"
                         >
@@ -983,8 +990,8 @@ function DashboardTab({ games, loading, onReload, users }) {
                             onClick={() => setOpenContactId(null)}
                             style={{
                               marginTop: "8px",
-                              padding: "4px 10px",
-                              fontSize: "0.8em",
+                              padding: "8px 14px",
+                              fontSize: "0.85em",
                               background: "transparent",
                               border: "1px solid var(--admin-border)",
                               color: "var(--admin-text-sub)",
@@ -1033,10 +1040,10 @@ function DashboardTab({ games, loading, onReload, users }) {
               </div>
 
               {/* 상태별 버튼 로직 [IMPROVED] */}
-              <div style={{ display: "flex", gap: "5px" }}>
-                <button onClick={() => handleShowLogs(game)} style={{ ...actionBtnStyle("#2c3e50"), color: "#eee", border: "1px solid #555", padding: "6px 12px", fontSize: "1.1em" }} title="이력 조회">📜</button>
+              <div className="admin-btn-row">
+                <button onClick={() => handleShowLogs(game)} style={{ ...actionBtnStyle("#2c3e50"), color: "#eee", border: "1px solid #555", padding: "6px 12px", fontSize: "1.1em" }} title="이력 조회" aria-label="이력 조회">📜</button>
                 <button onClick={() => openEditModal(game)} style={actionBtnStyle("#8e44ad")}>✏️ 수정</button>
-                <button onClick={() => handleDelete(game)} style={{ ...actionBtnStyle("transparent"), color: "#e74c3c", border: "1px solid #e74c3c", width: "30px", padding: 0 }}>🗑️</button>
+                <button onClick={() => handleDelete(game)} style={{ ...actionBtnStyle("transparent"), color: "#e74c3c", border: "1px solid #e74c3c", padding: "6px 10px", marginLeft: "8px" }} title="게임 삭제" aria-label="게임 삭제">🗑️</button>
 
                 {/* 1. 수령/취소 (예약이 있는 경우) */}
                 {((game.rentals && game.rentals.some(r => r.type === 'DIBS')) || game.status === '예약됨') && (
@@ -1064,7 +1071,7 @@ function DashboardTab({ games, loading, onReload, users }) {
 
                 {/* 3. 현장대여 (재고가 남아있는 경우) */}
                 {game.available_count > 0 && (
-                  <button onClick={() => handleDirectRent(game)} style={{ ...actionBtnStyle("var(--admin-card-bg)"), marginLeft: "5px" }}>✋ 현장대여</button>
+                  <button onClick={() => handleDirectRent(game)} style={actionBtnStyle("var(--admin-card-bg)")}>✋ 현장대여</button>
                 )}
               </div>
             </div>
@@ -1084,10 +1091,10 @@ function DashboardTab({ games, loading, onReload, users }) {
 
       {isLogModalOpen && (
         <div style={styles.modalOverlay}>
-          <div style={styles.modalContent}>
-            <h3 style={{ marginTop: 0, marginBottom: "15px", borderBottom: "1px solid var(--admin-border)", paddingBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>📜 [{logGameName}] 대여 이력</span>
-              <button onClick={() => setIsLogModalOpen(false)} style={{ background: "none", border: "none", fontSize: "1.2em", cursor: "pointer", color: "var(--admin-text-main)" }}>✖️</button>
+          <div className="admin-modal-scroll" style={styles.modalContent}>
+            <h3 style={{ marginTop: 0, marginBottom: "15px", borderBottom: "1px solid var(--admin-border)", paddingBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
+              <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>📜 [{logGameName}] 대여 이력</span>
+              <button onClick={() => setIsLogModalOpen(false)} aria-label="닫기" style={{ background: "none", border: "none", fontSize: "1.2em", cursor: "pointer", color: "var(--admin-text-main)", padding: "6px 10px", flexShrink: 0 }}>✖️</button>
             </h3>
 
             {/* [NEW] 로그 필터 및 검색 컨트롤 */}
@@ -1126,7 +1133,8 @@ function DashboardTab({ games, loading, onReload, users }) {
               </div>
             </div>
 
-            <div style={{ maxHeight: "500px", overflowY: "auto", fontSize: "0.9em" }}>
+            {/* 세로·가로 스크롤을 한 컨테이너가 담당 → thead sticky 와 가로 스크롤이 같이 동작 */}
+            <div className="admin-table-wrap" style={{ maxHeight: "60vh", overflow: "auto", fontSize: "0.9em" }}>
               {(() => {
                 // [NEW] 필터링 적용 로직
                 const filteredLogs = gameLogs.filter(log => {
@@ -1160,14 +1168,14 @@ function DashboardTab({ games, loading, onReload, users }) {
                   <table className="admin-table">
                     <thead style={{ position: "sticky", top: 0, background: "var(--admin-card-bg)", zIndex: 1 }}>
                       <tr style={{ textAlign: "left", borderBottom: "2px solid var(--admin-border)" }}>
-                        <th style={{ padding: "10px", width: "130px", color: "var(--admin-text-sub)" }}>날짜</th>
-                        <th style={{ padding: "10px", width: "60px", color: "var(--admin-text-sub)", textAlign: "center" }}>행동</th>
+                        <th style={{ padding: "10px", minWidth: "110px", color: "var(--admin-text-sub)" }}>날짜</th>
+                        <th style={{ padding: "10px", minWidth: "60px", color: "var(--admin-text-sub)", textAlign: "center" }}>행동</th>
                         {/* 전체 보기 모드일 때만 게임명 표시 */}
                         {logGameName === "전체" && (
-                          <th style={{ padding: "10px", width: "150px", color: "var(--admin-text-sub)" }}>게임명</th>
+                          <th style={{ padding: "10px", minWidth: "120px", color: "var(--admin-text-sub)" }}>게임명</th>
                         )}
                         <th style={{ padding: "10px", color: "var(--admin-text-sub)" }}>내용</th>
-                        <th style={{ padding: "10px", width: "150px", color: "var(--admin-text-sub)" }}>대여자 정보</th>
+                        <th style={{ padding: "10px", minWidth: "130px", color: "var(--admin-text-sub)" }}>대여자 정보</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1249,15 +1257,15 @@ function DashboardTab({ games, loading, onReload, users }) {
 
                             {/* 전체 보기 모드일 때만 게임명 표시 */}
                             {logGameName === "전체" && (
-                              <td style={{ padding: "10px 5px", color: "var(--admin-primary)", fontWeight: "bold", fontSize: "0.95em" }}>
+                              <td className="wrap" style={{ padding: "10px 5px", color: "var(--admin-primary)", fontWeight: "bold", fontSize: "0.95em", minWidth: "120px" }}>
                                 {log.gameName || "-"}
                               </td>
                             )}
 
-                            <td style={{ padding: "10px 5px", color: "var(--admin-text-main)" }}>
+                            <td className="wrap" style={{ padding: "10px 5px", color: "var(--admin-text-main)" }}>
                               {mainText}
                             </td>
-                            <td style={{ padding: "10px 5px" }}>
+                            <td className="wrap" style={{ padding: "10px 5px", minWidth: "130px" }}>
                               {userInfo ? (
                                 <div style={{
                                   fontSize: "0.9em",
@@ -1383,7 +1391,8 @@ const styles = {
     justifyContent: "center",
     zIndex: 9999
   },
-  modalContent: { background: "var(--admin-card-bg)", color: "var(--admin-text-main)", padding: "25px", borderRadius: "15px", width: "90%", maxWidth: "800px", boxShadow: "0 5px 20px rgba(0,0,0,0.5)", maxHeight: "90vh", overflowY: "auto" },
+  // maxHeight/overflow 는 .admin-modal-scroll 클래스가 담당 (85dvh, 모바일 주소창 대응)
+  modalContent: { background: "var(--admin-card-bg)", color: "var(--admin-text-main)", padding: "20px", borderRadius: "15px", width: "95%", maxWidth: "800px", boxSizing: "border-box", boxShadow: "0 5px 20px rgba(0,0,0,0.5)" },
   cancelBtn: { padding: "10px 20px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.2)", background: "rgba(108, 117, 125, 0.9)", color: "white", fontWeight: "600", cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)" },
   contactPopover: {
     position: "absolute",
@@ -1395,7 +1404,23 @@ const styles = {
     borderRadius: "8px",
     boxShadow: "0 6px 16px rgba(0,0,0,0.4)",
     minWidth: "220px",
+    maxWidth: "calc(100vw - 32px)",
     zIndex: 50,
+  },
+  // 좁은 화면(600px 미만): 앵커 위치와 무관하게 화면 하단 시트로 표시
+  contactSheet: {
+    position: "fixed",
+    left: "12px",
+    right: "12px",
+    bottom: "12px",
+    background: "var(--admin-card-bg)",
+    border: "1px solid var(--admin-border)",
+    padding: "12px 14px",
+    borderRadius: "10px",
+    boxShadow: "0 -6px 20px rgba(0,0,0,0.5)",
+    zIndex: 60,
+    maxHeight: "60vh",
+    overflowY: "auto",
   },
   contactRow: {
     padding: "6px 0",

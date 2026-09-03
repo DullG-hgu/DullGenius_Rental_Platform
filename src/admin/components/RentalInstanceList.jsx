@@ -47,12 +47,14 @@ const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs,
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
+                            flexWrap: "wrap",
+                            gap: "8px",
                             background: "rgba(255,255,255,0.05)",
                             padding: "8px 10px",
                             borderRadius: "6px",
                             border: "1px solid rgba(255,255,255,0.05)"
                         }}>
-                            <div style={{ flex: 1 }}>
+                            <div style={{ flex: "1 1 140px", minWidth: 0 }}>
                                 <div style={{ fontSize: "0.9em", fontWeight: "bold", display: "flex", alignItems: "center", gap: "5px" }}>
                                     <span style={{ color: isHold ? "#16a085" : isDibs ? "#f39c12" : "#3498db", fontSize: "0.8em" }}>
                                         {isHold ? "🏷️ 단체" : isDibs ? "⚡ 찜" : "📦 대여"}
@@ -69,7 +71,7 @@ const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs,
                                     단체대여 신청 탭에서 관리
                                 </div>
                             ) : isDibs ? (
-                                <div style={{ display: 'flex', gap: '5px' }}>
+                                <div className="admin-btn-row">
                                     <button
                                         onClick={() => onReceive(game, r.rental_id)}
                                         style={btnStyle("#f39c12")}
@@ -84,7 +86,7 @@ const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs,
                                     </button>
                                 </div>
                             ) : (
-                                <div style={{ display: 'flex', gap: '5px' }}>
+                                <div className="admin-btn-row">
                                     <button
                                         onClick={() => onExtend(game, r.rental_id)}
                                         style={btnStyle("#8e44ad")}
@@ -113,9 +115,9 @@ const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs,
     );
 };
 
-// 내부 버튼 스타일
+// 내부 버튼 스타일 — "반납 확인" 옆에 "분실"이 있어 터치 타깃을 충분히 준다
 const btnStyle = (bg) => ({
-    padding: "2px 8px",
+    padding: "8px 12px",
     background: bg,
     color: "white",
     border: "none",

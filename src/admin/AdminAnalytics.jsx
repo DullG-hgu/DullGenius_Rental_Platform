@@ -181,8 +181,13 @@ export default function AdminAnalytics() {
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = `관리자-활동로그_${appliedFilters.startDate}_${appliedFilters.endDate}.csv`;
+    // 모바일 브라우저는 DOM에 붙지 않은 앵커나 즉시 revoke 된 blob URL 을 무시할 수 있다
+    document.body.appendChild(anchor);
     anchor.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    }, 1000);
   };
 
   return (

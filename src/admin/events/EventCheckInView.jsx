@@ -1,6 +1,7 @@
 // 출석 체크 — 학번/이름 검색 + 1-탭 체크인
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useToast } from '../../contexts/ToastContext';
+import ConfirmModal from '../../components/ConfirmModal';
 import { adminCheckIn } from './api_events';
 
 const fmt = (iso) => iso ? new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-';
@@ -11,6 +12,7 @@ export default function EventCheckInView({ registrations, reload }) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('eligible'); // eligible | all | checked
   const [busyId, setBusyId] = useState(null);
+  const [confirmReg, setConfirmReg] = useState(null); // 미입금 상태 출석 확인 모달
   const inputRef = useRef(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
@@ -46,11 +48,14 @@ export default function EventCheckInView({ registrations, reload }) {
     checked: eligible.filter((r) => r.checked_in_at).length,
   }), [eligible]);
 
-  const checkIn = async (reg) => {
+  const checkIn = (reg) => {
     if (reg.checked_in_at) return;
-    if (reg.status !== 'paid') {
-      if (!confirm(`${reg.applicant_name}님은 ${reg.status} 상태입니다. 그래도 출석 체크할까요?`)) return;
-    }
+    // 네이티브 confirm 은 모바일 브라우저의 "대화상자 차단"에 걸리면 조용히 false 를 돌려준다 → 모달로
+    if (reg.status !== 'paid') { setConfirmReg(reg); return; }
+    doCheckIn(reg);
+  };
+
+  const doCheckIn = async (reg) => {
     setBusyId(reg.id);
     try {
       await adminCheckIn(reg.id);
@@ -101,7 +106,8 @@ export default function EventCheckInView({ registrations, reload }) {
         </div>
       </div>
 
-      <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+      {/* overflow:hidden 이면 좁은 화면에서 맨 오른쪽 "출석" 버튼 열이 잘려 누를 수 없다 → 가로 스크롤 래퍼 */}
+      <div className="admin-table-wrap" style={{ ...card, padding: 0 }}>
         {rows.length === 0 ? (
           <div style={{ padding: 30, textAlign: 'center', color: 'var(--admin-text-sub)' }}>
             {search ? '일치하는 신청자가 없습니다.' : '출석 대상이 없습니다.'}
@@ -111,25 +117,19 @@ export default function EventCheckInView({ registrations, reload }) {
             <thead>
               <tr>
                 <th style={th}>이름</th>
+                <th style={th}></th>
                 <th style={th}>학번</th>
                 <th style={th}>등급</th>
                 <th style={th}>팀</th>
                 <th style={th}>상태</th>
                 <th style={th}>체크인</th>
-                <th style={th}></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} style={{ borderTop: '1px solid var(--admin-border)', background: r.checked_in_at ? 'rgba(39,174,96,0.06)' : undefined }}>
                   <td style={{ ...td, fontWeight: 600 }}>{r.applicant_name}</td>
-                  <td style={td}>{r.applicant_student_id || '-'}</td>
-                  <td style={td}>{TIER_LABEL[r.membership_tier] || r.membership_tier}</td>
-                  <td style={td}>{r.team?.team_name || <span style={{ color: 'var(--admin-text-sub)' }}>개인</span>}</td>
-                  <td style={td}>{r.status}</td>
-                  <td style={{ ...td, color: r.checked_in_at ? '#27ae60' : 'var(--admin-text-sub)' }}>
-                    {r.checked_in_at ? `✓ ${fmt(r.checked_in_at)}` : '-'}
-                  </td>
+                  {/* 출석 버튼을 이름 바로 옆에 — 폰에서 스와이프 없이 누를 수 있게 */}
                   <td style={td}>
                     {r.checked_in_at ? (
                       <span style={{ color: '#27ae60', fontWeight: 600 }}>완료</span>
@@ -139,12 +139,30 @@ export default function EventCheckInView({ registrations, reload }) {
                       </button>
                     )}
                   </td>
+                  <td style={td}>{r.applicant_student_id || '-'}</td>
+                  <td style={td}>{TIER_LABEL[r.membership_tier] || r.membership_tier}</td>
+                  <td style={td}>{r.team?.team_name || <span style={{ color: 'var(--admin-text-sub)' }}>개인</span>}</td>
+                  <td style={td}>{r.status}</td>
+                  <td style={{ ...td, color: r.checked_in_at ? '#27ae60' : 'var(--admin-text-sub)' }}>
+                    {r.checked_in_at ? `✓ ${fmt(r.checked_in_at)}` : '-'}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!confirmReg}
+        onClose={() => setConfirmReg(null)}
+        onConfirm={() => { if (confirmReg) doCheckIn(confirmReg); }}
+        title="⚠️ 미입금 상태 출석"
+        message={confirmReg ? `${confirmReg.applicant_name}님은 "${confirmReg.status}" 상태입니다.\n그래도 출석 체크할까요?` : ''}
+        confirmText="출석 체크"
+        cancelText="취소"
+        type="warning"
+      />
     </div>
   );
 }
@@ -160,7 +178,7 @@ function Stat({ label, n, color }) {
 
 const card = { background: 'var(--admin-card-bg)', border: '1px solid var(--admin-border)', borderRadius: 8 };
 const table = { width: '100%', borderCollapse: 'collapse' };
-const th = { padding: '10px 12px', textAlign: 'left', color: 'var(--admin-text-sub)', fontSize: '0.78rem', fontWeight: 600, borderBottom: '1px solid var(--admin-border)' };
-const td = { padding: '10px 12px', color: 'var(--admin-text-main)', fontSize: '0.9rem' };
+const th = { padding: '10px 12px', textAlign: 'left', color: 'var(--admin-text-sub)', fontSize: '0.78rem', fontWeight: 600, borderBottom: '1px solid var(--admin-border)', whiteSpace: 'nowrap' };
+const td = { padding: '10px 12px', color: 'var(--admin-text-main)', fontSize: '0.9rem', whiteSpace: 'nowrap' };
 const input = { padding: '8px 12px', background: 'var(--admin-bg)', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, fontSize: '0.9rem' };
 const btnPrimary = { padding: '8px 16px', background: 'var(--admin-primary)', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' };

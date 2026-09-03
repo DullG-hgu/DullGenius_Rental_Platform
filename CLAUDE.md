@@ -53,6 +53,7 @@ React + Vite + Supabase / 배포: Netlify (`netlify.toml`)
 | `database/_LIVE/schema.sql` | 모든 테이블 + 컬럼 정의 |
 | `database/_LIVE/rls.sql` | 모든 RLS 정책 |
 | `database/_LIVE/types.sql` | 커스텀 Enum 타입 |
+| `database/_LIVE/grants.sql` | anon/authenticated 실효 권한 — 함수 EXECUTE, 테이블·컬럼 GRANT. **권한 변경 후 여기서 회귀 확인** |
 
 **MCP 도구 사용:**
 - DDL (CREATE/ALTER/함수 생성): `mcp__supabase__apply_migration`
@@ -62,6 +63,27 @@ React + Vite + Supabase / 배포: Netlify (`netlify.toml`)
 **권한 함수:**
 - `is_admin()` → admin, executive만 허용 (kiosk 제외)
 - `is_kiosk_or_admin()` → admin, executive, kiosk 허용 (키오스크 RPC 전용)
+- 두 함수 모두 **anon도 EXECUTE 가능해야 한다** (auth.uid() 기준이라 anon에선 항상 false, 노출 없음).
+  anon 권한을 회수하면 `TO public` 정책이 이 함수를 부르는 순간 비로그인 홈·검색·키오스크 반납이
+  전부 `permission denied`로 죽는다 (2026-08 장애 원인). **회수 금지.**
+
+**RLS 정책 작성 규칙:**
+- 정책에는 `TO anon` 또는 `TO authenticated`를 명시한다. 대시보드 기본값 `TO public`은 쓰지 않는다
+- 관리자·소유자 조건(`is_admin()`, `auth.uid() = ...`)이 들어가는 정책은 `TO authenticated`
+- 관리자 전용 SECURITY DEFINER RPC는 `REVOKE EXECUTE ... FROM PUBLIC, anon` 을 함께 적는다.
+  CREATE FUNCTION 기본값이 PUBLIC EXECUTE라 **anon만 회수하면 무효**다. 적용 후 `_LIVE/grants.sql`에서 anon 열이 `-`인지 확인
+  (예외: `ingest_rental_request` — Google Apps Script가 anon 키 + 공유 시크릿으로 호출)
+
+**비회원(anon) 노출 면 (2026-09-02 기준):**
+- anon은 **모든 테이블에 쓰기 권한이 없다** (INSERT/UPDATE/DELETE 회수, 기본 권한도 회수).
+  비회원이 뭔가를 기록해야 하면 SECURITY DEFINER RPC로 만든다. 테이블 GRANT를 되돌리지 말 것
+- `rentals`는 anon에게 `rental_id, game_id, type, returned_at, due_date, borrowed_at` 컬럼만 열려 있다.
+  비로그인 상태에서 `from('rentals').select('*')`는 **permission denied**. 새 테이블을 anon에게 열 때도
+  `GRANT SELECT (컬럼...)` 로 필요한 컬럼만 준다
+- 홈 목록·상세는 `get_games_with_rentals()` / `get_game_with_rentals(p_game_id)` RPC만 쓴다.
+  둘 다 SECURITY DEFINER이며 `user_id`·`renter_name`·회원 이름은 **본인 행 또는 관리자에게만** 채워진다.
+  `rentals`를 화면에서 직접 조회하는 코드를 새로 만들지 말 것
+- 비회원이 볼 수 있는 전체 목록은 `grep 'TO anon' database/_LIVE/rls.sql` 로 확인한다
 
 ---
 
@@ -145,3 +167,27 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 - 서버에서만 쓸 값은 `netlify/functions/`에서 `process.env`로 읽는다
 - `npm run validate:env`로 배포 전 필수값·금지된 `VITE_` secret 이름을 검사한다
 - 키오스크 운영 주소는 `https://dullgrental.netlify.app/kiosk`다. 예전 주소의 PWA는 제거 후 재설치한다
+
+---
+
+## 관리자 화면 모바일 검증 절차 (2026-09-03 확립)
+
+관리자 페이지는 로그인이 필요해 헤드리스 하네스로는 셸(헤더·탭·표)만 볼 수 있다.
+실제 탭·모달까지 폰 폭으로 확인할 때는 아래 순서를 쓴다. **자격증명은 어떤 형태로도 Claude에게 주지 않는다.**
+
+1. `npm run dev -- --host 0.0.0.0 --port 5173` 를 띄운다.
+2. 사용자가 **자기 Chrome에서 직접** `http://localhost:5173/admin-secret` 에 관리자 계정으로 로그인한다.
+3. Claude in Chrome 확장으로 같은 출처의 가벼운 페이지(`/manifest.json`)를 열고, `javascript_tool` 로
+   `<iframe src="/admin-secret" style="width:390px;height:660px">` 를 주입한다.
+   같은 출처라 세션이 공유되어 iframe 안이 로그인 상태로 뜬다. (Chrome 창 자체는 500px 아래로 안 줄어든다)
+4. iframe 의 `contentDocument` 를 `javascript_tool` 로 조작·측정한다. 기준:
+   `documentElement.scrollWidth <= innerWidth`, 높이 32px 미만 버튼 0개, font-size 16px 미만 입력 0개(color 제외).
+   `browser_batch` 로 탭 클릭 → 대기 → 스크린샷 → 측정을 묶어야 빠르다.
+5. 저장·삭제는 실행하지 않고 모달은 전부 「취소」로 닫는다. 게임 추가는 이미 있는 이름(예: 카탄)으로 넣어 중복 모달에서 취소하면 저장 없이 폼이 열린다.
+
+주의:
+- **Vite HMR 이 WSL 의 `/mnt/c` 경로에서 동작하지 않는다.** 파일을 고쳐도 옛 CSS/JS 를 계속 서빙한다.
+  dev 서버를 재시작해야 반영된다. 종료는 `ss -ltnp` 로 5173 의 PID 를 찾아 `kill` (`pkill -f vite` 는 실행 중인 셸까지 죽인다).
+- 공용 CSS 계약: `.admin-table-wrap` `.admin-btn-row` `.admin-grid-auto(--min)` `.admin-modal-scroll` `.admin-header-actions`.
+  (pointer:coarse) 또는 800px 이하에서 입력 16px·버튼 min-height 36px 은 `Admin.css` 가 전역 처리하므로 인라인으로 다시 쓰지 않는다.
+- 네이티브 `confirm/prompt/alert` 는 관리자 영역에서 쓰지 않는다(모바일 브라우저의 대화상자 차단 옵션에 걸리면 조용히 실패). `ConfirmModal`/`PromptModal` 을 쓴다.

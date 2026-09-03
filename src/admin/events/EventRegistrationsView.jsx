@@ -1,6 +1,7 @@
 // 신청자 명단 — 필터·검색·액션 통합 테이블
 import React, { useState, useMemo } from 'react';
 import { useToast } from '../../contexts/ToastContext';
+import PromptModal from '../../components/PromptModal';
 import {
   markPaid, unmarkPaid, adminCheckIn, adminCancel, adminRefund,
   promoteWaitlist, adminInviteUser, adminRegister, searchProfiles,
@@ -27,6 +28,7 @@ export default function EventRegistrationsView({ event, registrations, teams, re
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false); // 'register' | 'invite' | null
+  const [cancelTarget, setCancelTarget] = useState(null); // 운영자 취소 사유 입력 모달 대상
 
   const filtered = useMemo(() => {
     let rows = registrations;
@@ -97,15 +99,16 @@ export default function EventRegistrationsView({ event, registrations, teams, re
             {teams.map((t) => <option key={t.id} value={t.id}>{t.team_name}</option>)}
           </select>
         )}
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="이름/학번/연락처 검색" style={{ ...input, flex: 1, minWidth: 200 }} />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="이름/학번/연락처 검색" style={{ ...input, flex: '1 1 160px', minWidth: 0 }} />
       </div>
 
-      {/* 테이블 */}
-      <div style={{ overflowX: 'auto', background: 'var(--admin-card-bg)', borderRadius: 8 }}>
+      {/* 테이블 — 10열이라 폰에서는 가로 스크롤. 액션 열을 이름 옆에 둬서 스와이프 없이 누를 수 있게 */}
+      <div className="admin-table-wrap" style={{ background: 'var(--admin-card-bg)', borderRadius: 8 }}>
         <table style={table}>
           <thead>
             <tr>
               <th style={th}>이름</th>
+              <th style={th}>액션</th>
               <th style={th}>학번</th>
               <th style={th}>연락처</th>
               <th style={th}>등급</th>
@@ -114,19 +117,21 @@ export default function EventRegistrationsView({ event, registrations, teams, re
               <th style={th}>상태</th>
               <th style={th}>입금자명</th>
               <th style={th}>출석</th>
-              <th style={th}>액션</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={10} style={{ ...td, textAlign: 'center', padding: 40, color: 'var(--admin-text-sub)' }}>해당 조건의 신청자가 없습니다.</td></tr>
+              <tr><td colSpan={10} style={{ ...td, textAlign: 'center', padding: 40, color: 'var(--admin-text-sub)', whiteSpace: 'normal' }}>해당 조건의 신청자가 없습니다.</td></tr>
             ) : filtered.map((r) => {
               const status = STATUS_LABEL[r.status] || { text: r.status, bg: '#666' };
               return (
                 <tr key={r.id} style={{ borderTop: '1px solid var(--admin-border)' }}>
-                  <td style={td}>
+                  <td style={{ ...td, whiteSpace: 'normal', minWidth: 90 }}>
                     <div>{r.applicant_name}</div>
                     {r.is_invited && <span style={{ fontSize: '0.7rem', color: '#9b59b6' }}>초대</span>}
+                  </td>
+                  <td style={{ ...td, whiteSpace: 'normal', minWidth: 140 }}>
+                    <RowActions reg={r} busy={busy === r.id} onAction={wrap} onCancelRequest={setCancelTarget} />
                   </td>
                   <td style={td}>{r.applicant_student_id || '-'}</td>
                   <td style={td}>{r.applicant_phone || '-'}</td>
@@ -146,15 +151,28 @@ export default function EventRegistrationsView({ event, registrations, teams, re
                     )}
                   </td>
                   <td style={td}>{r.checked_in_at ? '✓' : '-'}</td>
-                  <td style={td}>
-                    <RowActions reg={r} busy={busy === r.id} onAction={wrap} />
-                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
+
+      {/* 운영자 취소 사유 — window.prompt 는 모바일 "대화상자 차단"에 걸리면 항상 null 을 돌려줘 취소가 조용히 무시된다 */}
+      <PromptModal
+        isOpen={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={(reason) => {
+          const reg = cancelTarget;
+          if (!reg) return;
+          wrap(reg.id, '운영자 취소', () => adminCancel(reg.id, (reason || '').trim() || null));
+        }}
+        title="🚫 운영자 취소"
+        message={cancelTarget ? `${cancelTarget.applicant_name}님의 신청을 취소합니다. 사유는 선택 사항입니다.` : ''}
+        placeholder="취소 사유 (선택)"
+        confirmText="취소 처리"
+        cancelText="닫기"
+      />
 
       {showAddModal === 'register' && (
         <ManualAddModal mode="register" event={event} teams={teams} onClose={() => setShowAddModal(null)} onDone={() => { setShowAddModal(null); reload(); }} />
@@ -166,7 +184,7 @@ export default function EventRegistrationsView({ event, registrations, teams, re
   );
 }
 
-function RowActions({ reg, busy, onAction }) {
+function RowActions({ reg, busy, onAction, onCancelRequest }) {
   const s = reg.status;
   return (
     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -183,11 +201,7 @@ function RowActions({ reg, busy, onAction }) {
         <button disabled={busy} onClick={() => onAction(reg.id, '대기자 승계', () => promoteWaitlist(reg.id))} style={btnSm}>승계</button>
       )}
       {['pending', 'paid', 'waitlisted'].includes(s) && (
-        <button disabled={busy} onClick={() => {
-          const reason = prompt('취소 사유 (선택)');
-          if (reason === null) return;
-          onAction(reg.id, '운영자 취소', () => adminCancel(reg.id, reason || null));
-        }} style={{ ...btnSm, color: 'var(--admin-danger)' }}>취소</button>
+        <button disabled={busy} onClick={() => onCancelRequest(reg)} style={{ ...btnSm, color: 'var(--admin-danger)' }}>취소</button>
       )}
     </div>
   );
@@ -323,7 +337,7 @@ function ManualAddModal({ mode, event, teams = [], onClose, onDone }) {
 function Modal({ title, onClose, children }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--admin-card-bg)', border: '1px solid var(--admin-border)', borderRadius: 8, padding: 24, width: '100%', maxWidth: 520, color: 'var(--admin-text-main)' }}>
+      <div onClick={(e) => e.stopPropagation()} className="admin-modal-scroll" style={{ background: 'var(--admin-card-bg)', border: '1px solid var(--admin-border)', borderRadius: 8, padding: 24, width: '100%', maxWidth: 520, color: 'var(--admin-text-main)' }}>
         <h3 style={{ margin: '0 0 16px' }}>{title}</h3>
         {children}
       </div>
@@ -341,11 +355,11 @@ function Stat({ label, n, color }) {
 }
 
 const table = { width: '100%', borderCollapse: 'collapse' };
-const th = { padding: '10px 12px', textAlign: 'left', color: 'var(--admin-text-sub)', fontSize: '0.78rem', fontWeight: 600, borderBottom: '1px solid var(--admin-border)' };
-const td = { padding: '10px 12px', color: 'var(--admin-text-main)', fontSize: '0.85rem', verticalAlign: 'top' };
+const th = { padding: '10px 12px', textAlign: 'left', color: 'var(--admin-text-sub)', fontSize: '0.78rem', fontWeight: 600, borderBottom: '1px solid var(--admin-border)', whiteSpace: 'nowrap' };
+const td = { padding: '10px 12px', color: 'var(--admin-text-main)', fontSize: '0.85rem', verticalAlign: 'top', whiteSpace: 'nowrap' };
 const input = { padding: '6px 10px', background: 'var(--admin-bg)', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, fontSize: '0.85rem' };
 const btn = { padding: '6px 12px', background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, cursor: 'pointer', fontSize: '0.85rem' };
-const btnSm = { padding: '4px 8px', background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem' };
+const btnSm = { padding: '6px 10px', background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem' };
 const btnPrimary = { padding: '6px 14px', background: 'var(--admin-primary)', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' };
 const modalInput = { padding: '8px 10px', background: 'var(--admin-bg)', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)', borderRadius: 4, fontSize: '0.9rem' };
 const modalField = { display: 'flex', flexDirection: 'column', gap: 4, color: 'var(--admin-text-sub)', fontSize: '0.85rem' };

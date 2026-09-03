@@ -227,7 +227,7 @@ function Admin() {
       {/* 상단 헤더 */}
       <div className="admin-header">
         <h2>🔓 관리자 페이지</h2>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        <div className="admin-header-actions">
           {/* 오피스아워 빠른 토글 */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", background: "var(--admin-card-bg)", borderRadius: "8px", border: "1px solid var(--admin-border)" }}>
             <span style={{ fontSize: "0.85rem", color: isOfficeOpen ? "#27ae60" : "var(--admin-text-sub)", fontWeight: "bold" }}>

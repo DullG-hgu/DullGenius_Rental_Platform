@@ -78,8 +78,8 @@ function SystemTab({ users }) {
         showConfirmModal(
             `회비 검사 ${action}`,
             `회비 검사를 ${action}하시겠습니까?\n\n${newState
-                ? '⚠️ 활성화하면 회비를 내지 않은 회원은 게임을 대여할 수 없습니다.'
-                : '⚠️ 비활성화하면 모든 회원이 회비 납부 없이 게임을 대여할 수 있습니다. (무료 대여 기간, 축제 등)'}`,
+                ? '⚠️ 활성화하면 회비를 내지 않은 회원은 키오스크 간편대여·예약수령이 막힙니다.'
+                : '⚠️ 비활성화하면 회비 미납 회원도 키오스크에서 대여·수령할 수 있습니다. (무료 대여 기간, 축제 등)'}`,
             async () => {
                 try {
                     await togglePaymentCheck(newState);
@@ -94,10 +94,23 @@ function SystemTab({ users }) {
         );
     };
 
+    // 숫자 입력 정리: 빈 값·범위 밖은 기본값/경계로 (onBlur 와 저장 시에만 적용 — 입력 중엔 빈칸 허용)
+    const clampInt = (value, min, max, fallback) => {
+        const n = parseInt(value, 10);
+        if (Number.isNaN(n)) return fallback;
+        return Math.min(max, Math.max(min, n));
+    };
+
     // 오피스아워 설정 저장
     const handleSaveOfficeHoursConfig = async () => {
         try {
-            await saveOfficeHoursConfig(officeHoursConfig);
+            const normalized = {
+                ...officeHoursConfig,
+                auto_close_hour: clampInt(officeHoursConfig.auto_close_hour, 0, 23, 0),
+                auto_close_minute: clampInt(officeHoursConfig.auto_close_minute, 0, 59, 0),
+            };
+            setOfficeHoursConfig(normalized);
+            await saveOfficeHoursConfig(normalized);
             showToast('✅ 오피스아워 설정이 저장되었습니다.', { type: 'success' });
         } catch (e) {
             console.error('[SystemTab] 오피스아워 설정 저장 실패:', e);
@@ -158,7 +171,7 @@ function SystemTab({ users }) {
             <div className="admin-card" style={{ marginTop: '30px' }}>
                 <h4 style={{ marginBottom: '15px' }}>💳 회비 검사 설정</h4>
                 <p style={{ color: 'var(--admin-text-sub)', fontSize: '0.9em', marginBottom: '20px' }}>
-                    회비 검사를 비활성화하면 모든 회원이 회비 납부 없이 게임을 대여할 수 있습니다.<br />
+                    회비 검사는 키오스크 간편대여·예약수령에 적용됩니다. 비활성화하면 회비 미납 회원도 키오스크에서 대여할 수 있습니다.<br />
                     (무료 대여 기간, 축제, 체험 행사 등에 활용)
                 </p>
 
@@ -196,22 +209,26 @@ function SystemTab({ users }) {
                     {/* 자동 퇴근 시간 */}
                     <div style={{ marginBottom: '20px' }}>
                         <label style={styles.fieldLabel}>자동 퇴근 시간</label>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
                             <input
-                                type="number" min="0" max="23"
-                                value={officeHoursConfig.auto_close_hour}
-                                onChange={e => setOfficeHoursConfig(prev => ({ ...prev, auto_close_hour: Math.min(23, Math.max(0, parseInt(e.target.value) || 0)) }))}
-                                style={{ ...styles.input, width: '70px' }}
+                                type="number" min="0" max="23" inputMode="numeric"
+                                aria-label="자동 퇴근 시각 (시)"
+                                value={officeHoursConfig.auto_close_hour ?? ''}
+                                onChange={e => setOfficeHoursConfig(prev => ({ ...prev, auto_close_hour: e.target.value }))}
+                                onBlur={e => setOfficeHoursConfig(prev => ({ ...prev, auto_close_hour: clampInt(e.target.value, 0, 23, 0) }))}
+                                style={{ ...styles.input, width: '70px', flexShrink: 0 }}
                             />
                             <span style={{ color: 'var(--admin-text-main)' }}>시</span>
                             <input
-                                type="number" min="0" max="59"
-                                value={officeHoursConfig.auto_close_minute}
-                                onChange={e => setOfficeHoursConfig(prev => ({ ...prev, auto_close_minute: Math.min(59, Math.max(0, parseInt(e.target.value) || 0)) }))}
-                                style={{ ...styles.input, width: '70px' }}
+                                type="number" min="0" max="59" inputMode="numeric"
+                                aria-label="자동 퇴근 시각 (분)"
+                                value={officeHoursConfig.auto_close_minute ?? ''}
+                                onChange={e => setOfficeHoursConfig(prev => ({ ...prev, auto_close_minute: e.target.value }))}
+                                onBlur={e => setOfficeHoursConfig(prev => ({ ...prev, auto_close_minute: clampInt(e.target.value, 0, 59, 0) }))}
+                                style={{ ...styles.input, width: '70px', flexShrink: 0 }}
                             />
                             <span style={{ color: 'var(--admin-text-main)' }}>분</span>
-                            <span style={{ color: 'var(--admin-text-sub)', fontSize: '0.82em' }}>
+                            <span style={{ color: 'var(--admin-text-sub)', fontSize: '0.82em', flexBasis: '100%' }}>
                                 출근 후 이 시간이 지나면 자동 오프라인
                             </span>
                         </div>
@@ -263,7 +280,7 @@ function SystemTab({ users }) {
                             style={styles.input}
                             placeholder="linear-gradient(135deg, #1a5c2a, #27ae60)"
                         />
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
                             {COLOR_PRESETS.map(preset => (
                                 <button
                                     key={preset.label}
@@ -438,6 +455,8 @@ const styles = {
     },
     toggleContainer: {
         display: 'flex',
+        flexWrap: 'wrap',
+        gap: '12px',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '15px',
@@ -489,7 +508,7 @@ const styles = {
         border: '1px solid var(--admin-border)',
         borderRadius: '6px',
         color: 'var(--admin-text-main)',
-        fontSize: '0.95em',
+        fontSize: '1em',
         boxSizing: 'border-box'
     },
     saveBtn: {

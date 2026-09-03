@@ -73,7 +73,7 @@ function DashboardView() {
     if (loading) return <div style={styles.loading}>데이터 로딩 중...</div>;
 
     return (
-        <div style={styles.dashboardGrid}>
+        <div className="admin-grid-auto" style={styles.dashboardGrid}>
             {/* 왼쪽: 랭킹 */}
             <div className="admin-card">
                 <h3 style={styles.cardTitle}>🏆 포인트 랭킹 (Top 5)</h3>
@@ -200,7 +200,7 @@ const UseCard = ({ icon, title, points, description, highlight }) => (
 );
 
 const styles = {
-    subTabContainer: { display: 'flex', gap: '10px', marginBottom: '30px', borderBottom: '2px solid var(--admin-border)', paddingBottom: '10px' },
+    subTabContainer: { display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '30px', borderBottom: '2px solid var(--admin-border)', paddingBottom: '10px' },
     subTab: { padding: '10px 20px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem', transition: 'all 0.2s' },
     sectionTitle: { fontSize: '1.8em', marginBottom: '20px', color: 'var(--admin-text-main)', borderBottom: '3px solid var(--admin-primary)', paddingBottom: '10px' },
     subTitle: { fontSize: '1.3em', marginTop: '30px', marginBottom: '15px', color: 'var(--admin-text-main)' },
@@ -218,22 +218,23 @@ const styles = {
     usePoints: { fontSize: '1.3em', fontWeight: 'bold', color: 'var(--admin-primary)', marginBottom: '5px' },
     useDesc: { fontSize: '0.85em', color: 'var(--admin-text-sub)' },
     // Dashboard Styles
-    dashboardGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' },
+    // 고정 2열 → .admin-grid-auto (좁으면 1열). --min 이 최소 열 폭
+    dashboardGrid: { '--min': '280px', gap: '20px' },
     cardTitle: { fontSize: '1.4em', marginBottom: '15px', color: 'var(--admin-text-main)', borderBottom: '1px solid var(--admin-border)', paddingBottom: '10px' },
     rankList: { display: 'flex', flexDirection: 'column', gap: '10px' },
     rankItem: { display: 'flex', alignItems: 'center', padding: '15px', background: 'var(--admin-bg)', borderRadius: '8px', border: '1px solid var(--admin-border)' },
-    rankBadge: { width: '30px', height: '30px', borderRadius: '50%', background: 'var(--admin-primary)', color: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginRight: '15px' },
-    rankUser: { flex: 1 },
+    rankBadge: { width: '30px', height: '30px', flexShrink: 0, borderRadius: '50%', background: 'var(--admin-primary)', color: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginRight: '15px' },
+    rankUser: { flex: 1, minWidth: 0 },
     rankName: { fontWeight: 'bold', fontSize: '1.1em', color: 'var(--admin-text-main)' },
     rankId: { fontSize: '0.9em', color: 'var(--admin-text-sub)' },
-    rankPoint: { fontWeight: 'bold', fontSize: '1.2em', color: 'var(--admin-primary)' },
+    rankPoint: { fontWeight: 'bold', fontSize: '1.2em', color: 'var(--admin-primary)', whiteSpace: 'nowrap', marginLeft: '8px' },
     historyList: { display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '500px', overflowY: 'auto' },
     logItem: { display: 'flex', alignItems: 'center', padding: '12px', background: 'var(--admin-bg)', borderRadius: '8px', borderBottom: '1px solid var(--admin-border)' },
-    logIcon: { fontSize: '1.5em', marginRight: '15px' },
-    logContent: { flex: 1 },
+    logIcon: { fontSize: '1.5em', marginRight: '15px', flexShrink: 0 },
+    logContent: { flex: 1, minWidth: 0 },
     logTitle: { color: 'var(--admin-text-main)', marginBottom: '4px' },
     logTime: { fontSize: '0.8em', color: 'var(--admin-text-sub)' },
-    logAmount: { fontWeight: 'bold', fontSize: '1.1em' },
+    logAmount: { fontWeight: 'bold', fontSize: '1.1em', whiteSpace: 'nowrap', marginLeft: '8px' },
     loading: { color: 'var(--admin-text-sub)', textAlign: 'center', padding: '50px' },
     emptyState: { padding: '20px', textAlign: 'center', color: 'var(--admin-text-sub)' }
 };

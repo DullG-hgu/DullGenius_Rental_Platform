@@ -60,7 +60,7 @@ function ReportsTab() {
         const isRequest = activeSubTab === 'request';
         return (
             <div style={styles.modalOverlay} onClick={() => setSelectedReport(null)}>
-                <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+                <div className="admin-modal-scroll" style={styles.modalContent} onClick={e => e.stopPropagation()}>
                     <h3>{isRequest ? '🎲 게임 신청 상세' : '🚨 파손 신고 상세'}</h3>
                     <div style={styles.modalBody}>
                         <p><strong>작성자:</strong> {selectedReport.profiles?.name} ({selectedReport.profiles?.student_id})</p>
@@ -73,7 +73,9 @@ function ReportsTab() {
                             {isRequest ? selectedReport.description : selectedReport.content}
                         </div>
                     </div>
-                    <button style={styles.closeBtn} onClick={() => setSelectedReport(null)}>닫기</button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button style={styles.closeBtn} onClick={() => setSelectedReport(null)}>닫기</button>
+                    </div>
                 </div>
             </div>
         );
@@ -102,7 +104,7 @@ function ReportsTab() {
             {loading ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#bbb' }}>로딩 중...</div>
             ) : (
-                <div style={styles.tableContainer}>
+                <div className="admin-table-wrap" style={styles.tableContainer}>
                     <table className="admin-table">
                         <thead>
                             <tr>
@@ -134,7 +136,7 @@ function ReportsTab() {
                                             <td>{formatDate(report.created_at)}</td>
                                             <td>{report.profiles?.name || '알수없음'} <span style={{ fontSize: '0.8em', color: '#888' }}>({report.profiles?.student_id})</span></td>
                                             <td>{report.profiles?.phone || '-'}</td>
-                                            <td>{report.game_name}</td>
+                                            <td className="wrap">{report.game_name}</td>
                                             <td>
                                                 <button
                                                     style={styles.viewBtn}
@@ -172,7 +174,7 @@ function ReportsTab() {
                                             <td>{formatDate(request.created_at)}</td>
                                             <td>{request.profiles?.name || '알수없음'} <span style={{ fontSize: '0.8em', color: '#888' }}>({request.profiles?.student_id})</span></td>
                                             <td>{request.profiles?.phone || '-'}</td>
-                                            <td>{request.game_title}</td>
+                                            <td className="wrap">{request.game_title}</td>
                                             <td>
                                                 <button
                                                     style={styles.viewBtn}
@@ -218,10 +220,13 @@ const styles = {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '10px',
         marginBottom: '20px'
     },
     subTabs: {
         display: 'flex',
+        flexWrap: 'wrap',
         gap: '10px'
     },
     subTab: {
@@ -243,13 +248,13 @@ const styles = {
         fontWeight: 'bold'
     },
     tableContainer: {
-        overflowX: 'auto',
+        // overflowX 는 .admin-table-wrap
         background: '#2d3748', // Dark theme card bg
         borderRadius: '8px',
         border: '1px solid #4a5568'
     },
     select: {
-        padding: '5px',
+        padding: '8px 12px',
         borderRadius: '4px',
         border: '1px solid #4a5568',
         background: '#1a202c',
@@ -257,7 +262,8 @@ const styles = {
         cursor: 'pointer'
     },
     viewBtn: {
-        padding: '5px 10px',
+        padding: '8px 12px',
+        whiteSpace: 'nowrap',
         background: '#4a5568',
         border: 'none',
         borderRadius: '4px',
@@ -310,8 +316,7 @@ const styles = {
         color: 'white',
         border: 'none',
         borderRadius: '5px',
-        cursor: 'pointer',
-        float: 'right'
+        cursor: 'pointer'
     }
 };
 

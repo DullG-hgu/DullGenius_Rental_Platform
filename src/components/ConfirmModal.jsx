@@ -1,6 +1,7 @@
 // src/components/ConfirmModal.jsx
-import { useEffect, useId } from 'react';
+import { useId, useRef } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap.jsx';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock.jsx';
 import ModalButton from './ModalButton.jsx';
 
 /**
@@ -22,12 +23,13 @@ function ConfirmModal({
     const titleId = useId();
     const messageId = useId();
 
-    // body 스크롤만 useEffect로 처리 (ESC/포커스는 useFocusTrap이 담당)
-    useEffect(() => {
-        if (!isOpen) return;
-        document.body.style.overflow = 'hidden';
-        return () => { document.body.style.overflow = 'unset'; };
-    }, [isOpen]);
+    // body 스크롤 잠금은 카운터 기반 훅 (모달 동시 마운트 대응). ESC/포커스는 useFocusTrap이 담당
+    useBodyScrollLock(isOpen);
+
+    // 오버레이 닫기: pointerdown 과 pointerup 이 모두 오버레이 자체에서 일어났을 때만.
+    // 긴 메시지를 읽으려고 손가락을 움직이거나(드래그), 모달 안에서 시작한 제스처가
+    // 바깥에서 끝나는 경우에 닫히지 않게 한다.
+    const overlayPressRef = useRef(false);
 
     const containerRef = useFocusTrap({
         active: isOpen,
@@ -45,12 +47,21 @@ function ConfirmModal({
     };
 
     return (
-        <div className="modal-overlay" style={styles.overlay} onClick={onClose}>
+        <div
+            className="modal-overlay"
+            style={styles.overlay}
+            onPointerDown={(e) => { overlayPressRef.current = e.target === e.currentTarget; }}
+            onPointerUp={(e) => {
+                const shouldClose = overlayPressRef.current && e.target === e.currentTarget;
+                overlayPressRef.current = false;
+                if (shouldClose) onClose();
+            }}
+            onPointerCancel={() => { overlayPressRef.current = false; }}
+        >
             <div
                 ref={containerRef}
                 className="modal-content"
                 style={styles.modal}
-                onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
@@ -130,8 +141,9 @@ const styles = {
         color: '#95a5a6',
         cursor: 'pointer',
         padding: '0',
-        width: '30px',
-        height: '30px',
+        width: '36px',
+        height: '36px',
+        flexShrink: 0,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -140,7 +152,11 @@ const styles = {
     },
     content: {
         padding: '24px',
-        minHeight: '60px'
+        minHeight: '60px',
+        // 긴 메시지(학기 초기화 안내 등)에서도 하단 확인/취소 버튼이 화면 안에 남도록
+        maxHeight: '55vh',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch'
     },
     message: {
         margin: 0,
@@ -152,6 +168,7 @@ const styles = {
         display: 'flex',
         gap: '12px',
         padding: '20px 24px',
+        flexWrap: 'wrap',
     },
 };
 

@@ -41,6 +41,7 @@ export default function EventDetailPage() {
   const [teams, setTeams] = useState([]);
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [loadingRegs, setLoadingRegs] = useState(false);
+  const [regsLoaded, setRegsLoaded] = useState(false); // 한 번 불러오면 서브탭 전환 시 재조회하지 않는다 (reload 로만 갱신)
   const [activeSub, setActiveSub] = useState('info');
   const [tutorialSection, setTutorialSection] = useState(null);
 
@@ -62,6 +63,7 @@ export default function EventDetailPage() {
       const [regs, ts] = await Promise.all([listRegistrations(id), listEventTeams(id)]);
       setRegistrations(regs);
       setTeams(ts);
+      setRegsLoaded(true);
     } catch (e) {
       console.error(e);
       showToast('신청자를 불러오지 못했습니다: ' + e.message, { type: 'error' });
@@ -74,10 +76,10 @@ export default function EventDetailPage() {
     if (!authLoading && isAdmin) loadEvent();
   }, [authLoading, isAdmin, loadEvent]);
 
-  // 정보 탭 외에는 신청자 데이터도 필요
+  // 정보 탭 외에는 신청자 데이터도 필요 — 처음 한 번만. 이후 갱신은 각 탭의 reload() 가 담당
   useEffect(() => {
-    if (!authLoading && isAdmin && activeSub !== 'info') loadRegs();
-  }, [authLoading, isAdmin, activeSub, loadRegs]);
+    if (!authLoading && isAdmin && activeSub !== 'info' && !regsLoaded) loadRegs();
+  }, [authLoading, isAdmin, activeSub, regsLoaded, loadRegs]);
 
   if (authLoading) return null;
   if (!isAdmin) return <div className="admin-container"><p>권한이 없습니다.</p></div>;
@@ -85,9 +87,9 @@ export default function EventDetailPage() {
   return (
     <div className="admin-container">
       <div className="admin-header">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
           <Link to="/admin-secret/events" style={{ color: 'var(--admin-text-sub)', fontSize: '0.85rem', textDecoration: 'none' }}>← 행사 목록</Link>
-          <h2 style={{ margin: 0 }}>🎪 {event?.title || (loadingEvent ? '로딩 중…' : '행사')}</h2>
+          <h2 style={{ margin: 0, overflowWrap: 'anywhere' }}>🎪 {event?.title || (loadingEvent ? '로딩 중…' : '행사')}</h2>
           {event?.slug && (
             <a
               href={`/event/${event.slug}`}
@@ -101,7 +103,7 @@ export default function EventDetailPage() {
             </a>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="admin-header-actions">
           <button
             onClick={() => setTutorialSection(TUTORIAL_FOR_SUBTAB[activeSub] || 'overview')}
             className="admin-btn"

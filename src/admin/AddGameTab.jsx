@@ -209,13 +209,13 @@ function AddGameTab({ onGameAdded }) {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+      <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
         <input
           value={keyword} onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
           placeholder="등록할 게임 이름"
           className="admin-input"
-          style={{ width: "100%" }}
+          style={{ flex: 1, minWidth: "200px" }}
         />
         <button onClick={handleRegister} style={{ ...styles.searchBtn, background: "#2ecc71" }}>등록</button>
       </div>

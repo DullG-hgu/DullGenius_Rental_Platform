@@ -6,6 +6,7 @@ import {
 } from '../api';
 import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
+import PromptModal from '../components/PromptModal';
 
 const STATUS_LABEL = {
   pending: { text: '대기', bg: '#7f8c8d' },
@@ -192,9 +193,15 @@ function ReviewModal({ req, games, gamesById, onClose, onRefresh }) {
     }
   };
 
-  const handleReject = async () => {
-    const reason = window.prompt('반려 사유를 입력하세요 (필수)');
-    if (!reason || !reason.trim()) return;
+  // window.prompt 는 모바일에서 차단되면 조용히 null 을 돌려줘 반려가 무시된다 → PromptModal 사용
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const handleReject = () => setRejectOpen(true);
+
+  const submitReject = async (reason) => {
+    if (!reason || !reason.trim()) {
+      showToast('반려 사유를 입력해야 합니다.', { type: 'warning' });
+      return;
+    }
     setSubmitting(true);
     try {
       const { data, error } = await rejectRentalRequest(req.id, reason.trim());
@@ -216,7 +223,7 @@ function ReviewModal({ req, games, gamesById, onClose, onRefresh }) {
 
   return (
     <div style={styles.modalOverlay} onClick={onClose}>
-      <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+      <div className="admin-modal-scroll" style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ marginTop: 0, color: 'var(--admin-text-main)' }}>대여 신청 검토</h3>
         <div style={{ fontSize: '0.85rem', color: 'var(--admin-text-sub)', marginBottom: 12 }}>
           {req.requester_name} · {req.requester_phone} · 제출 {formatDateTime(req.submitted_at)}
@@ -248,7 +255,7 @@ function ReviewModal({ req, games, gamesById, onClose, onRefresh }) {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12, marginBottom: 16 }}>
+        <div className="admin-grid-auto" style={{ '--min': '160px', marginBottom: 16 }}>
           <div>
             <div style={styles.fieldLabel}>수령일시 (원문: {req.pickup_raw || '-'})</div>
             <input
@@ -271,7 +278,7 @@ function ReviewModal({ req, games, gamesById, onClose, onRefresh }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="admin-btn-row" style={{ justifyContent: 'flex-end', gap: 8 }}>
           <button style={styles.btnGhost} onClick={onClose} disabled={submitting}>취소</button>
           <button style={styles.btnDanger} onClick={handleReject} disabled={submitting}>반려</button>
           <button style={styles.btnPrimary} onClick={handleConfirm} disabled={submitting}>
@@ -279,6 +286,16 @@ function ReviewModal({ req, games, gamesById, onClose, onRefresh }) {
           </button>
         </div>
       </div>
+
+      <PromptModal
+        isOpen={rejectOpen}
+        onClose={() => setRejectOpen(false)}
+        onConfirm={submitReject}
+        title="대여 신청 반려"
+        message="반려 사유를 입력하세요 (필수)"
+        placeholder="예: 요청 기간에 이미 예약된 게임입니다"
+        confirmText="반려"
+      />
     </div>
   );
 }
@@ -381,7 +398,7 @@ const styles = {
     marginBottom: 16, gap: 12, flexWrap: 'wrap',
   },
   filterBtn: {
-    padding: '6px 12px', borderRadius: 16, fontSize: '0.8rem',
+    padding: '8px 12px', borderRadius: 16, fontSize: '0.8rem',
     border: '1px solid', cursor: 'pointer', fontWeight: 600,
   },
   row: {
@@ -423,7 +440,8 @@ const styles = {
   modalContent: {
     background: 'var(--admin-card-bg)', border: '1px solid var(--admin-border)',
     color: 'var(--admin-text-main)', borderRadius: 10, padding: 20,
-    width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto',
+    width: '100%', maxWidth: 560,
+    // maxHeight/overflow 는 .admin-modal-scroll (dvh 대응)
   },
   input: {
     width: '100%', padding: '8px 10px', background: 'var(--admin-bg)',

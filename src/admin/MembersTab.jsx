@@ -411,7 +411,7 @@ function MembersTab({ users, onUsersReload }) {
                     로딩 중... ⏳
                 </div>
             ) : (
-                <div style={{ overflowX: 'auto' }}>
+                <div className="admin-table-wrap">
                     <table className="admin-table">
                         <thead>
                             <tr>
@@ -443,7 +443,7 @@ function MembersTab({ users, onUsersReload }) {
 
                                     return (
                                         <tr key={member.id}>
-                                            <td style={{ fontWeight: 'bold', color: member.status === 'withdrawn' ? '#999' : 'inherit' }}>
+                                            <td className="wrap" style={{ fontWeight: 'bold', color: member.status === 'withdrawn' ? '#999' : 'inherit' }}>
                                                 {member.name || '-'}
                                                 {member.joined_semester === currentSemester && (
                                                     <span
@@ -462,14 +462,19 @@ function MembersTab({ users, onUsersReload }) {
                                                         🆕 신규
                                                     </span>
                                                 )}
+                                                {member.joined_semester === currentSemester && (
+                                                    <div style={{ fontSize: '0.72em', color: 'var(--admin-text-sub)', fontWeight: 'normal', marginTop: '2px' }}>
+                                                        이번 학기 가입 · 입금 확인 필요
+                                                    </div>
+                                                )}
                                                 {member.status === 'withdrawn' && <span style={{ fontSize: '0.8em', color: '#e74c3c', marginLeft: '5px' }}>(탈퇴)</span>}
                                             </td>
                                             <td>{member.student_id || '-'}</td>
-                                            <td style={{ fontSize: '0.9em' }}>
+                                            <td className="wrap" style={{ fontSize: '0.9em' }}>
                                                 <div style={{ fontWeight: 'bold', color: 'var(--admin-text-main)' }}>{calculateDuration(member.joined_semester)}</div>
                                                 <div style={{ fontSize: '0.8em', color: '#7f8c8d' }}>{member.joined_semester || '-'}</div>
                                             </td>
-                                            <td>
+                                            <td className="wrap">
                                                 <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
                                                     {roles.length === 0 ? (
                                                         <span style={{ color: 'var(--admin-text-sub)', fontSize: '0.85em' }}>일반 회원</span>
@@ -519,7 +524,7 @@ function MembersTab({ users, onUsersReload }) {
                                                 )}
                                             </td>
                                             <td>
-                                                <div style={{ display: 'flex', gap: '5px' }}>
+                                                <div className="admin-btn-row">
                                                     <button
                                                         onClick={() => handleOpenRoleEdit(member)}
                                                         style={styles.editBtn}
@@ -568,7 +573,7 @@ function MembersTab({ users, onUsersReload }) {
             {/* 역할 편집 모달 */}
             {roleEditModal.isOpen && (
                 <div style={styles.modalOverlay} onClick={handleCloseRoleEdit}>
-                    <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+                    <div className="admin-modal-scroll" style={styles.modalContent} onClick={e => e.stopPropagation()}>
                         <h3 style={{ marginTop: 0, marginBottom: '20px', color: 'var(--admin-text-main)' }}>
                             👤 회원 정보 수정 ({roleEditModal.member?.name})
                         </h3>
@@ -662,13 +667,14 @@ function MembersTab({ users, onUsersReload }) {
                             {/* [NEW] 가입 학기 수정 섹션 */}
                             <div style={{ marginBottom: '20px', padding: '15px', background: 'var(--admin-bg)', borderRadius: '8px' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '0.95em' }}>📅 가입 학기 수정</div>
-                                <div style={{ display: 'flex', gap: '10px' }}>
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                                     <input
                                         type="text"
+                                        autoComplete="off"
                                         placeholder={`YYYY-S (예: ${DEFAULT_SEMESTER})`}
                                         value={roleEditModal.tempSemester}
                                         onChange={(e) => setRoleEditModal(prev => ({ ...prev, tempSemester: e.target.value }))}
-                                        style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                                        style={{ flex: '1 1 140px', minWidth: 0, padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                                     />
                                     <button
                                         onClick={async () => {
@@ -698,13 +704,15 @@ function MembersTab({ users, onUsersReload }) {
                             {/* [NEW] 전화번호 수정 섹션 */}
                             <div style={{ marginBottom: '20px', padding: '15px', background: 'var(--admin-bg)', borderRadius: '8px' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '0.95em' }}>📞 전화번호 수정</div>
-                                <div style={{ display: 'flex', gap: '10px' }}>
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                                     <input
-                                        type="text"
+                                        type="tel"
+                                        inputMode="tel"
+                                        autoComplete="off"
                                         placeholder="010-XXXX-XXXX"
                                         value={roleEditModal.tempPhone}
                                         onChange={(e) => setRoleEditModal(prev => ({ ...prev, tempPhone: e.target.value }))}
-                                        style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                                        style={{ flex: '1 1 140px', minWidth: 0, padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                                     />
                                     <button
                                         onClick={async () => {
@@ -825,7 +833,7 @@ const styles = {
         fontWeight: 'bold'
     },
     paymentBtn: {
-        padding: '6px 12px',
+        padding: '8px 12px',
         color: 'white',
         border: 'none',
         borderRadius: '6px',
@@ -834,7 +842,7 @@ const styles = {
         fontSize: '0.9em'
     },
     resetBtn: {
-        padding: '6px 12px',
+        padding: '8px 12px',
         background: '#9b59b6',
         color: 'white',
         border: 'none',
@@ -873,10 +881,13 @@ const styles = {
     },
     modalContent: {
         backgroundColor: 'var(--admin-card-bg)',
-        padding: '30px',
+        padding: '24px',
         borderRadius: '12px',
         width: '90%',
         maxWidth: '400px',
+        maxHeight: '85vh',
+        overflowY: 'auto',
+        boxSizing: 'border-box',
         border: '1px solid var(--admin-border)',
         boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
     },
@@ -897,6 +908,7 @@ const styles = {
     modalActions: {
         display: 'flex',
         justifyContent: 'flex-end',
+        flexWrap: 'wrap',
         gap: '10px',
         marginTop: '25px'
     },
@@ -922,7 +934,7 @@ const styles = {
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
     },
     editBtn: {
-        padding: '6px 12px',
+        padding: '8px 12px',
         background: '#3498db',
         color: 'white',
         border: 'none',

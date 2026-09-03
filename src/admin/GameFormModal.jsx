@@ -342,7 +342,8 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
       {renderBggSideModal()}
       <div className="modal-content game-form-modal" style={{
         padding: "25px", borderRadius: "15px", width: "94%", maxWidth: "1100px",
-        boxShadow: "0 5px 20px rgba(0,0,0,0.5)", maxHeight: "90vh", overflowY: "auto"
+        boxShadow: "0 5px 20px rgba(0,0,0,0.5)"
+        /* maxHeight/overflow 는 Admin.css .game-form-modal 에서 — 모바일에선 workspace 하나만 스크롤 */
       }}>
         <h3 style={{ marginTop: 0 }}>{title}</h3>
 
@@ -359,7 +360,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
           />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+        <div className="admin-grid-auto" style={{ '--min': '140px' }}>
           <div className="admin-form-group">
             <label className="admin-label" htmlFor="category-select">카테고리</label>
             <select
@@ -434,7 +435,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+        <div className="admin-grid-auto" style={{ '--min': '140px' }}>
           <div className="admin-form-group">
             <label className="admin-label">최소 인원</label>
             <input
@@ -461,7 +462,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+        <div className="admin-grid-auto" style={{ '--min': '140px' }}>
           <div className="admin-form-group">
             <label className="admin-label">최소 플레이 시간 (분)</label>
             <input
@@ -512,8 +513,8 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
 
         {/* [NEW] 영상/설명서 링크 */}
         <div className="admin-form-group">
-          <div style={{ display: "flex", gap: "8px", alignItems: "flex-end", marginBottom: "8px" }}>
-            <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", gap: "8px", alignItems: "flex-end", marginBottom: "8px", flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: "160px" }}>
               <label className="admin-label">설명 영상 URL (유튜브)</label>
             </div>
             <button
@@ -618,7 +619,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
                   onKeyDown={e => e.key === 'Enter' && handleKoreanImageSearch()}
                   placeholder={`${formData.name || '게임명'} ${formData.category === '머더미스터리' ? '머더미스터리 패키지' : '보드게임 한글판'}`}
                   className="admin-input"
-                  style={{ flex: 1, minWidth: 0, fontSize: "0.85em" }}
+                  style={{ flex: 1, minWidth: 0 }}
                 />
                 <button
                   type="button"
@@ -656,10 +657,9 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
                           loading="lazy"
                           style={{ width: "100%", height: "105px", objectFit: "contain" }}
                         />
-                        <span style={{
-                          display: "block", marginTop: "4px", fontSize: "0.7em",
-                          color: "var(--admin-text-sub)", overflow: "hidden",
-                          whiteSpace: "nowrap", textOverflow: "ellipsis"
+                        <span className="game-image-title" style={{
+                          marginTop: "4px", fontSize: "0.7em",
+                          color: "var(--admin-text-sub)"
                         }}>
                           {stripHtml(item.title) || (item.width && item.height ? `${item.width}×${item.height}` : '')}
                         </span>
