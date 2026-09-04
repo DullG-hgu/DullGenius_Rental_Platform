@@ -1,6 +1,6 @@
 // src/kiosk/ReservationModal.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { kioskListActiveReservations, kioskPickup } from '../api';
+import { kioskListActiveReservations, kioskPickup, sendLog } from '../api';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
 import { subscribeToGameChanges } from '../lib/gamesRealtime';
@@ -85,10 +85,16 @@ function ReservationModal({ onClose }) {
             return;
         }
 
+        // [계측] 확인창을 연 시점과 실제 실행 시점을 각각 남긴다.
+        // open 만 있고 accept 가 없으면 확인 버튼 클릭이 유실된 것이다.
+        // (2026-09-04 수령이 서버에 도달조차 못한 건이 있었는데, 이 구간이 사각지대였다)
+        sendLog(null, 'ACTION', { step: 'kiosk_pickup_confirm_open', count: selectedRentalIds.size });
+
         showConfirmModal(
             "예약 수령 확인",
             `선택한 ${selectedRentalIds.size}개의 게임을 수령하시겠습니까?\n\n[대여 안내]\n• 반납 기한: 내일 밤 12시까지\n• 분실/파손 시: 사이트에서 즉시 신고해주세요\n\n재밌게 즐기세요! 🎲`,
             async () => {
+                sendLog(null, 'ACTION', { step: 'kiosk_pickup_confirm_accept', count: selectedRentalIds.size });
                 setProcessing(true);
                 let successCount = 0;
                 let failCount = 0;
@@ -150,7 +156,13 @@ function ReservationModal({ onClose }) {
     };
 
     return (
-        <div className="kiosk-modal-overlay" style={{ zIndex: 20000 }} onClick={onClose}>
+        <div
+            className="kiosk-modal-overlay"
+            style={{ zIndex: 20000 }}
+            // 오버레이 자신을 눌렀을 때만 닫는다. 안쪽 확인 모달의 버튼 클릭이
+            // 여기까지 올라와 목록이 통째로 사라지는 것을 막는다.
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
             <div className="kiosk-modal" style={{ width: "90%", height: "90%", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
                     <h2>📥 예약 수령</h2>

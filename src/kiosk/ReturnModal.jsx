@@ -1,6 +1,6 @@
 // src/kiosk/ReturnModal.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { kioskListActiveRentals, kioskReturn } from '../api';
+import { kioskListActiveRentals, kioskReturn, sendLog } from '../api';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal'; // [NEW] 커스텀 확인 모달
 import { subscribeToGameChanges } from '../lib/gamesRealtime';
@@ -84,10 +84,14 @@ function ReturnModal({ onClose }) {
             return;
         }
 
+        // [계측] 확인창 열림 / 실제 실행을 각각 남긴다 (예약 수령과 동일한 사각지대).
+        sendLog(null, 'ACTION', { step: 'kiosk_return_confirm_open', count: selectedRentals.size });
+
         showConfirmModal(
             "반납 확인",
             `선택한 ${selectedRentals.size}개의 게임을 반납하시겠습니까?`,
             async () => {
+                sendLog(null, 'ACTION', { step: 'kiosk_return_confirm_accept', count: selectedRentals.size });
                 setProcessing(true);
                 let successCount = 0;
                 let failCount = 0;
@@ -158,7 +162,13 @@ function ReturnModal({ onClose }) {
     };
 
     return (
-        <div className="kiosk-modal-overlay" style={{ zIndex: 20000 }} onClick={onClose}>
+        <div
+            className="kiosk-modal-overlay"
+            style={{ zIndex: 20000 }}
+            // 오버레이 자신을 눌렀을 때만 닫는다. 안쪽 확인 모달의 버튼 클릭이
+            // 여기까지 올라와 목록이 통째로 사라지는 것을 막는다.
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
             <div className="kiosk-modal" style={{ width: "90%", height: "90%", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
                     <h2>📦 간편 반납</h2>

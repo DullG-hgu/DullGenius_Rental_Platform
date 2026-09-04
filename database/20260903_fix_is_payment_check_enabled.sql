@@ -39,6 +39,10 @@ $function$;
 -- 저장된 값은 2026-02-14 의 'false' 가 방치돼 있어, 함수만 고치면 오늘부터 갑자기
 -- 미납 회원 대여가 열린다. 실효 동작을 그대로 유지하도록 값을 true 로 맞춘다.
 -- (관리자가 시스템 설정 탭에서 끄면 그때부터 실제로 꺼진다)
+-- [2026-09-03 저녁 되돌림] 이 UPDATE 는 잘못된 전제였다. 운영진은 시스템 탭에서 회비 검사를
+--   의도적으로 꺼 둔 상태였고(저장값 'false'), 이 줄이 그 설정을 'true' 로 덮어써 당일 저녁
+--   키오스크 찜 수령이 "회비 납부가 필요합니다" 로 막혔다. execute_sql 로 'false' 로 복구함.
+--   교훈: 운영자가 UI 로 저장한 설정값은 마이그레이션에서 덮어쓰지 않는다.
 UPDATE public.app_config
 SET value = to_jsonb('true'::text), updated_at = timezone('utc'::text, now())
 WHERE key = 'payment_check_enabled';

@@ -62,6 +62,10 @@ function ConfirmModal({
                 ref={containerRef}
                 className="modal-content"
                 style={styles.modal}
+                // 이 모달은 다른 모달 안에 렌더링되기도 한다(키오스크 예약 수령·간편 반납).
+                // 전파를 막지 않으면 확인/취소 클릭이 바깥 모달의 오버레이까지 올라가
+                // 부모 모달이 통째로 닫힌다. pointer 이벤트는 위 오버레이 판정이 쓰므로 건드리지 않는다.
+                onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
