@@ -4,7 +4,9 @@
 .kiosk-container {
     background-color: #000000;
     color: #ffffff;
-    min-height: 100vh;
+    /* min-height 였을 때는 자식이 넘치면 컨테이너가 같이 늘어나 아래 overflow:hidden 이
+       무력해지고 페이지가 통째로 스크롤됐다. 뷰포트에 고정한다. */
+    height: 100vh;
     font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
     overflow: hidden;
     /* Prevent scrolling */
@@ -43,10 +45,13 @@
 .kiosk-dashboard {
     flex: 1;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    /* 1fr 은 minmax(auto, 1fr) 이라 행이 콘텐츠 최소 높이(QR 이미지 420px + 패딩)에
+       밀려 늘어났다. minmax(0, 1fr) 로 실제 축소를 허용한다. */
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
     gap: 20px;
     padding: 30px;
+    min-height: 0;
 }
 
 .kiosk-btn {
@@ -62,6 +67,9 @@
     cursor: pointer;
     transition: transform 0.1s active;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .kiosk-btn:active {
@@ -97,6 +105,8 @@
     gap: 28px;
     padding: 24px;
     overflow: hidden;
+    min-height: 0;
+    min-width: 0;
 }
 
 .kiosk-qr-img {
@@ -104,7 +114,10 @@
     max-height: 420px;
     aspect-ratio: 1 / 1;
     width: auto;
-    flex: 0 0 auto;
+    /* 카드가 좁아지면 이미지도 함께 줄어야 텍스트를 밀어내지 않는다 */
+    flex: 0 1 auto;
+    min-height: 0;
+    min-width: 0;
     border-radius: 16px;
     background: #fff;
     padding: 10px;
