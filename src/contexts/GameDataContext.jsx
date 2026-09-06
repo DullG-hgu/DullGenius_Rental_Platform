@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { fetchGames, fetchTrending, fetchConfig } from '../api';
+import { useAuth } from './AuthContext';
 import { subscribeToGameChanges } from '../lib/gamesRealtime';
 
 const GameDataContext = createContext(null);
@@ -31,6 +32,18 @@ const writeCache = (key, data) => {
     }
 };
 
+// 사용자별로 내용이 달라지는 캐시만 지운다 (config_cache 는 공용, 키오스크 캐시는 별도 키).
+// get_games_with_rentals 는 관리자에게만 대여자 정보를 채워주므로, 계정이 바뀌면
+// 이전 권한으로 받은 결과가 다음 사용자 화면에 남지 않도록 버린다.
+const clearUserScopedCache = () => {
+    try {
+        localStorage.removeItem('games_cache');
+        localStorage.removeItem('trending_cache');
+    } catch (e) {
+        console.warn('[GameData] cache clear failed', e);
+    }
+};
+
 const mapTrending = (trendingData, games) => {
     if (!Array.isArray(trendingData)) return [];
     return trendingData
@@ -39,6 +52,7 @@ const mapTrending = (trendingData, games) => {
 };
 
 export const GameProvider = ({ children }) => {
+    const { user, loading: authLoading } = useAuth();
     const [games, setGames] = useState([]);
     const [trending, setTrending] = useState([]);
     const [config, setConfig] = useState(null);
@@ -123,6 +137,23 @@ export const GameProvider = ({ children }) => {
     }, [loadData]);
 
     const refreshGames = useCallback(() => loadData(true), [loadData]);
+
+    // [AUTH] 로그아웃·계정 전환 시 사용자별 캐시를 버리고 현재 권한으로 다시 받는다.
+    // 첫 세션 확정(initial session)은 기록만 하고 건너뛴다 — 위의 초기 loadData 가 이미 처리했고,
+    // 여기서 또 부르면 콜드 로드마다 SWR 캐시가 무의미해진다.
+    const lastAuthUserId = useRef(undefined);
+    useEffect(() => {
+        if (authLoading) return;
+        const currentId = user?.id ?? null;
+        if (lastAuthUserId.current === undefined) {
+            lastAuthUserId.current = currentId;
+            return;
+        }
+        if (lastAuthUserId.current === currentId) return;
+        lastAuthUserId.current = currentId;
+        clearUserScopedCache();
+        loadData(true);
+    }, [user?.id, authLoading, loadData]);
 
     // [REALTIME] 다른 기기(키오스크·관리자·다른 회원)의 대여·찜·반납을 따라간다.
     // 본인 조작은 각 화면이 refreshGames() 를 직접 불러 즉시 반영하고,

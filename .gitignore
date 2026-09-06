@@ -45,6 +45,8 @@ tag_analysis.txt
 
 # MCP configuration (contains sensitive API tokens)
 .mcp.json
+# 백업본에도 Supabase 액세스 토큰(sbp_...)이 평문으로 들어간다
+.mcp.json.*
 
 # Claude Code local settings (project-level, contains API tokens)
 .claude/settings.local.json

@@ -26,7 +26,12 @@ export async function getEventBySlug(slug) {
   return data;
 }
 
-// 본인 이 행사 신청 내역 (있으면 1개)
+// 취소·환불로 끝난 신청. 이 상태들은 재신청을 막지 않는다 (DB 부분 유니크 인덱스와 같은 목록)
+const INACTIVE_REG_STATUSES = ['cancelled_unpaid', 'cancelled_self', 'cancelled_admin', 'refunded'];
+
+// 본인 이 행사의 활성 신청 (있으면 1개)
+// 취소 후 재신청하면 같은 행사에 행이 여러 개 남으므로 활성 행만 본다.
+// 지난 신청 이력은 MyEventsCard(listMyRegistrations)가 보여준다.
 export async function getMyRegistration(eventId, userId) {
   if (!userId) return null;
   const { data, error } = await supabase
@@ -34,26 +39,28 @@ export async function getMyRegistration(eventId, userId) {
     .select('id, status, fee_amount, payment_deadline_at, expected_depositor_name, team_id, membership_tier')
     .eq('event_id', eventId)
     .eq('user_id', userId)
+    .not('status', 'in', `(${INACTIVE_REG_STATUSES.join(',')})`)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (error) throw error;
   return data;
 }
 
-// 모집 인원 현황 (정원 진행률용 — 활성 신청 카운트)
-// RLS상 본인 외에는 SELECT 못 봄. 정확한 카운트는 SECURITY DEFINER RPC가 필요하므로
-// v1에서는 운영자/본인만 보이는 부분 카운트로 사용. 정원 마감은 서버 RPC가 정확히 차단.
+// 모집 인원 현황 (정원 진행률용)
+// event_public_counts 는 SECURITY DEFINER 라 RLS 와 무관하게 전체 집계를 준다.
+// 숫자만 내려오며(개인정보 없음), 정원 단위가 팀이면 total 은 팀 수다.
+// 실패하면 0 으로 두되 그 경우 진행률 표시만 빠지고 정원 마감 판정은 서버 RPC 가 맡는다.
 export async function getEventCounts(eventId) {
   try {
-    const { data, error } = await supabase
-      .from('event_registrations')
-      .select('status')
-      .eq('event_id', eventId);
+    const { data, error } = await supabase.rpc('event_public_counts', { p_event_id: eventId });
     if (error) throw error;
-    const rows = data || [];
-    const paid = rows.filter((r) => r.status === 'paid').length;
-    const pending = rows.filter((r) => r.status === 'pending').length;
-    const waitlisted = rows.filter((r) => r.status === 'waitlisted').length;
-    return { total: paid + pending, paid, pending, waitlisted };
+    return {
+      total: data?.total ?? 0,
+      paid: data?.paid ?? 0,
+      pending: data?.pending ?? 0,
+      waitlisted: data?.waitlisted ?? 0,
+    };
   } catch {
     return { total: 0, paid: 0, pending: 0, waitlisted: 0 };
   }
@@ -117,15 +124,13 @@ export async function getRegistration(regId) {
   return data;
 }
 
-// 팀 정보 (초대코드로)
+// 팀 정보 (초대코드로) — 가입 전 미리보기
+// event_teams 는 RLS 가 팀장·팀원에게만 열려 있어 처음 초대받은 사람은 직접 조회하면 null 이 됐다.
+// event_team_preview 는 로그인한 사용자에게 코드가 맞을 때만 최소 정보를 돌려준다. 없으면 null.
 export async function getTeamByInviteCode(code) {
-  const { data, error } = await supabase
-    .from('event_teams')
-    .select('id, event_id, team_name, invite_code, leader_user_id, size_target, status')
-    .eq('invite_code', code)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc('event_team_preview', { p_invite_code: code });
   if (error) throw error;
-  return data;
+  return data || null;
 }
 
 // 내 행사 신청 목록 (MyPage용)
