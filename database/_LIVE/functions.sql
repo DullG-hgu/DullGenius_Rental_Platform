@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 3. AM 9:45:17
+-- 생성 시각: 2026. 9. 6. PM 6:46:43
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 87개 함수
+-- 총 90개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -580,6 +580,23 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
     END IF;
 
+    -- [중복 차단] 지정한 찜이 이미 대여로 전환돼 있으면(재시도·이중 클릭) 새 대여를 만들지 않는다
+    IF p_rental_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.rentals
+        WHERE rental_id = p_rental_id AND type = 'RENT' AND returned_at IS NULL
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 대여 처리된 찜입니다.');
+    END IF;
+
+    -- [운영 방침] 같은 게임은 1인 1부 — rent_game/dibs_game 과 같은 규칙을 관리자 경로에도 적용
+    IF p_user_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.rentals
+        WHERE game_id = p_game_id AND user_id = p_user_id
+          AND type = 'RENT' AND returned_at IS NULL
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 대여 중인 게임입니다.');
+    END IF;
+
     -- 대상 찜 선정. returned_at IS NULL 필수(부활 차단),
     -- 식별자가 전혀 없으면 남의 찜을 집지 않도록 매칭하지 않는다.
     IF p_rental_id IS NOT NULL THEN
@@ -873,7 +890,7 @@ CREATE OR REPLACE FUNCTION public.confirm_rental_request(p_request_id uuid, p_ga
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_req            public.rental_requests%ROWTYPE;
@@ -885,6 +902,8 @@ DECLARE
     v_conflicts      text[] := '{}';
     v_hold_id        uuid;
     v_hold_ids       uuid[] := '{}';
+    v_old_hold       uuid;
+    v_old_gids       int[] := '{}';
     v_borrowed_at    timestamptz;
     v_due_date       timestamptz;
     v_note           text;
@@ -913,6 +932,9 @@ BEGIN
     v_note        := 'HOLD request:' || v_req.id::text;
 
     -- [1패스] 게임별 락(id 오름차순) + 존재·기간 재고 검증
+    --   자동 접수(needs_review)가 이미 확보해 둔 이 신청의 HOLD 는 충돌로 세지 않는다.
+    --   (아래에서 닫고 새로 만들므로 점유가 이중으로 잡히지 않는다)
+    --   주의: 여기서 실패해 RETURN 하면 앞선 UPDATE 도 커밋되므로, 옛 HOLD 종료는 검증·선점 뒤에 한다.
     FOR v_gid, v_needed IN
         SELECT t.gid, COUNT(*)::int FROM unnest(p_game_ids) AS t(gid) GROUP BY t.gid ORDER BY t.gid
     LOOP
@@ -932,7 +954,9 @@ BEGIN
               OR (type = 'HOLD' AND due_date > now())
           )
           AND tstzrange(borrowed_at, due_date, '[)')
-              && tstzrange(v_borrowed_at, v_due_date, '[)');
+              && tstzrange(v_borrowed_at, v_due_date, '[)')
+          AND NOT (rental_id = ANY(COALESCE(v_req.hold_rental_ids, '{}')))
+          AND (note IS DISTINCT FROM v_note);
 
         IF v_conflict_count + v_needed > COALESCE(v_quantity, 0) THEN
             v_conflicts := array_append(v_conflicts, v_game_name);
@@ -957,6 +981,19 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', '이미 처리된 요청입니다. (동시 처리 감지)');
     END IF;
 
+    -- [정리] 이 신청이 앞서 확보한 HOLD 는 전부 닫는다 (관리자가 게임·기간을 바꿨을 수 있다)
+    FOR v_old_hold, v_gid IN
+        SELECT r.rental_id, r.game_id FROM public.rentals r
+        WHERE (r.rental_id = ANY(COALESCE(v_req.hold_rental_ids, '{}')) OR r.note = v_note)
+          AND r.type = 'HOLD' AND r.returned_at IS NULL
+        ORDER BY r.game_id
+    LOOP
+        PERFORM 1 FROM public.games WHERE id = v_gid FOR UPDATE;
+        UPDATE public.rentals SET returned_at = now()
+        WHERE rental_id = v_old_hold AND returned_at IS NULL;
+        v_old_gids := array_append(v_old_gids, v_gid);
+    END LOOP;
+
     -- [2패스] HOLD 생성 (중복 id = 복수 부수 유지, id 오름차순)
     FOR v_gid IN SELECT t.gid FROM unnest(p_game_ids) AS t(gid) ORDER BY t.gid LOOP
         INSERT INTO public.rentals (
@@ -969,10 +1006,13 @@ BEGIN
         RETURNING rental_id INTO v_hold_id;
 
         v_hold_ids := array_append(v_hold_ids, v_hold_id);
+    END LOOP;
 
-        IF v_borrowed_at <= now() + interval '7 days' AND v_due_date > now() THEN
-            PERFORM public.recalc_game_availability(v_gid);
-        END IF;
+    -- [재계산] 새 HOLD 게임 + 옛 HOLD 를 닫은 게임 (목록에서 빠진 게임 포함)
+    FOR v_gid IN
+        SELECT DISTINCT gid FROM unnest(p_game_ids || v_old_gids) AS t(gid) ORDER BY gid
+    LOOP
+        PERFORM public.recalc_game_availability(v_gid);
     END LOOP;
 
     UPDATE public.rental_requests
@@ -985,7 +1025,8 @@ BEGIN
     INSERT INTO public.logs (game_id, user_id, action_type, details)
     VALUES (
         NULL, auth.uid(), 'RENTAL_REQUEST_CONFIRM',
-        jsonb_build_object('request_id', p_request_id, 'hold_count', array_length(v_hold_ids, 1))
+        jsonb_build_object('request_id', p_request_id, 'hold_count', array_length(v_hold_ids, 1),
+                           'closed_prior_holds', COALESCE(array_length(v_old_gids, 1), 0))
     );
 
     RETURN jsonb_build_object('success', true, 'hold_rental_ids', v_hold_ids);
@@ -1640,25 +1681,77 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: event_public_counts
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_public_counts(p_event_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_event      public.events%ROWTYPE;
+  v_paid       int := 0;
+  v_pending    int := 0;
+  v_waitlisted int := 0;
+  v_teams      int := 0;
+  v_total      int := 0;
+BEGIN
+  SELECT * INTO v_event FROM public.events WHERE id = p_event_id;
+  IF NOT FOUND
+     OR (NOT public.is_admin()
+         AND (v_event.deleted_at IS NOT NULL OR v_event.status IN ('draft','archived'))) THEN
+    RETURN jsonb_build_object('total', 0, 'paid', 0, 'pending', 0, 'waitlisted', 0);
+  END IF;
+
+  SELECT
+    count(*) FILTER (WHERE status = 'paid'),
+    count(*) FILTER (WHERE status = 'pending'),
+    count(*) FILTER (WHERE status = 'waitlisted')
+  INTO v_paid, v_pending, v_waitlisted
+  FROM public.event_registrations
+  WHERE event_id = p_event_id;
+
+  -- 정원 단위가 팀이면 진행률 분자는 팀 수 (_event_is_full 과 같은 기준)
+  IF v_event.capacity_unit = 'team' THEN
+    SELECT count(*) INTO v_teams FROM public.event_teams
+      WHERE event_id = p_event_id AND status != 'cancelled';
+    v_total := v_teams;
+  ELSE
+    v_total := v_paid + v_pending;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'total', v_total, 'paid', v_paid, 'pending', v_pending, 'waitlisted', v_waitlisted
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: event_refund
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.event_refund(p_registration_id uuid, p_note text DEFAULT NULL::text)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE v_reg public.event_registrations%ROWTYPE;
 BEGIN
   IF NOT public.is_admin() THEN RAISE EXCEPTION 'forbidden'; END IF;
   SELECT * INTO v_reg FROM public.event_registrations WHERE id = p_registration_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'registration_not_found'; END IF;
-  IF v_reg.status != 'paid' THEN RAISE EXCEPTION 'not_paid_status'; END IF;
+  IF v_reg.status = 'refunded' THEN RAISE EXCEPTION 'already_refunded'; END IF;
+  -- 결제 사실은 상태가 아니라 결제 수령 시각으로 판정한다 (결제 → 취소 → 환불 흐름 연결)
+  IF v_reg.payment_received_at IS NULL
+     OR v_reg.status NOT IN ('paid','cancelled_self','cancelled_admin') THEN
+    RAISE EXCEPTION 'not_paid_status';
+  END IF;
 
   UPDATE public.event_registrations
     SET status = 'refunded',
-        cancelled_at = now(),
-        cancel_reason = p_note
+        cancelled_at = COALESCE(cancelled_at, now()),
+        cancel_reason = COALESCE(p_note, cancel_reason)
     WHERE id = p_registration_id;
 
   INSERT INTO public.event_payment_logs (registration_id, action, amount, note, performed_by)
@@ -1748,6 +1841,41 @@ BEGIN
   ) RETURNING id INTO v_reg_id;
 
   RETURN v_reg_id;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: event_team_preview
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.event_team_preview(p_invite_code text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_team  public.event_teams%ROWTYPE;
+  v_count int;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'auth_required'; END IF;
+
+  SELECT * INTO v_team FROM public.event_teams
+    WHERE invite_code = upper(btrim(COALESCE(p_invite_code, '')));
+  IF NOT FOUND THEN RETURN NULL; END IF;
+
+  SELECT count(*) INTO v_count FROM public.event_registrations
+    WHERE team_id = v_team.id
+      AND status NOT IN ('cancelled_unpaid','cancelled_self','cancelled_admin','refunded');
+
+  RETURN jsonb_build_object(
+    'id',           v_team.id,
+    'event_id',     v_team.event_id,
+    'team_name',    v_team.team_name,
+    'invite_code',  v_team.invite_code,
+    'size_target',  v_team.size_target,
+    'status',       v_team.status,
+    'member_count', v_count
+  );
 END;
 $function$
 
@@ -2399,7 +2527,8 @@ BEGIN
     returns AS (
         SELECT r.returned_at::date AS d, COUNT(*) AS cnt
         FROM public.rentals r
-        WHERE r.returned_at IS NOT NULL AND r.returned_at >= current_date - (p_days - 1)
+        WHERE r.type = 'RENT'   -- 찜·HOLD 종료(returned_at)는 반납이 아니다
+          AND r.returned_at IS NOT NULL AND r.returned_at >= current_date - (p_days - 1)
           AND NOT EXISTS (
             SELECT 1 FROM public.user_roles ur
             WHERE ur.user_id = r.user_id AND ur.role_key = 'tester'
@@ -2592,7 +2721,7 @@ CREATE OR REPLACE FUNCTION public.ingest_rental_request(p_payload jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
     v_expected_secret text;
@@ -2698,6 +2827,9 @@ BEGIN
     END IF;
 
     -- 5) rental_requests INSERT
+    --    유니크 인덱스(rental_requests_dedupe_key)가 동시 재전송을 막는다.
+    --    위 SELECT 검사와 INSERT 사이에 다른 트랜잭션이 먼저 커밋하면 unique_violation → 기존 id 반환
+    BEGIN
     INSERT INTO public.rental_requests (
         submitted_at, requester_name, requester_phone,
         org_type, org_name, event_overview, event_schedule, audience_notes,
@@ -2710,8 +2842,21 @@ BEGIN
         p_payload->>'event_overview', p_payload->>'event_schedule', p_payload->>'audience_notes',
         v_games_raw, v_game_count, v_fee, v_duration_raw, v_pickup_raw,
         v_is_free, COALESCE(v_matched_ids, '{}'), v_pickup_at, v_duration_days,
-        'pending', p_payload
+        'pending', p_payload - '_secret'   -- 공유 시크릿은 인증에만 쓰고 원문에는 남기지 않는다
     ) RETURNING id INTO v_request_id;
+    EXCEPTION WHEN unique_violation THEN
+        SELECT id INTO v_dup_id
+        FROM public.rental_requests
+        WHERE submitted_at = v_submitted_at
+          AND requester_phone = v_requester_phone
+          AND requested_games_raw = v_games_raw
+        LIMIT 1;
+        RETURN jsonb_build_object(
+            'success', true,
+            'duplicate', true,
+            'request_id', v_dup_id
+        );
+    END;
 
     -- 6) 자동 확정 판정
     v_auto_ok := (
@@ -3091,7 +3236,7 @@ BEGIN
     END IF;
 
     UPDATE public.rentals
-    SET type = 'RENT', borrowed_at = now(), due_date = now() + interval '2 days', source = 'kiosk'
+    SET type = 'RENT', borrowed_at = now(), due_date = public.rental_due_date(), source = 'kiosk'
     WHERE rental_id = p_rental_id
       AND type = 'DIBS' AND returned_at IS NULL;
     GET DIAGNOSTICS v_affected = ROW_COUNT;
@@ -3174,7 +3319,7 @@ BEGIN
     END IF;
 
     INSERT INTO public.rentals (game_id, user_id, game_name, type, borrowed_at, due_date, source)
-    VALUES (p_game_id, p_user_id, v_game_name, 'RENT', now(), now() + interval '2 days', 'kiosk');
+    VALUES (p_game_id, p_user_id, v_game_name, 'RENT', now(), public.rental_due_date(), 'kiosk');
 
     PERFORM public.recalc_game_availability(p_game_id);
 
@@ -3480,6 +3625,19 @@ BEGIN
 
     RETURN jsonb_build_object('success', true, 'message', '대여 완료');
 END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: rental_due_date
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.rental_due_date(p_from timestamp with time zone DEFAULT now())
+ RETURNS timestamp with time zone
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT (date_trunc('day', p_from AT TIME ZONE 'Asia/Seoul') + interval '2 days')
+         AT TIME ZONE 'Asia/Seoul';
 $function$
 
 -- ----------------------------------------------------------------

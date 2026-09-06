@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 3. AM 9:45:40
+-- 생성 시각: 2026. 9. 6. PM 6:47:03
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -12,7 +12,7 @@
 --   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.
 
 -- ----------------------------------------------------------------
--- 함수 EXECUTE  (87개)
+-- 함수 EXECUTE  (90개)
 -- ----------------------------------------------------------------
 -- anon  auth  security  function
 --  -     -    INVOKER   _active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
@@ -50,8 +50,10 @@
 --  -     Y    DEFINER   event_join_team(p_invite_code text, p_extra_answers jsonb, p_photo_consent boolean)
 --  -     Y    DEFINER   event_mark_paid(p_registration_id uuid, p_actual_depositor_name text, p_note text)
 --  -     Y    DEFINER   event_promote_waitlist(p_registration_id uuid)
+--  Y     Y    DEFINER   event_public_counts(p_event_id uuid)
 --  -     Y    DEFINER   event_refund(p_registration_id uuid, p_note text)
 --  -     Y    DEFINER   event_register_individual(p_event_id uuid, p_extra_answers jsonb, p_photo_consent boolean)
+--  -     Y    DEFINER   event_team_preview(p_invite_code text)
 --  -     Y    DEFINER   event_unmark_paid(p_registration_id uuid, p_note text)
 --  -     Y    DEFINER   fix_rental_data_consistency()
 --  -     Y    DEFINER   get_admin_analytics_activity(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)
@@ -90,12 +92,13 @@
 --  -     Y    DEFINER   register_match_result(p_game_id integer, p_player_ids uuid[], p_winner_ids uuid[])
 --  -     Y    DEFINER   reject_rental_request(p_request_id uuid, p_reason text)
 --  -     Y    DEFINER   rent_any_copy(p_game_id integer, p_user_id uuid)
---  -     Y    DEFINER   rent_game(p_game_id integer, p_user_id uuid, p_renter_name text)
+--  -     -    DEFINER   rent_game(p_game_id integer, p_user_id uuid, p_renter_name text)
+--  Y     Y    INVOKER   rental_due_date(p_from timestamp with time zone)
 --  -     -    DEFINER   reset_own_password(p_student_id text, p_name text, p_phone text, p_new_password text)
 --  -     Y    DEFINER   reset_semester_payments()
 --  -     Y    DEFINER   reset_user_password(target_user_id uuid)
 --  -     -    DEFINER   resolve_membership_tier(p_user_id uuid)
---  -     Y    DEFINER   return_game(p_game_id integer, p_user_id uuid)
+--  -     -    DEFINER   return_game(p_game_id integer, p_user_id uuid)
 --  -     Y    DEFINER   safe_delete_game(p_game_id integer)
 --  -     Y    DEFINER   send_user_log(p_game_id integer, p_action_type text, p_details jsonb)
 --  -     Y    DEFINER   set_private_config(p_key text, p_value text)
