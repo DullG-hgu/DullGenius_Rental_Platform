@@ -138,7 +138,7 @@ function ReturnModal({ onClose }) {
 
                 // 피드백 개선
                 if (successCount > 0) {
-                    showToast(`✅ ${successCount}개 반납 완료! 각 건당 100P 지급되었습니다.`, { type: "success" });
+                    showToast(`✅ ${successCount}개 반납 완료! 각 건당 50P 지급되었습니다.`, { type: "success" });
                 }
 
                 if (succeededIds.size > 0) {

@@ -84,11 +84,63 @@
     cursor: pointer;
 }
 
-.btn-match {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.kiosk-qr-card {
     grid-column: 1 / 2;
     grid-row: 1 / 2;
-    /* Single row */
+    border-radius: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 24px;
+    overflow: hidden;
+}
+
+.kiosk-qr-img {
+    height: 100%;
+    max-height: 420px;
+    aspect-ratio: 1 / 1;
+    width: auto;
+    flex: 0 0 auto;
+    border-radius: 16px;
+    background: #fff;
+    padding: 10px;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+.kiosk-qr-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+}
+
+.kiosk-qr-title {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1.2;
+    word-break: keep-all;
+}
+
+.kiosk-qr-sub {
+    font-size: 1.15rem;
+    line-height: 1.5;
+    opacity: 0.9;
+    word-break: keep-all;
+}
+
+.kiosk-qr-url {
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 6px 12px;
+    border-radius: 8px;
 }
 
 .btn-return {
@@ -362,32 +414,36 @@
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }
-/* 플로팅 타이머 버튼 (우측 상단) */
-.floating-timer-btn {
-    position: fixed;
-    top: 30px;
-    right: 30px;
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    font-size: 1.8rem;
-    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
-    z-index: 10000 !important;
-    cursor: pointer;
+/* 헤더 타이머 버튼 (시계 옆) */
+.kiosk-header-right {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 12px;
+    gap: 20px;
+}
+
+.header-timer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 52px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 26px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.45);
+    cursor: pointer;
     transition: transform 0.2s;
 }
 
-.floating-timer-btn:hover {
+.header-timer-btn:hover {
     transform: scale(1.05);
 }
 
-.floating-timer-btn:active {
+.header-timer-btn:active {
     transform: scale(0.98);
 }

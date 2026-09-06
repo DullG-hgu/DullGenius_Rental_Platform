@@ -27,7 +27,9 @@ const writeCache = (key, value) => {
     }
 };
 
-const useKioskData = () => {
+// includeUsers=false 로 부르면 회원 목록을 아예 받지 않는다.
+// 룰렛처럼 게임만 쓰는 화면이 전 회원 이름·학번을 태블릿에 내려받을 이유가 없다.
+const useKioskData = ({ includeUsers = true } = {}) => {
     const [games, setGames] = useState([]);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -50,23 +52,28 @@ const useKioskData = () => {
     // 게임 + 회원 전체 동기화. 최초 로드와 네트워크 복구 시에 쓴다.
     const syncAll = useCallback(async () => {
         try {
-            const [gamesData, usersData] = await Promise.all([fetchGames(), kioskListUsers()]);
+            const [gamesData, usersData] = await Promise.all([
+                fetchGames(),
+                includeUsers ? kioskListUsers() : Promise.resolve(null)
+            ]);
             const validGames = sortGames((gamesData || []).filter(g => !g.error));
-            const validUsers = usersData || [];
 
             setGames(validGames);
-            setUsers(validUsers);
             setError(null);
-
             writeCache(GAMES_CACHE_KEY, validGames);
-            writeCache(USERS_CACHE_KEY, validUsers);
+
+            if (includeUsers) {
+                const validUsers = usersData || [];
+                setUsers(validUsers);
+                writeCache(USERS_CACHE_KEY, validUsers);
+            }
         } catch (e) {
             console.error("Kiosk Data Sync Failed:", e);
             setError(e);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [includeUsers]);
 
     useEffect(() => {
         // 옛 캐시에 남아 있는 개인정보 제거 (기기에서 1회성으로 정리)
@@ -77,16 +84,16 @@ const useKioskData = () => {
         // 1. LocalStorage (Instant Load with error handling)
         try {
             const localGames = localStorage.getItem(GAMES_CACHE_KEY);
-            const localUsers = localStorage.getItem(USERS_CACHE_KEY);
+            const localUsers = includeUsers ? localStorage.getItem(USERS_CACHE_KEY) : null;
 
-            if (localGames && localUsers) {
+            if (localGames && (localUsers || !includeUsers)) {
                 const parsedGames = JSON.parse(localGames);
-                const parsedUsers = JSON.parse(localUsers);
+                const parsedUsers = localUsers ? JSON.parse(localUsers) : [];
 
                 // 데이터 유효성 검증
                 if (Array.isArray(parsedGames) && Array.isArray(parsedUsers)) {
                     setGames(parsedGames);
-                    setUsers(parsedUsers);
+                    if (includeUsers) setUsers(parsedUsers);
                     setLoading(false);
                 } else {
                     console.warn("캐시된 데이터가 배열이 아닙니다. 캐시를 삭제합니다.");
@@ -104,7 +111,8 @@ const useKioskData = () => {
 
         // 2. Background Sync (Fetch Latest)
         syncAll();
-    }, [syncAll]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [syncAll, includeUsers]);
 
     // [REALTIME] 키오스크는 오피스아워 내내 한 번 켜두고 쓴다. 예전에는 마운트 시점
     // 스냅샷으로 하루를 버텨서, 관리자나 다른 회원이 대여·반납해도 키오스크 화면은

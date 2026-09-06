@@ -26,6 +26,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "pull-schema": "node scripts/pull_schema.js",
+    "gen:kiosk-qr": "node scripts/gen_kiosk_qr.mjs",
     "validate:env": "node scripts/validate_env.mjs --strict"
   },
   "eslintConfig": {
@@ -49,6 +50,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^5.1.3",
     "baseline-browser-mapping": "^2.9.19",
+    "qrcode": "^1.5.4",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0"
   }

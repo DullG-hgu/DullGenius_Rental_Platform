@@ -1,45 +1,65 @@
 // src/kiosk/RouletteModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import useKioskData from '../hooks/useKioskData'; // useKioskData 훅 사용
 import './Kiosk.css';
 
+// games.category 값 그대로 (DB: '머더미스터리')
+const MURDER_MYSTERY_CATEGORY = '머더미스터리';
+
+const chipStyle = (active) => ({
+    padding: "10px 20px",
+    background: active ? "#667eea" : "#444",
+    border: "none",
+    borderRadius: "10px",
+    color: "white",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "all 0.2s"
+});
+
 function RouletteModal({ onClose }) {
-    const { games, loading } = useKioskData(); // 훅으로 데이터 로딩
-    const [filteredGames, setFilteredGames] = useState([]);
+    // 룰렛은 게임 목록만 쓴다. 회원 목록까지 받으면 전 회원 이름·학번이
+    // 태블릿 localStorage 에 다시 쌓인다 (api.jsx 의 개인정보 최소화 주석 참고).
+    const { games, loading } = useKioskData({ includeUsers: false });
     const [playerCount, setPlayerCount] = useState(null); // 선택된 인원수
+    const [includeMurderMystery, setIncludeMurderMystery] = useState(true); // 머더미스터리 포함 여부
     const [spinning, setSpinning] = useState(false);
     const [result, setResult] = useState(null);
     const [displayParams, setDisplayParams] = useState(null); // Animation display
 
-    // 대여 가능한 게임만 필터링
-    const allGames = games.filter(g => g.status === '대여가능');
+    // 대여 가능 + 머더미스터리 포함 여부 + 인원수 필터링
+    // (useMemo: 매 렌더마다 새 배열을 만들어 effect 를 다시 돌리던 구조를 정리)
+    const filteredGames = useMemo(() => {
+        return games.filter(game => {
+            if (game.status !== '대여가능') return false;
+            if (!includeMurderMystery && game.category === MURDER_MYSTERY_CATEGORY) return false;
+            if (playerCount === null) return true;
+            if (game.min_players == null || game.max_players == null) return false;
+            return playerCount >= game.min_players && playerCount <= game.max_players;
+        });
+    }, [games, playerCount, includeMurderMystery]);
 
-    // 인원수 필터링
-    useEffect(() => {
-        if (playerCount === null) {
-            setFilteredGames(allGames);
-        } else {
-            const filtered = allGames.filter(game => {
-                if (game.min_players == null || game.max_players == null) return false;
-                return playerCount >= game.min_players && playerCount <= game.max_players;
-            });
-            setFilteredGames(filtered);
-        }
-    }, [playerCount, allGames]);
+    // 스핀 중에 모달을 닫으면 인터벌이 그대로 남아 언마운트된 컴포넌트를 계속 갱신했다.
+    const spinIntervalRef = useRef(null);
+    useEffect(() => () => {
+        if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
+    }, []);
 
     const spin = () => {
         if (filteredGames.length === 0) return;
+        if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
         setSpinning(true);
         setResult(null);
 
         let count = 0;
         const maxCount = 20;
-        const interval = setInterval(() => {
+        spinIntervalRef.current = setInterval(() => {
             const random = filteredGames[Math.floor(Math.random() * filteredGames.length)];
             setDisplayParams(random);
             count++;
             if (count > maxCount) {
-                clearInterval(interval);
+                clearInterval(spinIntervalRef.current);
+                spinIntervalRef.current = null;
                 setResult(random);
                 setSpinning(false);
             }
@@ -64,39 +84,27 @@ function RouletteModal({ onClose }) {
                         <div style={{ marginBottom: "20px" }}>
                             <p style={{ fontSize: "1.1rem", marginBottom: "10px", color: "#ccc" }}>게임 인원수를 선택하세요</p>
                             <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>
-                                <button
-                                    onClick={() => setPlayerCount(null)}
-                                    style={{
-                                        padding: "10px 20px",
-                                        background: playerCount === null ? "#667eea" : "#444",
-                                        border: "none",
-                                        borderRadius: "10px",
-                                        color: "white",
-                                        fontSize: "1rem",
-                                        cursor: "pointer",
-                                        transition: "all 0.2s"
-                                    }}
-                                >
+                                <button onClick={() => setPlayerCount(null)} style={chipStyle(playerCount === null)}>
                                     전체
                                 </button>
                                 {playerOptions.map(num => (
-                                    <button
-                                        key={num}
-                                        onClick={() => setPlayerCount(num)}
-                                        style={{
-                                            padding: "10px 20px",
-                                            background: playerCount === num ? "#667eea" : "#444",
-                                            border: "none",
-                                            borderRadius: "10px",
-                                            color: "white",
-                                            fontSize: "1rem",
-                                            cursor: "pointer",
-                                            transition: "all 0.2s"
-                                        }}
-                                    >
+                                    <button key={num} onClick={() => setPlayerCount(num)} style={chipStyle(playerCount === num)}>
                                         {num}인
                                     </button>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* 머더미스터리 포함 여부 */}
+                        <div style={{ marginBottom: "20px" }}>
+                            <p style={{ fontSize: "1.1rem", marginBottom: "10px", color: "#ccc" }}>🔍 머더미스터리</p>
+                            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                                <button onClick={() => setIncludeMurderMystery(true)} style={chipStyle(includeMurderMystery)}>
+                                    포함
+                                </button>
+                                <button onClick={() => setIncludeMurderMystery(false)} style={chipStyle(!includeMurderMystery)}>
+                                    미포함
+                                </button>
                             </div>
                         </div>
 
@@ -133,7 +141,7 @@ function RouletteModal({ onClose }) {
                                 style={{ width: "100%", height: "60px" }}
                                 disabled={filteredGames.length === 0}
                             >
-                                {filteredGames.length === 0 ? "해당 인원수의 게임이 없습니다" : "추천받기 START"}
+                                {filteredGames.length === 0 ? "조건에 맞는 게임이 없습니다" : "추천받기 START"}
                             </button>
                         )}
 

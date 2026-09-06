@@ -4,11 +4,13 @@ import './Kiosk.css';
 import { useToast } from '../contexts/ToastContext'; // Toast 알림
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient.jsx';
-import MatchModal from './MatchModal';
 import RouletteModal from './RouletteModal';
 import ReturnModal from './ReturnModal';
 import ReservationModal from './ReservationModal'; // [NEW] 예약 수령 모달
 import MurderMysteryTimerModal from './MurderMysteryTimerModal'; // [NEW] 머더 미스터리 타이머
+import siteQr from './assets/site-qr.svg'; // 동아리 사이트 QR (빌드 시 고정 생성: scripts/gen_kiosk_qr.mjs)
+
+const SITE_URL = 'https://dullgrental.netlify.app/';
 
 // [Constants]
 const IDLE_TIMEOUT_MS = 180000; // 3분 (번인 방지)
@@ -16,6 +18,10 @@ const REFRESH_HOUR = 4; // 새벽 4시 자동 새로고침
 const DEVICE_KEY_STORAGE = 'kiosk_device_key';
 const LEGACY_KIOSK_HOST = 'dullgboardgamerent.netlify.app';
 const CANONICAL_KIOSK_ORIGIN = 'https://dullgrental.netlify.app';
+
+// 세션 발급이 네트워크 오류로 실패했을 때의 재시도 간격 (지수 백오프)
+const SESSION_RETRY_BASE_MS = 5000;
+const SESSION_RETRY_MAX_MS = 60000;
 
 function KioskPage() {
     const { showToast } = useToast();
@@ -32,7 +38,6 @@ function KioskPage() {
 
     // [Modals State]
     const [showReturnModal, setShowReturnModal] = useState(false);
-    const [showMatchModal, setShowMatchModal] = useState(false);
     const [showRouletteModal, setShowRouletteModal] = useState(false);
     const [showReservationModal, setShowReservationModal] = useState(false); // [NEW]
     const [showMurderMysteryTimer, setShowMurderMysteryTimer] = useState(false); // [NEW] 머더 미스터리
@@ -94,8 +99,12 @@ function KioskPage() {
     const [deviceKeyInput, setDeviceKeyInput] = useState('');
     const [provisioning, setProvisioning] = useState(false);
     const [needsDeviceKey, setNeedsDeviceKey] = useState(false);
+    // 네트워크 오류로 세션을 못 받아 스스로 재시도하는 중인지
+    const [reconnecting, setReconnecting] = useState(false);
     // 세션 요청이 effect 재실행으로 중복 발사되는 것을 막는다
     const sessionRequestedRef = useRef(false);
+    const retryTimerRef = useRef(null);
+    const retryAttemptRef = useRef(0);
 
     const readDeviceKey = () => {
         try {
@@ -103,6 +112,28 @@ function KioskPage() {
         } catch {
             return null;
         }
+    };
+
+    const clearSessionRetry = () => {
+        if (retryTimerRef.current) {
+            clearTimeout(retryTimerRef.current);
+            retryTimerRef.current = null;
+        }
+        retryAttemptRef.current = 0;
+    };
+
+    // 네트워크 오류 전용 재시도. 저장된 키가 살아 있을 때만 부른다.
+    const scheduleSessionRetry = (key) => {
+        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+        const delay = Math.min(
+            SESSION_RETRY_BASE_MS * (2 ** retryAttemptRef.current),
+            SESSION_RETRY_MAX_MS
+        );
+        retryAttemptRef.current += 1;
+        retryTimerRef.current = setTimeout(() => {
+            retryTimerRef.current = null;
+            requestKioskSession(key);
+        }, delay);
     };
 
     const requestKioskSession = async (key, { persist = false } = {}) => {
@@ -122,6 +153,9 @@ function KioskPage() {
                 if (response.status === 401) {
                     try { localStorage.removeItem(DEVICE_KEY_STORAGE); } catch { /* 무시 */ }
                 }
+                // 서버가 응답한 실패는 재시도로 풀리지 않는다. 자동 재시도를 멈추고 사람을 부른다.
+                clearSessionRetry();
+                setReconnecting(false);
                 setNeedsDeviceKey(true);
                 const message = response.status === 405
                     ? '이전 배포 주소에서는 기기 등록 요청이 전달되지 않습니다. 새 키오스크 주소로 다시 접속해 주세요.'
@@ -136,6 +170,8 @@ function KioskPage() {
             });
 
             if (error) {
+                clearSessionRetry();
+                setReconnecting(false);
                 setNeedsDeviceKey(true);
                 setLoginError(`세션 적용 실패: ${error.message}`);
                 return;
@@ -148,17 +184,34 @@ function KioskPage() {
             if (data.key_rotation_required) {
                 // 이전 키의 유예 접속은 허용하되, 다음 만료 전에 현재 키로 재등록하게 한다.
                 try { localStorage.removeItem(DEVICE_KEY_STORAGE); } catch { /* 무시 */ }
+                clearSessionRetry();
+                setReconnecting(false);
                 setNeedsDeviceKey(true);
                 setLoginError('기기 등록 키가 교체되었습니다. 운영진에게 새 키를 받아 다시 등록해 주세요.');
                 return;
             }
 
+            clearSessionRetry();
+            setReconnecting(false);
             setNeedsDeviceKey(false);
             setDeviceKeyInput('');
         } catch (err) {
-            // 네트워크 오류는 키 문제가 아니므로 저장된 키를 지우지 않는다
-            setNeedsDeviceKey(true);
-            setLoginError(`연결 오류: ${err.message}`);
+            // 네트워크 오류는 키 문제가 아니므로 저장된 키를 지우지 않는다.
+            //
+            // 예전에는 여기서 바로 기기 등록 화면을 띄웠는데, 그게 무인 운영을 깼다.
+            // 오피스아워 밖에는 사람이 없어서 와이파이가 잠깐 끊긴 것만으로도
+            // 태블릿이 "기기 등록" 화면인 채 다음 방문자까지 방치됐다.
+            // 저장된 키가 멀쩡하면 사람을 부르지 말고 스스로 다시 붙는다.
+            const storedKey = readDeviceKey();
+            if (storedKey) {
+                setLoginError(null);
+                setNeedsDeviceKey(false);
+                setReconnecting(true);
+                scheduleSessionRetry(storedKey);
+            } else {
+                setNeedsDeviceKey(true);
+                setLoginError(`연결 오류: ${err.message}`);
+            }
         } finally {
             setProvisioning(false);
         }
@@ -221,6 +274,25 @@ function KioskPage() {
         requestKioskSession(storedKey);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authLoading, user]);
+
+    // [Effect] 재연결 대기 중 네트워크가 돌아오면 백오프를 기다리지 않고 바로 붙는다.
+    // 언마운트 시 예약된 재시도도 함께 정리한다.
+    useEffect(() => {
+        if (!reconnecting) return undefined;
+
+        const handleOnline = () => {
+            const storedKey = readDeviceKey();
+            if (!storedKey) return;
+            clearSessionRetry();
+            requestKioskSession(storedKey);
+        };
+
+        window.addEventListener('online', handleOnline);
+        return () => window.removeEventListener('online', handleOnline);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [reconnecting]);
+
+    useEffect(() => clearSessionRetry, []);
 
     // [Effect 1] 자동 새로고침 스케줄러
     useEffect(() => {
@@ -306,6 +378,39 @@ function KioskPage() {
     // [Views]
     const isAuthorized = !authLoading && user && (hasRole('kiosk') || hasRole('admin') || hasRole('executive'));
 
+    // 네트워크만 끊긴 상태에서는 사람을 부르지 않는다. 저장된 키로 계속 재시도 중임을 알리고,
+    // 연결이 돌아오면 스스로 대시보드로 복귀한다.
+    if (reconnecting) {
+        return (
+            <div className="activation-screen">
+                <h1 style={{ marginBottom: "12px" }}>📡 네트워크 재연결 중</h1>
+                <p style={{ color: "#888", fontSize: "0.95rem", maxWidth: "420px", textAlign: "center" }}>
+                    인터넷 연결이 끊겨 키오스크 세션을 받지 못했습니다.<br />
+                    연결이 복구되면 <strong>자동으로</strong> 다시 시작합니다.
+                </p>
+                <div className="spinner" style={{ marginTop: "24px" }} />
+                <button
+                    onClick={() => {
+                        const storedKey = readDeviceKey();
+                        if (!storedKey) return;
+                        clearSessionRetry();
+                        requestKioskSession(storedKey);
+                    }}
+                    disabled={provisioning}
+                    style={{ marginTop: "24px", padding: "10px 24px", background: "#667eea", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", opacity: provisioning ? 0.7 : 1 }}
+                >
+                    {provisioning ? "연결 중..." : "지금 다시 시도"}
+                </button>
+                <button
+                    onClick={() => { clearSessionRetry(); setReconnecting(false); setNeedsDeviceKey(true); }}
+                    style={{ marginTop: "10px", padding: "8px 20px", background: "transparent", color: "#888", border: "1px solid #444", borderRadius: "6px", cursor: "pointer", fontSize: "0.85rem" }}
+                >
+                    기기 등록 키 다시 입력
+                </button>
+            </div>
+        );
+    }
+
     // 이전 키로 세션이 살아난 경우에도 현재 키 재등록 화면을 우선 표시한다.
     if (needsDeviceKey || loginError) {
         return (
@@ -374,18 +479,34 @@ function KioskPage() {
             {/* 상단바 */}
             <header style={{ padding: "20px", borderBottom: "1px solid #333", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>🎲 덜지니어스 키오스크</div>
-                <div style={{ fontSize: "1.3rem", color: "#888", fontFamily: "'Courier New', Consolas, monospace", fontWeight: "600", letterSpacing: "2px" }}>
-                    {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                <div className="kiosk-header-right">
+                    <div style={{ fontSize: "1.3rem", color: "#888", fontFamily: "'Courier New', Consolas, monospace", fontWeight: "600", letterSpacing: "2px" }}>
+                        {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </div>
+                    {/* 타이머 버튼 — 시계 옆. 타이머 모달이 열려 있으면 X 버튼과 겹치므로 숨김 */}
+                    {!showMurderMysteryTimer && (
+                        <button className="header-timer-btn" onClick={() => {
+                            setShowMurderMysteryTimer(true);
+                            timerActiveRef.current = true;
+                        }}>
+                            <span style={{ fontSize: '1.6rem' }}>⏱️</span>
+                            <span>타이머</span>
+                        </button>
+                    )}
                 </div>
             </header>
 
             {/* 메인 대시보드 */}
             <div className="kiosk-dashboard">
-                <button className="kiosk-btn btn-match" onClick={() => setShowMatchModal(true)}>
-                    <div className="btn-icon">⚔️</div>
-                    매치 등록
-                    <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>승자 +200P / 패자 +50P</span>
-                </button>
+                {/* 동아리 사이트 QR — 찜하기·내 대여 확인은 개인 폰에서 */}
+                <div className="kiosk-qr-card">
+                    <img className="kiosk-qr-img" src={siteQr} alt="덜지니어스 대여 사이트 QR" draggable={false} />
+                    <div className="kiosk-qr-text">
+                        <div className="kiosk-qr-title">📱 웹사이트 바로가기</div>
+                        <div className="kiosk-qr-sub">찜하기 · 내 대여 확인은<br />폰으로 QR을 찍어주세요</div>
+                        <div className="kiosk-qr-url">{SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '')}</div>
+                    </div>
+                </div>
 
                 <button className="kiosk-btn" style={{ background: "linear-gradient(135deg, #FF9966 0%, #FF5E62 100%)" }} onClick={() => setShowReservationModal(true)}>
                     <div className="btn-icon">📥</div>
@@ -418,21 +539,6 @@ function KioskPage() {
                 </div>
             </button>
 
-            {/* 플로팅 타이머 버튼 (우측 상단) — 타이머 모달이 열려 있으면 X 버튼과 위치 충돌 방지를 위해 숨김 */}
-            {!showMurderMysteryTimer && (
-                <button className="floating-timer-btn" onClick={() => {
-                    setShowMurderMysteryTimer(true);
-                    timerActiveRef.current = true;
-                }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{ fontSize: '2.2rem' }}>⏱️</div>
-                        <div style={{ fontSize: '0.9rem', marginTop: '4px', fontWeight: 'bold', whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>
-                            타이머
-                        </div>
-                    </div>
-                </button>
-            )}
-
             {/* 플로팅 반납 버튼 (우측 하단) */}
             <button className="floating-return-btn" onClick={() => setShowReturnModal(true)}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -444,12 +550,6 @@ function KioskPage() {
             </button>
 
 
-
-            {/* 매치 모달 */}
-            {showMatchModal && <MatchModal onClose={() => {
-                setShowMatchModal(false);
-                setGracePeriod(5); // 매치 등록 후 5분 유예
-            }} />}
 
             {/* 룰렛 모달 */}
             {showRouletteModal && <RouletteModal onClose={() => setShowRouletteModal(false)} />}
