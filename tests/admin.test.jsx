@@ -1,0 +1,68 @@
+import React from 'react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import Admin from '../src/Admin';
+import { fetchGames, fetchConfig, fetchOfficeStatus, fetchUsers, fetchPaymentCheckEnabled, fetchOfficeHoursConfig } from '../src/api';
+import { setOfficeOpen } from '../src/api_members';
+const mocks = vi.hoisted(() => ({ auth: { user: { id: 'first' }, loading: false, hasRole: () => true, logout: vi.fn() }, showToast: vi.fn() }));
+vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => mocks.auth }));
+vi.mock('../src/contexts/ToastContext', () => ({ useToast: () => ({ showToast: mocks.showToast }) }));
+vi.mock('../src/api', () => ({ fetchGames: vi.fn(), fetchConfig: vi.fn(), fetchOfficeStatus: vi.fn(), fetchUsers: vi.fn(), fetchPaymentCheckEnabled: vi.fn(), fetchOfficeHoursConfig: vi.fn() }));
+vi.mock('../src/api_members', () => ({ setOfficeOpen: vi.fn(), setOfficeClosed: vi.fn() }));
+vi.mock('../src/admin/DashboardTab', () => ({ default: ({ games, users, onReload }) => <div>{games.map(g => <p key={g.id}>{g.name}</p>)}{users.map(u => <p key={u.id}>{u.name}</p>)}<button onClick={onReload}>reload games</button></div> }));
+vi.mock('../src/admin/AdminOverviewCard', () => ({ default: () => null }));
+vi.mock('../src/admin/AddGameTab', () => ({ default: () => null }));
+vi.mock('../src/admin/ConfigTab', () => ({ default: () => null }));
+vi.mock('../src/admin/PointsTab', () => ({ default: () => null }));
+vi.mock('../src/admin/MembersTab', () => ({ default: () => null }));
+vi.mock('../src/admin/SystemTab', () => ({ default: () => null }));
+vi.mock('../src/admin/ReportsTab', () => ({ default: () => null }));
+vi.mock('../src/admin/RentalRequestsTab', () => ({ default: () => null }));
+const App = () => <MemoryRouter><Admin /></MemoryRouter>;
+const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { resolve, promise }; };
+beforeEach(() => {
+  vi.resetAllMocks(); localStorage.clear(); mocks.auth.user = { id: 'first' }; mocks.auth.loading = false;
+  fetchGames.mockResolvedValue([{ id: 1, name: 'Current game' }]); fetchConfig.mockResolvedValue([]);
+  fetchUsers.mockResolvedValue([{ id: 1, name: 'Current member' }]); fetchOfficeStatus.mockResolvedValue({ open: false });
+  fetchPaymentCheckEnabled.mockResolvedValue(true); fetchOfficeHoursConfig.mockResolvedValue(null);
+});
+afterEach(cleanup);
+it('keeps game data when configuration fails and never persists private payloads', async () => {
+  localStorage.setItem('games_cache', JSON.stringify({ data: [{ id: 2, name: 'Cached private game' }], timestamp: Date.now() }));
+  fetchConfig.mockRejectedValue(new Error('offline'));
+  render(<App />);
+  expect(screen.queryByText('Cached private game')).toBeNull();
+  await screen.findByText('Current game');
+  expect(localStorage.getItem('games_cache')).toBeNull();
+  expect(mocks.showToast).toHaveBeenCalledWith('홈페이지 설정을 불러오지 못했습니다.', { type: 'error' });
+});
+it('discards games and users returned after an account switch', async () => {
+  const games = deferred(); const users = deferred();
+  fetchGames.mockReturnValueOnce(games.promise); fetchUsers.mockReturnValueOnce(users.promise);
+  const view = render(<App />);
+  await waitFor(() => expect(fetchGames).toHaveBeenCalledOnce());
+  mocks.auth.user = { id: 'second' }; view.rerender(<App />);
+  await screen.findByText('Current game');
+  await act(async () => { games.resolve([{ id: 2, name: 'Previous private game' }]); users.resolve([{ id: 2, name: 'Previous private member' }]); });
+  expect(screen.queryByText('Previous private game')).toBeNull(); expect(screen.queryByText('Previous private member')).toBeNull();
+  expect(screen.getByText('Current member')).toBeTruthy();
+});
+it('reports unknown office status rather than claiming offline on failure and can retry', async () => {
+  fetchOfficeStatus.mockRejectedValueOnce(new Error('offline'));
+  render(<App />);
+  fireEvent.click(await screen.findByText('🕒 오피스아워'));
+  await screen.findByText('상태 확인 실패');
+  expect(screen.queryByText('⭕ 오프라인')).toBeNull();
+  fireEvent.click(screen.getByText('상태 다시 조회'));
+  await screen.findByText('⭕ 오피스아워 종료');
+});
+it('does not claim opening succeeded when the follow-up read fails', async () => {
+  fetchOfficeStatus.mockResolvedValueOnce({ open: false }).mockRejectedValueOnce(new Error('offline'));
+  setOfficeOpen.mockResolvedValue({}); render(<App />);
+  fireEvent.click(await screen.findByText('🕒 오피스아워'));
+  fireEvent.click(await screen.findByText('출근'));
+  await screen.findByText('상태 확인 실패');
+  expect(setOfficeOpen).toHaveBeenCalledOnce();
+  expect(mocks.showToast.mock.calls.some(([, options]) => options.type === 'success')).toBe(false);
+});

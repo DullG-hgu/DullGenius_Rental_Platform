@@ -74,12 +74,34 @@ cd dullgboardgamerent
 npm install
 ```
 
-### 2. 환경 설정 (.env)
-프로젝트 루트에 `.env` 파일을 생성하고 Supabase 접속 정보를 입력합니다.
+### 2. 환경 설정 (.env.local)
+
+`.env.example`은 변수 이름과 용도를 안내하는 템플릿입니다. 실제 값은 Git에서 제외되는 프로젝트 루트의 `.env.local`에 입력합니다. 일반 프런트엔드 개발·빌드에는 공개 설정 두 개만 필요합니다.
+
 ```env
 VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 ```
+
+운영 키오스크 이메일·비밀번호를 로컬 빌드 목적으로 복사하지 않습니다. 로컬에서 BGG·NAVER 검색까지 시험하려면 해당 개발용 API 설정을 추가합니다. 키오스크 서버 개발 시에만 개발용 키오스크 계정을 별도로 설정합니다.
+
+| 명령 | 검사 범위 |
+| --- | --- |
+| `npm run validate:env` | 공개 Supabase 설정 |
+| `npm run build` | 공개 설정 검사 후 프런트엔드 빌드 |
+| `npm run validate:env:kiosk` | 키오스크 계정·기기 키·Supabase 연결 설정 |
+| `npm run validate:env:all` | 프런트엔드·키오스크·NAVER·BGG 설정 |
+
+모든 검사는 금지된 `VITE_` 비밀변수 이름을 차단하며 실제 값을 출력하지 않습니다. `all`은 위 네 기능에 대한 검사이며, Discord·DB 관리 도구 등 모든 서버 기능을 검증하는 것은 아닙니다. 키오스크 키 32자 미만은 기존 기기와의 호환을 위해 명시적 키오스크 검사에서도 경고로 처리합니다.
+
+운영 키오스크 설정은 Netlify 프로젝트의 환경변수 관리 화면에서 담당자가 직접 입력합니다.
+
+1. Production 컨텍스트에 `KIOSK_EMAIL`, `KIOSK_PASSWORD`, `KIOSK_MASTER_KEY`를 설정합니다. 범위를 선택할 수 있는 요금제에서는 Functions만 선택합니다.
+2. `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`도 함수에서 접근 가능하게 설정합니다. 함수는 기존 `VITE_SUPABASE_*` 공개 값을 대체값으로 사용할 수 있습니다.
+3. 키오스크 이메일·비밀번호는 Supabase의 키오스크 전용 계정과 일치해야 합니다. `VITE_` 접두사를 붙이지 않습니다. `KIOSK_MASTER_KEY_PREVIOUS`는 키 교체 유예 기간에만 사용합니다.
+4. 환경변수를 변경했다면 담당자가 새 배포를 진행한 후 키오스크 기기에서 등록·세션 복구를 확인합니다. 프런트엔드 빌드 성공만으로 Functions 환경변수가 검증되지는 않습니다.
+
+검사 명령은 **실행한 환경만** 확인하며 Netlify 설정을 원격으로 읽거나 변경하지 않습니다. Functions 전용 값은 빌드 단계에서 보이지 않을 수 있으므로, 빌드에서 검사하려고 비밀번호의 노출 범위를 넓히지 않습니다. 서버 함수는 실행 시 필수값 누락을 별도로 검사합니다. 함수 환경변수를 `netlify.toml`에 넣지 않습니다. [Netlify 공식 문서](https://docs.netlify.com/build/functions/environment-variables/)
 
 ### 3. 실행 (Run)
 개발 모드로 실행합니다.

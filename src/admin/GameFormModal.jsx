@@ -1,12 +1,16 @@
 // src/admin/GameFormModal.js
 // 설명: 게임 정보 입력/수정용 공통 모달
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useToast } from '../contexts/ToastContext'; // [NEW]
-import { searchBGG, fetchBGGGame, searchKoreanImages } from '../api';
+import { searchBGG, fetchBGGGame, searchKoreanImages, checkGameExists } from '../api';
 import PoweredByBGG from '../components/PoweredByBGG';
 
-function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
+function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplicateGame, busy = false }) {
+  const bggRequestRef = useRef(0);
+  const bggBusyRef = useRef(false);
+  const manualBggInputRef = useRef(null);
+  const [bggSelectionPending, setBggSelectionPending] = useState(false);
   const { showToast } = useToast(); // [NEW]
   const [formData, setFormData] = useState({
     name: "",
@@ -33,6 +37,12 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
   const [bggSearchResults, setBggSearchResults] = useState([]);
   const [bggSearching, setBggSearching] = useState(false);
   const [bggFetching, setBggFetching] = useState(false);
+  useEffect(() => {
+    bggBusyRef.current = false;
+    setBggFetching(false);
+    setBggSelectionPending(false);
+    return () => { bggRequestRef.current += 1; };
+  }, [isOpen, initialData]);
   const [showBggPanel, setShowBggPanel] = useState(false);
   const [manualBggId, setManualBggId] = useState('');
   const [bggMechanics, setBggMechanics] = useState(null); // BGG 메커니즘 참고용
@@ -78,10 +88,10 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
     const timer = window.setTimeout(async () => {
       const categoryHint = formData.category === '머더미스터리'
         ? '머더미스터리 패키지'
-        : '보드게임 한글판';
+        : '';
       setImageSearching(true);
       try {
-        const results = await searchKoreanImages(`${name} ${categoryHint}`);
+        const results = await searchKoreanImages(`${name} ${categoryHint}`.trim());
         if (active) setImageSearchResults(results);
       } catch (error) {
         console.error('[관리자 게임 추가 모달][NAVER 이미지 자동 검색 실패]', {
@@ -142,6 +152,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
   }, [isOpen, formData.name]);
 
   const handleSubmit = () => {
+    if (busy || bggBusyRef.current || bggSelectionPending) return;
     if (!formData.name) return showToast("이름은 필수입니다.", { type: "warning" });
     if (formData.difficulty === "") return showToast("난이도를 입력해주세요.", { type: "warning" }); // [NEW] 난이도 필수 검증 추가
     onSubmit(formData); // 부모 컴포넌트에게 입력된 데이터 전달
@@ -172,9 +183,27 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
 
   // [NEW] 검색 결과 선택 또는 수동 ID 입력 후 상세 조회 → 폼 자동 채움
   const applyBggData = async (bggId) => {
+    if (busy || bggBusyRef.current) return;
+    bggBusyRef.current = true;
+    const requestId = ++bggRequestRef.current;
+    setBggSelectionPending(true);
     setBggFetching(true);
     try {
+      // 이 콜백은 신규 등록에서만 전달한다. 수정 모달은 기존 동작을 유지한다.
+      if (onDuplicateGame) {
+        const matches = await checkGameExists(bggId);
+        if (requestId !== bggRequestRef.current) return;
+        if (matches.length > 1) {
+          showToast('같은 BGG ID의 게임이 여러 개입니다. 게임 목록에서 재고를 추가할 대상을 선택해주세요.', { type: 'warning' });
+          return;
+        }
+        if (matches.length === 1) {
+          onDuplicateGame(matches[0]);
+          return;
+        }
+      }
       const detail = await fetchBGGGame(bggId);
+      if (requestId !== bggRequestRef.current) return;
       if (!detail) throw new Error("게임 정보를 찾을 수 없습니다.");
 
       setFormData(prev => ({
@@ -204,11 +233,16 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
       setShowBggPanel(false);
       setBggSearchResults([]);
       setManualBggId('');
+      setBggSelectionPending(false);
     } catch (e) {
+      if (requestId !== bggRequestRef.current) return;
       console.error('applyBggData 에러:', e);
       showToast("BGG 정보 조회 오류: " + e.message, { type: "error" });
     } finally {
-      setBggFetching(false);
+      if (requestId === bggRequestRef.current) {
+        bggBusyRef.current = false;
+        setBggFetching(false);
+      }
     }
   };
 
@@ -239,8 +273,8 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
 
     const categoryHint = formData.category === '머더미스터리'
       ? '머더미스터리 패키지'
-      : '보드게임 한글판';
-    const query = imageSearchQuery.trim() || `${formData.name} ${categoryHint}`;
+      : '';
+    const query = imageSearchQuery.trim() || `${formData.name} ${categoryHint}`.trim();
 
     setImageSearching(true);
     setImageSearchResults([]);
@@ -297,12 +331,19 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
         </div>
       )}
 
+      {bggSelectionPending && !bggFetching && !busy && (
+        <div style={{ color: 'var(--admin-text-sub)', fontSize: '0.85em' }}>
+          BGG 항목을 다시 선택하거나 ID를 다시 조회해주세요.
+        </div>
+      )}
       <div style={{ display: 'flex', gap: '8px' }}>
         <input
+          ref={manualBggInputRef}
           value={manualBggId}
           onChange={e => setManualBggId(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleManualBggFetch()}
           placeholder="BGG ID 직접 입력"
+          aria-label="BGG ID 직접 입력"
           className="admin-input"
           style={{ flex: 1, minWidth: 0 }}
         />
@@ -312,8 +353,26 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
       </div>
 
       {formData.bgg_id && (
-        <div style={{ fontSize: '0.8em', color: '#3498db' }}>
-          선택된 BGG ID: {formData.bgg_id}
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '0.8em', color: '#3498db' }}>
+          <span>선택된 BGG ID: {formData.bgg_id}</span>
+          <button
+            type="button"
+            disabled={busy || bggFetching}
+            onClick={() => {
+              setManualBggId(String(formData.bgg_id));
+              manualBggInputRef.current?.focus();
+              manualBggInputRef.current?.scrollIntoView({ block: 'nearest' });
+            }}
+            title="올바른 BGG ID를 입력하고 가져오기를 눌러 변경합니다."
+            aria-label="선택된 BGG ID 변경"
+            style={{
+              padding: '5px 10px', borderRadius: '6px', fontSize: '0.8rem',
+              background: 'var(--admin-card-bg)', color: 'var(--admin-text-sub)',
+              border: '1px solid var(--admin-border)', cursor: 'pointer',
+            }}
+          >
+            변경
+          </button>
         </div>
       )}
 
@@ -617,7 +676,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
                   value={imageSearchQuery}
                   onChange={e => setImageSearchQuery(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleKoreanImageSearch()}
-                  placeholder={`${formData.name || '게임명'} ${formData.category === '머더미스터리' ? '머더미스터리 패키지' : '보드게임 한글판'}`}
+                  placeholder={`${formData.name || '게임명'} ${formData.category === '머더미스터리' ? '머더미스터리 패키지' : ''}`.trim()}
                   className="admin-input"
                   style={{ flex: 1, minWidth: 0 }}
                 />
@@ -695,6 +754,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title }) {
           </button>
           <button
             onClick={handleSubmit}
+            disabled={busy || bggFetching || bggSelectionPending}
             style={styles.saveBtn}
             onMouseEnter={(e) => {
               e.target.style.backgroundColor = 'rgba(52, 152, 219, 1)';

@@ -10,24 +10,34 @@
 
 const KEY = 'pr';
 
-// 오픈 리다이렉트 방지 — 명시적으로 허용된 내부 경로만 취급한다.
-const ALLOWED = /^\/admin-secret(\/[\w\-/:]*)?$/;
+// 로그인·가입 후 복귀할 수 있는 앱 내부 화면만 허용한다.
+const ALLOWED = /^(?:\/admin-secret(?:\/[\w-]+)*|\/event\/[\w-]+(?:\/[\w-]+)?|\/game\/\d+|\/mypage|\/search|\/categories|\/)$/;
+
+export const getSafeReturnPath = (path) => {
+    if (typeof path !== 'string' || /[\\\s]/.test(path)) return null;
+    try {
+        const url = new URL(path, 'https://app.invalid');
+        if (!path.startsWith('/') || url.origin !== 'https://app.invalid') return null;
+        if (!ALLOWED.test(url.pathname)) return null;
+        return url.pathname + url.search;
+    } catch { return null; }
+};
 
 /** 로그인 후 돌아갈 경로를 저장 (허용 목록 밖이면 무시) */
 export const stashPendingRoute = (path) => {
-    if (typeof path !== 'string' || !ALLOWED.test(path)) return;
+    const safePath = getSafeReturnPath(path);
+    if (!safePath) return;
     try {
-        sessionStorage.setItem(KEY, path);
+        sessionStorage.setItem(KEY, safePath);
     } catch { /* storage 차단 환경 — 복귀 기능만 포기 */ }
 };
 
 /** 저장된 복귀 경로를 꺼내고 비운다. 없거나 부적합하면 null */
-export const takePendingRoute = () => {
+export const takePendingRoute = (requestedPath) => {
+    let savedPath = null;
     try {
-        const path = sessionStorage.getItem(KEY);
+        savedPath = sessionStorage.getItem(KEY);
         sessionStorage.removeItem(KEY);
-        return path && ALLOWED.test(path) ? path : null;
-    } catch {
-        return null;
-    }
+    } catch { /* Explicit return links still work when storage is unavailable. */ }
+    return getSafeReturnPath(requestedPath) || getSafeReturnPath(savedPath);
 };

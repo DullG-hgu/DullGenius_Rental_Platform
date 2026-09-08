@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useGameData } from '../contexts/GameDataContext';
 import { getOptimizedImageUrl } from '../utils/imageOptimizer';
 import InfoBar from '../components/InfoBar';
@@ -11,41 +11,67 @@ import { sendLog, fetchOfficeStatus, fetchOfficeHoursConfig } from '../api';
 import './Home.css'; // [NEW] External CSS
 
 const Home = () => {
-    const navigate = useNavigate();
-    const { games, trending, loading } = useGameData();
+    const { games, trending, loading, error, trendingError, refreshGames } = useGameData();
     const [officeStatus, setOfficeStatus] = useState(null);
     const [officeHoursConfig, setOfficeHoursConfig] = useState(null);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
 
-    // 오피스아워 운영 여부
-    const isOfficeOpen = officeStatus?.open &&
-        (!officeStatus.auto_close_at || new Date() < new Date(officeStatus.auto_close_at));
+    const [now, setNow] = useState(Date.now);
+    const [officeError, setOfficeError] = useState(false);
+    const [officeRetry, setOfficeRetry] = useState(0);
 
-    // 마감 30분 전 여부 계산
+    // Office schedules are Korea time even when the visitor's browser is abroad.
     const getCloseTime = () => {
         if (officeStatus?.auto_close_at) return new Date(officeStatus.auto_close_at);
         if (officeHoursConfig?.auto_close_hour != null) {
-            const d = new Date();
-            d.setHours(officeHoursConfig.auto_close_hour, officeHoursConfig.auto_close_minute || 0, 0, 0);
-            return d;
+            const koreaDate = new Date(now + 9 * 60 * 60 * 1000);
+            return new Date(Date.UTC(koreaDate.getUTCFullYear(), koreaDate.getUTCMonth(), koreaDate.getUTCDate(),
+                Number(officeHoursConfig.auto_close_hour) - 9, Number(officeHoursConfig.auto_close_minute) || 0));
         }
         return null;
     };
     const closeTime = getCloseTime();
-    const msToClose = closeTime ? closeTime - new Date() : null;
-    const isClosingSoon = isOfficeOpen && msToClose != null && msToClose > 0 && msToClose <= 30 * 60 * 1000;
-    const closeTimeStr = closeTime
-        ? `${closeTime.getHours()}시${closeTime.getMinutes() > 0 ? ` ${closeTime.getMinutes()}분` : ''}`
+    const isOfficeOpen = !officeError && officeStatus?.open &&
+        (!officeStatus.auto_close_at || now < new Date(officeStatus.auto_close_at).getTime());
+    const msToClose = closeTime ? closeTime.getTime() - now : null;
+    const isClosingSoon = isOfficeOpen && msToClose > 0 && msToClose <= 30 * 60 * 1000;
+    const closeTimeStr = closeTime && Number.isFinite(closeTime.getTime())
+        ? new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' }).format(closeTime)
         : '';
 
     useEffect(() => {
-        Promise.all([fetchOfficeStatus(), fetchOfficeHoursConfig()])
-            .then(([status, config]) => {
+        let active = true;
+        let pending = false;
+        const refreshOffice = async () => {
+            if (pending) return;
+            pending = true;
+            setNow(Date.now());
+            try {
+                const [status, config] = await Promise.all([fetchOfficeStatus(), fetchOfficeHoursConfig()]);
+                if (!active) return;
                 setOfficeStatus(status);
                 setOfficeHoursConfig(config);
-            })
-            .catch(() => {});
-    }, []);
+                setOfficeError(false);
+            } catch {
+                if (active) setOfficeError(true);
+            } finally {
+                pending = false;
+            }
+        };
+        const onVisible = () => { if (document.visibilityState === 'visible') refreshOffice(); };
+        refreshOffice();
+        const poll = setInterval(refreshOffice, 30_000);
+        const clock = setInterval(() => setNow(Date.now()), 1000);
+        window.addEventListener('focus', refreshOffice);
+        document.addEventListener('visibilitychange', onVisible);
+        return () => {
+            active = false;
+            clearInterval(poll);
+            clearInterval(clock);
+            window.removeEventListener('focus', refreshOffice);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
+    }, [officeRetry]);
 
     useEffect(() => {
         // 페이지 진입 로그
@@ -64,10 +90,9 @@ const Home = () => {
     }, []);
 
     // [OPTIMIZATION] useCallback for handler
-    const handleNavigation = useCallback((path) => {
+    const saveScroll = useCallback(() => {
         sessionStorage.setItem('home_scroll_y', window.scrollY);
-        navigate(path);
-    }, [navigate]);
+    }, []);
 
     // [PERF] 전체 스피너 제거. 레이아웃은 즉시 렌더하고 트렌딩만 스켈레톤 처리.
 
@@ -87,8 +112,15 @@ const Home = () => {
                 <span aria-hidden="true" className="home-guide-entry-arrow">→</span>
             </button>
 
+            {officeError && (
+                <div className="home-status-message" role="alert">
+                    <p>오피스아워 운영 상태를 확인하지 못했습니다.</p>
+                    <button type="button" onClick={() => setOfficeRetry(value => value + 1)}>운영 상태 다시 시도</button>
+                </div>
+            )}
+
             {/* 운영 예정 시간 안내 (오프라인일 때) */}
-            {!isOfficeOpen && officeHoursConfig && (
+            {!officeError && !isOfficeOpen && officeHoursConfig && (
                 <div style={{
                     margin: "12px 16px 0",
                     padding: "11px 16px",
@@ -143,21 +175,21 @@ const Home = () => {
 
             {/* [2] 메인 내비게이션 (Big Buttons) */}
             <section className="home-nav-section">
-                <div
-                    onClick={() => handleNavigation('/categories')}
+                <Link
+                    to="/categories" onClick={saveScroll}
                     className="home-nav-btn category">
                     <div className="nav-icon">✨</div>
                     <div className="nav-title">추천 보드게임</div>
                     <div className="nav-desc">카테고리로 찾기</div>
-                </div>
+                </Link>
 
-                <div
-                    onClick={() => handleNavigation('/search')}
+                <Link
+                    to="/search" onClick={saveScroll}
                     className="home-nav-btn search">
                     <div className="nav-icon">🔍</div>
                     <div className="nav-title">직접 검색하기</div>
                     <div className="nav-desc">게임명, 필터</div>
-                </div>
+                </Link>
             </section>
 
 
@@ -165,6 +197,15 @@ const Home = () => {
             {/* [4] 요즘 뜨는 게임 (Horizontal Scroll) */}
             <section className="trending-section">
                 <h2 className="section-title" style={{ paddingLeft: "20px" }}>🔥 요즘 뜨는 게임</h2>
+                {(error || trendingError) && (
+                    <div className="home-status-message" role="alert">
+                        <p>{error ? '게임 목록을' : '인기 순위를'} 불러오지 못했습니다.</p>
+                        <button type="button" onClick={refreshGames}>게임 목록 다시 시도</button>
+                    </div>
+                )}
+                {!loading && !error && !trendingError && trending.length === 0 && (
+                    <p className="home-status-message">최근 7일간 집계된 인기 게임이 없습니다.</p>
+                )}
                 <div className="trending-list">
                     {loading && trending.length === 0 && (
                         [0, 1, 2, 3, 4].map(i => (
@@ -175,13 +216,12 @@ const Home = () => {
                             </div>
                         ))
                     )}
-                    {trending.slice(0, 5).map((game, index) => (
-                        <div
+                    {!error && !trendingError && trending.slice(0, 5).map((game, index) => (
+                        <Link
                             key={game.id}
-                            onClick={() => {
-                                sessionStorage.setItem('home_scroll_y', window.scrollY);
-                                navigate(`/game/${game.id}`, { state: { game, from: '/' } });
-                            }}
+                            to={`/game/${game.id}`}
+                            state={{ game, from: '/' }}
+                            onClick={saveScroll}
                             className="trending-item"
                         >
                             <div className="trending-img-wrapper">
@@ -206,16 +246,14 @@ const Home = () => {
                                 {game.name}
                             </div>
                             <div className="trending-category">{game.category}</div>
-                        </div>
+                        </Link>
                     ))}
 
                     {/* [NEW] 더보기 버튼 (순위 확장) */}
-                    {trending.length > 5 && (
-                        <div
-                            onClick={() => {
-                                sessionStorage.setItem('home_scroll_y', window.scrollY);
-                                navigate('/search?type=trending');
-                            }}
+                    {!error && !trendingError && trending.length > 5 && (
+                        <Link
+                            to="/search?type=trending"
+                            onClick={saveScroll}
                             className="trending-item more-item"
                         >
                             <div className="trending-img-wrapper more-wrapper">
@@ -224,14 +262,14 @@ const Home = () => {
                                     <span>인기 순위<br />더보기</span>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                     )}
                 </div>
             </section>
 
             {/* [5] 하단 정보 바 (InfoBar) - [MOVED TO FOOTER] */}
             <footer className="home-footer">
-                <InfoBar games={games} />
+                {!loading && !error && <InfoBar games={games} />}
                 <div className="home-footer-bgg">
                     <PoweredByBGG variant="light" height={26} />
                     <span className="home-footer-bgg-caption">Game data from BoardGameGeek</span>

@@ -1,12 +1,15 @@
 // src/Signup.js
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { takePendingRoute, getSafeReturnPath } from '../lib/pendingRoute';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext'; // [NEW]
 import { getAuthErrorMessage } from '../constants'; // [NEW]
 
 function Signup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnPath = getSafeReturnPath(searchParams.get('redirect'));
   const { signup } = useAuth(); // restoreAccount 제거
   const { showToast } = useToast();
 
@@ -55,7 +58,7 @@ function Signup() {
       });
 
       showToast("가입 성공! 환영합니다.", { type: "success" });
-      navigate("/");
+      navigate(takePendingRoute(returnPath) || "/", { replace: true });
     } catch (error) {
       console.error("Signup Error:", error);
       showToast(getAuthErrorMessage(error), { type: "error" });

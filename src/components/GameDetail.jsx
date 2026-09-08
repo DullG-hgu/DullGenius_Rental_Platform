@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { fetchGames, fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, fetchMyRentals, sendLog } from '../api';
+import { fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, sendLog } from '../api';
 import { TEXTS } from '../constants';
 import { translateGenre } from '../constants/genreMap';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,15 +18,22 @@ function GameDetail() {
   const location = useLocation();
   const { user, profile } = useAuth();
   const { showToast } = useToast();
-  // 찜/취소 후 전역 게임 목록을 서버 기준으로 다시 읽는다.
-  // localStorage 만 지우면 이미 마운트된 GameProvider 의 state 는 그대로라
-  // 뒤로가기 했을 때 목록이 옛 상태로 남는다.
-  const { refreshGames } = useGameData();
-
-  const [game, setGame] = useState(location.state?.game || null);
+  const { games, loading: gamesLoading, error: gamesError, refreshGames } = useGameData();
+  const { loading: authLoading } = useAuth();
+  const loggedGameId = useRef(null);
+  const [detail, setDetail] = useState(null);
+  const [retry, setRetry] = useState(0);
   const [reviews, setReviews] = useState([]);
+  const [reviewRefresh, setReviewRefresh] = useState(0);
+  const [reviewsError, setReviewsError] = useState(null);
   const [isReviewsLoading, setIsReviewsLoading] = useState(true);
-  const [loading, setLoading] = useState(!game);
+  const globalGame = games.find(item => String(item.id) === String(id));
+  const currentDetail = detail?.id === id && detail?.userId === (user?.id ?? null) ? detail : null;
+  const game = authLoading ? null : globalGame || currentDetail?.game;
+  const loading = authLoading || (!game && (gamesLoading || !currentDetail));
+  const gameError = globalGame ? gamesError : currentDetail?.error;
+  const myRental = game?.rentals?.find(rental => user && rental.user_id === user.id && !rental.returned_at &&
+    (rental.type === 'RENT' || (rental.type === 'DIBS' && Date.parse(rental.due_date) > Date.now())));
   const [newReview, setNewReview] = useState({ rating: "5", comment: "" });
   const [cooldown, setCooldown] = useState(0);
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
@@ -60,71 +67,46 @@ function GameDetail() {
 
   useEffect(() => {
     if (id) increaseViewCount(id);
-    const loadData = async () => {
-      let targetGame = game;
-
-      if (!targetGame) {
-        setLoading(true);
-        const cached = localStorage.getItem('games_cache');
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached);
-            const gamesList = parsed.data || (Array.isArray(parsed) ? parsed : []);
-            const found = gamesList.find(g => String(g.id) === String(id));
-            if (found) {
-              targetGame = found;
-              setGame(found);
-            }
-          } catch (e) {
-            console.warn('캐시 로드 실패:', e);
-          }
-        }
-
-        if (!targetGame) {
-          const gamesData = await fetchGames();
-          const found = gamesData.find(g => String(g.id) === String(id));
-          if (found) {
-            targetGame = found;
-            setGame(found);
-          }
-        }
-      }
-
-      setIsReviewsLoading(true);
-      const reviewsData = await fetchReviews(id);
-      setReviews(reviewsData || []);
-
-      setIsReviewsLoading(false);
-      setLoading(false);
-
-      if (targetGame && targetGame.status !== "대여가능" && targetGame.status !== "대여 불가") {
-        sendLog(id, 'OUT_OF_STOCK_VIEW', { current_status: targetGame.status });
-      }
-    };
-    loadData();
   }, [id]);
 
   useEffect(() => {
-    const checkDibsStatus = async () => {
-      if (user && game) {
-        try {
-          // [SECURITY] userId 파라미터 제거, server의 auth.uid() 사용
-          const rentals = await fetchMyRentals();
-          const myRental = rentals.find(r => String(r.gameId) === String(game.id) && !r.returnedAt);
-          if (myRental) {
-            setGame(prev => ({
-              ...prev,
-              status: myRental.type === 'DIBS' ? "예약됨" : "대여중",
-              renterId: user.id
-            }));
-          }
-        } catch (e) {
-          console.error("내 대여 상태 확인 실패:", e);
-        }
-      }
-    };
-    checkDibsStatus();
-  }, [user, game?.id]);
+    if (!game || loggedGameId.current === id) return;
+    loggedGameId.current = id;
+    if (game.status !== '대여가능' && game.status !== '대여 불가') {
+      sendLog(id, 'OUT_OF_STOCK_VIEW', { current_status: game.status });
+    }
+  }, [id, game]);
+
+  useEffect(() => {
+    if (authLoading || gamesLoading || globalGame) return;
+    let active = true;
+    setDetail(null);
+    fetchGameById(id).then(game => {
+      if (active) setDetail({ id, userId: user?.id ?? null, game, error: null });
+    }).catch(error => {
+      if (active) setDetail({ id, userId: user?.id ?? null, game: null, error });
+    });
+    return () => { active = false; };
+  }, [id, user?.id, authLoading, gamesLoading, globalGame, retry]);
+
+  useEffect(() => {
+    let active = true;
+    setReviews([]);
+    setReviewsError(null);
+    setIsReviewsLoading(true);
+    fetchReviews(id).then(result => {
+      if (active) setReviews(result || []);
+    }).catch(error => {
+      if (active) setReviewsError(error);
+    }).finally(() => { if (active) setIsReviewsLoading(false); });
+    return () => { active = false; };
+  }, [id, retry, reviewRefresh]);
+
+  const retryData = () => {
+    setDetail(null);
+    setRetry(value => value + 1);
+    refreshGames();
+  };
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -158,7 +140,7 @@ function GameDetail() {
   const handleRent = async () => {
     if (!user) {
       showConfirmModal("로그인 필요", "로그인이 필요합니다. 로그인 페이지로 이동할까요?", () => {
-        navigate("/login");
+        navigate("/login", { state: { from: location.pathname + location.search } });
       }, "info");
       return;
     }
@@ -181,19 +163,13 @@ function GameDetail() {
           const result = await dibsGame(game.id, user.id);
 
           if (result.success) {
-            refreshGames(); // [FIX] 전역 목록을 서버 기준으로 갱신 (캐시 + in-memory state 모두)
+            await refreshGames();
+            setRetry(value => value + 1);
             showToast("찜 완료! 30분 내에 수령해주세요.", {
               showButton: true,
               buttonText: "마이페이지로 가기",
               onButtonClick: () => navigate('/mypage')
             });
-            // [FIX] 로컬 추정 대신 서버에서 최신 상태 재조회 (동시성 안전)
-            const updatedGame = await fetchGameById(game.id);
-            if (updatedGame) {
-              setGame(prev => ({ ...updatedGame, renterId: user.id, status: '예약됨' }));
-            } else {
-              setGame(prev => ({ ...prev, status: '예약됨', renterId: user.id }));
-            }
           } else {
             showToast(result.message || "찜하기 실패", { type: "error" });
           }
@@ -214,15 +190,9 @@ function GameDetail() {
         try {
           const result = await cancelDibsGame(game.id, user.id);
           if (result.success) {
-            refreshGames(); // [FIX] 전역 목록을 서버 기준으로 갱신
+            await refreshGames();
+            setRetry(value => value + 1);
             showToast("찜이 취소되었습니다.");
-            // [FIX] 로컬 추정 대신 서버에서 최신 상태 재조회 (동시성 안전)
-            const updatedGame = await fetchGameById(game.id);
-            if (updatedGame) {
-              setGame(updatedGame);
-            } else {
-              setGame(prev => ({ ...prev, status: '대여가능', renterId: null, available_count: (prev.available_count || 0) + 1 }));
-            }
           } else {
             showToast(result.message || "취소 실패", { type: "error" });
           }
@@ -265,8 +235,7 @@ function GameDetail() {
       setNewReview({ rating: "5", comment: "" });
       setCooldown(10);
 
-      const reviewsData = await fetchReviews(id);
-      setReviews(reviewsData || []);
+      setReviewRefresh(value => value + 1);
 
     } catch (e) {
       showToast("리뷰 등록 실패: " + e.message, { type: "error" });
@@ -293,8 +262,7 @@ function GameDetail() {
       await updateReview(reviewId, editForm);
       showToast(TEXTS.ALERT_REVIEW_UPDATE_SUCCESS);
       handleCancelEdit();
-      const reviewsData = await fetchReviews(id);
-      setReviews(reviewsData || []);
+      setReviewRefresh(value => value + 1);
     } catch (e) {
       showToast("리뷰 수정 실패: " + e.message, { type: "error" });
     } finally {
@@ -310,8 +278,7 @@ function GameDetail() {
         try {
           await deleteReview(reviewId);
           showToast(TEXTS.ALERT_REVIEW_DELETE_SUCCESS);
-          const reviewsData = await fetchReviews(id);
-          setReviews(reviewsData || []);
+          setReviewRefresh(value => value + 1);
         } catch (e) {
           showToast("삭제 실패: " + e.message, { type: "error" });
         }
@@ -321,6 +288,9 @@ function GameDetail() {
   };
 
   if (loading && !game) return <div className="loading-container"><div className="spinner"></div></div>;
+  if (!game && gameError) return <div role="alert" style={{ padding: "20px", textAlign: "center" }}>
+    <p>게임 정보를 불러오지 못했습니다.</p><button onClick={retryData}>다시 시도</button>
+  </div>;
   if (!game) return <div style={{ padding: "20px", textAlign: "center" }}>게임을 찾을 수 없습니다.</div>;
 
   const handleBack = () => {
@@ -335,6 +305,7 @@ function GameDetail() {
     <div className="game-detail-container">
       <button onClick={handleBack} className="detail-back-btn">← 뒤로가기</button>
 
+      {gameError && <div role="alert"><p>최신 게임 정보를 불러오지 못했습니다. 표시된 재고가 달라질 수 있습니다.</p><button onClick={retryData}>다시 시도</button></div>}
       {/* 게임 정보 카드 */}
       <div className="detail-card">
         {game.image && (
@@ -422,6 +393,10 @@ function GameDetail() {
             <button disabled className="main-btn using" style={{ backgroundColor: "#95a5a6", cursor: "not-allowed", border: "none" }}>
               🚫 대여 불가 (열람 전용)
             </button>
+          ) : myRental?.type === 'DIBS' ? (
+            <button onClick={handleCancelDibs} className="main-btn cancel">❌ 예약 취소</button>
+          ) : myRental?.type === 'RENT' ? (
+            <button disabled className="main-btn using">🔒 이미 이용 중인 게임입니다</button>
           ) : game.status === "대여가능" ? (
             <button onClick={handleRent} className="main-btn rent">
               ⚡ 찜하기 (30분)
@@ -448,7 +423,7 @@ function GameDetail() {
         {!user ? (
           <div className="login-plz">
             <p>로그인 후 리뷰를 남길 수 있습니다.</p>
-            <button onClick={() => navigate("/login")} className="login-btn-small">로그인하기</button>
+            <button onClick={() => navigate("/login", { state: { from: location.pathname + location.search } })} className="login-btn-small">로그인하기</button>
           </div>
         ) : (
           <div className="review-input-box">
@@ -497,6 +472,7 @@ function GameDetail() {
         <h4 className="review-list-title">
           📝 리뷰 ({reviews.length})
         </h4>
+        {reviewsError && <div role="alert">리뷰를 불러오지 못했습니다. <button onClick={() => setReviewRefresh(value => value + 1)}>리뷰 다시 시도</button></div>}
         {isReviewsLoading ? <div>리뷰 불러오는 중...</div> : (
           (reviews || []).map(r => (
             <div key={r.review_id} className="review-item">
@@ -551,7 +527,7 @@ function GameDetail() {
             </div>
           ))
         )}
-        {reviews.length === 0 && !isReviewsLoading && <div style={{ color: "#999", textAlign: "center", padding: "20px" }}>아직 리뷰가 없습니다. 첫 리뷰를 남겨주세요!</div>}
+        {reviews.length === 0 && !isReviewsLoading && !reviewsError && <div style={{ color: "#999", textAlign: "center", padding: "20px" }}>아직 리뷰가 없습니다. 첫 리뷰를 남겨주세요!</div>}
       </div>
 
       {/* 유튜브 모달 */}

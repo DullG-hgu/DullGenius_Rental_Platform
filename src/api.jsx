@@ -54,7 +54,7 @@ export const fetchGameById = async (gameId) => {
     return { ...data, ...statusData };
   } catch (e) {
     console.error("fetchGameById 실패:", e);
-    return null;
+    throw e;
   }
 };
 
@@ -133,7 +133,7 @@ export const fetchReviews = async (gameId) => {
 
   if (error) {
     console.error("리뷰 로딩 실패:", error);
-    return [];
+    throw error;
   }
 
   // [FIX] 서버 DB에 중복된 데이터가 있을 경우를 대비해, API 레벨에서 중복 제거
@@ -241,39 +241,16 @@ export const increaseViewCount = async (gameId) => {
 
 /**
  * 급상승 게임(최근 7일 집계) 목록을 가져옵니다.
- * RPC가 실패할 경우 전체 조회수 기준의 Fallback을 제공합니다.
+ * RPC 실패는 호출자에게 전달하며 누적 조회수 순위로 대체하지 않습니다.
  * 
  * @returns {Promise<Array>} 트렌딩 게임 배열
  */
 export const fetchTrending = async () => {
-  try {
-    // [FIX] 최근 7일 집계 로직이 반영된 RPC 호출
-    const { data: trendingData, error } = await supabase
-      .rpc('get_trending_games');
-
-    if (error || !trendingData || trendingData.length === 0) {
-      // RPC가 아직 없거나 에러인 경우 fallback: 기존 방식(총 조회수)
-      if (error) console.warn("Trending RPC Error (Fallback to total_views):", error.message);
-      const { data, error: fbError } = await supabase
-        .from('games')
-        .select('*')
-        .order('total_views', { ascending: false })
-        .limit(20);
-
-      if (fbError) throw fbError;
-      return data;
-    }
-
-    // RPC 리턴값: { id, name, image, category, weekly_views }
-    // 프론트엔드 컴포넌트는 game object 전체를 기대할 수 있으므로,
-    // 필요하다면 여기서 매핑하거나, RPC에서 더 많은 필드를 반환해야 함.
-    // 현재는 id, name, image, category만으로도 충분할 수 있음 (DashboardTab UI 체크 필요).
-    return trendingData;
-
-  } catch (error) {
-    console.error("Trending Fetch Failed:", error);
-    return [];
-  }
+  // 실패나 빈 집계를 누적 조회수 순위로 바꾸지 않는다.
+  // 모든 방문자에게 동일한 최근 7일 집계만 표시한다.
+  const { data, error } = await supabase.rpc('get_trending_games');
+  if (error) throw error;
+  return data || [];
 };
 
 // [IMPROVED] 설정값 가져오기 (DB: app_config)
@@ -285,9 +262,10 @@ export const fetchConfig = async () => {
     .from('app_config')
     .select('value')
     .eq('key', DEFAULT_KEY)
-    .single();
+    .maybeSingle();
 
-  if (error || !data) {
+  if (error) throw error;
+  if (!data) {
     // 2. 없으면 기본값 반환 (DB에 없을 때)
     console.warn("설정 로드 실패 또는 없음, 기본값 사용:", error?.message);
     return [
@@ -305,21 +283,23 @@ export const fetchConfig = async () => {
 
 // 오피스아워 상태 조회
 export const fetchOfficeStatus = async () => {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('app_config')
     .select('value')
     .eq('key', 'office_status')
-    .single();
+    .maybeSingle();
+  if (error) throw error;
   return data?.value ?? { open: false, auto_close_at: null };
 };
 
 // 오피스아워 배너 설정 조회
 export const fetchOfficeHoursConfig = async () => {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('app_config')
     .select('value')
     .eq('key', 'office_hours_config')
-    .single();
+    .maybeSingle();
+  if (error) throw error;
   return data?.value ?? {
     auto_close_hour: 21,
     auto_close_minute: 0,
@@ -655,39 +635,18 @@ export const addGame = async (gameData) => {
   return newGame;
 };
 
-// [Admin] 게임 이름 중복 확인 [IMPROVED]
-// 정확한 일치(eq) 우선, 필요시만 부분 일치(ilike) 확인
-// 영문/한글 혼용, 띄어쓰기 차이 등에 대응
-export const checkGameExists = async (name) => {
-  if (!name?.trim()) return [];
+// [Admin] BGG ID가 같은 게임만 기존 재고로 취급한다.
+export const checkGameExists = async (bggId) => {
+  const normalizedId = String(bggId ?? '').trim();
+  if (!normalizedId) return [];
 
-  const trimmedName = name.trim();
-
-  // 1단계: 정확한 일치 확인 (우선도 높음)
-  const { data: exactMatch } = await supabase
+  const { data, error } = await supabase
     .from('games')
     .select('id, name, quantity, bgg_id')
-    .eq('name', trimmedName);
+    .eq('bgg_id', normalizedId);
 
-  if (exactMatch && exactMatch.length > 0) {
-    return exactMatch;
-  }
-
-  // 2단계: 부분 일치 확인 (3글자 이상일 때만, 대소문자 무시)
-  // 너무 짧은 검색어는 오탐지 가능성 높으므로 제외
-  // "스" (1글자) → 검색 안함
-  // "스플렌더" (4글자) → 부분 검색 (스플렌더, Splendor 모두 감지)
-  if (trimmedName.length >= 3) {
-    const { data: fuzzyMatch } = await supabase
-      .from('games')
-      .select('id, name, quantity, bgg_id')
-      .ilike('name', `%${trimmedName}%`)
-      .limit(5);  // 오탐지 방지: 최대 5개만
-
-    return fuzzyMatch || [];
-  }
-
-  return [];
+  if (error) throw error;
+  return data || [];
 };
 
 // [Admin] 기존 게임에 재고(Copy) 추가 — 원자적 증가 RPC (동시 클릭 시 증가분 유실 방지)
@@ -799,6 +758,7 @@ export const editGame = async (gameData) => {
   const { error } = await supabase
     .from('games')
     .update({
+      ...(gameData.bgg_id !== undefined ? { bgg_id: gameData.bgg_id || null } : {}),
       name: gameData.name,
       category: gameData.category,
       min_players: gameData.min_players,
@@ -1451,10 +1411,11 @@ export const kioskListActiveRentals = async () => {
  *
  * @param {number} gameId - 게임 ID
  * @param {string} userId - 사용자 UUID
- * @param {string} [rentalId] - 특정 대여 기록 UUID
+ * @param {string} rentalId - 반납할 정확한 대여 기록 UUID (필수)
  * @returns {Promise<Object>} 처리 결과 객체
  */
 export const kioskReturn = async (gameId, userId, rentalId) => {
+  if (!rentalId) throw new Error('반납할 대여 건을 선택해주세요.');
   const { data, error } = await supabase.rpc('kiosk_return', {
     p_game_id: gameId,
     p_user_id: userId,

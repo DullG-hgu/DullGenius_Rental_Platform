@@ -3,6 +3,15 @@
 
 import { useMemo } from 'react';
 
+// Canonical URL/select values, including links saved before player filters were standardized.
+export const normalizePlayerFilter = (value = 'all') => {
+    const compact = String(value).replace(/\s+/g, '');
+    const match = compact.match(/^([2-8])(?:인)?(이상|\+)?$/);
+    if (!match) return 'all';
+    const normalized = `${match[1]}${match[2] ? '+' : ''}`;
+    return ['2', '3', '4', '5', '5+', '6+', '8+'].includes(normalized) ? normalized : 'all';
+};
+
 export const useGameFilter = (games, filters) => {
     const {
         searchTerm = "",
@@ -19,8 +28,7 @@ export const useGameFilter = (games, filters) => {
     // 인원수 체크 헬퍼 함수
     const checkPlayerCount = (minPlayers, maxPlayers, targetFilter) => {
         if (minPlayers == null || maxPlayers == null) return false;
-        if (targetFilter === "6+") return maxPlayers >= 6;
-        if (targetFilter === "8+") return maxPlayers >= 8;
+        if (targetFilter.endsWith('+')) return maxPlayers >= parseInt(targetFilter, 10);
         const target = parseInt(targetFilter);
         return target >= minPlayers && target <= maxPlayers;
     };
@@ -72,7 +80,7 @@ export const useGameFilter = (games, filters) => {
                 }
 
                 // 태그 중 하나라도 키워드를 포함하면 매칭 (공백 무시 적용)
-                return tags.some(tag => {
+                const matchesTag = tags.some(tag => {
                     const normalizedTag = normalize(tag.replace(/^#/, ''));
                     if (normalizedTag.includes(normalizedTagSearch)) return true;
                     if (isPureChoseong(normalizedTagSearch)) {
@@ -80,18 +88,13 @@ export const useGameFilter = (games, filters) => {
                     }
                     return false;
                 });
+                if (!matchesTag) return false;
             } else {
                 if (searchTerm) {
-                    // 1. 일반 검색 (공백 무시)
-                    if (normalizedGameName.includes(normalizedSearch)) return true;
-
-                    // 2. 한글 초성 검색 (검색어가 순수 초성으로만 이루어진 경우만!)
-                    if (isPureChoseong(normalizedSearch)) {
-                        const gameChoseong = getChoseong(normalizedGameName);
-                        if (gameChoseong.includes(normalizedSearch)) return true;
-                    }
-
-                    return false;
+                    const matchesName = normalizedGameName.includes(normalizedSearch)
+                        || (isPureChoseong(normalizedSearch)
+                            && getChoseong(normalizedGameName).includes(normalizedSearch));
+                    if (!matchesName) return false;
                 }
             }
 
@@ -101,16 +104,10 @@ export const useGameFilter = (games, filters) => {
                 const normalizedRenterSearch = normalize(renterFilter);
                 const normalizedRenterName = normalize(game.renter);
 
-                // 일반 검색
-                if (normalizedRenterName.includes(normalizedRenterSearch)) return true;
-
-                // 초성 검색 (순수 초성일 때만)
-                if (isPureChoseong(normalizedRenterSearch)) {
-                    const renterChoseong = getChoseong(normalizedRenterName);
-                    if (renterChoseong.includes(normalizedRenterSearch)) return true;
-                }
-
-                return false;
+                const matchesRenter = normalizedRenterName.includes(normalizedRenterSearch)
+                    || (isPureChoseong(normalizedRenterSearch)
+                        && getChoseong(normalizedRenterName).includes(normalizedRenterSearch));
+                if (!matchesRenter) return false;
             }
 
             // [NEW] Admin 전용 - 소유자 필터
@@ -139,16 +136,18 @@ export const useGameFilter = (games, filters) => {
             }
 
             // 난이도 필터
-            if (difficultyFilter !== "전체" && game.difficulty) {
+            if (difficultyFilter !== "전체") {
                 const score = parseFloat(game.difficulty);
+                if (!Number.isFinite(score)) return false;
                 if (difficultyFilter === "입문" && score >= 2.0) return false;
                 if (difficultyFilter === "초중급" && (score < 2.0 || score >= 3.0)) return false;
                 if (difficultyFilter === "전략" && score < 3.0) return false;
             }
 
             // 인원수 필터
-            if (playerFilter !== "all" && (game.min_players != null || game.max_players != null)) {
-                if (!checkPlayerCount(game.min_players, game.max_players, playerFilter)) return false;
+            const normalizedPlayerFilter = normalizePlayerFilter(playerFilter);
+            if (normalizedPlayerFilter !== "all") {
+                if (!checkPlayerCount(game.min_players, game.max_players, normalizedPlayerFilter)) return false;
             }
 
             return true;

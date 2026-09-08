@@ -86,7 +86,7 @@ function DashboardTab({ games, loading, onReload, users }) {
   // 필터 관련 변수
   const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [renterFilter, setRenterFilter] = useState(""); // 👤 대여자 검색용
+  const [renterFilter, setRenterFilter] = useState(""); // 대여자 이름 선택
   const [ownerFilter, setOwnerFilter] = useState(""); // [NEW] 소유자 필터
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [difficultyFilter, setDifficultyFilter] = useState("전체");
@@ -139,9 +139,21 @@ function DashboardTab({ games, loading, onReload, users }) {
 
   // --- 필터링 로직 (App.js에서 가져옴 + 대여자 필터 추가) ---
   // [개선] Custom Hook 사용
-  const filteredGames = useGameFilter(games, {
+  const renterOptions = [...new Set(games.flatMap(game =>
+    (game.rentals || []).map(rental =>
+      (rental.renter_name || rental.profiles?.name || '').trim()
+    ).filter(Boolean)
+  ))].sort((a, b) => a.localeCompare(b, 'ko'));
+
+  // 이름 선택은 정확히 일치하는 대여 기록으로 먼저 좁힌다.
+  const renterGames = renterFilter ? games.filter(game =>
+    (game.rentals || []).some(rental =>
+      (rental.renter_name || rental.profiles?.name || '').trim() === renterFilter
+    )
+  ) : games;
+
+  const filteredGames = useGameFilter(renterGames, {
     searchTerm,
-    renterFilter, // Admin 전용
     ownerFilter, // [NEW] Admin 전용 - 소유자 필터
     selectedCategory,
     onlyAvailable,
@@ -839,7 +851,7 @@ function DashboardTab({ games, loading, onReload, users }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", flexWrap: "wrap", gap: "10px" }}>
         <h3 style={{ margin: 0 }}>🚨 게임 관리 (총 {games.length}개)</h3>
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <div className="admin-dashboard-actions">
           {/* 연체만 보기 토글 — 연체가 있을 때 강조 */}
           <button
             onClick={() => setOnlyOverdue(prev => !prev)}
@@ -876,6 +888,7 @@ function DashboardTab({ games, loading, onReload, users }) {
         onReset={resetFilters}
         isAdmin={true}                   // 관리자 모드 켜기
         renterFilter={renterFilter}      // 대여자 검색 state
+        renterOptions={renterOptions}
         setRenterFilter={setRenterFilter}
         ownerFilter={ownerFilter}        // [NEW] 소유자 검색 state
         setOwnerFilter={setOwnerFilter}

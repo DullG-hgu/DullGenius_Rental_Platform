@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { fetchDamageReports, fetchGameRequests, fetchRentalRequests } from '../api';
 
-function AdminOverviewCard({ games = [], isOfficeOpen, onGoReports, onGoRentalRequests }) {
+function AdminOverviewCard({ games = [], isOfficeOpen, onGoReports, onGoRentalRequests, onGoOffice }) {
     const [pendingReports, setPendingReports] = useState(null); // null = 로딩 중
     const [pendingRequests, setPendingRequests] = useState(null);
     const [pendingRentals, setPendingRentals] = useState(null);
@@ -62,12 +62,14 @@ function AdminOverviewCard({ games = [], isOfficeOpen, onGoReports, onGoRentalRe
             <div style={styles.grid}>
                 <StatusCell
                     icon={isOfficeOpen ? '🟢' : '⭕'}
-                    label="운영 상태"
+                    label="오피스아워"
                     value={isOfficeOpen ? '운영 중' : '오프라인'}
                     hint={isOfficeOpen
-                        ? '지금 회원들이 대여할 수 있어요.'
-                        : '우상단 "출근" 버튼을 눌러야 대여가 열립니다.'}
-                    tone={isOfficeOpen ? 'ok' : 'warn'}
+                        ? '1주차 무료 대여 운영 상태와 설정을 확인하세요.'
+                        : '1주차 무료 대여 운영은 오피스아워 탭에서 시작합니다.'}
+                    tone={isOfficeOpen ? 'ok' : 'info'}
+                    actionLabel="오피스아워 관리"
+                    onAction={onGoOffice}
                 />
 
                 <StatusCell
@@ -124,7 +126,7 @@ function AdminOverviewCard({ games = [], isOfficeOpen, onGoReports, onGoRentalRe
                 <ul style={styles.tips}>
                     <li><b>대여/반납:</b> 아래 게임 카드의 버튼으로 처리합니다. 이름 검색으로 회원을 찾아 연결하세요.</li>
                     <li><b>회원 문의:</b> 📢 신고/신청 관리 탭에서 먼저 확인하세요.</li>
-                    <li><b>출근/퇴근:</b> 우상단 초록 버튼입니다. 출근해야 홈페이지에 "운영중"으로 보입니다.</li>
+                    <li><b>1주차 무료 대여:</b> 🕒 오피스아워 탭에서 출근·퇴근, 전체 회원 대여 허용과 운영 안내를 관리합니다.</li>
                     <li><b>위험한 작업</b> (학기 초기화, 권한 변경 등)은 ⚙️ 시스템 설정 · 👥 회원 관리에 있습니다. 두 번 확인하고 실행하세요.</li>
                     <li><b>문제가 생기면:</b> 브라우저에서 <kbd>F12</kbd> → Console 탭을 열어 빨간 에러 메시지를 캡처해 개발자에게 전달해주세요.</li>
                 </ul>

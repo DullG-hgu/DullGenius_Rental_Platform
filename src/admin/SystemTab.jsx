@@ -1,28 +1,22 @@
 // src/admin/SystemTab.jsx
 // 시스템 설정 탭 - 회비 관리, 학기 초기화 등
 
-import { useState, useEffect } from 'react';
-import { fetchUsers, fetchPaymentCheckEnabled, fetchOfficeHoursConfig, saveOfficeHoursConfig } from '../api';
-import { resetSemesterPayments, togglePaymentCheck } from '../api_members';
+import { useState, useEffect, useRef } from 'react';
+import { fetchUsers } from '../api';
+import { resetSemesterPayments } from '../api_members';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
 
-const COLOR_PRESETS = [
-    { label: '🔴 빨강', value: 'linear-gradient(135deg, #7b1a1a, #e74c3c)' },
-    { label: '🟢 초록', value: 'linear-gradient(135deg, #1a5c2a, #27ae60)' },
-    { label: '⬜ 회색', value: 'linear-gradient(135deg, #3a3a3a, #666666)' },
-];
-
-function SystemTab({ users }) {
+function SystemTab({ users, onUsersReload }) {
     const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
+    const [resetting, setResetting] = useState(false);
+    const resetInFlight = useRef(false);
     const [stats, setStats] = useState({
         totalMembers: 0,
         paidMembers: 0,
         unpaidMembers: 0
     });
-    const [paymentCheckEnabled, setPaymentCheckEnabled] = useState(true);
-    const [officeHoursConfig, setOfficeHoursConfig] = useState(null);
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
         title: '',
@@ -40,14 +34,10 @@ function SystemTab({ users }) {
     };
 
     // 데이터 로드
-    const loadData = async () => {
+    const loadData = async (freshMembers) => {
         setLoading(true);
         try {
-            const [members, paymentCheck, ohConfig] = await Promise.all([
-                Array.isArray(users) ? Promise.resolve(users) : fetchUsers(),
-                fetchPaymentCheckEnabled(),
-                fetchOfficeHoursConfig()
-            ]);
+            const members = Array.isArray(freshMembers) ? freshMembers : Array.isArray(users) ? users : await fetchUsers();
 
             // 통계 계산
             const totalMembers = members.length;
@@ -55,8 +45,6 @@ function SystemTab({ users }) {
             const unpaidMembers = totalMembers - paidMembers;
 
             setStats({ totalMembers, paidMembers, unpaidMembers });
-            setPaymentCheckEnabled(paymentCheck);
-            setOfficeHoursConfig(ohConfig);
 
         } catch (e) {
             console.error('[SystemTab] 데이터 로딩 실패:', e);
@@ -70,56 +58,9 @@ function SystemTab({ users }) {
         loadData();
     }, [users]);
 
-    // 회비 검사 토글
-    const handleTogglePaymentCheck = async () => {
-        const newState = !paymentCheckEnabled;
-        const action = newState ? '활성화' : '비활성화';
-
-        showConfirmModal(
-            `회비 검사 ${action}`,
-            `회비 검사를 ${action}하시겠습니까?\n\n${newState
-                ? '⚠️ 활성화하면 회비를 내지 않은 회원은 키오스크 간편대여·예약수령이 막힙니다.'
-                : '⚠️ 비활성화하면 회비 미납 회원도 키오스크에서 대여·수령할 수 있습니다. (무료 대여 기간, 축제 등)'}`,
-            async () => {
-                try {
-                    await togglePaymentCheck(newState);
-                    setPaymentCheckEnabled(newState);
-                    showToast(`✅ 회비 검사가 ${action}되었습니다.`, { type: 'success' });
-                } catch (e) {
-                    console.error('[SystemTab] 회비 검사 토글 실패:', e);
-                    showToast('설정 변경 실패: ' + e.message, { type: 'error' });
-                }
-            },
-            'warning'
-        );
-    };
-
-    // 숫자 입력 정리: 빈 값·범위 밖은 기본값/경계로 (onBlur 와 저장 시에만 적용 — 입력 중엔 빈칸 허용)
-    const clampInt = (value, min, max, fallback) => {
-        const n = parseInt(value, 10);
-        if (Number.isNaN(n)) return fallback;
-        return Math.min(max, Math.max(min, n));
-    };
-
-    // 오피스아워 설정 저장
-    const handleSaveOfficeHoursConfig = async () => {
-        try {
-            const normalized = {
-                ...officeHoursConfig,
-                auto_close_hour: clampInt(officeHoursConfig.auto_close_hour, 0, 23, 0),
-                auto_close_minute: clampInt(officeHoursConfig.auto_close_minute, 0, 59, 0),
-            };
-            setOfficeHoursConfig(normalized);
-            await saveOfficeHoursConfig(normalized);
-            showToast('✅ 오피스아워 설정이 저장되었습니다.', { type: 'success' });
-        } catch (e) {
-            console.error('[SystemTab] 오피스아워 설정 저장 실패:', e);
-            showToast('저장 실패: ' + e.message, { type: 'error' });
-        }
-    };
-
     // 학기 초기화
     const handleResetSemester = async () => {
+        if (resetInFlight.current || loading) return;
         showConfirmModal(
             '학기 종료 - 회비 일괄 초기화',
             `⚠️ 모든 일반 회원의 회비 납부 상태를 "미납"으로 초기화합니다.\n\n` +
@@ -127,13 +68,24 @@ function SystemTab({ users }) {
             `• 관리자, 운영진, 회비 면제 역할 보유자는 자동 제외\n\n` +
             `이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`,
             async () => {
+                if (resetInFlight.current) return;
+                resetInFlight.current = true;
+                setResetting(true);
                 try {
                     const result = await resetSemesterPayments();
                     showToast(`✅ ${result.reset_count}명의 회비 상태가 초기화되었습니다.`, { type: 'success' });
-                    loadData(); // 통계 새로고침
+                    try {
+                        const members = onUsersReload ? await onUsersReload() : await fetchUsers();
+                        await loadData(members);
+                    } catch {
+                        showToast('초기화는 완료됐지만 회원 목록을 새로 불러오지 못했습니다. 페이지를 새로고침해주세요.', { type: 'warning' });
+                    }
                 } catch (e) {
                     console.error('[SystemTab] 학기 초기화 실패:', e);
                     showToast('초기화 실패: ' + e.message, { type: 'error' });
+                } finally {
+                    resetInFlight.current = false;
+                    setResetting(false);
                 }
             },
             'danger'
@@ -167,238 +119,20 @@ function SystemTab({ users }) {
 
             </div>
 
-            {/* 회비 검사 토글 */}
-            <div className="admin-card" style={{ marginTop: '30px' }}>
-                <h4 style={{ marginBottom: '15px' }}>💳 회비 검사 설정</h4>
-                <p style={{ color: 'var(--admin-text-sub)', fontSize: '0.9em', marginBottom: '20px' }}>
-                    회비 검사는 키오스크 간편대여·예약수령에 적용됩니다. 비활성화하면 회비 미납 회원도 키오스크에서 대여할 수 있습니다.<br />
-                    (무료 대여 기간, 축제, 체험 행사 등에 활용)
-                </p>
-
-                <div style={styles.toggleContainer}>
-                    <div>
-                        <div style={{ fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}>
-                            현재 상태: {paymentCheckEnabled ? '🟢 활성화' : '🔴 비활성화'}
-                        </div>
-                        <div style={{ color: 'var(--admin-text-sub)', fontSize: '0.85em' }}>
-                            {paymentCheckEnabled
-                                ? '회비를 내지 않은 회원은 게임을 대여할 수 없습니다.'
-                                : '모든 회원이 회비 납부 없이 게임을 대여할 수 있습니다.'}
-                        </div>
-                    </div>
-                    <button
-                        onClick={handleTogglePaymentCheck}
-                        style={{
-                            ...styles.toggleBtn,
-                            background: paymentCheckEnabled ? '#e74c3c' : '#27ae60'
-                        }}
-                    >
-                        {paymentCheckEnabled ? '비활성화' : '활성화'}
-                    </button>
-                </div>
-            </div>
-
-            {/* 오피스아워 배너 설정 */}
-            {officeHoursConfig && (
-                <div className="admin-card" style={{ marginTop: '20px' }}>
-                    <h4 style={{ marginBottom: '8px' }}>🟢 오피스아워 배너 설정</h4>
-                    <p style={{ color: 'var(--admin-text-sub)', fontSize: '0.9em', marginBottom: '20px' }}>
-                        홈 화면 배너 문구/색상과 자동 퇴근 시간을 설정합니다.
-                    </p>
-
-                    {/* 자동 퇴근 시간 */}
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={styles.fieldLabel}>자동 퇴근 시간</label>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                            <input
-                                type="number" min="0" max="23" inputMode="numeric"
-                                aria-label="자동 퇴근 시각 (시)"
-                                value={officeHoursConfig.auto_close_hour ?? ''}
-                                onChange={e => setOfficeHoursConfig(prev => ({ ...prev, auto_close_hour: e.target.value }))}
-                                onBlur={e => setOfficeHoursConfig(prev => ({ ...prev, auto_close_hour: clampInt(e.target.value, 0, 23, 0) }))}
-                                style={{ ...styles.input, width: '70px', flexShrink: 0 }}
-                            />
-                            <span style={{ color: 'var(--admin-text-main)' }}>시</span>
-                            <input
-                                type="number" min="0" max="59" inputMode="numeric"
-                                aria-label="자동 퇴근 시각 (분)"
-                                value={officeHoursConfig.auto_close_minute ?? ''}
-                                onChange={e => setOfficeHoursConfig(prev => ({ ...prev, auto_close_minute: e.target.value }))}
-                                onBlur={e => setOfficeHoursConfig(prev => ({ ...prev, auto_close_minute: clampInt(e.target.value, 0, 59, 0) }))}
-                                style={{ ...styles.input, width: '70px', flexShrink: 0 }}
-                            />
-                            <span style={{ color: 'var(--admin-text-main)' }}>분</span>
-                            <span style={{ color: 'var(--admin-text-sub)', fontSize: '0.82em', flexBasis: '100%' }}>
-                                출근 후 이 시간이 지나면 자동 오프라인
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* 배너 아이콘 */}
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={styles.fieldLabel}>배너 아이콘 (이모지)</label>
-                        <input
-                            type="text"
-                            value={officeHoursConfig.banner_icon}
-                            onChange={e => setOfficeHoursConfig(prev => ({ ...prev, banner_icon: e.target.value }))}
-                            style={{ ...styles.input, width: '100px' }}
-                            placeholder="🟢"
-                        />
-                    </div>
-
-                    {/* 배너 제목 */}
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={styles.fieldLabel}>배너 제목</label>
-                        <input
-                            type="text"
-                            value={officeHoursConfig.banner_title}
-                            onChange={e => setOfficeHoursConfig(prev => ({ ...prev, banner_title: e.target.value }))}
-                            style={styles.input}
-                            placeholder="오피스아워 진행 중!"
-                        />
-                    </div>
-
-                    {/* 배너 부제목 */}
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={styles.fieldLabel}>배너 부제목</label>
-                        <input
-                            type="text"
-                            value={officeHoursConfig.banner_subtitle}
-                            onChange={e => setOfficeHoursConfig(prev => ({ ...prev, banner_subtitle: e.target.value }))}
-                            style={styles.input}
-                            placeholder="지금 방문하시면 게임을 대여할 수 있어요"
-                        />
-                    </div>
-
-                    {/* 배너 색상 */}
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={styles.fieldLabel}>배너 색상 (CSS gradient 또는 색상 코드)</label>
-                        <input
-                            type="text"
-                            value={officeHoursConfig.banner_color}
-                            onChange={e => setOfficeHoursConfig(prev => ({ ...prev, banner_color: e.target.value }))}
-                            style={styles.input}
-                            placeholder="linear-gradient(135deg, #1a5c2a, #27ae60)"
-                        />
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                            {COLOR_PRESETS.map(preset => (
-                                <button
-                                    key={preset.label}
-                                    onClick={() => setOfficeHoursConfig(prev => ({ ...prev, banner_color: preset.value }))}
-                                    style={{
-                                        padding: '6px 14px',
-                                        background: preset.value,
-                                        border: officeHoursConfig.banner_color === preset.value
-                                            ? '2px solid white' : '2px solid transparent',
-                                        borderRadius: '6px',
-                                        color: 'white',
-                                        fontSize: '0.85em',
-                                        cursor: 'pointer',
-                                        fontWeight: 'bold',
-                                        textShadow: '0 1px 2px rgba(0,0,0,0.4)'
-                                    }}
-                                >
-                                    {preset.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* 운영 예정 시간 안내 */}
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={styles.fieldLabel}>운영 예정 시간 안내 아이콘</label>
-                        <input
-                            type="text"
-                            value={officeHoursConfig.schedule_icon ?? '📅'}
-                            onChange={e => setOfficeHoursConfig(prev => ({ ...prev, schedule_icon: e.target.value }))}
-                            style={{ ...styles.input, width: '100px' }}
-                            placeholder="📅"
-                        />
-                    </div>
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={styles.fieldLabel}>운영 예정 시간 안내 문구 (비워두면 아래 기본 문구로 표시)</label>
-                        <input
-                            type="text"
-                            value={officeHoursConfig.schedule_text ?? ''}
-                            onChange={e => setOfficeHoursConfig(prev => ({ ...prev, schedule_text: e.target.value }))}
-                            style={styles.input}
-                            placeholder="예) 오늘 오후 6시~9시에 빌려갈 수 있어요"
-                        />
-                    </div>
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={styles.fieldLabel}>퇴근 중 기본 문구 (예정 시간 미입력 시 표시)</label>
-                        <input
-                            type="text"
-                            value={officeHoursConfig.offline_text ?? ''}
-                            onChange={e => setOfficeHoursConfig(prev => ({ ...prev, offline_text: e.target.value }))}
-                            style={styles.input}
-                            placeholder="현재 오피스아워를 운영하고 있지 않아요"
-                        />
-                    </div>
-
-                    {/* 미리보기 */}
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={styles.fieldLabel}>미리보기</label>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {/* 운영중 배너 */}
-                            <div style={{
-                                padding: '14px 20px',
-                                background: officeHoursConfig.banner_color,
-                                borderRadius: '12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                fontSize: '1rem',
-                            }}>
-                                <span style={{ fontSize: '1.4rem' }}>{officeHoursConfig.banner_icon || '🟢'}</span>
-                                <div>
-                                    <div>{officeHoursConfig.banner_title || '(제목 없음)'}</div>
-                                    <div style={{ fontWeight: 'normal', fontSize: '0.82rem', opacity: 0.85, marginTop: '2px' }}>
-                                        {officeHoursConfig.banner_subtitle || '(부제목 없음)'}
-                                    </div>
-                                </div>
-                            </div>
-                            {/* 오프라인 안내 배너 (schedule_text 있을 때만) */}
-                            {officeHoursConfig.schedule_text && (
-                                <div style={{
-                                    padding: '11px 16px',
-                                    background: 'rgba(100, 120, 160, 0.15)',
-                                    borderRadius: '12px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    border: '1px solid rgba(100, 120, 160, 0.3)',
-                                    color: 'var(--admin-text-main)',
-                                    fontSize: '0.9rem',
-                                }}>
-                                    <span style={{ fontSize: '1.1rem' }}>{officeHoursConfig.schedule_icon || '📅'}</span>
-                                    <span>{officeHoursConfig.schedule_text}</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <button onClick={handleSaveOfficeHoursConfig} style={styles.saveBtn}>
-                        💾 저장
-                    </button>
-                </div>
-            )}
-
             {/* 학기 초기화 */}
             <div className="admin-card" style={{ marginTop: '20px' }}>
                 <h4 style={{ marginBottom: '15px' }}>🔄 학기 종료 관리</h4>
                 <p style={{ color: 'var(--admin-text-sub)', fontSize: '0.9em', marginBottom: '20px' }}>
                     학기가 끝나면 모든 일반 회원의 회비 납부 상태를 "미납"으로 초기화합니다.<br />
-                    관리자, OB, 면제 역할을 가진 회원은 초기화 대상에서 제외됩니다.
+                    관리자, 운영진, 회비 면제 역할을 가진 회원은 초기화 대상에서 제외되므로 납부 인원이 0명이 아닐 수 있습니다.
                 </p>
 
                 <button
                     onClick={handleResetSemester}
+                    disabled={loading || resetting}
                     style={styles.resetBtn}
                 >
-                    🔄 학기 종료 - 회비 일괄 초기화
+                    {resetting ? '초기화 처리 중…' : '🔄 학기 종료 - 회비 일괄 초기화'}
                 </button>
             </div>
 
@@ -406,7 +140,7 @@ function SystemTab({ users }) {
             <div style={styles.infoBox}>
                 <p><strong>💡 사용 안내:</strong></p>
                 <ul style={{ margin: '10px 0', paddingLeft: '20px', lineHeight: '1.6' }}>
-                    <li>회비 검사 토글은 즉시 적용되며, 모든 대여 시스템에 영향을 미칩니다.</li>
+                    <li>무료 대여 전환과 출근·퇴근은 오피스아워 탭에서 관리합니다.</li>
                     <li>학기 초기화는 되돌릴 수 없으므로 신중하게 실행하세요.</li>
                     <li>영구 면제 역할은 회원 관리 탭에서 개별적으로 부여할 수 있습니다.</li>
                 </ul>
@@ -453,27 +187,6 @@ const styles = {
         fontSize: '0.9em',
         color: 'var(--admin-text-sub)'
     },
-    toggleContainer: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '12px',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '15px',
-        background: 'rgba(187, 134, 252, 0.05)',
-        borderRadius: '8px',
-        border: '1px solid var(--admin-border)'
-    },
-    toggleBtn: {
-        padding: '12px 24px',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        fontWeight: 'bold',
-        fontSize: '1em',
-        cursor: 'pointer',
-        minWidth: '120px'
-    },
     resetBtn: {
         width: '100%',
         padding: '15px',
@@ -494,33 +207,7 @@ const styles = {
         color: 'var(--admin-text-main)',
         fontSize: '0.9em'
     },
-    fieldLabel: {
-        display: 'block',
-        marginBottom: '6px',
-        fontSize: '0.9em',
-        fontWeight: 'bold',
-        color: 'var(--admin-text-main)'
-    },
-    input: {
-        width: '100%',
-        padding: '8px 12px',
-        background: 'var(--admin-bg)',
-        border: '1px solid var(--admin-border)',
-        borderRadius: '6px',
-        color: 'var(--admin-text-main)',
-        fontSize: '1em',
-        boxSizing: 'border-box'
-    },
-    saveBtn: {
-        padding: '10px 24px',
-        background: 'var(--admin-primary)',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        fontWeight: 'bold',
-        fontSize: '1em',
-        cursor: 'pointer'
-    }
+
 };
 
 export default SystemTab;

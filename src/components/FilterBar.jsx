@@ -14,6 +14,7 @@ function FilterBar({
   // 관리자 전용 Props
   isAdmin = false,
   renterFilter, setRenterFilter,
+  renterOptions = [],
   ownerFilter, setOwnerFilter, // [NEW] props 추가
   hideSearch = false
 }) {
@@ -28,6 +29,7 @@ function FilterBar({
         <input
           type="text"
           placeholder="🔍 검색 (태그는 #)"
+          aria-label="게임 이름 또는 태그 검색"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           className={isAdmin ? "admin-input search-input" : ""}
@@ -35,16 +37,20 @@ function FilterBar({
         />
       )}
 
-      {/* 2. [관리자 전용] 대여자 검색 */}
+      {/* 2. [관리자 전용] 현재 대여·예약자 이름 선택 */}
       {isAdmin && (
-        <input
-          type="text"
-          placeholder="👤 대여자 이름"
+        <select
           value={renterFilter}
           onChange={(e) => setRenterFilter(e.target.value)}
-          className="admin-input search-input"
-          style={isAdmin ? {} : { ...styles.inputSearch, borderColor: "#3498db", background: "#f0f9ff" }}
-        />
+          className="admin-select admin-renter-select"
+          aria-label="대여·예약자 선택"
+        >
+          <option value="">대여·예약자 전체</option>
+          {renterFilter && !renterOptions.includes(renterFilter) && (
+            <option value={renterFilter}>{renterFilter} (현재 내역 없음)</option>
+          )}
+          {renterOptions.map(name => <option key={name} value={name}>{name}</option>)}
+        </select>
       )}
 
       {/* 2-2. [관리자 전용] 소유자 검색 - 관리자일 때만 노출 */}
@@ -52,9 +58,10 @@ function FilterBar({
         <input
           type="text"
           placeholder="🏢 소유자 검색"
+          aria-label="소유자 검색"
           value={ownerFilter}
           onChange={(e) => setOwnerFilter(e.target.value)}
-          className="admin-input search-input"
+          className="admin-input admin-owner-input"
           style={isAdmin ? {} : { ...styles.inputSearch, borderColor: "#27ae60", background: "#f0fff4" }}
         />
       )}
@@ -97,23 +104,24 @@ function FilterBar({
         <option value="3">3인</option>
         <option value="4">4인</option>
         <option value="5">5인</option>
+        <option value="5+">5인 이상</option>
         <option value="6+">6인 이상</option>
         <option value="8+">8인 이상</option>
       </select>
 
       {/* 6. 대여 가능만 보기 체크박스 */}
-      <label style={isAdmin ? { color: "var(--admin-text-main)", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", margin: "0 10px" } : styles.checkboxLabel}>
+      <label className={isAdmin ? 'admin-available-filter' : undefined} style={isAdmin ? undefined : styles.checkboxLabel}>
         <input
           type="checkbox"
           checked={onlyAvailable}
           onChange={(e) => setOnlyAvailable(e.target.checked)}
-          style={{ transform: "scale(1.2)" }}
+          style={isAdmin ? undefined : { transform: "scale(1.2)" }}
         />
         <span style={{ fontWeight: onlyAvailable ? "bold" : "normal" }}>대여 가능만</span>
       </label>
 
       {/* 7. 초기화 버튼 */}
-      <button onClick={onReset} style={styles.resetBtn}>
+      <button type="button" onClick={onReset} className={isAdmin ? 'admin-filter-reset' : undefined} style={isAdmin ? undefined : styles.resetBtn}>
         🔄 초기화
       </button>
     </div>

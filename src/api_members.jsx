@@ -37,6 +37,12 @@ export const updateUserProfile = async (userId, updates) => {
 export const resetSemesterPayments = async () => {
     const { data, error } = await supabase.rpc('reset_semester_payments');
     if (error) throw error;
+    if (data?.success !== true) {
+        throw new Error(data?.message || '회비 초기화에 실패했습니다.');
+    }
+    if (!Number.isInteger(data.reset_count) || data.reset_count < 0) {
+        throw new Error('초기화 결과를 확인할 수 없습니다. 회원 목록을 새로고침해 확인해주세요.');
+    }
     return data;
 };
 

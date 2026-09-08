@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 6. PM 6:46:43
+-- 생성 시각: 2026. 9. 8. AM 11:29:44
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 90개 함수
+-- 총 91개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -2599,6 +2599,34 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: guard_rental_return_chronology
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.guard_rental_return_chronology()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        IF NEW.type IS NOT DISTINCT FROM OLD.type
+           AND NEW.borrowed_at IS NOT DISTINCT FROM OLD.borrowed_at
+           AND NEW.returned_at IS NOT DISTINCT FROM OLD.returned_at THEN
+            RETURN NEW;
+        END IF;
+    END IF;
+
+    -- An open RENT may have no return time. A closed RENT requires a known
+    -- borrowing time and a return at or after it. DIBS/HOLD are not returns.
+    IF NEW.type = 'RENT' AND NEW.returned_at IS NOT NULL
+       AND (NEW.borrowed_at IS NULL OR NEW.returned_at < NEW.borrowed_at) THEN
+        RAISE EXCEPTION '반납 시각은 대여 시각보다 빠를 수 없으며 대여 시각이 필요합니다.'
+            USING ERRCODE = '23514', CONSTRAINT = 'rental_return_chronology';
+    END IF;
+    RETURN NEW;
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: handle_new_user
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -3340,55 +3368,58 @@ CREATE OR REPLACE FUNCTION public.kiosk_return(p_game_id integer, p_user_id uuid
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-    v_rental_id UUID;
-    v_game_id   INTEGER;
-    v_row_user  UUID;
-    v_affected  INTEGER;
+    v_rental public.rentals%ROWTYPE;
+    v_returned_at timestamptz;
+    v_points integer := 0;
 BEGIN
     IF NOT public.is_kiosk_or_admin() THEN
         RETURN jsonb_build_object('success', false, 'message', '키오스크 권한이 필요합니다.');
     END IF;
 
-    IF p_rental_id IS NOT NULL THEN
-        SELECT rental_id, game_id, user_id INTO v_rental_id, v_game_id, v_row_user
-        FROM public.rentals
-        WHERE rental_id = p_rental_id AND returned_at IS NULL AND type = 'RENT';
-    ELSE
-        SELECT rental_id, game_id, user_id INTO v_rental_id, v_game_id, v_row_user
-        FROM public.rentals
-        WHERE game_id = p_game_id AND user_id = p_user_id
-          AND returned_at IS NULL AND type = 'RENT'
-        ORDER BY borrowed_at ASC
-        LIMIT 1;
+    -- Retain the RPC signature for deployed clients, but never infer a target
+    -- from a user/game pair: a retry could otherwise return a different rental.
+    IF p_rental_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '반납할 대여 건을 선택해주세요.');
     END IF;
 
-    IF v_rental_id IS NULL THEN
+    -- Match the games -> rentals lock order used by rental/pickup RPCs.
+    PERFORM 1 FROM public.games WHERE id = p_game_id FOR UPDATE;
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'message', '존재하지 않는 게임입니다.');
+    END IF;
+
+    SELECT * INTO v_rental FROM public.rentals
+    WHERE rental_id = p_rental_id AND game_id = p_game_id FOR UPDATE;
+
+    IF NOT FOUND OR v_rental.type IS DISTINCT FROM 'RENT' THEN
         RETURN jsonb_build_object('success', false, 'message', '대여 기록이 없습니다.');
     END IF;
-
-    v_game_id := COALESCE(v_game_id, p_game_id);
-    PERFORM 1 FROM public.games WHERE id = v_game_id FOR UPDATE;
-
-    -- 멱등: 동시 요청이 겹쳐도 한 번만 반납 처리된다
-    UPDATE public.rentals SET returned_at = now()
-    WHERE rental_id = v_rental_id AND returned_at IS NULL AND type = 'RENT';
-    GET DIAGNOSTICS v_affected = ROW_COUNT;
-
-    IF v_affected = 0 THEN
-        RETURN jsonb_build_object('success', false, 'message', '이미 반납 처리된 건입니다.');
+    IF v_rental.returned_at IS NOT NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 반납 처리된 건입니다.', 'points_awarded', 0);
     END IF;
 
-    PERFORM public.recalc_game_availability(v_game_id);
+    -- Capture the actual completion time after waiting for the locks.
+    v_returned_at := clock_timestamp();
+    IF v_rental.borrowed_at IS NULL OR v_rental.borrowed_at > v_returned_at THEN
+        RETURN jsonb_build_object('success', false, 'message', '대여 시각을 확인해야 합니다. 관리자에게 문의해주세요.');
+    END IF;
 
-    -- 포인트는 파라미터가 아닌 대여 행의 실제 대여자에게 적립한다
-    IF v_row_user IS NOT NULL THEN
-        PERFORM public.earn_points(v_row_user, 50, 'RETURN_ON_TIME', '제때 반납 보상');
+    UPDATE public.rentals SET returned_at = v_returned_at
+    WHERE rental_id = v_rental.rental_id;
+    PERFORM public.recalc_game_availability(v_rental.game_id);
+
+    -- The locked row determines both recipient and deadline, never p_user_id.
+    IF v_rental.user_id IS NOT NULL AND v_returned_at <= v_rental.due_date THEN
+        v_points := 50;
+        PERFORM public.earn_points(v_rental.user_id, v_points, 'RETURN_ON_TIME', '제때 반납 보상');
     END IF;
 
     INSERT INTO public.logs (game_id, user_id, action_type, details)
-    VALUES (v_game_id, v_row_user, 'RETURN', jsonb_build_object('action', 'Kiosk Return'));
+    VALUES (v_rental.game_id, v_rental.user_id, 'RETURN',
+        jsonb_build_object('action', 'Kiosk Return', 'rental_id', v_rental.rental_id,
+            'returned_at', v_returned_at, 'points_awarded', v_points));
 
-    RETURN jsonb_build_object('success', true);
+    RETURN jsonb_build_object('success', true, 'points_awarded', v_points);
 END;
 $function$
 

@@ -94,6 +94,8 @@ function ReturnModal({ onClose }) {
                 sendLog(null, 'ACTION', { step: 'kiosk_return_confirm_accept', count: selectedRentals.size });
                 setProcessing(true);
                 let successCount = 0;
+                let pointsAwarded = 0;
+                let pointsKnown = true;
                 let failCount = 0;
                 const failedItems = []; // 실패한 항목 추적
                 const succeededIds = new Set(); // 성공한 것만 목록에서 지운다
@@ -116,6 +118,11 @@ function ReturnModal({ onClose }) {
                         const result = await kioskReturn(targetRental.game_id, targetRental.profiles?.id || null, rentalId);
                         if (result.success) {
                             successCount++;
+                            if (Number.isFinite(result.points_awarded)) {
+                                pointsAwarded += result.points_awarded;
+                            } else {
+                                pointsKnown = false;
+                            }
                             succeededIds.add(rentalId);
                         } else {
                             failCount++;
@@ -138,7 +145,10 @@ function ReturnModal({ onClose }) {
 
                 // 피드백 개선
                 if (successCount > 0) {
-                    showToast(`✅ ${successCount}개 반납 완료! 각 건당 50P 지급되었습니다.`, { type: "success" });
+                    const rewardMessage = pointsKnown && pointsAwarded > 0
+                        ? ` 총 ${pointsAwarded}P 지급되었습니다.`
+                        : "";
+                    showToast(`✅ ${successCount}개 반납 완료!${rewardMessage}`, { type: "success" });
                 }
 
                 if (succeededIds.size > 0) {

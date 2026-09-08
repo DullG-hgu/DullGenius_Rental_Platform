@@ -1,7 +1,7 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 6. PM 6:46:59
+-- 생성 시각: 2026. 9. 8. AM 11:30:00
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -215,7 +215,7 @@ CREATE TABLE public.logs (
 CREATE TABLE public.matches (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   game_id int4,  -- FK → games(id)
-  played_at timestamptz DEFAULT timezone('kst'::text, now()),
+  played_at timestamptz DEFAULT now(),
   players jsonb NOT NULL,
   winner_id uuid,
   verified_at timestamptz
@@ -230,7 +230,7 @@ CREATE TABLE public.point_transactions (
   amount int4 NOT NULL,
   type text,
   reason text,
-  created_at timestamptz DEFAULT timezone('kst'::text, now())
+  created_at timestamptz DEFAULT now()
 );
 
 -- ----------------------------------------------------------------

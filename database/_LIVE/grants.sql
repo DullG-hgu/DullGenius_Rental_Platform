@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 6. PM 6:47:03
+-- 생성 시각: 2026. 9. 8. AM 11:30:05
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -12,7 +12,7 @@
 --   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.
 
 -- ----------------------------------------------------------------
--- 함수 EXECUTE  (90개)
+-- 함수 EXECUTE  (91개)
 -- ----------------------------------------------------------------
 -- anon  auth  security  function
 --  -     -    INVOKER   _active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
@@ -71,7 +71,8 @@
 --  -     Y    DEFINER   get_rental_source_breakdown(p_days integer)
 --  -     Y    DEFINER   get_rental_stats(p_days integer)
 --  -     Y    DEFINER   get_top_rented_games(p_limit integer, p_days integer)
---  -     Y    DEFINER   get_trending_games()
+--  Y     Y    DEFINER   get_trending_games()
+--  -     -    INVOKER   guard_rental_return_chronology()
 --  -     -    DEFINER   handle_new_user()
 --  -     Y    DEFINER   increment_view_count(p_game_id integer)
 --  Y     Y    DEFINER   ingest_rental_request(p_payload jsonb)

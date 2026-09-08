@@ -289,3 +289,24 @@
         opacity: 1;
     }
 }
+.home-nav-btn,
+a.trending-item {
+    text-decoration: none;
+    color: inherit;
+}
+
+.home-nav-btn:focus-visible,
+a.trending-item:focus-visible,
+.home-guide-entry:focus-visible {
+    outline: 3px solid #6a11cb;
+    outline-offset: 3px;
+}
+
+.home-status-message {
+    margin: 12px 20px;
+}
+
+.home-status-message button {
+    padding: 10px 14px;
+    cursor: pointer;
+}

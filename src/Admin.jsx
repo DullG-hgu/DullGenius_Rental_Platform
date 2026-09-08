@@ -2,7 +2,7 @@
 // 최종 수정일: 2026.01.30 (다크 모드 적용)
 // 설명: 관리자 페이지 메인 (인증 및 탭 컨테이너)
 
-/* 
+/*
  * ============================================================
  * [GUIDE] Admin Page Dark Mode Strategy
  * ============================================================
@@ -14,7 +14,7 @@
  * ============================================================
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchGames, fetchConfig, fetchOfficeStatus, fetchUsers } from './api';
 import { useAuth } from './contexts/AuthContext'; // [SECURITY] Supabase 권한 기반 인증
@@ -27,6 +27,7 @@ import AddGameTab from './admin/AddGameTab';
 import ConfigTab from './admin/ConfigTab';
 import PointsTab from './admin/PointsTab';
 import MembersTab from './admin/MembersTab'; // [NEW]
+import OfficeHoursTab from './admin/OfficeHoursTab';
 import SystemTab from './admin/SystemTab'; // [NEW] 시스템 설정 탭
 import ReportsTab from './admin/ReportsTab'; // [NEW] 신고/신청 관리 탭
 import RentalRequestsTab from './admin/RentalRequestsTab';
@@ -55,111 +56,90 @@ function Admin() {
   const [adminUsers, setAdminUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [officeStatus, setOfficeStatus] = useState(null);
+  const scope = !authLoading && user && isAdmin ? user.id : null;
+  const scopeRef = useRef(scope);
+  scopeRef.current = scope;
+  const requests = useRef({ games: 0, users: 0, office: 0 });
+  const [dataScope, setDataScope] = useState(null);
+  const [officeError, setOfficeError] = useState(false);
 
   // 오피스아워 진행 중 이동/로그아웃 시 확인용 모달
   const [exitConfirm, setExitConfirm] = useState({ isOpen: false, action: null, target: null });
 
-  // --- 데이터 로딩 (SWR 패턴 적용) ---
+  // Keep privileged rental/member data in memory and discard superseded responses.
   const loadData = useCallback(async () => {
-    // 1. (배경) 로딩 표시 시작
+    if (!scope || scopeRef.current !== scope) return;
+    const request = ++requests.current.games;
     setLoading(true);
-    try {
-      const [gamesData, configData] = await Promise.all([fetchGames(), fetchConfig()]);
-
-      // [FIX] gamesData가 배열인지 확인 (에러 객체 반환 가능성 대응)
-      let validGames = [];
-      if (Array.isArray(gamesData)) {
-        validGames = gamesData;
-      } else if (gamesData?.error) {
-        showToast(gamesData.message, { type: "error" });
-        return; // 에러 시 중단
-      }
-
-      // 정렬 로직 (우선순위: 예약됨 > 대여중 > 일부대여중 > 대여가능)
-      // [FIX] 반납/수령 처리를 위해 '예약됨(찜)', '대여중'을 상위로 이동
+    const [gamesResult, configResult] = await Promise.allSettled([fetchGames(), fetchConfig()]);
+    if (scopeRef.current !== scope || requests.current.games !== request) return;
+    if (gamesResult.status === 'fulfilled') {
       const priority = { "예약됨": 1, "대여중": 2, "일부대여중": 3, "대여가능": 4 };
-
-      const sortedGames = validGames.sort((a, b) => {
-        // 1. 상태 우선순위 비교 (관리자용 adminStatus 기준)
-        const priorityA = priority[a.adminStatus] || 99;
-        const priorityB = priority[b.adminStatus] || 99;
-        if (priorityA !== priorityB) return priorityA - priorityB;
-
-        // 2. 같은 상태면 이름순 정렬
-        return a.name.localeCompare(b.name, 'ko');
-      });
-
-      setGames(sortedGames);
-      if (configData?.length) setConfig(configData);
-
-      // ⭐ [핵심] 최신 데이터를 받으면 로컬 스토리지도 갱신한다! (타임스탬프 포함)
-      localStorage.setItem('games_cache', JSON.stringify({
-        data: sortedGames,
-        timestamp: Date.now()
-      }));
-
-    } catch (e) {
-      console.error('[Admin] 초기 데이터 로딩 실패:', e);
-      showToast("데이터 로딩 실패 (인터넷 연결 확인)", { type: "error" });
-    } finally {
-      setLoading(false);
+      setGames([...gamesResult.value].sort((a, b) =>
+        (priority[a.adminStatus] || 99) - (priority[b.adminStatus] || 99)
+        || a.name.localeCompare(b.name, 'ko')));
+    } else {
+      showToast("게임 데이터 로딩 실패 (인터넷 연결 확인)", { type: "error" });
     }
-  }, [showToast]);
+    if (configResult.status === 'fulfilled') setConfig(configResult.value || []);
+    else showToast("홈페이지 설정을 불러오지 못했습니다.", { type: "error" });
+    setLoading(false);
+  }, [scope, showToast]);
 
-  const loadAdminUsers = useCallback(async () => {
+  const loadAdminUsers = useCallback(async ({ throwOnError = false } = {}) => {
+    if (!scope || scopeRef.current !== scope) return [];
+    const request = ++requests.current.users;
     try {
       const usersData = await fetchUsers();
+      if (scopeRef.current !== scope || requests.current.users !== request) return [];
       const validUsers = Array.isArray(usersData) ? usersData : [];
       setAdminUsers(validUsers);
       return validUsers;
-    } catch (e) {
-      console.error('[Admin] 회원 데이터 로딩 실패:', e);
+    } catch (error) {
+      if (scopeRef.current !== scope || requests.current.users !== request) return [];
+      if (throwOnError) throw error;
       showToast("회원 데이터 로딩 실패", { type: "error" });
-      setAdminUsers([]);
       return [];
     }
-  }, [showToast]);
+  }, [scope, showToast]);
 
-  // 오피스아워 상태 로드
   const loadOfficeStatus = useCallback(async () => {
-    const status = await fetchOfficeStatus();
-    setOfficeStatus(status);
-  }, []);
+    if (!scope || scopeRef.current !== scope) return null;
+    const request = ++requests.current.office;
+    try {
+      const status = await fetchOfficeStatus();
+      if (scopeRef.current !== scope || requests.current.office !== request) return null;
+      setOfficeStatus(status);
+      setOfficeError(false);
+      return status;
+    } catch {
+      if (scopeRef.current !== scope || requests.current.office !== request) return null;
+      setOfficeStatus(null);
+      setOfficeError(true);
+      showToast("오피스아워 상태를 확인하지 못했습니다. 다시 조회해 주세요.", { type: "error" });
+      return null;
+    }
+  }, [scope, showToast]);
 
-  // 캐시 TTL: 10분. 다른 운영진이 처리한 변경을 너무 오래 못 보면 안 되므로 짧게.
-  const GAMES_CACHE_TTL_MS = 10 * 60 * 1000;
-
-  // 인증 성공 시 데이터 최초 로드
   useEffect(() => {
-    if (user && isAdmin) {
-      // 캐시가 있으면 먼저 보여준다! (0초 로딩)
-      const cachedGames = localStorage.getItem('games_cache');
-      if (cachedGames) {
-        try {
-          const parsedCache = JSON.parse(cachedGames);
-          // [FIX] 변경된 캐시 구조 ({ data, timestamp }) 대응
-          if (parsedCache.data && Array.isArray(parsedCache.data)) {
-            const age = Date.now() - (parsedCache.timestamp || 0);
-            if (age < GAMES_CACHE_TTL_MS) {
-              setGames(parsedCache.data);
-            } else {
-              // TTL 초과 — 캐시 폐기 (오래된 데이터 깜빡임 방지)
-              localStorage.removeItem('games_cache');
-            }
-          } else if (Array.isArray(parsedCache)) {
-            // 구버전 캐시 — 타임스탬프가 없으므로 안전하게 폐기
-            localStorage.removeItem('games_cache');
-          }
-        } catch (e) {
-          console.warn("캐시 파싱 실패");
-        }
-      }
+    setDataScope(scope);
+    setGames([]);
+    setAdminUsers([]);
+    setConfig([]);
+    setOfficeStatus(null);
+    setOfficeError(false);
+    try { localStorage.removeItem('games_cache'); } catch { /* Storage may be unavailable. */ }
+    if (scope) {
       loadData();
       loadAdminUsers();
       loadOfficeStatus();
     }
-  }, [user?.id, isAdmin, loadData, loadAdminUsers, loadOfficeStatus]);
-
+    return () => {
+      requests.current.games += 1;
+      requests.current.users += 1;
+      requests.current.office += 1;
+    };
+  }, [scope, loadData, loadAdminUsers, loadOfficeStatus]);
 
   // --- 3. 로딩 및 권한 체크 ---
 
@@ -170,22 +150,26 @@ function Admin() {
   const handleOfficeOpen = async () => {
     try {
       await setOfficeOpen();
-      await loadOfficeStatus();
+      if (!await loadOfficeStatus()) return false;
       showToast("🟢 출근 완료! 오피스아워가 시작되었습니다.", { type: "success" });
+      return true;
     } catch (e) {
       console.error('[Admin] 출근 처리 실패:', e);
       showToast("오류: " + e.message, { type: "error" });
+      return false;
     }
   };
 
   const handleOfficeClosed = async () => {
     try {
       await setOfficeClosed();
-      await loadOfficeStatus();
+      if (!await loadOfficeStatus()) return false;
       showToast("퇴근 완료! 오피스아워가 종료되었습니다.", { type: "success" });
+      return true;
     } catch (e) {
       console.error('[Admin] 퇴근 처리 실패:', e);
       showToast("오류: " + e.message, { type: "error" });
+      return false;
     }
   };
 
@@ -213,13 +197,16 @@ function Admin() {
 
   const handleExitConfirm = async () => {
     const { action, target } = exitConfirm;
-    await handleOfficeClosed();
+    if (!await handleOfficeClosed()) return;
     if (action === 'navigate') {
       navigate(target);
     } else if (action === 'logout') {
       logout();
     }
   };
+
+  if (authLoading || dataScope !== scope) return <div className="admin-container">불러오는 중...</div>;
+  if (!scope) return <div className="admin-container">관리자 권한이 필요합니다.</div>;
 
   // --- 4. 렌더링: 관리자 메인 화면 ---
   return (
@@ -228,17 +215,6 @@ function Admin() {
       <div className="admin-header">
         <h2>🔓 관리자 페이지</h2>
         <div className="admin-header-actions">
-          {/* 오피스아워 빠른 토글 */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", background: "var(--admin-card-bg)", borderRadius: "8px", border: "1px solid var(--admin-border)" }}>
-            <span style={{ fontSize: "0.85rem", color: isOfficeOpen ? "#27ae60" : "var(--admin-text-sub)", fontWeight: "bold" }}>
-              {isOfficeOpen ? "🟢 운영중" : "⭕ 오프라인"}
-            </span>
-            {isOfficeOpen ? (
-              <button onClick={handleOfficeClosed} className="admin-btn" style={{ background: "#e74c3c", padding: "4px 12px", fontSize: "0.85rem" }}>퇴근</button>
-            ) : (
-              <button onClick={handleOfficeOpen} className="admin-btn" style={{ background: "#27ae60", padding: "4px 12px", fontSize: "0.85rem" }}>출근</button>
-            )}
-          </div>
           <button onClick={guardedLogout} className="admin-btn admin-btn-logout">로그아웃</button>
           <button onClick={() => guardedNavigate('/')} className="admin-btn admin-btn-home">🏠 메인으로</button>
           <button onClick={() => guardedNavigate('/admin-secret/events')} className="admin-btn" style={{ background: "#bb86fc", color: "#000" }}>🎪 행사 관리</button>
@@ -257,7 +233,9 @@ function Admin() {
         <TabButton label="➕ 게임 추가" id="add" activeTab={activeTab} onClick={setActiveTab}
           hint="BGG에서 새 게임을 검색해 목록에 등록" />
         <TabButton label="⚙️ 시스템 설정" id="system" activeTab={activeTab} onClick={setActiveTab}
-          hint="회비 검사 on/off, 학기 초기화, 오피스아워 설정" />
+          hint="회원 회비 통계, 학기 초기화" />
+        <TabButton label="🕒 오피스아워" id="office" activeTab={activeTab} onClick={setActiveTab}
+          hint="1주차 무료 대여: 출근·퇴근, 전체 회원 대여 허용, 운영 안내 설정" />
         <TabButton label="👥 회원 관리" id="members" activeTab={activeTab} onClick={setActiveTab}
           hint="회원 목록, 회비 납부 상태, 비밀번호 초기화, 권한 변경" />
         <TabButton label="💰 포인트 시스템" id="points" activeTab={activeTab} onClick={setActiveTab}
@@ -275,6 +253,7 @@ function Admin() {
             <AdminOverviewCard
               games={games}
               isOfficeOpen={isOfficeOpen}
+              onGoOffice={() => setActiveTab('office')}
               onGoReports={() => setActiveTab('reports')}
               onGoRentalRequests={() => setActiveTab('rental_requests')}
             />
@@ -309,7 +288,13 @@ function Admin() {
         )}
 
         {activeTab === "system" && ( // [NEW]
-          <SystemTab users={adminUsers} />
+          <SystemTab users={adminUsers} onUsersReload={() => loadAdminUsers({ throwOnError: true })} />
+        )}
+
+        {activeTab === "office" && (
+          <OfficeHoursTab isOfficeOpen={isOfficeOpen} statusKnown={officeStatus !== null}
+            officeError={officeError} onReloadStatus={loadOfficeStatus}
+            onOpen={handleOfficeOpen} onClose={handleOfficeClosed} />
         )}
 
         {activeTab === "points" && (

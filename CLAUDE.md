@@ -165,7 +165,7 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 - 공개돼도 되는 것: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`(publishable) — RLS가 실제 관문
 - Netlify `SECRETS_SCAN_ENABLED=true`가 이를 강제한다. 시크릿이 번들에 들어가면 빌드가 실패함
 - 서버에서만 쓸 값은 `netlify/functions/`에서 `process.env`로 읽는다
-- `npm run validate:env`로 배포 전 필수값·금지된 `VITE_` secret 이름을 검사한다
+- `npm run validate:env`와 빌드는 공개 프런트엔드 설정만 검사한다. 키오스크는 `npm run validate:env:kiosk`, 프런트엔드·키오스크·NAVER·BGG는 `npm run validate:env:all`로 명시적으로 검사하며, 금지된 `VITE_` secret은 모든 검사에서 차단한다.
 - 키오스크 운영 주소는 `https://dullgrental.netlify.app/kiosk`다. 예전 주소의 PWA는 제거 후 재설치한다
 
 ---

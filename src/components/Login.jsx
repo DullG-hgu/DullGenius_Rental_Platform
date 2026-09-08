@@ -1,13 +1,17 @@
 // src/Login.js
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext'; // [NEW] Context 사용
 import { useToast } from '../contexts/ToastContext'; // [NEW]
 import { getAuthErrorMessage } from '../constants'; // [NEW] 에러 메시지 헬퍼
-import { takePendingRoute } from '../lib/pendingRoute'; // 보호 경로에서 튕겨온 경우 복귀용
+import { takePendingRoute, getSafeReturnPath } from '../lib/pendingRoute';
 
 function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const returnPath = getSafeReturnPath(searchParams.get('redirect')) || getSafeReturnPath(location.state?.from);
+  const returnQuery = returnPath ? `?redirect=${encodeURIComponent(returnPath)}` : '';
   const { login } = useAuth();
   const { showToast } = useToast(); // [NEW]
 
@@ -26,7 +30,7 @@ function Login() {
       await login(email, password);
 
       showToast(`환영합니다!`, { type: "success" });
-      navigate(takePendingRoute() || "/");
+      navigate(takePendingRoute(returnPath) || "/", { replace: true });
 
     } catch (error) {
       console.error("Login Error:", error);
@@ -57,6 +61,8 @@ function Login() {
           type="text"
           inputMode="numeric"
           placeholder="학번 (예: 21500000)"
+          aria-label="학번"
+          autoComplete="username"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
           style={styles.input}
@@ -65,6 +71,8 @@ function Login() {
         <input
           type="password"
           placeholder="비밀번호"
+          aria-label="비밀번호"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           style={styles.input}
@@ -76,10 +84,10 @@ function Login() {
       </form>
       <div style={{ textAlign: "center", marginTop: "20px", fontSize: "0.9em", display: "flex", flexDirection: "column", gap: "10px" }}>
         <div>
-          계정이 없으신가요? <Link to="/signup" style={{ color: "#3498db" }}>회원가입</Link>
+          계정이 없으신가요? <Link to={`/signup${returnQuery}`} style={{ color: "#3498db" }}>회원가입</Link>
         </div>
         <div style={{ marginTop: "5px" }}>
-          <Link to="/reset-password" style={{ color: "#7f8c8d", fontSize: "0.9em", textDecoration: "none" }}>비밀번호를 잊으셨나요?</Link>
+          <Link to={`/reset-password${returnQuery}`} style={{ color: "#7f8c8d", fontSize: "0.9em", textDecoration: "none" }}>비밀번호를 잊으셨나요?</Link>
         </div>
       </div>
     </div>

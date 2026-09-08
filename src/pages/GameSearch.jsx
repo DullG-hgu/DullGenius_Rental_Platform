@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useGameData } from '../contexts/GameDataContext';
-import { useGameFilter } from '../hooks/useGameFilter';
+import { useGameFilter, normalizePlayerFilter } from '../hooks/useGameFilter';
 import FilterBar from '../components/FilterBar';
 import { getOptimizedImageUrl } from '../utils/imageOptimizer';
 import LazyImage from '../components/common/LazyImage';
@@ -12,27 +12,31 @@ import './GameSearch.css';
 const GameSearch = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { games, loading } = useGameData();
+    const { games, trending, loading, error, trendingError, refreshGames } = useGameData();
+    const [queryParams, setQueryParams] = useSearchParams();
+    const inputValue = queryParams.get('query') || '';
+    const selectedCategory = queryParams.get('category') || '전체';
+    const difficultyFilter = queryParams.get('difficulty') || '전체';
+    const playerFilter = normalizePlayerFilter(queryParams.get('players') || 'all');
+    const onlyAvailable = queryParams.get('available') === 'true';
+    const isTrendingMode = queryParams.get('type') === 'trending';
+    const [searchTerm, setSearchTerm] = useState(inputValue);
 
-    // 쿼리 파라미터 파싱
-    const queryParams = new URLSearchParams(location.search);
-    const initialQuery = queryParams.get('query') || "";
-    const initialCategory = queryParams.get('category') || "전체";
-    const initialPlayers = queryParams.get('players') || "all";
-    const searchType = queryParams.get('type'); // [NEW] 트렌딩 모드 확인용
-
-    const isTrendingMode = searchType === 'trending';
-
-    // 상태 관리
-    const [inputValue, setInputValue] = useState(initialQuery);
-    const [searchTerm, setSearchTerm] = useState(initialQuery);
-    const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-    const [difficultyFilter, setDifficultyFilter] = useState("전체");
-    const [playerFilter, setPlayerFilter] = useState(initialPlayers);
-    const [onlyAvailable, setOnlyAvailable] = useState(false);
-
-    // 트렌딩 모드일 경우 전역 trending 데이터를 사용, 아닐 경우 필터 훅 결과 사용
-    const { trending } = useGameData(); // [NEW] 트렌딩 데이터 가져오기
+    // Keep the editable state in the URL so details/back/reload restore every filter.
+    // Replace avoids adding one browser-history entry for each keystroke.
+    const updateFilter = (key, value, defaultValue) => {
+        setQueryParams(current => {
+            const next = new URLSearchParams(current);
+            if (value === defaultValue) next.delete(key);
+            else next.set(key, String(value));
+            return next;
+        }, { replace: true });
+    };
+    const setInputValue = value => updateFilter('query', value, '');
+    const setSelectedCategory = value => updateFilter('category', value, '전체');
+    const setDifficultyFilter = value => updateFilter('difficulty', value, '전체');
+    const setPlayerFilter = value => updateFilter('players', value, 'all');
+    const setOnlyAvailable = value => updateFilter('available', value, false);
 
     // 필터링 훅 사용
     const baseFilteredGames = useGameFilter(games, {
@@ -63,7 +67,6 @@ const GameSearch = () => {
 
     // 검색어 디바운스 및 로그
     useEffect(() => {
-        // ... (생략 없이 원본 유지)
         const timer = setTimeout(() => {
             setSearchTerm(inputValue);
         }, 300);
@@ -95,14 +98,14 @@ const GameSearch = () => {
 
 
     const resetFilters = useCallback(() => {
-        setInputValue("");
-        setSearchTerm("");
-        setSelectedCategory("전체");
-        setDifficultyFilter("전체");
-        setPlayerFilter("all");
-        setOnlyAvailable(false);
+        setSearchTerm('');
+        setQueryParams(current => {
+            const next = new URLSearchParams(current);
+            ['query', 'category', 'difficulty', 'players', 'available'].forEach(key => next.delete(key));
+            return next;
+        }, { replace: true });
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, []);
+    }, [setQueryParams]);
 
     const handleBack = () => {
         // 검색 페이지에서 뒤로가기는 홈으로 (기획)
@@ -112,11 +115,19 @@ const GameSearch = () => {
 
     if (loading) return <div className="loading-container"><div className="spinner"></div></div>;
 
+    if (error || (isTrendingMode && trendingError)) return (
+        <div className="search-container" role="alert">
+            <p>{isTrendingMode ? '인기 순위를' : '게임 목록을'} 불러오지 못했습니다. 연결 상태를 확인한 후 다시 시도해 주세요.</p>
+            <button type="button" onClick={refreshGames}>다시 시도</button>
+            <Link to="/">홈으로</Link>
+        </div>
+    );
+
     return (
         <div className="search-container">
             {/* 상단 헤더 (뒤로가기 + 검색바/타이틀) */}
             <div className="search-header">
-                <button onClick={handleBack} className="back-btn">←</button>
+                <button onClick={handleBack} className="back-btn" aria-label="홈으로">←</button>
                 <div className="search-input-wrapper">
                     {isTrendingMode ? (
                         <h2 className="trending-search-title">🔥 요즘 뜨는 보드게임 (Top 20)</h2>
@@ -127,7 +138,7 @@ const GameSearch = () => {
                             placeholder="게임 이름 검색..."
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
-                            autoFocus={!initialQuery && !initialCategory}
+                            aria-label="게임 이름 또는 태그 검색"
                         />
                     )}
                 </div>
@@ -154,7 +165,8 @@ const GameSearch = () => {
                     <>
                         <span>총 <strong>{filteredGames.length}</strong>개의 게임</span>
                         <button
-                            onClick={() => setOnlyAvailable(v => !v)}
+                            onClick={() => setOnlyAvailable(!onlyAvailable)}
+                            aria-pressed={onlyAvailable}
                             className={`available-filter-chip${onlyAvailable ? ' active' : ''}`}
                         >
                             🟢 대여 가능만
@@ -223,7 +235,7 @@ const GameSearch = () => {
                 ))}
                 {filteredGames.length === 0 && (
                     <div className="no-results">
-                        검색 결과가 없습니다. 😅
+                        {isTrendingMode ? '최근 7일간 집계된 인기 게임이 없습니다.' : '검색 결과가 없습니다. 😅'}
                     </div>
                 )}
             </div>

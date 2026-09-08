@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useGameData } from '../contexts/GameDataContext';
 import { sendLog } from '../api';
 import './CategorySelect.css';
@@ -7,7 +7,7 @@ import './CategorySelect.css';
 const CategorySelect = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { games, config, loading } = useGameData();
+    const { games, config, loading, error, configError, refreshGames } = useGameData();
 
     // URL 파라미터 확인
     const queryParams = new URLSearchParams(location.search);
@@ -24,16 +24,20 @@ const CategorySelect = () => {
         if (!loading) sendLog(null, 'VIEW', { value: 'Category Select Page' });
     }, [loading]);
 
-    const handleCategoryClick = (category) => {
-        navigate(`/search?category=${encodeURIComponent(category)}`);
-    };
-
     if (loading) return <div className="loading-container"><div className="spinner"></div></div>;
+
+    if (error) return (
+        <div className="category-select-container" role="alert">
+            <p>카테고리를 불러오지 못했습니다. 연결 상태를 확인한 후 다시 시도해 주세요.</p>
+            <button type="button" onClick={refreshGames}>다시 시도</button>
+            <Link to="/">홈으로</Link>
+        </div>
+    );
 
     return (
         <div className="category-select-container">
             <div className="category-header">
-                <button onClick={() => navigate(-1)} className="back-btn">←</button>
+                <button onClick={() => navigate(-1)} className="back-btn" aria-label="뒤로가기">←</button>
                 <h2 className="category-title">카테고리 선택</h2>
             </div>
 
@@ -41,13 +45,13 @@ const CategorySelect = () => {
             <div className="player-count-section">
                 <h3 className="section-subtitle">👥 인원수로 찾기</h3>
                 <div className="player-btn-grid">
-                    {['2인', '3인', '4인', '5인 이상', '6인 이상', '8인 이상'].map((p, i) => (
+                    {[['2', '2인'], ['3', '3인'], ['4', '4인'], ['5+', '5인 이상'], ['6+', '6인 이상'], ['8+', '8인 이상']].map(([value, label]) => (
                         <button
-                            key={i}
-                            onClick={() => navigate(`/search?players=${encodeURIComponent(p)}`)}
+                            key={value}
+                            onClick={() => navigate(`/search?players=${encodeURIComponent(value)}`)}
                             className="player-btn"
                         >
-                            {p}
+                            {label}
                         </button>
                     ))}
                 </div>
@@ -55,8 +59,8 @@ const CategorySelect = () => {
 
             {/* 트렌딩 보러가기 입구 타일 */}
             <div className="trending-entrance-section" style={{ padding: '0 20px', marginBottom: '15px' }}>
-                <div
-                    onClick={() => navigate('/search?type=trending')}
+                <Link
+                    to="/search?type=trending"
                     className="trending-entrance-card"
                 >
                     <div className="trending-entrance-icon">🔥</div>
@@ -65,12 +69,18 @@ const CategorySelect = () => {
                         <div className="entrance-desc">Top 20 랭킹 보기</div>
                     </div>
                     <div className="trending-entrance-arrow">➔</div>
-                </div>
+                </Link>
             </div>
 
             {/* 상황별 추천 섹션 */}
             <div className="recommendation-section-cat">
                 <h3 className="section-subtitle">🎯 상황별 추천</h3>
+                {configError && (
+                    <div role="alert">
+                        <p>상황별 추천을 불러오지 못했습니다.</p>
+                        <button type="button" onClick={refreshGames}>추천 다시 시도</button>
+                    </div>
+                )}
                 {config && (
                     <div className="theme-grid-cat">
                         {config.map((btn, idx) => (
@@ -95,10 +105,10 @@ const CategorySelect = () => {
             <div className="category-section">
                 <h3 className="section-subtitle">📂 장르별 카테고리</h3>
                 <div className="category-grid">
-                    {categories.map((cat, idx) => (
-                        <div
-                            key={idx}
-                            onClick={() => handleCategoryClick(cat)}
+                    {categories.map(cat => (
+                        <Link
+                            key={cat}
+                            to={`/search?category=${encodeURIComponent(cat)}`}
                             className="category-card"
                         >
                             <div className="category-icon">
@@ -108,7 +118,7 @@ const CategorySelect = () => {
                             <div className="category-count">
                                 {games.filter(g => g.category === cat).length}개
                             </div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </div>
