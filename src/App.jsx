@@ -3,8 +3,9 @@
 // 설명: 라우터 설정 및 전역 Provider 구성 (InfoBar, Home 등은 하위 페이지로 이동)
 
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
+import NotFound from './components/NotFound';
 
 // Contexts
 import { AuthProvider } from './contexts/AuthContext';
@@ -74,7 +75,7 @@ function App() {
                   <Route path="/event/team/:code" element={<EventTeamJoinPage />} />
                   <Route path="/org-rental" element={<OrgRental />} />
                   <Route path="/kiosk" element={<KioskPage />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
             </ChunkErrorBoundary>

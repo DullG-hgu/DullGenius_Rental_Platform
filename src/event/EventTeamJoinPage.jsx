@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { getTeamByInviteCode, getEventBySlug, joinTeamByCode, getRegistration, getMyRegistration } from './api_events_public';
 import { supabase } from '../lib/supabaseClient.jsx';
+import NotFound from '../components/NotFound';
 import EventPaymentGuide from './EventPaymentGuide';
 import './EventPage.css';
 
@@ -17,6 +18,8 @@ export default function EventTeamJoinPage() {
   const [team, setTeam] = useState(null);
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
   const [extra, setExtra] = useState({});
   const [photoConsent, setPhotoConsent] = useState(false);
   const [privacyConsent, setPrivacyConsent] = useState(false);
@@ -32,6 +35,12 @@ export default function EventTeamJoinPage() {
     }
     let alive = true;
     (async () => {
+      setLoading(true);
+      setLoadError(false);
+      setEvent(null);
+      setNotFound(false);
+      setTeam(null);
+      setDoneReg(null);
       try {
         const t = await getTeamByInviteCode(code);
         if (!alive) return;
@@ -50,11 +59,14 @@ export default function EventTeamJoinPage() {
           .eq('id', t.event_id).maybeSingle();
         if (error) throw error;
         if (!alive) return;
+        if (!ev) { setNotFound(true); return; }
         setEvent(ev);
         // 이미 신청한 사용자
         const myReg = await getMyRegistration(t.event_id, user.id);
-        if (myReg) setDoneReg(myReg);
+        if (alive && myReg) setDoneReg(myReg);
       } catch (e) {
+        if (!alive) return;
+        setLoadError(true);
         console.error(e);
         showToast('정보 로딩 실패: ' + e.message, { type: 'error' });
       } finally {
@@ -62,21 +74,15 @@ export default function EventTeamJoinPage() {
       }
     })();
     return () => { alive = false; };
-  }, [code, user, authLoading, navigate, showToast]);
+  }, [code, user, authLoading, navigate, showToast, retry]);
 
   const questions = useMemo(() => Array.isArray(event?.extra_questions) ? event.extra_questions : [], [event]);
 
   if (authLoading || loading) {
     return <div className="event-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p>로딩 중…</p></div>;
   }
-  if (notFound) {
-    return (
-      <div className="event-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-        <h2>유효하지 않은 초대 코드</h2>
-        <Link to="/" style={{ color: '#888' }}>홈으로</Link>
-      </div>
-    );
-  }
+  if (loadError) return <NotFound title="초대 정보를 불러오지 못했습니다." description="연결 상태를 확인한 뒤 다시 시도해 주세요." onRetry={() => setRetry(value => value + 1)} />;
+  if (notFound || !event) return <NotFound title="초대 링크를 사용할 수 없습니다." description="초대 코드와 행사 정보를 확인할 수 없습니다. 초대한 분에게 링크를 다시 확인해 주세요." />;
 
   const styleVars = {
     '--event-bg': event?.bg_color || '#1a1a2e',

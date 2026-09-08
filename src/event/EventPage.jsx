@@ -5,6 +5,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { getEventBySlug, getMyRegistration, getEventCounts, getRegistration } from './api_events_public';
+import NotFound from '../components/NotFound';
 import EventPaymentGuide from './EventPaymentGuide';
 import './EventPage.css';
 
@@ -48,12 +49,19 @@ export default function EventPage() {
   const [myReg, setMyReg] = useState(null);
   const [counts, setCounts] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
+      setLoadError(false);
+      setEvent(null);
+      setNotFound(false);
+      setMyReg(null);
+      setCounts(null);
       try {
         const ev = await getEventBySlug(slug);
         if (!alive) return;
@@ -70,6 +78,8 @@ export default function EventPage() {
           if (alive) setMyReg(full);
         }
       } catch (e) {
+        if (!alive) return;
+        setLoadError(true);
         console.error(e);
         showToast('행사를 불러오지 못했습니다.', { type: 'error' });
       } finally {
@@ -77,7 +87,7 @@ export default function EventPage() {
       }
     })();
     return () => { alive = false; };
-  }, [slug, user?.id, showToast]);
+  }, [slug, user?.id, showToast, retry]);
 
   // 사용자 등급 추정 (UI용 — 실제 청구는 RPC에서 결정)
   const myTier = useMemo(() => {
@@ -89,14 +99,8 @@ export default function EventPage() {
   if (loading) {
     return <div className="event-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p>로딩 중…</p></div>;
   }
-  if (notFound) {
-    return (
-      <div className="event-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-        <h2>행사를 찾을 수 없습니다</h2>
-        <Link to="/" style={{ color: '#888' }}>홈으로</Link>
-      </div>
-    );
-  }
+  if (loadError) return <NotFound title="행사를 불러오지 못했습니다." description="연결 상태를 확인한 뒤 다시 시도해 주세요." onRetry={() => setRetry(value => value + 1)} />;
+  if (notFound || !event) return <NotFound title="행사를 찾을 수 없습니다." />;
 
   const styleVars = {
     '--event-bg': event.bg_color || '#1a1a2e',

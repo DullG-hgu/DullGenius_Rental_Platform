@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getEvent, listRegistrations, listEventTeams } from './api_events';
+import NotFound from '../../components/NotFound';
 import EventInfoForm from './EventInfoForm';
 import EventRegistrationsView from './EventRegistrationsView';
 import EventPaymentReconcile from './EventPaymentReconcile';
@@ -40,6 +41,7 @@ export default function EventDetailPage() {
   const [registrations, setRegistrations] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loadingEvent, setLoadingEvent] = useState(true);
+  const [eventError, setEventError] = useState(false);
   const [loadingRegs, setLoadingRegs] = useState(false);
   const [regsLoaded, setRegsLoaded] = useState(false); // 한 번 불러오면 서브탭 전환 시 재조회하지 않는다 (reload 로만 갱신)
   const [activeSub, setActiveSub] = useState('info');
@@ -47,9 +49,14 @@ export default function EventDetailPage() {
 
   const loadEvent = useCallback(async () => {
     setLoadingEvent(true);
+    setEvent(null);
+    setEventError(false);
     try {
       setEvent(await getEvent(id));
     } catch (e) {
+      // getEvent는 고유 ID로 single() 조회하므로 PGRST116은 결과 없음이다.
+      if (e.code === 'PGRST116' || e.code === '22P02') return;
+      setEventError(true);
       console.error(e);
       showToast('행사를 불러오지 못했습니다: ' + e.message, { type: 'error' });
     } finally {
@@ -83,6 +90,9 @@ export default function EventDetailPage() {
 
   if (authLoading) return null;
   if (!isAdmin) return <div className="admin-container"><p>권한이 없습니다.</p></div>;
+
+  if (!loadingEvent && eventError) return <NotFound admin title="행사를 불러오지 못했습니다." description="연결 상태를 확인한 뒤 다시 시도해 주세요." onRetry={loadEvent} />;
+  if (!loadingEvent && !event) return <NotFound admin title="행사를 찾을 수 없습니다." />;
 
   return (
     <div className="admin-container">

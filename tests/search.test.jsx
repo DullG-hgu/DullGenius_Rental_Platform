@@ -98,3 +98,39 @@ it('keeps category navigation usable while recommendation loading fails', () => 
     fireEvent.click(screen.getByRole('button', { name: '추천 다시 시도' }));
     expect(data.refreshGames).toHaveBeenCalledTimes(1);
 });
+
+it('keeps Korean composition local until committed, then restores the completed query after back', () => {
+    mount('/search?players=5%2B');
+    const input = screen.getByRole('textbox');
+    fireEvent.compositionStart(input);
+    for (const value of ['ㅋ', '카', '캍', '카타', '카탄']) {
+        fireEvent.change(input, { target: { value } });
+        act(() => vi.advanceTimersByTime(400));
+        expect(input.value).toBe(value);
+        expect(screen.getByTestId('url').textContent).toBe('/search?players=5%2B');
+    }
+    fireEvent.compositionEnd(input, { data: '탄' });
+    act(() => vi.advanceTimersByTime(300));
+    const params = new URLSearchParams(screen.getByTestId('url').textContent.split('?')[1]);
+    expect(params.get('query')).toBe('카탄');
+    expect(params.get('players')).toBe('5+');
+    fireEvent.click(screen.getByRole('link', { name: /카탄/ }));
+    fireEvent.click(screen.getByRole('button', { name: '브라우저 뒤로' }));
+    expect(screen.getByRole('textbox')).toHaveValue('카탄');
+});
+
+it('does not filter or log partially composed Korean text', () => {
+    mount();
+    sendLog.mockClear();
+    const input = screen.getByRole('textbox');
+    fireEvent.compositionStart(input);
+    fireEvent.change(input, { target: { value: '없는ㄱ' } });
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.getByRole('link', { name: /카탄/ })).toBeInTheDocument();
+    expect(sendLog).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: '없는게임' } });
+    fireEvent.compositionEnd(input);
+    act(() => vi.advanceTimersByTime(300));
+    expect(screen.queryByRole('link', { name: /카탄/ })).not.toBeInTheDocument();
+    expect(sendLog).toHaveBeenCalledWith(null, 'SEARCH', { query: '없는게임', result_count: 0 });
+});

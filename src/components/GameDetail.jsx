@@ -6,6 +6,7 @@ import { translateGenre } from '../constants/genreMap';
 import { useAuth } from '../contexts/AuthContext';
 import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
+import NotFound from './NotFound';
 import ConfirmModal from './ConfirmModal';
 import InfoModal from './InfoModal';
 import LazyImage from './common/LazyImage'; // [NEW] Lazy Image
@@ -291,7 +292,7 @@ function GameDetail() {
   if (!game && gameError) return <div role="alert" style={{ padding: "20px", textAlign: "center" }}>
     <p>게임 정보를 불러오지 못했습니다.</p><button onClick={retryData}>다시 시도</button>
   </div>;
-  if (!game) return <div style={{ padding: "20px", textAlign: "center" }}>게임을 찾을 수 없습니다.</div>;
+  if (!game) return <NotFound title="게임을 찾을 수 없습니다." description="주소를 확인하거나 다른 게임을 검색해 주세요." />;
 
   const handleBack = () => {
     if (location.state?.from) {

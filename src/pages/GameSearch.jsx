@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useGameData } from '../contexts/GameDataContext';
 import { useGameFilter, normalizePlayerFilter } from '../hooks/useGameFilter';
@@ -14,7 +14,10 @@ const GameSearch = () => {
     const location = useLocation();
     const { games, trending, loading, error, trendingError, refreshGames } = useGameData();
     const [queryParams, setQueryParams] = useSearchParams();
-    const inputValue = queryParams.get('query') || '';
+    const urlQuery = queryParams.get('query') || '';
+    const [inputValue, setInputValue] = useState(urlQuery);
+    const composing = useRef(false);
+    const [isComposing, setIsComposing] = useState(false);
     const selectedCategory = queryParams.get('category') || '전체';
     const difficultyFilter = queryParams.get('difficulty') || '전체';
     const playerFilter = normalizePlayerFilter(queryParams.get('players') || 'all');
@@ -22,8 +25,8 @@ const GameSearch = () => {
     const isTrendingMode = queryParams.get('type') === 'trending';
     const [searchTerm, setSearchTerm] = useState(inputValue);
 
-    // Keep the editable state in the URL so details/back/reload restore every filter.
-    // Replace avoids adding one browser-history entry for each keystroke.
+    // 입력값은 즉시 로컬에 반영하고, 한글 조합이 끝난 검색어만 URL에 저장한다.
+    // replace로 상세 진입·뒤로가기 복원을 유지하면서 입력별 히스토리는 쌓지 않는다.
     const updateFilter = (key, value, defaultValue) => {
         setQueryParams(current => {
             const next = new URLSearchParams(current);
@@ -32,7 +35,24 @@ const GameSearch = () => {
             return next;
         }, { replace: true });
     };
-    const setInputValue = value => updateFilter('query', value, '');
+    const handleInputChange = event => {
+        const value = event.target.value;
+        setInputValue(value);
+        if (!composing.current && !event.nativeEvent.isComposing) updateFilter('query', value, '');
+    };
+    const handleCompositionStart = () => {
+        composing.current = true;
+        setIsComposing(true);
+    };
+    const handleCompositionEnd = event => {
+        composing.current = false;
+        setIsComposing(false);
+        setInputValue(event.currentTarget.value);
+        updateFilter('query', event.currentTarget.value, '');
+    };
+    useEffect(() => {
+        if (!composing.current) setInputValue(urlQuery);
+    }, [urlQuery]);
     const setSelectedCategory = value => updateFilter('category', value, '전체');
     const setDifficultyFilter = value => updateFilter('difficulty', value, '전체');
     const setPlayerFilter = value => updateFilter('players', value, 'all');
@@ -67,11 +87,12 @@ const GameSearch = () => {
 
     // 검색어 디바운스 및 로그
     useEffect(() => {
+        if (isComposing) return;
         const timer = setTimeout(() => {
             setSearchTerm(inputValue);
         }, 300);
         return () => clearTimeout(timer);
-    }, [inputValue]);
+    }, [inputValue, isComposing]);
 
     // 필터 변경 로그
     useEffect(() => {
@@ -98,6 +119,7 @@ const GameSearch = () => {
 
 
     const resetFilters = useCallback(() => {
+        setInputValue('');
         setSearchTerm('');
         setQueryParams(current => {
             const next = new URLSearchParams(current);
@@ -137,7 +159,9 @@ const GameSearch = () => {
                             className="search-page-input"
                             placeholder="게임 이름 검색..."
                             value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
+                            onChange={handleInputChange}
+                            onCompositionStart={handleCompositionStart}
+                            onCompositionEnd={handleCompositionEnd}
                             aria-label="게임 이름 또는 태그 검색"
                         />
                     )}

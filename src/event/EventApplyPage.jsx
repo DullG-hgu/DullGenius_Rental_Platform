@@ -5,6 +5,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { getEventBySlug, getMyRegistration, registerIndividual, createTeam, getRegistration } from './api_events_public';
+import NotFound from '../components/NotFound';
 import EventPaymentGuide from './EventPaymentGuide';
 import './EventPage.css';
 
@@ -16,6 +17,8 @@ export default function EventApplyPage() {
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
   const [mode, setMode] = useState(null); // 'individual' | 'team_leader'
   const [step, setStep] = useState('form'); // 'mode' | 'form' | 'done'
   const [doneReg, setDoneReg] = useState(null);
@@ -29,12 +32,20 @@ export default function EventApplyPage() {
     }
     let alive = true;
     (async () => {
+      setLoading(true);
+      setLoadError(false);
+      setEvent(null);
+      setDoneReg(null);
+      setDoneTeam(null);
+      setStep('form');
+      setMode(null);
       try {
         const ev = await getEventBySlug(slug);
         if (!alive) return;
-        if (!ev) { showToast('행사를 찾을 수 없습니다.', { type: 'error' }); navigate('/'); return; }
+        if (!ev) return;
         setEvent(ev);
         const myReg = await getMyRegistration(ev.id, user.id);
+        if (!alive) return;
         if (myReg) {
           setDoneReg(myReg);
           setStep('done');
@@ -46,6 +57,8 @@ export default function EventApplyPage() {
         else if (ev.participation_mode === 'team') setMode('team_leader');
         else setStep('mode'); // both → 사용자 선택
       } catch (e) {
+        if (!alive) return;
+        setLoadError(true);
         console.error(e);
         showToast('로딩 실패: ' + e.message, { type: 'error' });
       } finally {
@@ -53,12 +66,13 @@ export default function EventApplyPage() {
       }
     })();
     return () => { alive = false; };
-  }, [slug, user, authLoading, navigate, showToast]);
+  }, [slug, user, authLoading, navigate, showToast, retry]);
 
   if (authLoading || loading) {
     return <div className="event-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p>로딩 중…</p></div>;
   }
-  if (!event) return null;
+  if (loadError) return <NotFound title="행사를 불러오지 못했습니다." description="연결 상태를 확인한 뒤 다시 시도해 주세요." onRetry={() => setRetry(value => value + 1)} />;
+  if (!event) return <NotFound title="행사를 찾을 수 없습니다." />;
 
   const styleVars = {
     '--event-bg': event.bg_color || '#1a1a2e',
