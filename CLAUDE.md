@@ -191,3 +191,17 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 - 공용 CSS 계약: `.admin-table-wrap` `.admin-btn-row` `.admin-grid-auto(--min)` `.admin-modal-scroll` `.admin-header-actions`.
   (pointer:coarse) 또는 800px 이하에서 입력 16px·버튼 min-height 36px 은 `Admin.css` 가 전역 처리하므로 인라인으로 다시 쓰지 않는다.
 - 네이티브 `confirm/prompt/alert` 는 관리자 영역에서 쓰지 않는다(모바일 브라우저의 대화상자 차단 옵션에 걸리면 조용히 실패). `ConfirmModal`/`PromptModal` 을 쓴다.
+
+---
+
+## BGG 연동 데이터 규칙 (2026-09-10)
+
+- `bgg_id`는 **게임 폼의 이름 검색(한글 그대로 됨)에서 고른 항목**만 넣는다. 손으로 ID를 적어 넣지 않는다.
+  2026-04 일괄 작업이 137개 중 61개를 TRPG·비디오게임·무관 게임에 연결해 놓았고, 9/10에 전부 재연결했다
+  (`database/bgg_sync/2026-09-10_report.md`, 롤백은 같은 폴더의 `_rollback.sql`).
+- BGG는 확장판을 기본 게임 타입으로도 이중 등록한다. 검색 후보의 「확장판」 배지를 보고 고른다.
+  "정령섬"을 검색하면 「정령섬: 가지와 발톱」이 같이 뜬다.
+- 폼 자동 채우기는 type이 boardgame/boardgameexpansion 이 아니면 거부하고, BGG 값 0·투표 0 난이도는 채우지 않는다.
+- 값 재동기화: `node scripts/bgg_sync.mjs`(dry-run) → `--apply`. 이름 재점검: `node scripts/bgg_match_names.mjs` (읽기 전용).
+  둘 다 `.env.local`의 `SUPABASE_SERVICE_ROLE_KEY`·`BGG_API_TOKEN`을 쓴다.
+- `genres`는 운영자가 한글로 손질한 값이라 스크립트가 덮어쓰지 않는다. `playingtime`은 「30분」「60~120분」 형식.

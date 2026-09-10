@@ -31,7 +31,8 @@ exports.handler = async function (event, context) {
                 body: JSON.stringify({ error: 'query parameter is required for search action' }),
             };
         }
-        bggUrl = `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(query)}&type=boardgame`;
+        // 확장판도 함께 받아 항목별로 구분한다 (BGG는 확장판을 boardgame 타입으로도 이중 등록함)
+        bggUrl = `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(query)}&type=boardgame,boardgameexpansion`;
     } else if (action === 'detail') {
         if (!id) {
             return {
@@ -120,11 +121,19 @@ exports.handler = async function (event, context) {
 // XML 파싱 함수 (검색 결과)
 function parseSearchXml(xml) {
     const items = [];
-    const itemRegex = /<item[^>]*type="boardgame"[^>]*id="(\d+)"[^>]*>([\s\S]*?)<\/item>/g;
+    const byId = new Map();
+    const itemRegex = /<item[^>]*type="([a-z]+)"[^>]*id="(\d+)"[^>]*>([\s\S]*?)<\/item>/g;
     let match;
     while ((match = itemRegex.exec(xml)) !== null) {
-        const id = match[1];
-        const inner = match[2];
+        const type = match[1];
+        const id = match[2];
+        const inner = match[3];
+        if (type !== 'boardgame' && type !== 'boardgameexpansion') continue;
+        // 같은 id가 boardgame/boardgameexpansion 두 타입으로 오면 하나로 합치고 확장 표시만 켠다
+        if (byId.has(id)) {
+            if (type === 'boardgameexpansion') byId.get(id).isExpansion = true;
+            continue;
+        }
         // primary 이름을 먼저 찾고, 없으면 alternate 이름 사용 (다국어 지원)
         let nameMatch = inner.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
         if (!nameMatch) {
@@ -132,11 +141,14 @@ function parseSearchXml(xml) {
         }
         const yearMatch = inner.match(/<yearpublished[^>]*value="([^"]+)"/);
         if (nameMatch) {
-            items.push({
+            const item = {
                 id,
                 name: nameMatch[1],
-                year: yearMatch ? yearMatch[1] : ''
-            });
+                year: yearMatch ? yearMatch[1] : '',
+                isExpansion: type === 'boardgameexpansion'
+            };
+            byId.set(id, item);
+            items.push(item);
         }
     }
     return items;
@@ -145,6 +157,8 @@ function parseSearchXml(xml) {
 // XML 파싱 함수 (상세 정보)
 function parseDetailXml(xml) {
     const idMatch = xml.match(/<item[^>]*id="(\d+)"/);
+    const typeMatch = xml.match(/<item[^>]*type="([a-z]+)"/);
+    const numWeightsMatch = xml.match(/<numweights[^>]*value="(\d+)"/);
     // primary 이름을 먼저 찾고, 없으면 alternate 이름 사용 (다국어 지원)
     let nameMatch = xml.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
     if (!nameMatch) {
@@ -181,6 +195,8 @@ function parseDetailXml(xml) {
 
     return {
         id: idMatch ? idMatch[1] : '',
+        type: typeMatch ? typeMatch[1] : '',
+        numWeights: numWeightsMatch ? parseInt(numWeightsMatch[1], 10) : 0,
         name: nameMatch ? nameMatch[1] : '',
         thumbnail: thumbnail,
         minPlayers: minPMatch ? minPMatch[1] : '',

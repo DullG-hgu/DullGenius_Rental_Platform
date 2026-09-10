@@ -403,22 +403,33 @@ export const searchKoreanImages = async (query) => {
 // [BGG] XML 파싱 헬퍼 (검색 결과)
 const parseBGGSearch = (xmlText) => {
   const items = [];
-  const itemRegex = /<item[^>]*type="boardgame"[^>]*id="(\d+)"[^>]*>([\s\S]*?)<\/item>/g;
+  const byId = new Map();
+  const itemRegex = /<item[^>]*type="([a-z]+)"[^>]*id="(\d+)"[^>]*>([\s\S]*?)<\/item>/g;
   let match;
   while ((match = itemRegex.exec(xmlText)) !== null) {
-    const id = match[1];
-    const inner = match[2];
+    const type = match[1];
+    const id = match[2];
+    const inner = match[3];
+    if (type !== 'boardgame' && type !== 'boardgameexpansion') continue;
+    // BGG는 확장판을 boardgame 타입으로도 이중 등록한다 → id 기준으로 합치고 확장 여부만 표시
+    if (byId.has(id)) {
+      if (type === 'boardgameexpansion') byId.get(id).isExpansion = true;
+      continue;
+    }
     // 영어(primary) 또는 한국어(alternate) 이름 모두 지원
     const primaryNameMatch = inner.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
     const alternateNameMatch = inner.match(/<name[^>]*type="alternate"[^>]*value="([^"]+)"/);
     const nameMatch = primaryNameMatch || alternateNameMatch;
     const yearMatch = inner.match(/<yearpublished[^>]*value="([^"]+)"/);
     if (nameMatch) {
-      items.push({
+      const item = {
         id,
         name: nameMatch[1],
-        year: yearMatch ? yearMatch[1] : ''
-      });
+        year: yearMatch ? yearMatch[1] : '',
+        isExpansion: type === 'boardgameexpansion'
+      };
+      byId.set(id, item);
+      items.push(item);
     }
   }
   return items;
@@ -427,6 +438,8 @@ const parseBGGSearch = (xmlText) => {
 // [BGG] XML 파싱 헬퍼 (상세 정보)
 const parseBGGDetail = (xmlText) => {
   const idMatch = xmlText.match(/<item[^>]*id="(\d+)"/);
+  const typeMatch = xmlText.match(/<item[^>]*type="([a-z]+)"/);
+  const numWeightsMatch = xmlText.match(/<numweights[^>]*value="(\d+)"/);
   // primary 이름을 먼저 찾고, 없으면 alternate 이름 사용 (다국어 지원)
   const primaryNameMatch = xmlText.match(/<name[^>]*type="primary"[^>]*value="([^"]+)"/);
   const alternateNameMatch = xmlText.match(/<name[^>]*type="alternate"[^>]*value="([^"]+)"/);
@@ -462,6 +475,8 @@ const parseBGGDetail = (xmlText) => {
 
   return {
     id: idMatch ? idMatch[1] : '',
+    type: typeMatch ? typeMatch[1] : '',
+    numWeights: numWeightsMatch ? parseInt(numWeightsMatch[1], 10) : 0,
     name: nameMatch ? nameMatch[1] : '',
     thumbnail: thumbnail,
     minPlayers: minPMatch ? minPMatch[1] : '',
@@ -484,7 +499,7 @@ export const searchBGG = async (query) => {
 
     if (import.meta.env.DEV) {
       // DEV: Vite 프록시 사용
-      url = `/bgg-search?query=${encodeURIComponent(query)}&type=boardgame`;
+      url = `/bgg-search?query=${encodeURIComponent(query)}&type=boardgame,boardgameexpansion`;
       response = await fetch(url);
 
       if (!response.ok) {

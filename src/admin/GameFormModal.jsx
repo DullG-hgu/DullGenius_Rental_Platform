@@ -6,6 +6,19 @@ import { useToast } from '../contexts/ToastContext'; // [NEW]
 import { searchBGG, fetchBGGGame, searchKoreanImages, checkGameExists } from '../api';
 import PoweredByBGG from '../components/PoweredByBGG';
 
+const BGG_ALLOWED_TYPES = new Set(['boardgame', 'boardgameexpansion']);
+
+// BGG 최소/최대 시간 → "30분" / "60~120분". 둘 다 없으면 null.
+// 최소가 5분 미만인데 최대는 있는 경우(예: 1~30분)는 최대만 쓴다.
+export function formatPlayingTime(minPlaytime, maxPlaytime) {
+  let min = minPlaytime > 0 ? minPlaytime : null;
+  const max = maxPlaytime > 0 ? maxPlaytime : null;
+  if (min && min < 5 && max && max >= 5) min = null;
+  if (!min && !max) return null;
+  if (!min || !max || min === max) return `${max || min}분`;
+  return `${min}~${max}분`;
+}
+
 function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplicateGame, busy = false }) {
   const bggRequestRef = useRef(0);
   const bggBusyRef = useRef(false);
@@ -205,22 +218,33 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
       const detail = await fetchBGGGame(bggId);
       if (requestId !== bggRequestRef.current) return;
       if (!detail) throw new Error("게임 정보를 찾을 수 없습니다.");
+      // 보드게임·확장판이 아닌 항목(TRPG 아이템, 비디오게임 등)은 폼에 넣지 않는다.
+      // 2026-09 점검에서 이런 오연결이 60건 넘게 발견됨.
+      if (detail.type && !BGG_ALLOWED_TYPES.has(detail.type)) {
+        throw new Error(`BGG ID ${detail.id}는 보드게임이 아닙니다 (${detail.type}). 이름으로 다시 검색해주세요.`);
+      }
+
+      // 0 또는 빈 값은 "정보 없음"이라 기존 값을 유지한다 (BGG는 미기재 항목을 0으로 준다)
+      const num = (v) => { const n = parseInt(v, 10); return n > 0 ? n : null; };
+      const minPlayers = num(detail.minPlayers);
+      const maxPlayers = num(detail.maxPlayers);
+      const minPlaytime = num(detail.minPlaytime);
+      const maxPlaytime = num(detail.maxPlaytime);
+      // 난이도는 투표가 있을 때만 (투표 0인 항목의 0.00이 그대로 저장되던 문제 방지)
+      const weight = parseFloat(detail.weight);
+      const hasWeight = Number.isFinite(weight) && weight > 0 && (detail.numWeights ?? 1) > 0;
 
       setFormData(prev => ({
         ...prev,
         bgg_id: detail.id,
         image: prev.image || detail.thumbnail || '',
-        difficulty: detail.weight || prev.difficulty,
-        min_players: detail.minPlayers || prev.min_players,
-        max_players: detail.maxPlayers || prev.max_players,
-        min_playtime: detail.minPlaytime || prev.min_playtime,
-        max_playtime: detail.maxPlaytime || prev.max_playtime,
+        difficulty: hasWeight ? detail.weight : prev.difficulty,
+        min_players: minPlayers ?? prev.min_players,
+        max_players: maxPlayers ?? prev.max_players,
+        min_playtime: minPlaytime ?? prev.min_playtime,
+        max_playtime: maxPlaytime ?? prev.max_playtime,
         genres: detail.genres?.length ? detail.genres : prev.genres,
-        playingtime: (detail.minPlaytime && detail.maxPlaytime)
-          ? (detail.minPlaytime === detail.maxPlaytime
-              ? `${detail.minPlaytime}분`
-              : `${detail.minPlaytime}~${detail.maxPlaytime}분`)
-          : prev.playingtime,
+        playingtime: formatPlayingTime(minPlaytime, maxPlaytime) ?? prev.playingtime,
       }));
       if (detail.genres?.length) setGenresInput(detail.genres.join(', '));
 
@@ -322,7 +346,10 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
               disabled={bggFetching}
               className={String(formData.bgg_id) === String(item.id) ? 'is-selected' : ''}
             >
-              <strong>{item.name}</strong>
+              <strong>
+                {item.name}
+                {item.isExpansion && <em className="game-bgg-expansion-badge">확장판</em>}
+              </strong>
               <span>
                 {item.year ? `${item.year} · ` : ''}BGG ID ${item.id}
               </span>

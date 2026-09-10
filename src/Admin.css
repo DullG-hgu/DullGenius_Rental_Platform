@@ -416,6 +416,20 @@
   background: rgba(52, 152, 219, 0.22);
 }
 
+/* 확장판 후보 표시 — 기본판과 헷갈려 잘못 연결하는 것 방지 */
+.game-bgg-expansion-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(230, 126, 34, 0.25);
+  color: #f0a060;
+  font-size: 0.7em;
+  font-style: normal;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
 .game-bgg-web-button {
   width: 100%;
   padding: 8px;
