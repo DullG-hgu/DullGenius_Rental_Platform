@@ -3,7 +3,7 @@ name: Daily Overdue Briefing
 # ⏸️ 2026-08-04 스케줄 중단 (보류). 수동 실행만 가능.
 #
 # 중단 사유:
-#   1. 2026-08-01 키 교체 때 Actions 시크릿 VITE_SUPABASE_ANON_KEY 가 사라져
+#   1. 2026-08-01 키 교체 때 Actions의 구형 공개 키 시크릿이 사라져
 #      8/2 실행분부터 "Missing Supabase Environment Variables" 로 매일 실패했다.
 #   2. DISCORD_WEBHOOK_URL 시크릿도 등록돼 있지 않다. 스크립트는 웹훅이 없으면
 #      경고만 찍고 exit 0 하므로, 실패 이전의 "성공" 초록불도 실제로는

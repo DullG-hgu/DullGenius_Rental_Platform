@@ -12,6 +12,9 @@
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 const env = Object.fromEntries(fs.readFileSync('.env.local','utf8').split('\n').filter(l=>l.includes('=')&&!l.startsWith('#')).map(l=>{const i=l.indexOf('=');return [l.slice(0,i).trim(), l.slice(i+1).trim()];}));
+if (!/^sb_secret_[A-Za-z0-9_-]+$/.test(env.SUPABASE_SERVICE_ROLE_KEY || '')) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format');
+}
 const sb = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 const OUT = process.argv[2] || 'bgg_match_report.json';
 const { data: games, error } = await sb.from('games').select('id,name,category,bgg_id').order('id');

@@ -7,21 +7,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../.env.local') });
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-// const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use this if anon fails, but we want to test anon/user context if possible.
-
-// Actually, testing with service role key will tell us if data exists.
-// Testing with anon key (and no login) will definitely fail if RLS is on.
-// We need to simulate the admin user login, which is hard in a simple script without credentials.
-
-// So let's first check if data EXITS using service role key (if available in env)
-// If not, we'll try to just read with what we have.
-
-// Since I cannot easily get the user's session token here, 
-// I will create a script that runs in the browser console context if possible, OR
-// I will just use the Service Role Key to confirm table content first.
-
-const supabase = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey);
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!/^sb_secret_[A-Za-z0-9_-]+$/.test(supabaseKey || '')) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format');
+}
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function checkRoles() {
     console.log("Checking user_roles table...");

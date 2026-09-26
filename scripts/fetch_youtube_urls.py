@@ -7,8 +7,7 @@ from playwright.sync_api import sync_playwright, Page, BrowserContext
 
 # [설정]
 SUPABASE_URL = os.getenv("VITE_SUPABASE_URL")
-SUPABASE_KEY = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_PUBLISHABLE_KEY")
-                or os.getenv("VITE_SUPABASE_PUBLISHABLE_KEY") or os.getenv("VITE_SUPABASE_ANON_KEY"))
+SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 PRIORITY_KEYWORD = "코리아보드게임즈"
 
@@ -16,15 +15,14 @@ def fetch_youtube_urls():
     print("--- 유튜브 링크 자동 수집기 (Piority: 코리아보드게임즈) ---")
     
     # [입력] 환경 변수에 없으면 직접 입력 받기
-    global SUPABASE_URL, SUPABASE_KEY
+    global SUPABASE_URL, SUPABASE_SECRET_KEY
     while not SUPABASE_URL:
         SUPABASE_URL = input("Supabase URL: ").strip()
-    while not SUPABASE_KEY:
-        print("[주의] DB 업데이트를 위해 가급적 Service Role Key를 사용하세요.")
-        SUPABASE_KEY = input("Supabase Key: ").strip()
+    if not SUPABASE_SECRET_KEY or not SUPABASE_SECRET_KEY.startswith('sb_secret_'):
+        raise ValueError('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format')
 
     # Supabase 접속
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
 
     # 1. 게임 목록 가져오기 (video_url이 없는 것만)
     print("게임 목록 로딩 중...")

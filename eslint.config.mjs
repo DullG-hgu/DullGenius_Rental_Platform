@@ -24,7 +24,7 @@ export default [
         },
     },
     {
-        files: ['netlify/functions/**/*.js', 'scripts/validate_env.mjs'],
+        files: ['netlify/functions/**/*.js', 'scripts/validate_env.mjs', 'scripts/validate_supabase_refs.mjs'],
         languageOptions: { globals: globals.node, ecmaVersion: 'latest' },
         rules: { 'no-undef': 'error', 'no-unreachable': 'error', 'no-dupe-keys': 'error' },
     },

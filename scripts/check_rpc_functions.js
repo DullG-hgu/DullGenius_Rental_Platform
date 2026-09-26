@@ -16,8 +16,10 @@ fs.readFileSync(envPath, 'utf8').split('\n').forEach(l => {
 });
 
 const SUPABASE_URL     = env.VITE_SUPABASE_URL;
-const ANON_KEY         = env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY;
 const SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+if (!/^sb_secret_[A-Za-z0-9_-]+$/.test(SERVICE_ROLE_KEY || '')) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format');
+}
 
 // ── 로컬 SQL에서 기대되는 함수 목록 ──────────────────
 // final_rpc_v2.sql + 기타 sql 파일에서 정의된 함수들
@@ -59,8 +61,7 @@ function fetchOpenAPI() {
         const url = `${SUPABASE_URL}/rest/v1/`;
         https.get(url, {
             headers: {
-                'apikey': ANON_KEY,
-                'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+                'apikey': SERVICE_ROLE_KEY,
                 'Accept': 'application/json'
             }
         }, res => {

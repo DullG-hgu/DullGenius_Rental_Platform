@@ -9,7 +9,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../.env.local') });
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY; // 관리자 키가 필요할 수도 있음 (삭제 시)
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // 서비스 롤 키 (권한 우회)
 
 if (!supabaseUrl || !supabaseServiceKey) {
@@ -17,6 +16,9 @@ if (!supabaseUrl || !supabaseServiceKey) {
     process.exit(1);
 }
 
+if (!/^sb_secret_[A-Za-z0-9_-]+$/.test(supabaseServiceKey || '')) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format');
+}
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function checkStorage() {

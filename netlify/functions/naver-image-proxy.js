@@ -17,15 +17,12 @@ const authorizeAdmin = async (event) => {
     if (!accessToken) return { statusCode: 401, error: 'Authentication required' };
 
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = process.env.SUPABASE_PUBLISHABLE_KEY
-        || process.env.VITE_SUPABASE_PUBLISHABLE_KEY
-        || process.env.SUPABASE_ANON_KEY
-        || process.env.VITE_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) {
+    const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(supabasePublishableKey || '')) {
         return { statusCode: 500, error: 'Supabase server environment is not configured' };
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    const supabase = createClient(supabaseUrl, supabasePublishableKey, {
         global: { headers: { Authorization: `Bearer ${accessToken}` } },
         auth: { persistSession: false, autoRefreshToken: false },
     });

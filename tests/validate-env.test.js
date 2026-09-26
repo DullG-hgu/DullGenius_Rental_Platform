@@ -35,8 +35,36 @@ it.each(['KIOSK_EMAIL', 'KIOSK_PASSWORD', 'KIOSK_MASTER_KEY', 'SUPABASE_URL', 'S
     delete env[key];
     expect(check(['--scope=kiosk'], env).status).toBe(1);
 });
-it('kiosk scope accepts the same public Supabase fallback as the server', () => {
-    expect(check(['--scope=kiosk'], { ...kiosk, SUPABASE_URL: '', SUPABASE_PUBLISHABLE_KEY: '', ...client }).status).toBe(0);
+it('kiosk scope never substitutes the frontend key for the server key', () => {
+    expect(check(['--scope=kiosk'], { ...kiosk, SUPABASE_PUBLISHABLE_KEY: '', ...client }).status).toBe(1);
+});
+it.each(['client', 'kiosk', 'all'])('rejects invalid key formats even outside strict mode in %s scope', scope => {
+    for (const value of ['', 'eyJ_invalid_legacy_fixture', 'sb_secret_test', 'invalid', 'sb_publishable_']) {
+        const result = check([`--scope=${scope}`], {
+            ...client, ...kiosk,
+            VITE_SUPABASE_PUBLISHABLE_KEY: value, SUPABASE_PUBLISHABLE_KEY: value,
+        });
+        expect(result.status).toBe(1);
+        if (value && value !== 'sb_publishable_') expect(result.output).not.toContain(value);
+    }
+});
+it('rejects obsolete settings even alongside a valid new key', () => {
+    for (const prefix of ['', 'VITE_', 'REACT_APP_']) {
+        const name = prefix + ['SUPABASE', 'ANON', 'KEY'].join('_');
+        const result = check([], { ...client, [name]: 'never-print-obsolete-value' });
+        expect(result.status).toBe(1);
+        expect(result.output).not.toContain('never-print-obsolete-value');
+    }
+});
+it('all scope independently validates both frontend and server public keys', () => {
+    const env = { ...client, ...kiosk, NAVER_API_HUB_CLIENT_ID: 'test', NAVER_API_HUB_CLIENT_SECRET: 'test', BGG_API_TOKEN: 'test' };
+    expect(check(['--scope=all'], { ...env, SUPABASE_PUBLISHABLE_KEY: '' }).status).toBe(1);
+    expect(check(['--scope=all'], { ...env, VITE_SUPABASE_PUBLISHABLE_KEY: '' }).status).toBe(1);
+});
+it('rejects a legacy administrator key without printing it', () => {
+    const result = check([], { ...client, SUPABASE_SERVICE_ROLE_KEY: 'eyJ_private_fixture' });
+    expect(result.status).toBe(1);
+    expect(result.output).not.toContain('eyJ_private_fixture');
 });
 it('all scope requires external API settings too', () => {
     expect(check(['--scope=all'], { ...client, ...kiosk }).status).toBe(1);

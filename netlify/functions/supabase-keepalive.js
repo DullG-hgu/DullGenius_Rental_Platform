@@ -15,19 +15,16 @@ exports.handler = async () => {
     const url =
         process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const key =
-        process.env.SUPABASE_PUBLISHABLE_KEY ||
-        process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-        process.env.SUPABASE_ANON_KEY ||
-        process.env.VITE_SUPABASE_ANON_KEY;
+        process.env.SUPABASE_PUBLISHABLE_KEY;
 
-    if (!url || !key) {
+    if (!url || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(key || '')) {
         console.error('[keepalive] Supabase URL/키 환경변수 누락');
         return { statusCode: 500, body: 'missing env' };
     }
 
     // 공개 읽기 가능한 테이블에 최소 조회 1건 — RLS상 안전하고 활동으로 집계된다
     const res = await fetch(`${url}/rest/v1/games?select=id&limit=1`, {
-        headers: { apikey: key, Authorization: `Bearer ${key}` },
+        headers: { apikey: key },
     });
 
     if (!res.ok) {

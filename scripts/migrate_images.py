@@ -6,12 +6,10 @@ from urllib.parse import urlparse
 from supabase import create_client, Client
 
 # [설정] .env 파일 로드 (dotenv가 없으면 수동 설정 필요)
-# 이 스크립트는 로컬에서 실행하므로 직접 키를 입력받거나 .env에서 읽습니다.
+# 서버 secret 키는 환경변수로만 받습니다.
 SUPABASE_URL = os.getenv("VITE_SUPABASE_URL")
-# 주의: 스토리지 업로드 및 DB 수정을 위해 'Service Role Key'가 권장됩니다.
-# Anon Key로는 RLS 정책에 따라 막힐 수 있습니다.
-SUPABASE_KEY = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_PUBLISHABLE_KEY")
-                or os.getenv("VITE_SUPABASE_PUBLISHABLE_KEY") or os.getenv("VITE_SUPABASE_ANON_KEY"))
+# 스토리지 업로드 및 DB 수정에는 서버 전용 secret 키를 사용합니다.
+SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 BUCKET_NAME = "game-images"
 
@@ -19,22 +17,19 @@ def migrate_images():
     print("--- 보드게임 이미지 서버 이관 스크립트 ---")
     
     # [입력] 환경 변수에 없으면 직접 입력 받기
-    global SUPABASE_URL, SUPABASE_KEY
+    global SUPABASE_URL, SUPABASE_SECRET_KEY
 
     while not SUPABASE_URL:
         SUPABASE_URL = input("Supabase URL을 입력하세요 (예: https://xxx.supabase.co): ").strip()
         
-    while not SUPABASE_KEY:
-        print("\n[중요] 이미지 업로드 및 DB 수정을 위해 'service_role' 키가 권장됩니다.")
-        print("Anon Key를 사용하면 RLS 정책에 의해 막힐 수 있습니다.")
-        SUPABASE_KEY = input("Supabase Service Role Key (또는 Anon Key)를 입력하세요: ").strip()
+    if not SUPABASE_SECRET_KEY or not SUPABASE_SECRET_KEY.startswith('sb_secret_'):
+        raise ValueError('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format')
 
     print(f"URL: {SUPABASE_URL}")
-    print(f"Key: {SUPABASE_KEY[:10]}...") # 일부만 표시
 
     # Supabase 클라이언트 생성
     try:
-        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
     except Exception as e:
         print(f"클라이언트 생성 실패: {e}")
         return

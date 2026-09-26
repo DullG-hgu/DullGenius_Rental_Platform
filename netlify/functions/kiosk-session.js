@@ -29,7 +29,7 @@
 //   KIOSK_EMAIL        키오스크 계정 이메일
 //   KIOSK_PASSWORD     키오스크 계정 비밀번호
 //   SUPABASE_URL       (없으면 VITE_SUPABASE_URL 로 대체)
-//   SUPABASE_PUBLISHABLE_KEY  (기존 *_ANON_KEY 변수명은 전환 기간에만 대체 사용)
+//   SUPABASE_PUBLISHABLE_KEY  (활성 publishable 키만 사용, 다른 변수명으로 대체하지 않음)
 //
 // ⚠️ KIOSK_EMAIL / KIOSK_PASSWORD 에 절대 VITE_ 를 붙이지 말 것.
 //    붙이는 순간 다시 번들에 박힌다.
@@ -124,12 +124,9 @@ exports.handler = async function (event) {
     const email = process.env.KIOSK_EMAIL;
     const password = process.env.KIOSK_PASSWORD;
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY
-        || process.env.VITE_SUPABASE_PUBLISHABLE_KEY
-        || process.env.SUPABASE_ANON_KEY
-        || process.env.VITE_SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
 
-    if (!masterKey || !email || !password || !supabaseUrl || !supabaseKey) {
+    if (!masterKey || !email || !password || !supabaseUrl || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(supabaseKey || '')) {
         // 설정 누락은 서버 로그에만 남긴다. 어떤 값이 빠졌는지 응답에 싣지 않는다.
         console.error('kiosk-session: 환경변수 누락', {
             hasMasterKey: !!masterKey,

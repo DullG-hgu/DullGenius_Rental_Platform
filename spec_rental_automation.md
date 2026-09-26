@@ -165,7 +165,7 @@ RETURNING game_id;
 
 ### 2-1. `ingest_rental_request(p_payload jsonb)` — GAS 호출용
 
-**권한:** `SECURITY DEFINER`. `anon` role에서 호출 가능 (GAS는 anon key 사용) — **다만 GAS에만 알려진 공유 시크릿(payload 내 `_secret` 필드)으로 gating**
+**권한:** `SECURITY DEFINER`. `anon` role에서 호출 가능 (GAS는 publishable 키 사용) — **다만 GAS에만 알려진 공유 시크릿(payload 내 `_secret` 필드)으로 gating**
 
 ```sql
 -- 의사 코드
@@ -294,7 +294,7 @@ function postToSupabase(e) {
     UrlFetchApp.fetch(SUPABASE_URL + '/rest/v1/rpc/ingest_rental_request', {
         method: 'post',
         headers: {
-            'apikey': SUPABASE_ANON_KEY,
+            'apikey': SUPABASE_PUBLISHABLE_KEY,
             'Content-Type': 'application/json',
         },
         payload: JSON.stringify({ p_payload: payload }),
@@ -304,7 +304,7 @@ function postToSupabase(e) {
 ```
 
 **Script Properties에 저장할 값:**
-- `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+- `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_GAS_SECRET` (위 RPC의 `_secret` 매칭용 랜덤 문자열)
 
 ---

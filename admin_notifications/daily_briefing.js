@@ -18,6 +18,9 @@ if (!discordWebhookUrl) {
     process.exit(1);
 }
 
+if (!/^sb_secret_[A-Za-z0-9_-]+$/.test(supabaseKey || '')) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format');
+}
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 2. 연체자 조회 함수

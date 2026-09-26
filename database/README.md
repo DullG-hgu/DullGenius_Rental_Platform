@@ -87,8 +87,7 @@ jobs:
       - name: Fix Data Consistency
         run: |
           curl -X POST \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
             "https://your-project.supabase.co/rest/v1/rpc/fix_rental_data_consistency"
 ```

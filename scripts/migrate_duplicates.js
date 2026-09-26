@@ -11,15 +11,12 @@ envContent.split('\n').forEach(line => {
     if (key && val) env[key.trim()] = val.trim();
 });
 
-const supabaseUrl = env.REACT_APP_SUPABASE_URL;
-const supabaseKey = env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY
-    || env.VITE_SUPABASE_ANON_KEY || env.REACT_APP_SUPABASE_ANON_KEY;
-// IMPORTANT: Use SERVICE_ROLE key if available for deletions, otherwise ANON key with RLS might fail 
-// if the user is not the owner. But assuming local dev environment or admin rights context.
-// Actually, RLS usually blocks delete for anon. We might need to rely on the fact user is an admin or we have a service role key.
-// Since we don't have service role key in .env.local usually (security), we hope anon key has rights or RLS is permissive for now.
-// If this fails, we will need to ask user for Service Key or use SQL editor.
-// *Assumption*: The `analyze` script worked, so we have read access. Write access depends on RLS.
+const supabaseUrl = env.VITE_SUPABASE_URL;
+const supabaseKey = env.SUPABASE_PUBLISHABLE_KEY;
+if (!/^sb_publishable_[A-Za-z0-9_-]+$/.test(supabaseKey || '')) {
+    throw new Error('SUPABASE_PUBLISHABLE_KEY must be an active publishable key');
+}
+// Public access only; this script does not elevate privileges.
 
 if (!supabaseUrl || !supabaseKey) {
     console.error("Missing Supabase Credentials in .env.local");

@@ -87,6 +87,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 
 | 명령 | 검사 범위 |
 | --- | --- |
+| `npm run validate:keys` | 저장소의 구형 키 참조·JWT 하드코딩 검사 |
 | `npm run validate:env` | 공개 Supabase 설정 |
 | `npm run build` | 공개 설정 검사 후 프런트엔드 빌드 |
 | `npm run validate:env:kiosk` | 키오스크 계정·기기 키·Supabase 연결 설정 |
@@ -97,7 +98,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 운영 키오스크 설정은 Netlify 프로젝트의 환경변수 관리 화면에서 담당자가 직접 입력합니다.
 
 1. Production 컨텍스트에 `KIOSK_EMAIL`, `KIOSK_PASSWORD`, `KIOSK_MASTER_KEY`를 설정합니다. 범위를 선택할 수 있는 요금제에서는 Functions만 선택합니다.
-2. `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`도 함수에서 접근 가능하게 설정합니다. 함수는 기존 `VITE_SUPABASE_*` 공개 값을 대체값으로 사용할 수 있습니다.
+2. `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`도 함수에서 접근 가능하게 설정합니다. 함수는 `SUPABASE_PUBLISHABLE_KEY`만 사용하며 프런트엔드 키로 대체하지 않습니다.
 3. 키오스크 이메일·비밀번호는 Supabase의 키오스크 전용 계정과 일치해야 합니다. `VITE_` 접두사를 붙이지 않습니다. `KIOSK_MASTER_KEY_PREVIOUS`는 키 교체 유예 기간에만 사용합니다.
 4. 환경변수를 변경했다면 담당자가 새 배포를 진행한 후 키오스크 기기에서 등록·세션 복구를 확인합니다. 프런트엔드 빌드 성공만으로 Functions 환경변수가 검증되지는 않습니다.
 

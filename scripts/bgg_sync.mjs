@@ -18,6 +18,9 @@ import path from 'path';
 import { GENRE_MAP } from '../src/constants/genreMap.js';
 const APPLY = process.argv.includes('--apply');
 const env = Object.fromEntries(fs.readFileSync('.env.local','utf8').split('\n').filter(l=>l.includes('=')&&!l.startsWith('#')).map(l=>{const i=l.indexOf('=');return [l.slice(0,i).trim(), l.slice(i+1).trim()];}));
+if (!/^sb_secret_[A-Za-z0-9_-]+$/.test(env.SUPABASE_SERVICE_ROLE_KEY || '')) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format');
+}
 const sb = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 const H = { Authorization: `Bearer ${env.BGG_API_TOKEN}`, 'User-Agent': 'DulGenius-Board-Game-Rental/1.0 (sync)', Accept: 'application/xml' };
 const sleep = ms => new Promise(r => setTimeout(r, ms));

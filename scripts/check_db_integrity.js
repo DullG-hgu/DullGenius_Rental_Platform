@@ -25,6 +25,9 @@ if (!supabaseUrl || !serviceKey) {
     process.exit(1);
 }
 
+if (!/^sb_secret_[A-Za-z0-9_-]+$/.test(serviceKey || '')) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format');
+}
 const supabase = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false }
 });

@@ -18,6 +18,9 @@ if (!supabaseUrl || !supabaseServiceKey) {
     process.exit(1);
 }
 
+if (!/^sb_secret_[A-Za-z0-9_-]+$/.test(supabaseServiceKey || '')) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format');
+}
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const BUCKET_NAME = 'game-images';
 

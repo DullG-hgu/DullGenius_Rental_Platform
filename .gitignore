@@ -25,6 +25,9 @@
 # Supabase CLI
 supabase/.temp/
 
+# Netlify CLI local site connection
+.netlify/
+
 # misc
 .DS_Store
 Thumbs.db

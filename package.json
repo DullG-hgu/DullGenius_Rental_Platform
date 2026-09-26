@@ -21,18 +21,20 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "predev": "npm run validate:keys && node scripts/validate_env.mjs --scope=client",
     "dev": "vite",
-    "prebuild": "node scripts/validate_env.mjs --scope=client",
+    "prebuild": "npm run validate:keys && node scripts/validate_env.mjs --scope=client",
     "build": "vite build",
     "preview": "vite preview",
     "pull-schema": "node scripts/pull_schema.js",
     "gen:kiosk-qr": "node scripts/gen_kiosk_qr.mjs",
     "validate:env": "node scripts/validate_env.mjs --scope=client --strict",
+    "validate:keys": "node scripts/validate_supabase_refs.mjs",
     "validate:env:kiosk": "node scripts/validate_env.mjs --scope=kiosk --strict",
     "validate:env:all": "node scripts/validate_env.mjs --scope=all --strict",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src tests netlify/functions scripts/validate_env.mjs *.config.mjs vite.config.js"
+    "lint": "eslint src tests netlify/functions scripts/validate_env.mjs scripts/validate_supabase_refs.mjs *.config.mjs vite.config.js"
   },
   "eslintConfig": {
     "extends": [

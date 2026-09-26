@@ -32,7 +32,10 @@ envContent.split(/\r?\n/).forEach(line => {
 });
 
 const supabaseUrl = envVars['VITE_SUPABASE_URL'];
-const supabaseKey = envVars['SUPABASE_PUBLISHABLE_KEY'] || envVars['VITE_SUPABASE_PUBLISHABLE_KEY'] || envVars['VITE_SUPABASE_ANON_KEY'];
+const supabaseKey = envVars['SUPABASE_PUBLISHABLE_KEY'];
+if (!/^sb_publishable_[A-Za-z0-9_-]+$/.test(supabaseKey || '')) {
+    throw new Error('SUPABASE_PUBLISHABLE_KEY must be an active publishable key');
+}
 
 console.log(`Supabase URL found: ${!!supabaseUrl}`);
 console.log(`Supabase Key found: ${!!supabaseKey}`);

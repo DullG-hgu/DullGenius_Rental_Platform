@@ -2,16 +2,13 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-// Supabase의 현재 공개 클라이언트 키 이름을 우선 사용한다.
-// 기존 배포 환경이 VITE_SUPABASE_ANON_KEY에 publishable 키를 넣어둔 경우도
-// 중단 없이 이동할 수 있도록 변수명만 한시적으로 호환한다.
+// 공개 클라이언트 키는 이 변수 하나만 사용한다.
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-    || import.meta.env.VITE_SUPABASE_ANON_KEY
 
 
 
-if (!supabaseUrl || !supabasePublishableKey) {
-    console.error('Supabase URL or Key is missing! Check your .env file or Vite config envPrefix.');
+if (!supabaseUrl || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(supabasePublishableKey || '')) {
+    throw new Error('VITE_SUPABASE_URL and an active VITE_SUPABASE_PUBLISHABLE_KEY are required.');
 }
 let client;
 

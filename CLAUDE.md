@@ -162,7 +162,7 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 ### 환경변수 일반 규칙
 
 - **`VITE_` 가 붙으면 그 값은 공개된다.** 자격증명에는 절대 붙이지 말 것
-- 공개돼도 되는 것: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`(publishable) — RLS가 실제 관문
+- 공개돼도 되는 것: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`(publishable) — RLS가 실제 관문
 - Netlify `SECRETS_SCAN_ENABLED=true`가 이를 강제한다. 시크릿이 번들에 들어가면 빌드가 실패함
 - 서버에서만 쓸 값은 `netlify/functions/`에서 `process.env`로 읽는다
 - `npm run validate:env`와 빌드는 공개 프런트엔드 설정만 검사한다. 키오스크는 `npm run validate:env:kiosk`, 프런트엔드·키오스크·NAVER·BGG는 `npm run validate:env:all`로 명시적으로 검사하며, 금지된 `VITE_` secret은 모든 검사에서 차단한다.
@@ -202,6 +202,7 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 - BGG는 확장판을 기본 게임 타입으로도 이중 등록한다. 검색 후보의 「확장판」 배지를 보고 고른다.
   "정령섬"을 검색하면 「정령섬: 가지와 발톱」이 같이 뜬다.
 - 폼 자동 채우기는 type이 boardgame/boardgameexpansion 이 아니면 거부하고, BGG 값 0·투표 0 난이도는 채우지 않는다.
+- BGG 요청(`bgg-proxy.js`·`vite.config.js` 개발 프록시)은 앱 식별 UA(`dullgrental/1.0 …`)를 보낸다. **브라우저 UA로 위장하면 유효 토큰이어도 Cloudflare가 403**을 준다 (위장 UA는 4월부터 있었고, 차단 시작 시점은 모르나 9/27 운영에서 관리자 BGG 검색·상세가 전부 403이었다). 토큰 문제면 401이다.
 - 값 재동기화: `node scripts/bgg_sync.mjs`(dry-run) → `--apply`. 이름 재점검: `node scripts/bgg_match_names.mjs` (읽기 전용).
   둘 다 `.env.local`의 `SUPABASE_SERVICE_ROLE_KEY`·`BGG_API_TOKEN`을 쓴다.
 - `genres`는 운영자가 한글로 손질한 값이라 스크립트가 덮어쓰지 않는다. `playingtime`은 「30분」「60~120분」 형식.

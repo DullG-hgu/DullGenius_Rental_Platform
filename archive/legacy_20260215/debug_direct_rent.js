@@ -2,7 +2,10 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://hptvqangstiaatdtusrg.supabase.co';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwdHZxYW5nc3RpYWF0ZHR1c3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNjcyNDIsImV4cCI6MjA4NDg0MzI0Mn0.zUA1hXHeEblta3kQG6A3ltbKgRfzByDLc6suC_D3ZZc';
+const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+if (!/^sb_publishable_[A-Za-z0-9_-]+$/.test(supabaseKey || '')) {
+    throw new Error('SUPABASE_PUBLISHABLE_KEY must be an active publishable key');
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

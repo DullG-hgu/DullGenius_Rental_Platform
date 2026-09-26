@@ -40,25 +40,29 @@ for (const key of checkClient ? requiredForClient : []) {
   if (!process.env[key]) errors.push(`${key} is required`);
 }
 
-// 키오스크는 서버 전용 설정만으로도 동작한다. 실제 Function과 같은 우선순위.
-const publicSupabaseKey = scope === 'kiosk'
-  ? (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY
-    || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY)
-  : (process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY);
-
 if (checkKiosk && !(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)) {
   errors.push('SUPABASE_URL or VITE_SUPABASE_URL is required for kiosk-session');
 }
 
-if (!publicSupabaseKey) {
-  errors.push(scope === 'kiosk'
-    ? 'SUPABASE_PUBLISHABLE_KEY or VITE_SUPABASE_PUBLISHABLE_KEY is required for kiosk-session'
-    : 'VITE_SUPABASE_PUBLISHABLE_KEY is required (VITE_SUPABASE_ANON_KEY is accepted during migration)');
-} else if (publicSupabaseKey.startsWith('eyJ')) {
-  // 이 프로젝트에서는 legacy JWT anon 키가 비활성화되어 로그인까지 전부 401이 된다.
-  (strict ? errors : warnings).push('legacy JWT-style Supabase anon key detected; use the active sb_publishable_ key');
-} else if (!publicSupabaseKey.startsWith('sb_publishable_')) {
-  warnings.push('Supabase client key does not use the expected sb_publishable_ format');
+const publicKeyNames = [
+  ...(checkClient ? ['VITE_SUPABASE_PUBLISHABLE_KEY'] : []),
+  ...(checkKiosk ? ['SUPABASE_PUBLISHABLE_KEY'] : []),
+];
+for (const name of publicKeyNames) {
+  if (!/^sb_publishable_[A-Za-z0-9_-]+$/.test(process.env[name] || '')) {
+    errors.push(`${name} must be set to an active publishable key (sb_publishable_ format)`);
+  }
+}
+
+// Reject obsolete settings even when the canonical setting is also present.
+for (const name of Object.keys(process.env)) {
+  if (/^(?:VITE_|REACT_APP_)?SUPABASE_(?:ANON|SERVICE)?_?KEY$/.test(name)) {
+    errors.push(`${name} is obsolete; use the canonical publishable or server secret setting`);
+  }
+}
+if (process.env.SUPABASE_SERVICE_ROLE_KEY
+  && !/^sb_secret_[A-Za-z0-9_-]+$/.test(process.env.SUPABASE_SERVICE_ROLE_KEY)) {
+  errors.push('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format');
 }
 
 for (const key of checkKiosk ? requiredForKiosk : []) {
