@@ -2,6 +2,9 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// 브라우저 UA를 그대로 넘기면 BGG(Cloudflare)가 403을 준다. netlify/functions/bgg-proxy.js와 같은 값.
+const BGG_USER_AGENT = 'dullgrental/1.0 (+https://dullgrental.netlify.app)'
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '')
@@ -75,6 +78,7 @@ export default defineConfig(({ mode }) => {
                             if (bggToken) {
                                 proxyReq.setHeader('Authorization', `Bearer ${bggToken}`)
                             }
+                            proxyReq.setHeader('User-Agent', BGG_USER_AGENT)
                         })
                     },
                 },
@@ -88,6 +92,7 @@ export default defineConfig(({ mode }) => {
                             if (bggToken) {
                                 proxyReq.setHeader('Authorization', `Bearer ${bggToken}`)
                             }
+                            proxyReq.setHeader('User-Agent', BGG_USER_AGENT)
                         })
                     },
                 },

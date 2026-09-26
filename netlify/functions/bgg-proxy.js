@@ -1,3 +1,6 @@
+// BGG는 앱 식별 UA를 받는다. vite.config.js 개발 프록시도 같은 값을 쓴다.
+const BGG_USER_AGENT = 'dullgrental/1.0 (+https://dullgrental.netlify.app)';
+
 exports.handler = async function (event, context) {
     // 1. CORS Preflight 처리
     if (event.httpMethod === 'OPTIONS') {
@@ -65,7 +68,8 @@ exports.handler = async function (event, context) {
             response = await fetch(bggUrl, {
                 headers: {
                     'Authorization': `Bearer ${bggToken}`,
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    // 브라우저 UA로 위장하면 BGG(Cloudflare)가 유효 토큰이어도 403으로 막는다 (2026-09-27 확인)
+                    'User-Agent': BGG_USER_AGENT,
                     'Accept': 'application/xml, text/xml, */*',
                     'Accept-Language': 'en-US,en;q=0.9',
                     'Cache-Control': 'no-cache',
