@@ -1,4 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
+const { authorizeAdmin } = require('./_shared/authorizeAdmin');
 
 const JSON_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -10,36 +10,6 @@ const jsonResponse = (statusCode, body) => ({
     headers: JSON_HEADERS,
     body: JSON.stringify(body),
 });
-
-const authorizeAdmin = async (event) => {
-    const authorization = event.headers?.authorization || event.headers?.Authorization || '';
-    const accessToken = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
-    if (!accessToken) return { statusCode: 401, error: 'Authentication required' };
-
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-    if (!supabaseUrl || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(supabasePublishableKey || '')) {
-        return { statusCode: 500, error: 'Supabase server environment is not configured' };
-    }
-
-    const supabase = createClient(supabaseUrl, supabasePublishableKey, {
-        global: { headers: { Authorization: `Bearer ${accessToken}` } },
-        auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-    if (userError || !user) return { statusCode: 401, error: 'Invalid or expired session' };
-
-    const { data: roles, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role_key')
-        .eq('user_id', user.id)
-        .in('role_key', ['admin', 'executive'])
-        .limit(1);
-
-    if (roleError) return { statusCode: 500, error: 'Unable to verify administrator role' };
-    if (!roles?.length) return { statusCode: 403, error: 'Administrator role required' };
-    return null;
-};
 
 exports.handler = async function (event) {
     if (event.httpMethod === 'OPTIONS') {

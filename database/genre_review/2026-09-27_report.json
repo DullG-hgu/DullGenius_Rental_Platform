@@ -1,0 +1,5534 @@
+{
+ "date": "2026-09-27",
+ "inputTokens": 232387,
+ "stopped": null,
+ "rows": [
+  {
+   "game": {
+    "id": 1,
+    "name": "1%의 기적",
+    "bgg_id": "378040",
+    "genres": [
+     "카드",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Card Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.89
+    },
+    {
+     "genre": "카드",
+     "p": 0.75
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 2,
+    "name": "12칩 트릭",
+    "bgg_id": "358669",
+    "genres": [
+     "트릭테이킹"
+    ]
+   },
+   "bggCategories": [],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.84
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 4,
+    "name": "갬블러 X 갬블!",
+    "bgg_id": "197071",
+    "genres": [
+     "블러핑",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Card Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.93
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.93
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 5,
+    "name": "갱 오브 다이스",
+    "bgg_id": "366129",
+    "genres": [
+     "주사위",
+     "배팅"
+    ]
+   },
+   "bggCategories": [
+    "Dice",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.97
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 6,
+    "name": "갱스터스 딜레마",
+    "bgg_id": "294231",
+    "genres": [
+     "블러핑",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "Mafia"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.94
+    },
+    {
+     "genre": "카드",
+     "p": 0.79
+    },
+    {
+     "genre": "마피아",
+     "p": 0.67
+    },
+    {
+     "genre": "협상",
+     "p": 0.57
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 7,
+    "name": "구두룡 저택의 살인",
+    "bgg_id": "336495",
+    "genres": [
+     "머더미스터리"
+    ]
+   },
+   "bggCategories": [
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.96
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.78
+    },
+    {
+     "genre": "호러",
+     "p": 0.6
+    },
+    {
+     "genre": "협상",
+     "p": 0.54
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 8,
+    "name": "그러는 너는 어떤데?",
+    "bgg_id": "375146",
+    "genres": [
+     "파티",
+     "대화"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.87
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.64
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.62
+    },
+    {
+     "genre": "파티",
+     "p": 0.61
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 11,
+    "name": "글룸헤이븐",
+    "bgg_id": "174430",
+    "genres": [
+     "전략",
+     "던전크롤러"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Exploration",
+    "Fantasy",
+    "Fighting",
+    "Miniatures"
+   ],
+   "suggestions": [
+    {
+     "genre": "어드벤처",
+     "p": 0.94
+    },
+    {
+     "genre": "전략",
+     "p": 0.91
+    },
+    {
+     "genre": "협력",
+     "p": 0.86
+    },
+    {
+     "genre": "카드",
+     "p": 0.76
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 12,
+    "name": "꼬치의 달인",
+    "bgg_id": "264797",
+    "genres": [
+     "Action / Dexterity",
+     "Real-time"
+    ]
+   },
+   "bggCategories": [
+    "Action / Dexterity",
+    "Real-time"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.92
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.73
+    },
+    {
+     "genre": "타일놓기",
+     "p": 0.6
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 14,
+    "name": "노 터치 크라켄",
+    "bgg_id": "253786",
+    "genres": [
+     "마피아",
+     "블러핑"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "Deduction",
+    "Horror",
+    "Negotiation",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.94
+    },
+    {
+     "genre": "마피아",
+     "p": 0.9
+    },
+    {
+     "genre": "추리",
+     "p": 0.84
+    },
+    {
+     "genre": "카드",
+     "p": 0.83
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 15,
+    "name": "노닥노닥 TRPG",
+    "bgg_id": "267744",
+    "genres": [
+     "TRPG",
+     "입문용"
+    ]
+   },
+   "bggCategories": [],
+   "suggestions": [
+    {
+     "genre": "어드벤처",
+     "p": 0.75
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 16,
+    "name": "노땡스",
+    "bgg_id": "12942",
+    "genres": [
+     "Card Game"
+    ]
+   },
+   "bggCategories": [
+    "Card Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.94
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.52
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 17,
+    "name": "노팅엄의 지방관",
+    "bgg_id": "298638",
+    "genres": [
+     "블러핑",
+     "협상"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "Humor",
+    "Medieval",
+    "Negotiation",
+    "Novel-based",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.96
+    },
+    {
+     "genre": "협상",
+     "p": 0.89
+    },
+    {
+     "genre": "카드",
+     "p": 0.76
+    },
+    {
+     "genre": "파티",
+     "p": 0.73
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 18,
+    "name": "늑대인간 마을의 축제",
+    "bgg_id": "393283",
+    "genres": [
+     "머더미스터리"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Horror",
+    "Murder / Mystery",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.92
+    },
+    {
+     "genre": "마피아",
+     "p": 0.89
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.83
+    },
+    {
+     "genre": "호러",
+     "p": 0.78
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 19,
+    "name": "다빈치 코드",
+    "bgg_id": "8946",
+    "genres": [
+     "Deduction"
+    ]
+   },
+   "bggCategories": [
+    "Deduction"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.92
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.84
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 22,
+    "name": "달무티",
+    "bgg_id": "929",
+    "genres": [
+     "파티",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Medieval"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.94
+    },
+    {
+     "genre": "파티",
+     "p": 0.66
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 23,
+    "name": "당신은 사건현장에 있습니다 2",
+    "bgg_id": "423717",
+    "genres": [
+     "TRPG",
+     "추리"
+    ]
+   },
+   "bggCategories": [
+    "Book",
+    "Comic Book / Strip",
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.97
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.89
+    },
+    {
+     "genre": "협력",
+     "p": 0.85
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.5
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 24,
+    "name": "더 게임",
+    "bgg_id": "173090",
+    "genres": [
+     "협력",
+     "숫자"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Number"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.94
+    },
+    {
+     "genre": "협력",
+     "p": 0.91
+    },
+    {
+     "genre": "숫자",
+     "p": 0.72
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.63
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 25,
+    "name": "더 지니어스 : 호러 레이스",
+    "bgg_id": "180870",
+    "genres": [
+     "Bluffing",
+     "Horror",
+     "Racing"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Horror",
+    "Racing"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.93
+    },
+    {
+     "genre": "레이싱",
+     "p": 0.9
+    },
+    {
+     "genre": "파티",
+     "p": 0.71
+    },
+    {
+     "genre": "호러",
+     "p": 0.54
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 27,
+    "name": "도적단의 월급날",
+    "bgg_id": "391761",
+    "genres": [
+     "Animals",
+     "Deduction"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Deduction"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.89
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.77
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 29,
+    "name": "두부 왕국",
+    "bgg_id": "186475",
+    "genres": [
+     "블러핑",
+     "추리"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Deduction"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.92
+    },
+    {
+     "genre": "추리",
+     "p": 0.89
+    },
+    {
+     "genre": "파티",
+     "p": 0.7
+    },
+    {
+     "genre": "마피아",
+     "p": 0.69
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 30,
+    "name": "디크립토",
+    "bgg_id": "225694",
+    "genres": [
+     "추리",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Party Game",
+    "Spies / Secret Agents",
+    "Word Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "단어",
+     "p": 0.96
+    },
+    {
+     "genre": "추리",
+     "p": 0.91
+    },
+    {
+     "genre": "파티",
+     "p": 0.62
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 31,
+    "name": "라멘! 라멘!",
+    "bgg_id": "314971",
+    "genres": [
+     "셋컬렉션",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Number"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.92
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.86
+    },
+    {
+     "genre": "숫자",
+     "p": 0.57
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 32,
+    "name": "라스베가스",
+    "bgg_id": "117959",
+    "genres": [
+     "주사위",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Dice"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.97
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 33,
+    "name": "러브레터",
+    "bgg_id": "129622",
+    "genres": [
+     "블러핑",
+     "추리"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Deduction",
+    "Renaissance"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.94
+    },
+    {
+     "genre": "카드",
+     "p": 0.92
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 34,
+    "name": "레디 셋 벳",
+    "bgg_id": "351040",
+    "genres": [
+     "레이싱",
+     "실시간"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Party Game",
+    "Racing",
+    "Real-time",
+    "Sports"
+   ],
+   "suggestions": [
+    {
+     "genre": "레이싱",
+     "p": 0.94
+    },
+    {
+     "genre": "순발력",
+     "p": 0.92
+    },
+    {
+     "genre": "주사위",
+     "p": 0.88
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.87
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 35,
+    "name": "레지스탕스 아발론",
+    "bgg_id": "128882",
+    "genres": [
+     "블러핑",
+     "마피아"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "Deduction",
+    "Fantasy",
+    "Medieval",
+    "Negotiation",
+    "Party Game",
+    "Spies / Secret Agents"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.98
+    },
+    {
+     "genre": "마피아",
+     "p": 0.98
+    },
+    {
+     "genre": "추리",
+     "p": 0.96
+    },
+    {
+     "genre": "카드",
+     "p": 0.64
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 37,
+    "name": "렉시오",
+    "bgg_id": "19184",
+    "genres": [
+     "클라이밍",
+     "타일"
+    ]
+   },
+   "bggCategories": [
+    "Abstract Strategy"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.73
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 38,
+    "name": "로보 77",
+    "bgg_id": "3337",
+    "genres": [
+     "연산",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Card Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.92
+    },
+    {
+     "genre": "파티",
+     "p": 0.54
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 39,
+    "name": "로빈 후드의 모험",
+    "bgg_id": "326494",
+    "genres": [
+     "협력",
+     "어드벤처"
+    ]
+   },
+   "bggCategories": [
+    "Medieval"
+   ],
+   "suggestions": [
+    {
+     "genre": "어드벤처",
+     "p": 0.89
+    },
+    {
+     "genre": "협력",
+     "p": 0.88
+    },
+    {
+     "genre": "전략",
+     "p": 0.57
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 40,
+    "name": "로스트 시티",
+    "bgg_id": "50",
+    "genres": [
+     "전략",
+     "2인용"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Exploration",
+    "Number"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.96
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.78
+    },
+    {
+     "genre": "숫자",
+     "p": 0.7
+    },
+    {
+     "genre": "전략",
+     "p": 0.57
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 41,
+    "name": "로오-딩",
+    "bgg_id": "329293",
+    "genres": [
+     "실시간",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Real-time"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.94
+    },
+    {
+     "genre": "카드",
+     "p": 0.93
+    },
+    {
+     "genre": "레이싱",
+     "p": 0.77
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 42,
+    "name": "롱 샷",
+    "bgg_id": "295374",
+    "genres": [
+     "레이싱",
+     "주사위"
+    ]
+   },
+   "bggCategories": [
+    "Dice",
+    "Racing",
+    "Sports"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.95
+    },
+    {
+     "genre": "레이싱",
+     "p": 0.93
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.72
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 43,
+    "name": "루미큐브",
+    "bgg_id": "811",
+    "genres": [
+     "추리",
+     "숫자"
+    ]
+   },
+   "bggCategories": [
+    "Abstract Strategy",
+    "Card Game",
+    "Number"
+   ],
+   "suggestions": [
+    {
+     "genre": "숫자",
+     "p": 0.91
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.9
+    },
+    {
+     "genre": "전략",
+     "p": 0.77
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.66
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 44,
+    "name": "루트",
+    "bgg_id": "237182",
+    "genres": [
+     "전략",
+     "비대칭"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Fantasy",
+    "Negotiation",
+    "Territory Building",
+    "Wargame"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.94
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 45,
+    "name": "루트 확장판 : 리버포크",
+    "bgg_id": "241386",
+    "genres": [
+     "전략",
+     "확장"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Expansion for Base-game",
+    "Fantasy",
+    "Wargame"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.9
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 49,
+    "name": "머핀타임",
+    "bgg_id": "286735",
+    "genres": [
+     "파티",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.92
+    },
+    {
+     "genre": "파티",
+     "p": 0.82
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 50,
+    "name": "먼치킨",
+    "bgg_id": "1927",
+    "genres": [
+     "파티",
+     "판타지"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Fantasy",
+    "Fighting",
+    "Humor"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.93
+    },
+    {
+     "genre": "파티",
+     "p": 0.7
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 51,
+    "name": "몇 번이고 푸른 달에 불을 붙였다",
+    "bgg_id": "393282",
+    "genres": [
+     "머더미스터리"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Mafia",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.95
+    },
+    {
+     "genre": "마피아",
+     "p": 0.94
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.89
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.87
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 53,
+    "name": "문스톤 저택 살인 사건",
+    "bgg_id": "415627",
+    "genres": [
+     "머더미스터리"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.92
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.92
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.65
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 54,
+    "name": "미스터리 포켓 : 막이 내리다",
+    "bgg_id": "366466",
+    "genres": [
+     "머더미스터리"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.94
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.93
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.81
+    },
+    {
+     "genre": "마피아",
+     "p": 0.64
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 55,
+    "name": "미크로 마크로 : 크라임시티",
+    "bgg_id": "318977",
+    "genres": [
+     "추리",
+     "퍼즐"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.97
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.92
+    },
+    {
+     "genre": "협력",
+     "p": 0.88
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.62
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 56,
+    "name": "바보타임",
+    "bgg_id": "291008",
+    "genres": [
+     "파티",
+     "퀴즈"
+    ]
+   },
+   "bggCategories": [
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "파티",
+     "p": 0.89
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 58,
+    "name": "바퀴벌레 포커 로얄",
+    "bgg_id": "129736",
+    "genres": [
+     "블러핑",
+     "심리"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.96
+    },
+    {
+     "genre": "카드",
+     "p": 0.94
+    },
+    {
+     "genre": "파티",
+     "p": 0.85
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.5
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 60,
+    "name": "뱅!",
+    "bgg_id": "3955",
+    "genres": [
+     "마피아",
+     "총싸움"
+    ]
+   },
+   "bggCategories": [
+    "American West",
+    "Bluffing",
+    "Card Game",
+    "Deduction",
+    "Fighting"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.93
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.93
+    },
+    {
+     "genre": "추리",
+     "p": 0.9
+    },
+    {
+     "genre": "마피아",
+     "p": 0.86
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 61,
+    "name": "뱅 확장판 모음",
+    "bgg_id": "183275",
+    "genres": [
+     "마피아",
+     "확장"
+    ]
+   },
+   "bggCategories": [
+    "American West",
+    "Bluffing",
+    "Card Game",
+    "Deduction",
+    "Expansion for Base-game",
+    "Fighting",
+    "Humor"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.95
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.92
+    },
+    {
+     "genre": "추리",
+     "p": 0.88
+    },
+    {
+     "genre": "마피아",
+     "p": 0.73
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 63,
+    "name": "별의 소원",
+    "bgg_id": "424567",
+    "genres": [
+     "전략",
+     "셋컬렉션"
+    ]
+   },
+   "bggCategories": [
+    "Card Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.92
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.77
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 64,
+    "name": "보난자",
+    "bgg_id": "11",
+    "genres": [
+     "협상",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Farming",
+    "Negotiation"
+   ],
+   "suggestions": [
+    {
+     "genre": "협상",
+     "p": 0.96
+    },
+    {
+     "genre": "카드",
+     "p": 0.93
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.85
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.6
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 66,
+    "name": "브레인 스톰",
+    "bgg_id": "206082",
+    "genres": [
+     "창의력",
+     "연상"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Party Game",
+    "Real-time",
+    "Word Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.85
+    },
+    {
+     "genre": "카드",
+     "p": 0.83
+    },
+    {
+     "genre": "단어",
+     "p": 0.82
+    },
+    {
+     "genre": "파티",
+     "p": 0.81
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 69,
+    "name": "블랙 스토리즈 : 운수 나쁜 날",
+    "bgg_id": "147681",
+    "genres": [
+     "추리",
+     "퀴즈"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Deduction",
+    "Horror",
+    "Humor",
+    "Murder / Mystery",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.92
+    },
+    {
+     "genre": "추리",
+     "p": 0.89
+    },
+    {
+     "genre": "파티",
+     "p": 0.83
+    },
+    {
+     "genre": "호러",
+     "p": 0.63
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 70,
+    "name": "블랙 스토리즈 : 황당한 죽음",
+    "bgg_id": "96345",
+    "genres": [
+     "추리",
+     "퀴즈"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Deduction",
+    "Horror",
+    "Humor",
+    "Murder / Mystery",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.94
+    },
+    {
+     "genre": "추리",
+     "p": 0.9
+    },
+    {
+     "genre": "파티",
+     "p": 0.88
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.61
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 71,
+    "name": "블리츠!",
+    "bgg_id": "67877",
+    "genres": [
+     "순발력",
+     "단어"
+    ]
+   },
+   "bggCategories": [
+    "Party Game",
+    "Real-time",
+    "Trivia",
+    "Word Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.95
+    },
+    {
+     "genre": "단어",
+     "p": 0.92
+    },
+    {
+     "genre": "파티",
+     "p": 0.84
+    },
+    {
+     "genre": "퀴즈",
+     "p": 0.83
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 72,
+    "name": "사건의 재구성",
+    "bgg_id": "239188",
+    "genres": [
+     "추리",
+     "앱연동"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.96
+    },
+    {
+     "genre": "협력",
+     "p": 0.91
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.84
+    },
+    {
+     "genre": "어드벤처",
+     "p": 0.83
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 73,
+    "name": "사무라이 소드",
+    "bgg_id": "128667",
+    "genres": [
+     "마피아",
+     "검술"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "Deduction",
+    "Fighting",
+    "Medieval"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.91
+    },
+    {
+     "genre": "카드",
+     "p": 0.87
+    },
+    {
+     "genre": "추리",
+     "p": 0.85
+    },
+    {
+     "genre": "마피아",
+     "p": 0.5
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 74,
+    "name": "사보타지",
+    "bgg_id": "9220",
+    "genres": [
+     "블러핑",
+     "타일"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "Deduction",
+    "Exploration",
+    "Fantasy",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.96
+    },
+    {
+     "genre": "추리",
+     "p": 0.89
+    },
+    {
+     "genre": "카드",
+     "p": 0.87
+    },
+    {
+     "genre": "마피아",
+     "p": 0.82
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 75,
+    "name": "사이쓰 Scythe",
+    "bgg_id": "169786",
+    "genres": [
+     "전략",
+     "영토빌딩"
+    ]
+   },
+   "bggCategories": [
+    "Economic",
+    "Fighting",
+    "Science Fiction",
+    "Territory Building"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.95
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.87
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 76,
+    "name": "섀도우 레이더스",
+    "bgg_id": "288098",
+    "genres": [
+     "정체은닉",
+     "전투"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Bluffing",
+    "Card Game",
+    "Deduction",
+    "Dice",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.85
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.83
+    },
+    {
+     "genre": "주사위",
+     "p": 0.82
+    },
+    {
+     "genre": "파티",
+     "p": 0.57
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 77,
+    "name": "서스펙트 게임",
+    "bgg_id": "346623",
+    "genres": [
+     "추리",
+     "시나리오"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.95
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.89
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.61
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.59
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 79,
+    "name": "세 자매",
+    "bgg_id": "291845",
+    "genres": [
+     "전략",
+     "롤앤라이트"
+    ]
+   },
+   "bggCategories": [
+    "Dice",
+    "Farming"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.89
+    },
+    {
+     "genre": "전략",
+     "p": 0.64
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.5
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 80,
+    "name": "세븐 원더스 : 듀얼",
+    "bgg_id": "173346",
+    "genres": [
+     "전략",
+     "문명"
+    ]
+   },
+   "bggCategories": [
+    "Ancient",
+    "Card Game",
+    "City Building",
+    "Civilization",
+    "Economic"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.93
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.87
+    },
+    {
+     "genre": "카드",
+     "p": 0.84
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.78
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 81,
+    "name": "세트",
+    "bgg_id": "1198",
+    "genres": [
+     "패턴인지",
+     "퍼즐"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Puzzle"
+   ],
+   "suggestions": [
+    {
+     "genre": "퍼즐",
+     "p": 0.97
+    },
+    {
+     "genre": "순발력",
+     "p": 0.95
+    },
+    {
+     "genre": "카드",
+     "p": 0.94
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.7
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 82,
+    "name": "셀레스티아",
+    "bgg_id": "175117",
+    "genres": [
+     "파티",
+     "운"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Aviation / Flight",
+    "Card Game",
+    "Fantasy"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.79
+    },
+    {
+     "genre": "카드",
+     "p": 0.75
+    },
+    {
+     "genre": "어드벤처",
+     "p": 0.59
+    },
+    {
+     "genre": "협력",
+     "p": 0.55
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 84,
+    "name": "스몰 월드 오브 워크래프트",
+    "bgg_id": "309630",
+    "genres": [
+     "영토점령",
+     "전략"
+    ]
+   },
+   "bggCategories": [
+    "Fantasy",
+    "Fighting",
+    "Territory Building",
+    "Video Game Theme"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.8
+    },
+    {
+     "genre": "주사위",
+     "p": 0.52
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 86,
+    "name": "스파이시",
+    "bgg_id": "299169",
+    "genres": [
+     "블러핑",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Bluffing",
+    "Card Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.95
+    },
+    {
+     "genre": "카드",
+     "p": 0.91
+    },
+    {
+     "genre": "파티",
+     "p": 0.54
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 87,
+    "name": "스플렌더",
+    "bgg_id": "148228",
+    "genres": [
+     "전략",
+     "자원관리"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Economic",
+    "Renaissance"
+   ],
+   "suggestions": [
+    {
+     "genre": "자원관리",
+     "p": 0.93
+    },
+    {
+     "genre": "전략",
+     "p": 0.9
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.78
+    },
+    {
+     "genre": "카드",
+     "p": 0.53
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 89,
+    "name": "시체와 온천",
+    "bgg_id": "370748",
+    "genres": [
+     "머더미스터리"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.9
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.89
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.69
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 90,
+    "name": "시크릿 히틀러",
+    "bgg_id": "188834",
+    "genres": [
+     "마피아",
+     "정치"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "Deduction",
+    "Humor",
+    "Party Game",
+    "Political",
+    "Print & Play",
+    "Spies / Secret Agents"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.97
+    },
+    {
+     "genre": "마피아",
+     "p": 0.96
+    },
+    {
+     "genre": "추리",
+     "p": 0.93
+    },
+    {
+     "genre": "카드",
+     "p": 0.67
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 91,
+    "name": "시타델",
+    "bgg_id": "478",
+    "genres": [
+     "블러핑",
+     "도시건설"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "City Building",
+    "Deduction",
+    "Fantasy",
+    "Medieval"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.92
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.87
+    },
+    {
+     "genre": "추리",
+     "p": 0.79
+    },
+    {
+     "genre": "전략",
+     "p": 0.62
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 93,
+    "name": "아임 더 보스!",
+    "bgg_id": "115",
+    "genres": [
+     "협상",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Economic",
+    "Negotiation"
+   ],
+   "suggestions": [
+    {
+     "genre": "협상",
+     "p": 0.9
+    },
+    {
+     "genre": "주사위",
+     "p": 0.81
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.78
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.7
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 94,
+    "name": "아컴 미스터리 : 광기로 물든 사건집",
+    "bgg_id": "126100",
+    "genres": [
+     "추리",
+     "호러"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Horror",
+    "Murder / Mystery",
+    "Novel-based"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.92
+    },
+    {
+     "genre": "호러",
+     "p": 0.88
+    },
+    {
+     "genre": "협력",
+     "p": 0.87
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.77
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 95,
+    "name": "아컴 호러",
+    "bgg_id": "15987",
+    "genres": [
+     "협력",
+     "테마전투"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Fighting",
+    "Horror",
+    "Novel-based"
+   ],
+   "suggestions": [
+    {
+     "genre": "호러",
+     "p": 0.95
+    },
+    {
+     "genre": "협력",
+     "p": 0.92
+    },
+    {
+     "genre": "어드벤처",
+     "p": 0.88
+    },
+    {
+     "genre": "주사위",
+     "p": 0.84
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 96,
+    "name": "아컴 호러 카드게임",
+    "bgg_id": "205637",
+    "genres": [
+     "협력",
+     "덱빌딩"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Card Game",
+    "Collectible Components",
+    "Exploration",
+    "Horror",
+    "Novel-based"
+   ],
+   "suggestions": [
+    {
+     "genre": "호러",
+     "p": 0.95
+    },
+    {
+     "genre": "카드",
+     "p": 0.93
+    },
+    {
+     "genre": "어드벤처",
+     "p": 0.92
+    },
+    {
+     "genre": "협력",
+     "p": 0.86
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 99,
+    "name": "언락 1",
+    "bgg_id": "213460",
+    "genres": [
+     "방탈출",
+     "추리"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Puzzle"
+   ],
+   "suggestions": [
+    {
+     "genre": "협력",
+     "p": 0.94
+    },
+    {
+     "genre": "카드",
+     "p": 0.93
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.93
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.93
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 100,
+    "name": "언락 6",
+    "bgg_id": "279613",
+    "genres": [
+     "방탈출",
+     "추리"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Exploration",
+    "Novel-based",
+    "Puzzle",
+    "Real-time"
+   ],
+   "suggestions": [
+    {
+     "genre": "어드벤처",
+     "p": 0.93
+    },
+    {
+     "genre": "카드",
+     "p": 0.91
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.91
+    },
+    {
+     "genre": "협력",
+     "p": 0.9
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 101,
+    "name": "에버델",
+    "bgg_id": "199792",
+    "genres": [
+     "전략",
+     "일꾼배치"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Card Game",
+    "City Building",
+    "Fantasy"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.92
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.85
+    },
+    {
+     "genre": "일꾼배치",
+     "p": 0.8
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.77
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 103,
+    "name": "엘 그란데 빅 박스",
+    "bgg_id": "171908",
+    "genres": [
+     "전략",
+     "영향력"
+    ]
+   },
+   "bggCategories": [
+    "Renaissance"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.93
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 104,
+    "name": "옛날 옛적에",
+    "bgg_id": "1234",
+    "genres": [
+     "스토리텔링",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Humor",
+    "Party Game",
+    "Real-time"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.95
+    },
+    {
+     "genre": "파티",
+     "p": 0.74
+    },
+    {
+     "genre": "순발력",
+     "p": 0.65
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 105,
+    "name": "오토배틀 챌린저스!",
+    "bgg_id": "359970",
+    "genres": [
+     "덱빌딩",
+     "오토배틀"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Card Game",
+    "Sports"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.9
+    },
+    {
+     "genre": "덱빌딩",
+     "p": 0.85
+    },
+    {
+     "genre": "전략",
+     "p": 0.76
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 106,
+    "name": "왕좌의 게임 보드게임",
+    "bgg_id": "103343",
+    "genres": [
+     "전략",
+     "외교"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Fantasy",
+    "Negotiation",
+    "Novel-based",
+    "Political",
+    "Wargame"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.95
+    },
+    {
+     "genre": "협상",
+     "p": 0.87
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.73
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 107,
+    "name": "요트다이스",
+    "bgg_id": "2243",
+    "genres": [
+     "주사위",
+     "확률"
+    ]
+   },
+   "bggCategories": [
+    "Children's Game",
+    "Comic Book / Strip",
+    "Dice",
+    "Movies / TV / Radio theme",
+    "Music",
+    "Travel"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.97
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.85
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 109,
+    "name": "워드 캡처: 티키타카",
+    "bgg_id": "322204",
+    "genres": [
+     "단어",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Action / Dexterity",
+    "Card Game",
+    "Party Game",
+    "Real-time",
+    "Word Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.95
+    },
+    {
+     "genre": "단어",
+     "p": 0.9
+    },
+    {
+     "genre": "카드",
+     "p": 0.82
+    },
+    {
+     "genre": "파티",
+     "p": 0.76
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 110,
+    "name": "월드 오브 워크래프트 : 리치 왕의 분노 - 팬데믹 보드게임",
+    "bgg_id": "342848",
+    "genres": [
+     "협력",
+     "테마전투"
+    ]
+   },
+   "bggCategories": [
+    "Fantasy",
+    "Video Game Theme"
+   ],
+   "suggestions": [
+    {
+     "genre": "협력",
+     "p": 0.88
+    },
+    {
+     "genre": "전략",
+     "p": 0.77
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.5
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 111,
+    "name": "월면탐험",
+    "bgg_id": "330403",
+    "genres": [
+     "협력",
+     "자원관리"
+    ]
+   },
+   "bggCategories": [
+    "Exploration",
+    "Space Exploration"
+   ],
+   "suggestions": [
+    {
+     "genre": "협력",
+     "p": 0.88
+    },
+    {
+     "genre": "주사위",
+     "p": 0.82
+    },
+    {
+     "genre": "어드벤처",
+     "p": 0.8
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 112,
+    "name": "웬디, 어른이 되렴",
+    "bgg_id": "370749",
+    "genres": [
+     "머더미스터리"
+    ]
+   },
+   "bggCategories": [
+    "Murder / Mystery",
+    "Science Fiction"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.93
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.89
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.58
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 113,
+    "name": "위쳐 올드 월드",
+    "bgg_id": "331106",
+    "genres": [
+     "전략",
+     "어드벤처"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Fantasy",
+    "Fighting",
+    "Novel-based",
+    "Travel",
+    "Video Game Theme"
+   ],
+   "suggestions": [
+    {
+     "genre": "어드벤처",
+     "p": 0.88
+    },
+    {
+     "genre": "덱빌딩",
+     "p": 0.87
+    },
+    {
+     "genre": "전략",
+     "p": 0.82
+    },
+    {
+     "genre": "카드",
+     "p": 0.75
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 116,
+    "name": "이스케이프 룸",
+    "bgg_id": "204836",
+    "genres": [
+     "방탈출",
+     "퍼즐"
+    ]
+   },
+   "bggCategories": [
+    "Electronic",
+    "Puzzle"
+   ],
+   "suggestions": [
+    {
+     "genre": "협력",
+     "p": 0.96
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.96
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.96
+    },
+    {
+     "genre": "추리",
+     "p": 0.91
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 117,
+    "name": "익스플로딩 키튼",
+    "bgg_id": "172225",
+    "genres": [
+     "운",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Card Game",
+    "Comic Book / Strip",
+    "Humor"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.95
+    },
+    {
+     "genre": "파티",
+     "p": 0.54
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 119,
+    "name": "인사이더",
+    "bgg_id": "206051",
+    "genres": [
+     "추리",
+     "정체은닉"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Deduction",
+    "Party Game",
+    "Word Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.96
+    },
+    {
+     "genre": "추리",
+     "p": 0.93
+    },
+    {
+     "genre": "마피아",
+     "p": 0.9
+    },
+    {
+     "genre": "단어",
+     "p": 0.84
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 122,
+    "name": "인코그니토",
+    "bgg_id": "466",
+    "genres": [
+     "추리",
+     "팀전"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Spies / Secret Agents"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.94
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.54
+    },
+    {
+     "genre": "마피아",
+     "p": 0.54
+    },
+    {
+     "genre": "주사위",
+     "p": 0.53
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 123,
+    "name": "자두야 종치기하자",
+    "bgg_id": "2944",
+    "genres": [
+     "순발력",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Action / Dexterity",
+    "Card Game",
+    "Children's Game",
+    "Party Game",
+    "Real-time"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.96
+    },
+    {
+     "genre": "카드",
+     "p": 0.93
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.81
+    },
+    {
+     "genre": "파티",
+     "p": 0.78
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 124,
+    "name": "정령섬",
+    "bgg_id": "162886",
+    "genres": [
+     "협력",
+     "전략"
+    ]
+   },
+   "bggCategories": [
+    "Environmental",
+    "Fantasy",
+    "Mythology",
+    "Territory Building"
+   ],
+   "suggestions": [
+    {
+     "genre": "협력",
+     "p": 0.95
+    },
+    {
+     "genre": "전략",
+     "p": 0.94
+    },
+    {
+     "genre": "덱빌딩",
+     "p": 0.74
+    },
+    {
+     "genre": "카드",
+     "p": 0.52
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 125,
+    "name": "정령섬 : 가지와 발톱",
+    "bgg_id": "193065",
+    "genres": [
+     "협력",
+     "확장"
+    ]
+   },
+   "bggCategories": [
+    "Expansion for Base-game",
+    "Fantasy",
+    "Fighting",
+    "Mythology"
+   ],
+   "suggestions": [
+    {
+     "genre": "협력",
+     "p": 0.94
+    },
+    {
+     "genre": "전략",
+     "p": 0.88
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 126,
+    "name": "젝스 님트!",
+    "bgg_id": "432",
+    "genres": [
+     "운",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Number",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "숫자",
+     "p": 0.89
+    },
+    {
+     "genre": "카드",
+     "p": 0.8
+    },
+    {
+     "genre": "파티",
+     "p": 0.76
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 127,
+    "name": "지도 제작자들",
+    "bgg_id": "263918",
+    "genres": [
+     "그리기",
+     "전략"
+    ]
+   },
+   "bggCategories": [
+    "Fantasy",
+    "Territory Building"
+   ],
+   "suggestions": [
+    {
+     "genre": "타일놓기",
+     "p": 0.92
+    },
+    {
+     "genre": "전략",
+     "p": 0.78
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.77
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 130,
+    "name": "체스",
+    "bgg_id": "171",
+    "genres": [
+     "추상전략",
+     "보드"
+    ]
+   },
+   "bggCategories": [
+    "Abstract Strategy"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.97
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.5
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 131,
+    "name": "최종변론",
+    "bgg_id": "267401",
+    "genres": [
+     "말싸움",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Card Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.9
+    },
+    {
+     "genre": "전략",
+     "p": 0.82
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.78
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 133,
+    "name": "카나리아는 지저귀지 않는다",
+    "bgg_id": "415623",
+    "genres": [
+     "머더미스터리"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "머더미스터리",
+     "p": 0.92
+    },
+    {
+     "genre": "추리",
+     "p": 0.91
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.72
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 135,
+    "name": "카르카손",
+    "bgg_id": "822",
+    "genres": [
+     "타일놓기",
+     "전략"
+    ]
+   },
+   "bggCategories": [
+    "Medieval",
+    "Territory Building"
+   ],
+   "suggestions": [
+    {
+     "genre": "타일놓기",
+     "p": 0.98
+    },
+    {
+     "genre": "전략",
+     "p": 0.83
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 136,
+    "name": "카르타벤추라 : 라싸",
+    "bgg_id": "327076",
+    "genres": [
+     "어드벤처",
+     "역사"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Exploration"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.94
+    },
+    {
+     "genre": "어드벤처",
+     "p": 0.93
+    },
+    {
+     "genre": "협력",
+     "p": 0.87
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 137,
+    "name": "카르타벤추라 : 빈란드",
+    "bgg_id": "327077",
+    "genres": [
+     "어드벤처",
+     "역사"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Exploration"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.94
+    },
+    {
+     "genre": "어드벤처",
+     "p": 0.94
+    },
+    {
+     "genre": "협력",
+     "p": 0.87
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 138,
+    "name": "카르타벤추라 : 오클라호마",
+    "bgg_id": "344405",
+    "genres": [
+     "어드벤처",
+     "서부"
+    ]
+   },
+   "bggCategories": [
+    "American West",
+    "Card Game",
+    "Exploration"
+   ],
+   "suggestions": [
+    {
+     "genre": "어드벤처",
+     "p": 0.93
+    },
+    {
+     "genre": "카드",
+     "p": 0.9
+    },
+    {
+     "genre": "협력",
+     "p": 0.86
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 139,
+    "name": "카리바",
+    "bgg_id": "84732",
+    "genres": [
+     "전략",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Children's Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.88
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 140,
+    "name": "카멜 업",
+    "bgg_id": "153938",
+    "genres": [
+     "레이싱",
+     "주사위"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Arabian",
+    "Dice",
+    "Racing"
+   ],
+   "suggestions": [
+    {
+     "genre": "레이싱",
+     "p": 0.97
+    },
+    {
+     "genre": "주사위",
+     "p": 0.95
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.5
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 141,
+    "name": "카탄",
+    "bgg_id": "13",
+    "genres": [
+     "전략",
+     "협상"
+    ]
+   },
+   "bggCategories": [
+    "Economic",
+    "Negotiation"
+   ],
+   "suggestions": [
+    {
+     "genre": "협상",
+     "p": 0.96
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.93
+    },
+    {
+     "genre": "전략",
+     "p": 0.92
+    },
+    {
+     "genre": "주사위",
+     "p": 0.64
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 142,
+    "name": "카탄 확장판 : 항해사",
+    "bgg_id": "325",
+    "genres": [
+     "전략",
+     "확장"
+    ]
+   },
+   "bggCategories": [
+    "Expansion for Base-game",
+    "Exploration",
+    "Nautical",
+    "Negotiation"
+   ],
+   "suggestions": [
+    {
+     "genre": "협상",
+     "p": 0.92
+    },
+    {
+     "genre": "전략",
+     "p": 0.91
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.77
+    },
+    {
+     "genre": "타일놓기",
+     "p": 0.75
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 143,
+    "name": "캐스캐디아",
+    "bgg_id": "295947",
+    "genres": [
+     "타일놓기",
+     "자연"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Environmental"
+   ],
+   "suggestions": [
+    {
+     "genre": "타일놓기",
+     "p": 0.97
+    },
+    {
+     "genre": "전략",
+     "p": 0.88
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.78
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 145,
+    "name": "커피 러시",
+    "bgg_id": "377061",
+    "genres": [
+     "자원관리",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Economic"
+   ],
+   "suggestions": [
+    {
+     "genre": "자원관리",
+     "p": 0.78
+    },
+    {
+     "genre": "전략",
+     "p": 0.66
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 146,
+    "name": "코드네임",
+    "bgg_id": "178900",
+    "genres": [
+     "단어",
+     "추리"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Deduction",
+    "Party Game",
+    "Spies / Secret Agents",
+    "Word Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "단어",
+     "p": 0.97
+    },
+    {
+     "genre": "추리",
+     "p": 0.91
+    },
+    {
+     "genre": "파티",
+     "p": 0.79
+    },
+    {
+     "genre": "카드",
+     "p": 0.73
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 148,
+    "name": "쿠",
+    "bgg_id": "158408",
+    "genres": [
+     "블러핑",
+     "심리"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "Deduction",
+    "Party Game",
+    "Political"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.97
+    },
+    {
+     "genre": "카드",
+     "p": 0.85
+    },
+    {
+     "genre": "추리",
+     "p": 0.82
+    },
+    {
+     "genre": "파티",
+     "p": 0.81
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 150,
+    "name": "크베들린부르크의 돌팔이 약장수",
+    "bgg_id": "244521",
+    "genres": [
+     "Fantasy",
+     "Medieval"
+    ]
+   },
+   "bggCategories": [
+    "Fantasy",
+    "Medieval"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.9
+    },
+    {
+     "genre": "덱빌딩",
+     "p": 0.8
+    },
+    {
+     "genre": "전략",
+     "p": 0.63
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.5
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 152,
+    "name": "클루",
+    "bgg_id": "1294",
+    "genres": [
+     "추리",
+     "보드"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Movies / TV / Radio theme",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.98
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.78
+    },
+    {
+     "genre": "주사위",
+     "p": 0.62
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.52
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 154,
+    "name": "타불라의 늑대",
+    "bgg_id": "63539",
+    "genres": [
+     "마피아",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Deduction",
+    "Horror",
+    "Murder / Mystery",
+    "Negotiation",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.93
+    },
+    {
+     "genre": "추리",
+     "p": 0.91
+    },
+    {
+     "genre": "마피아",
+     "p": 0.86
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.85
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 155,
+    "name": "타임 스토리즈",
+    "bgg_id": "146508",
+    "genres": [
+     "협력",
+     "시나리오"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Puzzle",
+    "Science Fiction"
+   ],
+   "suggestions": [
+    {
+     "genre": "어드벤처",
+     "p": 0.95
+    },
+    {
+     "genre": "협력",
+     "p": 0.94
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.82
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.7
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 156,
+    "name": "타임 스토리즈 : 가면 아래에서",
+    "bgg_id": "189686",
+    "genres": [
+     "협력",
+     "시나리오"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Ancient",
+    "Expansion for Base-game",
+    "Fantasy",
+    "Puzzle"
+   ],
+   "suggestions": [
+    {
+     "genre": "어드벤처",
+     "p": 0.94
+    },
+    {
+     "genre": "협력",
+     "p": 0.88
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.77
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.68
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 157,
+    "name": "타임 스토리즈 : 용의 예언",
+    "bgg_id": "189035",
+    "genres": [
+     "협력",
+     "시나리오"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Expansion for Base-game",
+    "Fantasy",
+    "Medieval",
+    "Puzzle",
+    "Science Fiction"
+   ],
+   "suggestions": [
+    {
+     "genre": "어드벤처",
+     "p": 0.94
+    },
+    {
+     "genre": "협력",
+     "p": 0.91
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.81
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.71
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 158,
+    "name": "타임 스토리즈 : 해변의 형제단",
+    "bgg_id": "220839",
+    "genres": [
+     "협력",
+     "시나리오"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Expansion for Base-game",
+    "Pirates"
+   ],
+   "suggestions": [
+    {
+     "genre": "어드벤처",
+     "p": 0.95
+    },
+    {
+     "genre": "협력",
+     "p": 0.9
+    },
+    {
+     "genre": "주사위",
+     "p": 0.61
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.54
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 159,
+    "name": "타코 캣 고트 치즈 피자",
+    "bgg_id": "253664",
+    "genres": [
+     "순발력",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Action / Dexterity",
+    "Card Game",
+    "Children's Game",
+    "Party Game",
+    "Real-time"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.97
+    },
+    {
+     "genre": "카드",
+     "p": 0.95
+    },
+    {
+     "genre": "파티",
+     "p": 0.9
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.57
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 161,
+    "name": "탑텐 TV",
+    "bgg_id": "300905",
+    "genres": [
+     "파티",
+     "협력"
+    ]
+   },
+   "bggCategories": [
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.9
+    },
+    {
+     "genre": "파티",
+     "p": 0.8
+    },
+    {
+     "genre": "협력",
+     "p": 0.8
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.56
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 162,
+    "name": "테라포밍 마스",
+    "bgg_id": "167791",
+    "genres": [
+     "전략",
+     "엔진빌딩"
+    ]
+   },
+   "bggCategories": [
+    "Civilization",
+    "Economic",
+    "Environmental",
+    "Industry / Manufacturing",
+    "Science Fiction",
+    "Space Exploration",
+    "Territory Building"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.96
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.93
+    },
+    {
+     "genre": "타일놓기",
+     "p": 0.88
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 163,
+    "name": "트래지디 루퍼",
+    "bgg_id": "148319",
+    "genres": [
+     "추리",
+     "루프물"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game",
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.94
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.9
+    },
+    {
+     "genre": "카드",
+     "p": 0.76
+    },
+    {
+     "genre": "마피아",
+     "p": 0.63
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 164,
+    "name": "트랙스 : 사이렌 베이",
+    "bgg_id": "370984",
+    "genres": [
+     "추리",
+     "오디오"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.96
+    },
+    {
+     "genre": "협력",
+     "p": 0.86
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.75
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 165,
+    "name": "티츄",
+    "bgg_id": "215",
+    "genres": [
+     "클라이밍",
+     "팀전"
+    ]
+   },
+   "bggCategories": [
+    "Card Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.97
+    },
+    {
+     "genre": "전략",
+     "p": 0.68
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 166,
+    "name": "티켓 투 라이드 : 유럽",
+    "bgg_id": "14996",
+    "genres": [
+     "전략",
+     "기차"
+    ]
+   },
+   "bggCategories": [
+    "Trains"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.92
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.69
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 168,
+    "name": "판타지 왕국",
+    "bgg_id": "223040",
+    "genres": [
+     "카드",
+     "셋컬렉션"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Fantasy"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.93
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.87
+    },
+    {
+     "genre": "전략",
+     "p": 0.55
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 169,
+    "name": "패치워크",
+    "bgg_id": "163412",
+    "genres": [
+     "추상전략",
+     "퍼즐"
+    ]
+   },
+   "bggCategories": [
+    "Abstract Strategy",
+    "Economic",
+    "Puzzle"
+   ],
+   "suggestions": [
+    {
+     "genre": "타일놓기",
+     "p": 0.95
+    },
+    {
+     "genre": "전략",
+     "p": 0.9
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.8
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.63
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 170,
+    "name": "팬데믹",
+    "bgg_id": "30549",
+    "genres": [
+     "협력",
+     "전략"
+    ]
+   },
+   "bggCategories": [
+    "Medical",
+    "Travel"
+   ],
+   "suggestions": [
+    {
+     "genre": "협력",
+     "p": 0.97
+    },
+    {
+     "genre": "전략",
+     "p": 0.87
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 171,
+    "name": "페이퍼 던전",
+    "bgg_id": "291962",
+    "genres": [
+     "던전탐험",
+     "드로잉"
+    ]
+   },
+   "bggCategories": [
+    "Dice",
+    "Fantasy",
+    "Fighting",
+    "Medieval"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.87
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.53
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 172,
+    "name": "페이퍼 사파리",
+    "bgg_id": "39534",
+    "genres": [
+     "운",
+     "카드"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Card Game",
+    "Children's Game",
+    "Video Game Theme"
+   ],
+   "suggestions": [
+    {
+     "genre": "셋컬렉션",
+     "p": 0.89
+    },
+    {
+     "genre": "카드",
+     "p": 0.88
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 173,
+    "name": "펭귄파티",
+    "bgg_id": "56933",
+    "genres": [
+     "카드",
+     "숫자"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Card Game",
+    "Children's Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.9
+    },
+    {
+     "genre": "파티",
+     "p": 0.56
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 174,
+    "name": "포 더 윈",
+    "bgg_id": "390094",
+    "genres": [
+     "전략",
+     "타일"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Number"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.87
+    },
+    {
+     "genre": "숫자",
+     "p": 0.75
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 175,
+    "name": "푸에르토 리코",
+    "bgg_id": "3076",
+    "genres": [
+     "전략",
+     "자원관리"
+    ]
+   },
+   "bggCategories": [
+    "City Building",
+    "Economic",
+    "Farming"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.96
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.91
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 178,
+    "name": "할리갈리",
+    "bgg_id": "2944",
+    "genres": [
+     "Action / Dexterity",
+     "Card Game",
+     "Children&#039;s Game",
+     "Party Game",
+     "Real-time"
+    ]
+   },
+   "bggCategories": [
+    "Action / Dexterity",
+    "Card Game",
+    "Children's Game",
+    "Party Game",
+    "Real-time"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.97
+    },
+    {
+     "genre": "카드",
+     "p": 0.94
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.81
+    },
+    {
+     "genre": "파티",
+     "p": 0.77
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 179,
+    "name": "해저탐험",
+    "bgg_id": "169654",
+    "genres": [
+     "운",
+     "보드"
+    ]
+   },
+   "bggCategories": [
+    "Dice",
+    "Exploration",
+    "Nautical",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.93
+    },
+    {
+     "genre": "어드벤처",
+     "p": 0.7
+    },
+    {
+     "genre": "파티",
+     "p": 0.57
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 183,
+    "name": "EXIT : 수수께끼의 집",
+    "bgg_id": "226519",
+    "genres": [
+     "방탈출",
+     "퍼즐"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Novel-based",
+    "Puzzle"
+   ],
+   "suggestions": [
+    {
+     "genre": "퍼즐",
+     "p": 0.97
+    },
+    {
+     "genre": "협력",
+     "p": 0.96
+    },
+    {
+     "genre": "추리",
+     "p": 0.95
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.94
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 186,
+    "name": "MAGIC MAZE",
+    "bgg_id": "209778",
+    "genres": [
+     "실시간",
+     "협력"
+    ]
+   },
+   "bggCategories": [
+    "Exploration",
+    "Fantasy",
+    "Maze",
+    "Real-time"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.92
+    },
+    {
+     "genre": "협력",
+     "p": 0.89
+    },
+    {
+     "genre": "어드벤처",
+     "p": 0.69
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.68
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 187,
+    "name": "MINECRAFT EXPLORERS",
+    "bgg_id": "413403",
+    "genres": [
+     "어드벤처",
+     "협력"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Children's Game",
+    "Exploration",
+    "Fighting",
+    "Video Game Theme"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.9
+    },
+    {
+     "genre": "협력",
+     "p": 0.82
+    },
+    {
+     "genre": "어드벤처",
+     "p": 0.79
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 189,
+    "name": "QE",
+    "bgg_id": "266830",
+    "genres": [
+     "경매",
+     "경제"
+    ]
+   },
+   "bggCategories": [
+    "Economic"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.8
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.8
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.76
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 190,
+    "name": "RED ROOM",
+    "bgg_id": "442306",
+    "genres": [
+     "호러",
+     "추리"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Puzzle"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.9
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.88
+    },
+    {
+     "genre": "방탈출",
+     "p": 0.62
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 191,
+    "name": "Spot it!",
+    "bgg_id": "63268",
+    "genres": [
+     "순발력",
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Children's Game",
+    "Educational",
+    "Party Game",
+    "Real-time",
+    "Sports"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.96
+    },
+    {
+     "genre": "카드",
+     "p": 0.95
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.92
+    },
+    {
+     "genre": "파티",
+     "p": 0.67
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 192,
+    "name": "SURVIVE",
+    "bgg_id": "2653",
+    "genres": [
+     "생존",
+     "운"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Animals",
+    "Bluffing",
+    "Nautical"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.73
+    },
+    {
+     "genre": "주사위",
+     "p": 0.62
+    },
+    {
+     "genre": "전략",
+     "p": 0.59
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 204,
+    "name": "윙스팬",
+    "bgg_id": "266192",
+    "genres": [
+     "전략",
+     "엔진빌딩"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Card Game",
+    "Educational",
+    "Environmental"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.92
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.8
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.74
+    },
+    {
+     "genre": "카드",
+     "p": 0.63
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 205,
+    "name": "젝스님트",
+    "bgg_id": "432",
+    "genres": [
+     "카드",
+     "숫자"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Number",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "숫자",
+     "p": 0.89
+    },
+    {
+     "genre": "카드",
+     "p": 0.83
+    },
+    {
+     "genre": "파티",
+     "p": 0.75
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 207,
+    "name": "텔레스트레이션",
+    "bgg_id": "46213",
+    "genres": [
+     "파티",
+     "그림"
+    ]
+   },
+   "bggCategories": [
+    "Humor",
+    "Party Game",
+    "Real-time"
+   ],
+   "suggestions": [
+    {
+     "genre": "파티",
+     "p": 0.94
+    },
+    {
+     "genre": "순발력",
+     "p": 0.76
+    },
+    {
+     "genre": "단어",
+     "p": 0.59
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 210,
+    "name": "클랭크!: 덱 빌딩 어드벤처",
+    "bgg_id": "201808",
+    "genres": [
+     "전략",
+     "덱빌딩"
+    ]
+   },
+   "bggCategories": [
+    "Adventure",
+    "Fantasy"
+   ],
+   "suggestions": [
+    {
+     "genre": "덱빌딩",
+     "p": 0.97
+    },
+    {
+     "genre": "카드",
+     "p": 0.92
+    },
+    {
+     "genre": "전략",
+     "p": 0.8
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 211,
+    "name": "두 도시 사이에서",
+    "bgg_id": "168435",
+    "genres": [
+     "타일놓기",
+     "협력"
+    ]
+   },
+   "bggCategories": [
+    "City Building",
+    "Negotiation"
+   ],
+   "suggestions": [
+    {
+     "genre": "타일놓기",
+     "p": 0.95
+    },
+    {
+     "genre": "전략",
+     "p": 0.54
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.54
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 212,
+    "name": "우봉고 3D",
+    "bgg_id": "269971",
+    "genres": [
+     "퍼즐",
+     "실시간"
+    ]
+   },
+   "bggCategories": [
+    "Puzzle"
+   ],
+   "suggestions": [
+    {
+     "genre": "퍼즐",
+     "p": 0.96
+    },
+    {
+     "genre": "타일놓기",
+     "p": 0.82
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 215,
+    "name": "강변 밤의 꿈",
+    "bgg_id": "393285",
+    "genres": [
+     "머더미스터리"
+    ]
+   },
+   "bggCategories": [
+    "Medieval",
+    "Murder / Mystery",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "머더미스터리",
+     "p": 0.78
+    },
+    {
+     "genre": "추리",
+     "p": 0.76
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.61
+    },
+    {
+     "genre": "파티",
+     "p": 0.6
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 217,
+    "name": "마작패",
+    "bgg_id": "108018",
+    "genres": [
+     "추상 전략"
+    ]
+   },
+   "bggCategories": [
+    "Abstract Strategy"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.9
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.88
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.67
+    },
+    {
+     "genre": "추리",
+     "p": 0.62
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 218,
+    "name": "아그리콜라",
+    "bgg_id": "31260",
+    "genres": [
+     "동물",
+     "경제",
+     "Farming"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Economic",
+    "Farming"
+   ],
+   "suggestions": [
+    {
+     "genre": "일꾼배치",
+     "p": 0.97
+    },
+    {
+     "genre": "전략",
+     "p": 0.95
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.91
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 219,
+    "name": "영리한 여우",
+    "bgg_id": "244522",
+    "genres": [
+     "주사위",
+     "Number"
+    ]
+   },
+   "bggCategories": [
+    "Dice",
+    "Number"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.96
+    },
+    {
+     "genre": "숫자",
+     "p": 0.73
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.56
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 220,
+    "name": "트럼프 카드 카지노 칩 세트",
+    "bgg_id": "1115",
+    "genres": [
+     "블러핑",
+     "카드 게임"
+    ]
+   },
+   "bggCategories": [
+    "Bluffing",
+    "Card Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.93
+    },
+    {
+     "genre": "카드",
+     "p": 0.91
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.64
+    },
+    {
+     "genre": "전략",
+     "p": 0.5
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 222,
+    "name": "테라포밍 마스 확장 : 비너스 넥스트",
+    "bgg_id": "231965",
+    "genres": [
+     "전략"
+    ]
+   },
+   "bggCategories": [
+    "Expansion for Base-game",
+    "Economic",
+    "Educational",
+    "Environmental",
+    "Industry / Manufacturing",
+    "Science Fiction"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.94
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.89
+    },
+    {
+     "genre": "타일놓기",
+     "p": 0.77
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 223,
+    "name": "테라포밍 마스 확장: 아마조니스 보레알리스",
+    "bgg_id": "406001",
+    "genres": [
+     "전략"
+    ]
+   },
+   "bggCategories": [
+    "Expansion for Base-game"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.93
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.84
+    },
+    {
+     "genre": "타일놓기",
+     "p": 0.52
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 224,
+    "name": "테라포밍 마스 확장 서곡",
+    "bgg_id": "247030",
+    "genres": [
+     "확장판",
+     "경제",
+     "Environmental",
+     "Industry / Manufacturing",
+     "SF"
+    ]
+   },
+   "bggCategories": [
+    "Expansion for Base-game",
+    "Economic",
+    "Environmental",
+    "Industry / Manufacturing",
+    "Science Fiction"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.91
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.88
+    },
+    {
+     "genre": "타일놓기",
+     "p": 0.8
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 225,
+    "name": "딕싯",
+    "bgg_id": "39856",
+    "genres": [
+     "파티"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Humor",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "카드",
+     "p": 0.93
+    },
+    {
+     "genre": "파티",
+     "p": 0.82
+    },
+    {
+     "genre": "단어",
+     "p": 0.82
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.51
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 226,
+    "name": "다다다",
+    "bgg_id": "420091",
+    "genres": [
+     "파티",
+     "협력",
+     "언어"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Humor",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "파티",
+     "p": 0.88
+    },
+    {
+     "genre": "카드",
+     "p": 0.86
+    },
+    {
+     "genre": "추리",
+     "p": 0.85
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.79
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 231,
+    "name": "블러드 레이지",
+    "bgg_id": "170216",
+    "genres": [
+     "전략"
+    ]
+   },
+   "bggCategories": [
+    "Fantasy",
+    "Fighting",
+    "Miniatures",
+    "Mythology"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.87
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 232,
+    "name": "사그라다",
+    "bgg_id": "199561",
+    "genres": [
+     "퍼즐",
+     "타일배치"
+    ]
+   },
+   "bggCategories": [
+    "Abstract Strategy",
+    "Dice",
+    "Puzzle"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.95
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.9
+    },
+    {
+     "genre": "전략",
+     "p": 0.88
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.77
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 233,
+    "name": "네트워크: 시청률 전쟁",
+    "bgg_id": "72321",
+    "genres": [
+     "Economic",
+     "Humor",
+     "Movies / TV / Radio theme"
+    ]
+   },
+   "bggCategories": [
+    "Economic",
+    "Humor",
+    "Movies / TV / Radio theme"
+   ],
+   "suggestions": [
+    {
+     "genre": "자원관리",
+     "p": 0.86
+    },
+    {
+     "genre": "전략",
+     "p": 0.84
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.84
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 234,
+    "name": "도미니언",
+    "bgg_id": "36218",
+    "genres": [
+     "Card Game",
+     "Medieval"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Medieval"
+   ],
+   "suggestions": [
+    {
+     "genre": "덱빌딩",
+     "p": 0.97
+    },
+    {
+     "genre": "카드",
+     "p": 0.96
+    },
+    {
+     "genre": "전략",
+     "p": 0.89
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.77
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 235,
+    "name": "너도나도 파티",
+    "bgg_id": "261614",
+    "genres": [
+     "Party Game"
+    ]
+   },
+   "bggCategories": [
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "파티",
+     "p": 0.91
+    },
+    {
+     "genre": "단어",
+     "p": 0.64
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 236,
+    "name": "아크노바",
+    "bgg_id": "342942",
+    "genres": [
+     "Animals",
+     "Card Game",
+     "Environmental"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Card Game",
+    "Environmental"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.95
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.9
+    },
+    {
+     "genre": "타일놓기",
+     "p": 0.77
+    },
+    {
+     "genre": "셋컬렉션",
+     "p": 0.74
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 237,
+    "name": "샤크",
+    "bgg_id": "433",
+    "genres": [
+     "Economic"
+    ]
+   },
+   "bggCategories": [
+    "Economic"
+   ],
+   "suggestions": [
+    {
+     "genre": "주사위",
+     "p": 0.84
+    },
+    {
+     "genre": "전략",
+     "p": 0.72
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.68
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 238,
+    "name": "5분 마블",
+    "bgg_id": "253618",
+    "genres": [
+     "Card Game",
+     "Comic Book / Strip",
+     "Fighting",
+     "Real-time"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Comic Book / Strip",
+    "Fighting",
+    "Real-time"
+   ],
+   "suggestions": [
+    {
+     "genre": "순발력",
+     "p": 0.92
+    },
+    {
+     "genre": "카드",
+     "p": 0.91
+    },
+    {
+     "genre": "협력",
+     "p": 0.83
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 240,
+    "name": "혁신의 시대",
+    "bgg_id": "383179",
+    "genres": [
+     "Civilization",
+     "Economic",
+     "Fantasy",
+     "Territory Building"
+    ]
+   },
+   "bggCategories": [
+    "Civilization",
+    "Economic",
+    "Fantasy",
+    "Territory Building"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.94
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.85
+    },
+    {
+     "genre": "타일놓기",
+     "p": 0.63
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 241,
+    "name": "브라스 버밍엄",
+    "bgg_id": "224517",
+    "genres": [
+     "Age of Reason",
+     "Economic",
+     "Industry / Manufacturing",
+     "Post-Napoleonic",
+     "Trains",
+     "Transportation"
+    ]
+   },
+   "bggCategories": [
+    "Age of Reason",
+    "Economic",
+    "Industry / Manufacturing",
+    "Post-Napoleonic",
+    "Trains",
+    "Transportation"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.96
+    },
+    {
+     "genre": "자원관리",
+     "p": 0.96
+    },
+    {
+     "genre": "타일놓기",
+     "p": 0.68
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 242,
+    "name": "The Wolves 더 울브즈",
+    "bgg_id": "368058",
+    "genres": [
+     "Animals",
+     "Territory Building"
+    ]
+   },
+   "bggCategories": [
+    "Animals",
+    "Territory Building"
+   ],
+   "suggestions": [
+    {
+     "genre": "전략",
+     "p": 0.84
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 246,
+    "name": "교토 이세계 투어",
+    "bgg_id": "419570",
+    "genres": [
+     "Murder / Mystery"
+    ]
+   },
+   "bggCategories": [
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.77
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.68
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.58
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 247,
+    "name": "별장살인",
+    "bgg_id": "419569",
+    "genres": [
+     "Murder / Mystery"
+    ]
+   },
+   "bggCategories": [
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.84
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.71
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.61
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 251,
+    "name": "모텔 노바디",
+    "bgg_id": "416237",
+    "genres": [
+     "Deduction",
+     "Murder / Mystery"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Murder / Mystery"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.93
+    },
+    {
+     "genre": "머더미스터리",
+     "p": 0.89
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.57
+    },
+    {
+     "genre": "블러핑",
+     "p": 0.55
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 253,
+    "name": "블러핏!",
+    "bgg_id": "450039",
+    "genres": [
+     "Card Game",
+     "Number",
+     "Party Game"
+    ]
+   },
+   "bggCategories": [
+    "Card Game",
+    "Number",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "블러핑",
+     "p": 0.97
+    },
+    {
+     "genre": "카드",
+     "p": 0.91
+    },
+    {
+     "genre": "파티",
+     "p": 0.8
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 254,
+    "name": "탑텐TV 시트콤",
+    "bgg_id": "437938",
+    "genres": [
+     "Party Game"
+    ]
+   },
+   "bggCategories": [
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "파티",
+     "p": 0.86
+    },
+    {
+     "genre": "추리",
+     "p": 0.84
+    },
+    {
+     "genre": "협력",
+     "p": 0.8
+    },
+    {
+     "genre": "단어",
+     "p": 0.71
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 255,
+    "name": "색감과 직감",
+    "bgg_id": "302520",
+    "genres": [
+     "Deduction",
+     "Party Game"
+    ]
+   },
+   "bggCategories": [
+    "Deduction",
+    "Party Game"
+   ],
+   "suggestions": [
+    {
+     "genre": "추리",
+     "p": 0.92
+    },
+    {
+     "genre": "파티",
+     "p": 0.79
+    },
+    {
+     "genre": "단어",
+     "p": 0.62
+    },
+    {
+     "genre": "퍼즐",
+     "p": 0.61
+    }
+   ],
+   "model": "jev-1.13.0"
+  },
+  {
+   "game": {
+    "id": 256,
+    "name": "스트림스 메트로",
+    "bgg_id": "455631",
+    "genres": [
+     "Math",
+     "Number",
+     "Puzzle"
+    ]
+   },
+   "bggCategories": [
+    "Math",
+    "Number",
+    "Puzzle"
+   ],
+   "suggestions": [
+    {
+     "genre": "퍼즐",
+     "p": 0.89
+    },
+    {
+     "genre": "숫자",
+     "p": 0.75
+    }
+   ],
+   "model": "jev-1.13.0"
+  }
+ ]
+}

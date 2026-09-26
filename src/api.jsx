@@ -400,6 +400,25 @@ export const searchKoreanImages = async (query) => {
   }
 };
 
+// [관리자 게임 추가] Jev 장르 제안 — 실패해도 throw하지 않는다.
+// 키 없음·잔액 0·장애·개발 서버(함수 없음)는 모두 { available: false }로 받아 제안 칩만 숨긴다.
+export const suggestGenresAI = async (bggId, name) => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return { available: false, reason: 'unauthenticated' };
+    const params = new URLSearchParams({ bgg_id: String(bggId), name: name || '' });
+    const response = await fetch(`/.netlify/functions/jev-genre-suggest?${params}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data) return { available: false, reason: data?.error || `http_${response.status}` };
+    return data;
+  } catch (e) {
+    console.error('[관리자 게임 추가][AI 장르 제안 실패]', e);
+    return { available: false, reason: 'network' };
+  }
+};
+
 // [BGG] XML 파싱 헬퍼 (검색 결과)
 const parseBGGSearch = (xmlText) => {
   const items = [];

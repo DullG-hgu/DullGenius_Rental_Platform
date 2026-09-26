@@ -3,10 +3,23 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '../contexts/ToastContext'; // [NEW]
-import { searchBGG, fetchBGGGame, searchKoreanImages, checkGameExists } from '../api';
+import { searchBGG, fetchBGGGame, searchKoreanImages, checkGameExists, suggestGenresAI } from '../api';
 import PoweredByBGG from '../components/PoweredByBGG';
 
 const BGG_ALLOWED_TYPES = new Set(['boardgame', 'boardgameexpansion']);
+
+// AI 장르 제안을 못 쓸 때 사유 (함수 jev-genre-suggest의 reason 값)
+const AI_UNAVAILABLE_LABEL = {
+  unconfigured: '키 미설정',
+  quota: '크레딧 소진',
+  rate_limited: '요청 한도',
+  timeout: '응답 지연',
+  upstream: 'AI 서버 오류',
+  bgg_unavailable: 'BGG 응답 없음',
+  bgg_not_found: 'BGG 항목 없음',
+  network: '네트워크 오류',
+  http_404: '개발 서버에서는 함수 없음',
+};
 
 // BGG 최소/최대 시간 → "30분" / "60~120분". 둘 다 없으면 null.
 // 최소가 5분 미만인데 최대는 있는 경우(예: 1~30분)는 최대만 쓴다.
@@ -60,6 +73,8 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
   const [manualBggId, setManualBggId] = useState('');
   const [bggMechanics, setBggMechanics] = useState(null); // BGG 메커니즘 참고용
   const [genresInput, setGenresInput] = useState('');
+  const [bggCategories, setBggCategories] = useState(null); // BGG 영문 카테고리 — 참고용, 장르에 자동으로 넣지 않는다
+  const [aiGenres, setAiGenres] = useState({ status: 'idle', suggestions: [], reason: '' });
   const [imageSearchQuery, setImageSearchQuery] = useState('');
   const [imageSearchResults, setImageSearchResults] = useState([]);
   const [imageSearching, setImageSearching] = useState(false);
@@ -75,6 +90,8 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
       setShowBggPanel(false);
       setManualBggId('');
       setBggMechanics(null);
+      setBggCategories(null);
+      setAiGenres({ status: 'idle', suggestions: [], reason: '' });
       setGenresInput(Array.isArray(initialData?.genres) ? initialData.genres.join(', ') : '');
       setImageSearchQuery('');
       setImageSearchResults([]);
@@ -195,6 +212,31 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
   };
 
   // [NEW] 검색 결과 선택 또는 수동 ID 입력 후 상세 조회 → 폼 자동 채움
+  const updateGenresInput = (value) => {
+    setGenresInput(value);
+    setFormData(prev => ({
+      ...prev,
+      genres: value ? value.split(',').map(g => g.trim()).filter(Boolean) : null,
+    }));
+  };
+
+  const currentGenres = genresInput.split(',').map(g => g.trim()).filter(Boolean);
+
+  const addGenre = (genre) => {
+    if (currentGenres.includes(genre)) return;
+    updateGenresInput([...currentGenres, genre].join(', '));
+  };
+
+  // AI(Jev) 장르 제안. 실패해도 폼은 그대로 — 제안 영역에 사유만 짧게 보인다.
+  const requestAiGenres = async () => {
+    if (!formData.bgg_id || aiGenres.status === 'loading') return;
+    setAiGenres({ status: 'loading', suggestions: [], reason: '' });
+    const result = await suggestGenresAI(formData.bgg_id, formData.name);
+    setAiGenres(result.available
+      ? { status: 'done', suggestions: result.suggestions || [], reason: '' }
+      : { status: 'unavailable', suggestions: [], reason: result.reason || '' });
+  };
+
   const applyBggData = async (bggId) => {
     if (busy || bggBusyRef.current) return;
     bggBusyRef.current = true;
@@ -243,10 +285,11 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
         max_players: maxPlayers ?? prev.max_players,
         min_playtime: minPlaytime ?? prev.min_playtime,
         max_playtime: maxPlaytime ?? prev.max_playtime,
-        genres: detail.genres?.length ? detail.genres : prev.genres,
         playingtime: formatPlayingTime(minPlaytime, maxPlaytime) ?? prev.playingtime,
       }));
-      if (detail.genres?.length) setGenresInput(detail.genres.join(', '));
+      // 장르는 운영자가 한글로 손질하는 값이라 BGG 영문 카테고리로 덮어쓰지 않는다 (2026-09 장르 오염 원인).
+      setBggCategories(detail.genres?.length ? detail.genres : null);
+      setAiGenres({ status: 'idle', suggestions: [], reason: '' });
 
       // 메커니즘 참고용 저장
       if (detail.mechanics && detail.mechanics.length > 0) {
@@ -494,17 +537,51 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
           <input
             value={genresInput}
             onChange={e => {
-              const value = e.target.value;
-              setGenresInput(value);
-              setFormData(prev => ({
-                ...prev,
-                genres: value ? value.split(',').map(g => g.trim()).filter(Boolean) : null,
-              }));
+              updateGenresInput(e.target.value);
             }}
             placeholder="예: 전략, 추리, 파티"
             className="admin-input"
             style={{ width: "100%" }}
           />
+          <div className="game-ai-genre">
+            <button
+              type="button"
+              className="admin-btn"
+              onClick={requestAiGenres}
+              disabled={!formData.bgg_id || aiGenres.status === 'loading'}
+              title={formData.bgg_id ? 'BGG 정보로 장르 후보를 받습니다' : 'BGG 연결 후 사용할 수 있습니다'}
+            >
+              {aiGenres.status === 'loading' ? '🤖 제안 받는 중…' : '🤖 AI 장르 제안'}
+            </button>
+            {!formData.bgg_id && <span className="game-ai-genre-note">BGG를 연결하면 사용할 수 있어요</span>}
+            {aiGenres.status === 'done' && aiGenres.suggestions.length === 0 && (
+              <span className="game-ai-genre-note">뚜렷한 후보가 없습니다</span>
+            )}
+            {aiGenres.status === 'unavailable' && (
+              <span className="game-ai-genre-note">지금은 AI 제안을 쓸 수 없습니다 — 직접 입력해주세요 ({AI_UNAVAILABLE_LABEL[aiGenres.reason] || aiGenres.reason})</span>
+            )}
+            {aiGenres.suggestions.map(({ genre, p }) => {
+              const added = currentGenres.includes(genre);
+              return (
+                <button
+                  key={genre}
+                  type="button"
+                  className={`game-ai-genre-chip${added ? ' is-added' : ''}`}
+                  onClick={() => addGenre(genre)}
+                  disabled={added}
+                  title={`Jev 확률 ${Math.round(p * 100)}% — 눌러서 장르에 추가`}
+                >
+                  {added ? '✓ ' : '+ '}{genre} <small>{Math.round(p * 100)}%</small>
+                </button>
+              );
+            })}
+          </div>
+          {aiGenres.suggestions.length > 0 && (
+            <div className="game-ai-genre-note">AI 후보는 참고용입니다. 테마를 장르로 착각할 때가 있으니 맞는 것만 골라주세요.</div>
+          )}
+          {bggCategories && (
+            <div className="game-ai-genre-note">BGG 카테고리(참고): {bggCategories.join(', ')}</div>
+          )}
         </div>
 
         {/* 메커니즘 참고용 (BGG에서 가져온 정보) */}

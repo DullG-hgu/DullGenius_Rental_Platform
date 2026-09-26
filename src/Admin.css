@@ -430,6 +430,36 @@
   vertical-align: middle;
 }
 
+/* AI(Jev) 장르 제안 — 운영자가 고르는 후보 */
+.game-ai-genre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.game-ai-genre-chip {
+  padding: 4px 10px;
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  background: rgba(102, 126, 234, 0.15);
+  color: var(--admin-text-main);
+  font-size: 0.85em;
+  cursor: pointer;
+}
+.game-ai-genre-chip small {
+  color: var(--admin-text-sub);
+}
+.game-ai-genre-chip.is-added {
+  opacity: 0.55;
+  cursor: default;
+}
+.game-ai-genre-note {
+  margin-top: 4px;
+  font-size: 0.75em;
+  color: var(--admin-text-sub);
+}
+
 .game-bgg-web-button {
   width: 100%;
   padding: 8px;

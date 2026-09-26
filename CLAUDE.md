@@ -206,3 +206,11 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 - 값 재동기화: `node scripts/bgg_sync.mjs`(dry-run) → `--apply`. 이름 재점검: `node scripts/bgg_match_names.mjs` (읽기 전용).
   둘 다 `.env.local`의 `SUPABASE_SERVICE_ROLE_KEY`·`BGG_API_TOKEN`을 쓴다.
 - `genres`는 운영자가 한글로 손질한 값이라 스크립트가 덮어쓰지 않는다. `playingtime`은 「30분」「60~120분」 형식.
+- 게임 폼도 BGG 영문 카테고리를 `genres`에 넣지 않는다(참고 표시만). 9/27 기준 영문 장르가 섞인 게임 28개 — 대부분 최근 등록분이라 폼 덮어쓰기가 주원인으로 보인다(같은 날 수정).
+
+## Jev AI 장르 제안 (2026-09-27)
+
+- Jev(TypeSafe 판정 API)는 **관리자 작성 시점에만** 쓴다: 게임 폼 「🤖 AI 장르 제안」(`netlify/functions/jev-genre-suggest.js`)과 읽기 전용 `node scripts/jev_genre_report.mjs`(→ `database/genre_review/`).
+- **사용자·키오스크 경로에서 Jev를 부르지 않는다.** 구독 해지·잔액 0·장애여도 제안 칩만 사라지고 서비스는 그대로여야 한다. 실패는 200 + `{ available: false, reason }`.
+- 결과는 제안이다. 자동 적용 금지 — 운영자가 칩을 골라 넣는다. 정규 장르 목록은 `netlify/functions/_shared/jevGenres.js`의 `CANONICAL_GENRES` 한 곳.
+- 키 `JEV_AI_API_KEY`는 서버 전용(Netlify 함수·`.env.local`). 보내는 건 게임 한글명과 BGG 공개 정보뿐 — 회원 이름·전화·후기는 보내지 않는다(Jev는 제출 텍스트를 보관한다).
