@@ -1,12 +1,12 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 8. AM 11:30:00
+-- 생성 시각: 2026. 9. 29. PM 5:41:11
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 20개 테이블
+-- 총 23개 테이블
 
 -- ----------------------------------------------------------------
 -- 테이블: allowed_users
@@ -141,6 +141,55 @@ CREATE TABLE public.events (
   updated_at timestamptz NOT NULL DEFAULT now(),
   deleted_at timestamptz,
   allow_walk_in bool NOT NULL DEFAULT true
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: fun_worldcup_matches
+-- ----------------------------------------------------------------
+CREATE TABLE public.fun_worldcup_matches (
+  run_id uuid NOT NULL PRIMARY KEY,  -- FK → fun_worldcup_runs(id)
+  round_size int4 NOT NULL PRIMARY KEY,
+  match_no int4 NOT NULL PRIMARY KEY,
+  top_game_id int4 NOT NULL,
+  bottom_game_id int4 NOT NULL,
+  winner_game_id int4 NOT NULL,
+  picked_top bool NOT NULL,
+  decide_ms int4,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: fun_worldcup_runs
+-- ----------------------------------------------------------------
+CREATE TABLE public.fun_worldcup_runs (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  theme_id uuid NOT NULL,  -- FK → fun_worldcup_themes(id)
+  size int4 NOT NULL,
+  bracket _int4 NOT NULL,
+  top_first _bool NOT NULL,
+  user_id uuid,
+  anon_id uuid,
+  is_member bool NOT NULL,
+  status text NOT NULL DEFAULT 'started'::text,
+  champion_game_id int4,
+  started_at timestamptz NOT NULL DEFAULT now(),
+  finished_at timestamptz
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: fun_worldcup_themes
+-- ----------------------------------------------------------------
+CREATE TABLE public.fun_worldcup_themes (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  slug text NOT NULL,
+  title text NOT NULL,
+  description text,
+  filter jsonb NOT NULL DEFAULT '{}'::jsonb,
+  allowed_sizes _int4 NOT NULL DEFAULT '{8,16,32,64}'::integer[],
+  is_active bool NOT NULL DEFAULT true,
+  sort_order int4 NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 -- ----------------------------------------------------------------

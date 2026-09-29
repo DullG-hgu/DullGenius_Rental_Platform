@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 8. AM 11:30:05
+-- 생성 시각: 2026. 9. 29. PM 5:41:14
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -12,7 +12,7 @@
 --   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.
 
 -- ----------------------------------------------------------------
--- 함수 EXECUTE  (91개)
+-- 함수 EXECUTE  (105개)
 -- ----------------------------------------------------------------
 -- anon  auth  security  function
 --  -     -    INVOKER   _active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
@@ -20,6 +20,9 @@
 --  Y     Y    INVOKER   _event_generate_invite_code()
 --  Y     Y    INVOKER   _event_is_full(p_event_id uuid)
 --  Y     Y    INVOKER   _event_make_depositor_name(p_event_slug text, p_name text)
+--  -     -    INVOKER   _fun_wc_eligible_runs(p_theme_id uuid, p_scope text)
+--  -     -    INVOKER   _fun_wc_game_stats(p_theme_id uuid, p_scope text)
+--  -     -    INVOKER   _fun_wc_pool(p_filter jsonb)
 --  -     -    DEFINER   _fuzzy_match_games(raw text)
 --  -     -    INVOKER   _parse_duration(raw text)
 --  -     -    INVOKER   _parse_fee(raw text)
@@ -56,6 +59,17 @@
 --  -     Y    DEFINER   event_team_preview(p_invite_code text)
 --  -     Y    DEFINER   event_unmark_paid(p_registration_id uuid, p_note text)
 --  -     Y    DEFINER   fix_rental_data_consistency()
+--  -     Y    DEFINER   fun_wc_abuse_check(p_hours integer, p_device_threshold integer)
+--  -     Y    DEFINER   fun_wc_admin_list_themes()
+--  -     Y    DEFINER   fun_wc_admin_preview_pool(p_filter jsonb)
+--  -     Y    DEFINER   fun_wc_admin_stats(p_slug text, p_from timestamp with time zone, p_to timestamp with time zone)
+--  -     Y    DEFINER   fun_wc_admin_upsert_theme(p_id uuid, p_slug text, p_title text, p_description text, p_filter jsonb, p_allowed_sizes integer[], p_is_active boolean, p_sort_order integer)
+--  Y     Y    DEFINER   fun_wc_finish(p_run_id uuid, p_picks jsonb, p_anon_id uuid)
+--  Y     Y    DEFINER   fun_wc_get_run(p_run_id uuid)
+--  Y     Y    DEFINER   fun_wc_list_themes()
+--  -     -    DEFINER   fun_wc_mark_abandoned()
+--  Y     Y    DEFINER   fun_wc_ranking(p_slug text, p_scope text)
+--  Y     Y    DEFINER   fun_wc_start(p_slug text, p_size integer, p_anon_id uuid)
 --  -     Y    DEFINER   get_admin_analytics_activity(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)
 --  -     Y    DEFINER   get_admin_analytics_rankings(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)
 --  -     Y    DEFINER   get_admin_analytics_summary(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[])

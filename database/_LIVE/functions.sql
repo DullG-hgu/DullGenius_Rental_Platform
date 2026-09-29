@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 8. AM 11:29:44
+-- 생성 시각: 2026. 9. 29. PM 5:40:50
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 91개 함수
+-- 총 105개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -139,6 +139,77 @@ AS $function$
 BEGIN
   RETURN p_event_slug || '_' || regexp_replace(p_name, '\s+', '', 'g');
 END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _fun_wc_eligible_runs
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._fun_wc_eligible_runs(p_theme_id uuid, p_scope text)
+ RETURNS SETOF fun_worldcup_runs
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT r.*
+  FROM public.fun_worldcup_runs r
+  WHERE r.theme_id = p_theme_id
+    AND r.status = 'finished'
+    AND (p_scope = 'all' OR r.is_member)
+    AND NOT EXISTS (
+      SELECT 1 FROM public.user_roles ur
+      WHERE ur.user_id = r.user_id AND ur.role_key = 'tester'
+    )
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _fun_wc_game_stats
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._fun_wc_game_stats(p_theme_id uuid, p_scope text)
+ RETURNS TABLE(game_id integer, wins bigint, losses bigint, appearances bigint, championships bigint)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  WITH er AS (
+    SELECT * FROM public._fun_wc_eligible_runs(p_theme_id, p_scope)
+  ),
+  m AS (
+    SELECT m.* FROM public.fun_worldcup_matches m JOIN er ON er.id = m.run_id
+  ),
+  wl AS (
+    SELECT winner_game_id AS gid, 1 AS w, 0 AS l FROM m
+    UNION ALL
+    SELECT CASE WHEN winner_game_id = top_game_id THEN bottom_game_id ELSE top_game_id END, 0, 1 FROM m
+  ),
+  ap AS (SELECT unnest(bracket) AS gid FROM er),
+  a AS (SELECT gid, count(*) AS appearances FROM ap GROUP BY gid),
+  w AS (SELECT gid, sum(w)::bigint AS wins, sum(l)::bigint AS losses FROM wl GROUP BY gid),
+  c AS (SELECT champion_game_id AS gid, count(*) AS champs FROM er GROUP BY champion_game_id)
+  SELECT a.gid, COALESCE(w.wins, 0), COALESCE(w.losses, 0), a.appearances, COALESCE(c.champs, 0)
+  FROM a
+  LEFT JOIN w USING (gid)
+  LEFT JOIN c USING (gid)
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _fun_wc_pool
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._fun_wc_pool(p_filter jsonb)
+ RETURNS SETOF integer
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT g.id
+  FROM public.games g
+  WHERE (p_filter->>'category' IS NULL OR g.category = p_filter->>'category')
+    AND (NOT COALESCE((p_filter->>'rentable_only')::boolean, false) OR COALESCE(g.is_rentable, true))
+    AND (NOT COALESCE((p_filter->>'require_image')::boolean, false) OR NULLIF(btrim(g.image), '') IS NOT NULL)
+    AND (
+      jsonb_typeof(p_filter->'genres_any') IS DISTINCT FROM 'array'
+      OR jsonb_array_length(p_filter->'genres_any') = 0
+      OR g.genres && ARRAY(SELECT jsonb_array_elements_text(p_filter->'genres_any'))
+    )
 $function$
 
 -- ----------------------------------------------------------------
@@ -1957,6 +2028,485 @@ BEGIN
             'duplicate_active_groups_found', v_dup_active
         )
     );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_abuse_check
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_abuse_check(p_hours integer DEFAULT 24, p_device_threshold integer DEFAULT 40)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_window interval;
+BEGIN
+  IF NOT (public.is_admin() OR auth.role() = 'service_role') THEN
+    RAISE EXCEPTION '관리자 권한이 필요합니다.';
+  END IF;
+  IF p_hours IS NULL OR p_hours < 1 OR p_hours > 24 * 30 THEN RAISE EXCEPTION 'p_hours 범위가 올바르지 않습니다.'; END IF;
+  v_window := make_interval(hours => p_hours);
+
+  RETURN (
+    WITH cur AS (
+      SELECT * FROM public.fun_worldcup_runs WHERE started_at >= now() - v_window
+    ),
+    prev AS (
+      SELECT count(*) n FROM public.fun_worldcup_runs
+      WHERE started_at >= now() - 2 * v_window AND started_at < now() - v_window
+    ),
+    heavy AS (
+      SELECT left(anon_id::text, 8) AS device, count(*) AS runs
+      FROM cur WHERE NOT is_member
+      GROUP BY anon_id HAVING count(*) >= p_device_threshold
+    )
+    SELECT jsonb_build_object(
+      'window_hours', p_hours,
+      'runs', (SELECT count(*) FROM cur),
+      'nonmember_runs', (SELECT count(*) FROM cur WHERE NOT is_member),
+      'prev_window_runs', (SELECT n FROM prev),
+      'heavy_devices', (SELECT COALESCE(jsonb_agg(jsonb_build_object('device', device, 'runs', runs) ORDER BY runs DESC), '[]'::jsonb) FROM heavy),
+      'alert', EXISTS (SELECT 1 FROM heavy)
+               OR ((SELECT count(*) FROM cur) >= 200
+                   AND (SELECT count(*) FROM cur) > 5 * GREATEST((SELECT n FROM prev), 1))
+    )
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_admin_list_themes
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_admin_list_themes()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+
+  RETURN (
+    SELECT COALESCE(jsonb_agg(jsonb_build_object(
+             'id', t.id, 'slug', t.slug, 'title', t.title, 'description', t.description,
+             'filter', t.filter, 'allowed_sizes', to_jsonb(t.allowed_sizes),
+             'is_active', t.is_active, 'sort_order', t.sort_order, 'updated_at', t.updated_at,
+             'pool_count', (SELECT count(*) FROM public._fun_wc_pool(t.filter)),
+             'play_count', (SELECT count(*) FROM public.fun_worldcup_runs r
+                             WHERE r.theme_id = t.id AND r.status = 'finished')
+           ) ORDER BY t.sort_order, t.created_at), '[]'::jsonb)
+    FROM public.fun_worldcup_themes t
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_admin_preview_pool
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_admin_preview_pool(p_filter jsonb)
+ RETURNS integer
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+  RETURN (SELECT count(*) FROM public._fun_wc_pool(COALESCE(p_filter, '{}'::jsonb)));
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_admin_stats
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_admin_stats(p_slug text DEFAULT NULL::text, p_from timestamp with time zone DEFAULT (now() - '30 days'::interval), p_to timestamp with time zone DEFAULT now())
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+  IF p_from IS NULL OR p_to IS NULL OR p_from > p_to THEN RAISE EXCEPTION '조회 기간이 올바르지 않습니다.'; END IF;
+
+  RETURN (
+    WITH r AS (
+      SELECT r.*
+      FROM public.fun_worldcup_runs r
+      JOIN public.fun_worldcup_themes t ON t.id = r.theme_id
+      WHERE (p_slug IS NULL OR t.slug = p_slug)
+        AND r.started_at >= p_from AND r.started_at < p_to
+        AND NOT EXISTS (SELECT 1 FROM public.user_roles ur
+                        WHERE ur.user_id = r.user_id AND ur.role_key = 'tester')
+    ),
+    m AS (
+      SELECT m.* FROM public.fun_worldcup_matches m JOIN r ON r.id = m.run_id
+    )
+    SELECT jsonb_build_object(
+      'runs', jsonb_build_object(
+        'member',    (SELECT jsonb_object_agg(status, n) FROM (SELECT status, count(*) n FROM r WHERE is_member GROUP BY status) x),
+        'nonmember', (SELECT jsonb_object_agg(status, n) FROM (SELECT status, count(*) n FROM r WHERE NOT is_member GROUP BY status) x)
+      ),
+      'distinct_members', (SELECT count(DISTINCT user_id) FROM r WHERE is_member),
+      'distinct_devices', (SELECT count(DISTINCT anon_id) FROM r WHERE NOT is_member),
+      'completion_by_size', (
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                 'size', size, 'started', n, 'finished', f,
+                 'rate', round(f::numeric / NULLIF(n, 0), 4)) ORDER BY size), '[]'::jsonb)
+        FROM (SELECT size, count(*) n, count(*) FILTER (WHERE status = 'finished') f FROM r GROUP BY size) x
+      ),
+      'matches', (SELECT count(*) FROM m),
+      'top_pick_rate', (SELECT round(avg(picked_top::int)::numeric, 4) FROM m),
+      'median_decide_ms', (SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY decide_ms) FROM m WHERE decide_ms IS NOT NULL)
+    )
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_admin_upsert_theme
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_admin_upsert_theme(p_id uuid, p_slug text, p_title text, p_description text, p_filter jsonb, p_allowed_sizes integer[], p_is_active boolean, p_sort_order integer DEFAULT 0)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_id uuid;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+  IF NULLIF(btrim(p_title), '') IS NULL THEN RAISE EXCEPTION '제목을 입력해 주세요.'; END IF;
+  IF p_filter IS NULL OR jsonb_typeof(p_filter) <> 'object' THEN RAISE EXCEPTION '필터 형식이 올바르지 않습니다.'; END IF;
+
+  IF p_id IS NULL THEN
+    INSERT INTO public.fun_worldcup_themes (slug, title, description, filter, allowed_sizes, is_active, sort_order)
+    VALUES (p_slug, btrim(p_title), NULLIF(btrim(p_description), ''), p_filter,
+            COALESCE(p_allowed_sizes, '{8,16,32,64}'), COALESCE(p_is_active, true), COALESCE(p_sort_order, 0))
+    RETURNING id INTO v_id;
+  ELSE
+    UPDATE public.fun_worldcup_themes
+    SET slug = p_slug,
+        title = btrim(p_title),
+        description = NULLIF(btrim(p_description), ''),
+        filter = p_filter,
+        allowed_sizes = COALESCE(p_allowed_sizes, allowed_sizes),
+        is_active = COALESCE(p_is_active, is_active),
+        sort_order = COALESCE(p_sort_order, sort_order),
+        updated_at = now()
+    WHERE id = p_id
+    RETURNING id INTO v_id;
+    IF v_id IS NULL THEN RAISE EXCEPTION '테마를 찾을 수 없습니다.'; END IF;
+  END IF;
+
+  RETURN v_id;
+EXCEPTION
+  WHEN unique_violation THEN RAISE EXCEPTION '이미 쓰고 있는 주소(slug)입니다.';
+  WHEN check_violation THEN RAISE EXCEPTION '주소(slug)나 강수 설정이 올바르지 않습니다.';
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_finish
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_finish(p_run_id uuid, p_picks jsonb, p_anon_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid    uuid := auth.uid();
+  v_run    public.fun_worldcup_runs%ROWTYPE;
+  v_cur    integer[];
+  v_next   integer[];
+  v_len    integer;
+  v_idx    integer := 0;
+  v_pick   jsonb;
+  v_a      integer;
+  v_b      integer;
+  v_w      integer;
+  v_top    integer;
+  v_bottom integer;
+  v_ms     integer;
+BEGIN
+  SELECT * INTO v_run FROM public.fun_worldcup_runs WHERE id = p_run_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION '판을 찾을 수 없습니다.'; END IF;
+
+  IF NOT ((v_uid IS NOT NULL AND v_run.user_id = v_uid)
+       OR (p_anon_id IS NOT NULL AND v_run.anon_id = p_anon_id)) THEN
+    RAISE EXCEPTION '이 판을 제출할 권한이 없습니다.';
+  END IF;
+
+  IF v_run.status <> 'started' THEN RAISE EXCEPTION '이미 끝난 판입니다.'; END IF;
+
+  IF jsonb_typeof(p_picks) IS DISTINCT FROM 'array' OR jsonb_array_length(p_picks) <> v_run.size - 1 THEN
+    RAISE EXCEPTION '선택 기록이 올바르지 않습니다.';
+  END IF;
+
+  v_cur := v_run.bracket;
+  WHILE cardinality(v_cur) > 1 LOOP
+    v_len := cardinality(v_cur);
+    v_next := '{}';
+    FOR i IN 1 .. v_len / 2 LOOP
+      v_a := v_cur[2 * i - 1];
+      v_b := v_cur[2 * i];
+      v_pick := p_picks -> v_idx;
+
+      IF jsonb_typeof(v_pick->'w') IS DISTINCT FROM 'number' THEN
+        RAISE EXCEPTION '선택 기록이 올바르지 않습니다.';
+      END IF;
+      v_w := (v_pick->>'w')::integer;
+      IF v_w IS DISTINCT FROM v_a AND v_w IS DISTINCT FROM v_b THEN
+        RAISE EXCEPTION '선택 기록이 대진과 맞지 않습니다.';
+      END IF;
+
+      IF v_run.top_first[v_idx + 1] THEN
+        v_top := v_a; v_bottom := v_b;
+      ELSE
+        v_top := v_b; v_bottom := v_a;
+      END IF;
+
+      v_ms := CASE WHEN jsonb_typeof(v_pick->'ms') = 'number'
+                   THEN LEAST(GREATEST((v_pick->>'ms')::numeric, 0), 600000)::integer END;
+
+      INSERT INTO public.fun_worldcup_matches
+        (run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id, picked_top, decide_ms)
+      VALUES (v_run.id, v_len, i, v_top, v_bottom, v_w, v_w = v_top, v_ms);
+
+      v_next := v_next || v_w;
+      v_idx := v_idx + 1;
+    END LOOP;
+    v_cur := v_next;
+  END LOOP;
+
+  UPDATE public.fun_worldcup_runs
+  SET status = 'finished', champion_game_id = v_cur[1], finished_at = now()
+  WHERE id = v_run.id;
+
+  RETURN public.fun_wc_get_run(v_run.id);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_get_run
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_get_run(p_run_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_run    public.fun_worldcup_runs%ROWTYPE;
+  v_theme  public.fun_worldcup_themes%ROWTYPE;
+  v_total  bigint;
+  v_stats  record;
+BEGIN
+  SELECT * INTO v_run FROM public.fun_worldcup_runs WHERE id = p_run_id AND status = 'finished';
+  IF NOT FOUND THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_theme FROM public.fun_worldcup_themes WHERE id = v_run.theme_id;
+
+  SELECT count(*) INTO v_total FROM public._fun_wc_eligible_runs(v_run.theme_id, 'all');
+  SELECT * INTO v_stats FROM public._fun_wc_game_stats(v_run.theme_id, 'all') s
+  WHERE s.game_id = v_run.champion_game_id;
+
+  RETURN jsonb_build_object(
+    'run_id', v_run.id,
+    'slug', v_theme.slug,
+    'title', v_theme.title,
+    'size', v_run.size,
+    'finished_at', v_run.finished_at,
+    'champion', (
+      SELECT jsonb_build_object(
+        'id', v_run.champion_game_id, 'name', g.name, 'image', g.image,
+        'min_players', g.min_players, 'max_players', g.max_players, 'playingtime', g.playingtime)
+      FROM (SELECT 1) one LEFT JOIN public.games g ON g.id = v_run.champion_game_id
+    ),
+    'champion_stats', jsonb_build_object(
+      'total_runs', v_total,
+      'championships', COALESCE(v_stats.championships, 0),
+      'wins', COALESCE(v_stats.wins, 0),
+      'losses', COALESCE(v_stats.losses, 0)
+    ),
+    'path', (
+      SELECT COALESCE(jsonb_agg(jsonb_build_object(
+               'round_size', m.round_size,
+               'opponent', jsonb_build_object('id', o.id, 'name', o.name, 'image', o.image)
+             ) ORDER BY m.round_size DESC), '[]'::jsonb)
+      FROM public.fun_worldcup_matches m
+      LEFT JOIN public.games o ON o.id = CASE WHEN m.winner_game_id = m.top_game_id
+                                              THEN m.bottom_game_id ELSE m.top_game_id END
+      WHERE m.run_id = v_run.id AND m.winner_game_id = v_run.champion_game_id
+    )
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_list_themes
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_list_themes()
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT COALESCE(jsonb_agg(
+           jsonb_build_object(
+             'slug', x.slug, 'title', x.title, 'description', x.description,
+             'allowed_sizes', to_jsonb(x.allowed_sizes),
+             'pool_count', x.pool_count, 'play_count', x.play_count
+           ) ORDER BY x.sort_order, x.created_at), '[]'::jsonb)
+  FROM (
+    SELECT t.*,
+      (SELECT count(*) FROM public._fun_wc_pool(t.filter)) AS pool_count,
+      (SELECT count(*) FROM public.fun_worldcup_runs r
+        WHERE r.theme_id = t.id AND r.status = 'finished') AS play_count
+    FROM public.fun_worldcup_themes t
+    WHERE t.is_active
+  ) x
+  WHERE x.pool_count >= 16
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_mark_abandoned
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_mark_abandoned()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_count integer;
+BEGIN
+  UPDATE public.fun_worldcup_runs
+  SET status = 'abandoned'
+  WHERE status = 'started' AND started_at < now() - interval '6 hours';
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_ranking
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_ranking(p_slug text, p_scope text DEFAULT 'member'::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_theme public.fun_worldcup_themes%ROWTYPE;
+  v_total bigint;
+  c_min_matches constant integer := 20;
+BEGIN
+  IF p_scope NOT IN ('member', 'all') THEN RAISE EXCEPTION '집계 범위가 올바르지 않습니다.'; END IF;
+
+  SELECT * INTO v_theme FROM public.fun_worldcup_themes WHERE slug = p_slug AND is_active;
+  IF NOT FOUND THEN RAISE EXCEPTION '월드컵을 찾을 수 없습니다.'; END IF;
+
+  SELECT count(*) INTO v_total FROM public._fun_wc_eligible_runs(v_theme.id, p_scope);
+
+  RETURN jsonb_build_object(
+    'slug', v_theme.slug,
+    'title', v_theme.title,
+    'scope', p_scope,
+    'total_runs', v_total,
+    'min_matches', c_min_matches,
+    'items', (
+      SELECT COALESCE(jsonb_agg(jsonb_build_object(
+               'id', s.game_id, 'name', g.name, 'image', g.image,
+               'wins', s.wins, 'losses', s.losses,
+               'win_rate', CASE WHEN s.wins + s.losses > 0
+                                THEN round(s.wins::numeric / (s.wins + s.losses), 4) END,
+               'appearances', s.appearances,
+               'championships', s.championships,
+               'champion_rate', round(s.championships::numeric / s.appearances, 4),
+               'ranked', s.wins + s.losses >= c_min_matches
+             ) ORDER BY (s.wins + s.losses >= c_min_matches) DESC,
+                        s.wins::numeric / NULLIF(s.wins + s.losses, 0) DESC NULLS LAST,
+                        s.wins DESC), '[]'::jsonb)
+      FROM public._fun_wc_game_stats(v_theme.id, p_scope) s
+      JOIN public.games g ON g.id = s.game_id
+    )
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_start
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_start(p_slug text, p_size integer, p_anon_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid     uuid := auth.uid();
+  v_theme   public.fun_worldcup_themes%ROWTYPE;
+  v_recent  integer;
+  v_bracket integer[];
+  v_top     boolean[];
+  v_run_id  uuid;
+BEGIN
+  IF v_uid IS NULL AND p_anon_id IS NULL THEN
+    RAISE EXCEPTION '기기 식별자가 필요합니다.';
+  END IF;
+
+  SELECT * INTO v_theme FROM public.fun_worldcup_themes WHERE slug = p_slug AND is_active;
+  IF NOT FOUND THEN RAISE EXCEPTION '월드컵을 찾을 수 없습니다.'; END IF;
+
+  IF p_size IS NULL OR NOT (p_size = ANY (v_theme.allowed_sizes)) THEN
+    RAISE EXCEPTION '지원하지 않는 강수입니다.';
+  END IF;
+
+  SELECT count(*) INTO v_recent
+  FROM public.fun_worldcup_runs
+  WHERE started_at > now() - interval '1 hour'
+    AND ((v_uid IS NOT NULL AND user_id = v_uid)
+      OR (p_anon_id IS NOT NULL AND anon_id = p_anon_id));
+  IF v_recent >= 20 THEN
+    RAISE EXCEPTION '너무 많이 시작했어요. 잠시 후 다시 해 주세요.';
+  END IF;
+
+  SELECT array_agg(p.id) INTO v_bracket
+  FROM (
+    SELECT id FROM public._fun_wc_pool(v_theme.filter) AS pool(id)
+    ORDER BY random()
+    LIMIT p_size
+  ) p;
+  IF COALESCE(cardinality(v_bracket), 0) < p_size THEN
+    RAISE EXCEPTION '후보가 부족합니다.';
+  END IF;
+
+  SELECT array_agg(random() < 0.5) INTO v_top FROM generate_series(1, p_size - 1);
+
+  INSERT INTO public.fun_worldcup_runs (theme_id, size, bracket, top_first, user_id, anon_id, is_member)
+  VALUES (v_theme.id, p_size, v_bracket, v_top, v_uid, p_anon_id, v_uid IS NOT NULL)
+  RETURNING id INTO v_run_id;
+
+  RETURN jsonb_build_object(
+    'run_id', v_run_id,
+    'slug', v_theme.slug,
+    'title', v_theme.title,
+    'size', p_size,
+    'top_first', to_jsonb(v_top),
+    'candidates', (
+      SELECT jsonb_agg(jsonb_build_object(
+               'id', g.id, 'name', g.name, 'image', g.image,
+               'min_players', g.min_players, 'max_players', g.max_players,
+               'playingtime', g.playingtime
+             ) ORDER BY b.ord)
+      FROM unnest(v_bracket) WITH ORDINALITY AS b(id, ord)
+      JOIN public.games g ON g.id = b.id
+    )
+  );
 END;
 $function$
 
