@@ -3,12 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { stashPendingRoute } from '../lib/pendingRoute';
-
-const EXEMPT_ROLES = ['admin', 'executive', 'payment_exempt'];
-import { LINKS } from '../infoData';
-import logo from '../logo.png'; // [NEW] Logo Import
-import LoginTooltip from './LoginTooltip'; // [NEW] Login Tooltip Import
+import logo from '../logo.png';
 import './Header.css';
+
+// 2026-09-29 메인 개편: 한 줄짜리 작은 헤더. 부원 가입 안내는 메인 본문(Home)으로 옮겼다.
 
 const Header = () => {
     const { user, profile, roles, logout, loading: authLoading } = useAuth(); // [FIX] signOut -> logout
@@ -70,62 +68,35 @@ const Header = () => {
         // 반응을 주면 "숨은 관리자 입구가 존재한다"는 사실만 알려주는 꼴이다.
     };
 
-    const isExempt = user && roles.some(r => EXEMPT_ROLES.includes(r));
-    const isPaidUser = user && (profile?.is_paid || isExempt);
-
     return (
-        <header className={`hero-header ${isPaidUser ? 'paid-user' : ''}`}>
-            {/* 상단: 로그인 정보 & 마이페이지 */}
-            <div className="header-top-bar">
-                {authLoading ? (
-                    // 인증 하이드레이션 중: 로그인 버튼 플래시 방지용 자리 홀더
-                    <div className="user-action-group" aria-hidden="true" style={{ visibility: 'hidden' }}>
-                        <Link to="/login" className="header-sm-btn">로그인</Link>
-                        <Link to="/signup" className="header-sm-btn outline">회원가입</Link>
-                    </div>
-                ) : user ? (
-                    <div className="user-action-group">
-                        <span className="user-greeting">
-                            <span className="branding-icon">🕊️</span>
-                            <span className="user-name">{profile?.name || user?.user_metadata?.full_name || '부원'}님</span>
-                        </span>
-                        <Link to="/mypage" className="header-sm-btn">마이페이지</Link>
-                        <button onClick={handleLogout} className="header-sm-btn outline">로그아웃</button>
-                    </div>
-                ) : (
-                    <div className="user-action-group">
-                        <LoginTooltip />
-                        <Link to="/login" className="header-sm-btn">로그인</Link>
-                        <Link to="/signup" className="header-sm-btn outline">회원가입</Link>
-                    </div>
-                )}
+        <header className="site-header">
+            <div className="site-brand">
+                {/* 로고 5연타 = 숨은 관리자 입구 (위 handleLogoClick) */}
+                <img
+                    src={logo}
+                    alt="덜지니어스 대여소 로고"
+                    className="site-brand-logo"
+                    onClick={handleLogoClick}
+                />
+                <Link to="/" className="site-brand-text">덜지니어스 대여소</Link>
             </div>
 
-            {/* 하단: 로고 & 메인 액션 */}
-            <div className="header-main-bar">
-                <div className="branding-container">
-                    <img
-                        src={logo}
-                        alt="덜지니어스 대여소 로고"
-                        className="branding-logo-img"
-                        onClick={handleLogoClick}
-                        style={{ cursor: 'pointer' }}
-                    />
-                    <Link to="/" className="branding-text-link">
-                        <h1 className="branding-text">덜지니어스 대여소</h1>
-                    </Link>
-                </div>
-
-                {/* [MODIFIED] Hide Join Button for Paid Users */}
-                {!isPaidUser && (
-                    <a
-                        href={LINKS.recruit}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="recruit-pill-btn"
-                    >
-                        🚀 부원 가입 신청하기
-                    </a>
+            <div className="site-header-actions">
+                {authLoading ? (
+                    // 인증 하이드레이션 중: 로그인 버튼 플래시 방지용 자리 홀더
+                    <span className="site-header-btn is-placeholder" aria-hidden="true">로그인</span>
+                ) : user ? (
+                    <>
+                        <Link to="/mypage" className="site-header-btn">
+                            {profile?.name || user?.user_metadata?.full_name || '부원'}님
+                        </Link>
+                        <button type="button" onClick={handleLogout} className="site-header-btn is-ghost">로그아웃</button>
+                    </>
+                ) : (
+                    <>
+                        <Link to="/login" className="site-header-btn is-primary">로그인</Link>
+                        <Link to="/signup" className="site-header-btn is-ghost">회원가입</Link>
+                    </>
                 )}
             </div>
         </header>

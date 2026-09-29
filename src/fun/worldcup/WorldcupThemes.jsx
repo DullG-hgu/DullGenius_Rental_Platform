@@ -1,6 +1,6 @@
 // 월드컵 테마 목록 (/play/worldcup) + 강수 선택 하단 시트
-import React, { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchWorldcupThemes } from '../../api_fun';
 import { clearProgress, loadProgress } from './worldcupProgress';
 import { getMatchState, ROUND_LABEL } from './worldcupLogic';
@@ -24,6 +24,8 @@ const WorldcupThemes = () => {
     const [sheetTheme, setSheetTheme] = useState(null);
     const [size, setSize] = useState(DEFAULT_SIZE);
     const [saved, setSaved] = useState(() => loadProgress());
+    const [searchParams] = useSearchParams();
+    const autoOpened = useRef(false);
 
     const load = useCallback(() => {
         setError(null);
@@ -45,6 +47,19 @@ const WorldcupThemes = () => {
         setSize(sizes.includes(DEFAULT_SIZE) ? DEFAULT_SIZE : sizes[sizes.length - 1]);
         setSheetTheme(theme);
     };
+
+    // 한 번에 강수 선택까지: ?theme=slug 로 들어왔거나 열린 테마가 하나뿐이면 시트를 바로 연다
+    useEffect(() => {
+        if (!themes || autoOpened.current) return;
+        const wanted = searchParams.get('theme');
+        const target = themes.find((t) => t.slug === wanted) ?? (themes.length === 1 ? themes[0] : null);
+        if (target) {
+            autoOpened.current = true;
+            openSheet(target);
+        }
+        // openSheet 는 렌더마다 새로 만들어지지만 themes 기준 1회만 실행하면 된다
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [themes, searchParams]);
 
     const start = () => {
         clearProgress();

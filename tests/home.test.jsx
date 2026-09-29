@@ -4,10 +4,12 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom';
 import Home from '../src/pages/Home';
 
-const { data, fetchOfficeStatus, fetchOfficeHoursConfig } = vi.hoisted(() => ({
-    data: {}, fetchOfficeStatus: vi.fn(), fetchOfficeHoursConfig: vi.fn(),
+const { data, auth, fetchOfficeStatus, fetchOfficeHoursConfig } = vi.hoisted(() => ({
+    data: {}, auth: {}, fetchOfficeStatus: vi.fn(), fetchOfficeHoursConfig: vi.fn(),
 }));
 vi.mock('../src/contexts/GameDataContext', () => ({ useGameData: () => data }));
+vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => auth }));
+vi.mock('../src/api_fun', () => ({ fetchWorldcupRanking: () => Promise.resolve({ items: [] }) }));
 vi.mock('../src/api', () => ({ sendLog: vi.fn(), fetchOfficeStatus, fetchOfficeHoursConfig }));
 vi.mock('../src/components/Header', () => ({ default: () => null }));
 vi.mock('../src/components/InfoBar', () => ({ default: () => null }));
@@ -21,18 +23,19 @@ const mount = async () => {
 beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-08T08:59:50Z'));
-    Object.assign(data, { games: [], trending: [], loading: false, error: null, trendingError: null, refreshGames: vi.fn() });
+    Object.assign(data, { games: [], trending: [], config: null, loading: false, error: null, trendingError: null, refreshGames: vi.fn() });
+    Object.assign(auth, { user: null, profile: null, roles: [], loading: false });
     fetchOfficeStatus.mockReset().mockResolvedValue({ open: true, auto_close_at: '2026-09-08T09:00:00Z' });
     fetchOfficeHoursConfig.mockReset().mockResolvedValue({ schedule_text: '평일 17~18시 운영', auto_close_hour: 18 });
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-it('updates the closing banner at the deadline without requiring a server refresh', async () => {
+it('hides the office card at the deadline without requiring a server refresh (closed = nothing shown)', async () => {
     await mount();
     expect(screen.getByText(/18:00에 오피스아워가 끝나요/)).toBeTruthy();
     await act(async () => { vi.advanceTimersByTime(10_000); });
-    expect(screen.queryByText(/오피스아워가 끝나요/)).toBeNull();
-    expect(screen.getByText('평일 17~18시 운영')).toBeTruthy();
+    expect(screen.queryByText(/오피스아워/)).toBeNull();
+    expect(screen.queryByText('평일 17~18시 운영')).toBeNull();
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(1);
 });
 
@@ -56,27 +59,59 @@ it('refreshes office status on poll, focus and visibility, and cleans up after u
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(4);
 });
 
-it('does not label an office fetch error as closed and supports retry', async () => {
+it('shows nothing when the office status fails to load, and recovers on the next poll', async () => {
     fetchOfficeStatus.mockRejectedValue(new Error('offline'));
     await mount();
-    expect(screen.getByRole('alert').textContent).toContain('운영 상태를 확인하지 못했습니다');
-    expect(screen.queryByText('평일 17~18시 운영')).toBeNull();
-    fetchOfficeStatus.mockResolvedValue({ open: false });
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '운영 상태 다시 시도' })); });
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByText('평일 17~18시 운영')).toBeTruthy();
+    expect(screen.queryByText(/오피스아워/)).toBeNull();
+    fetchOfficeStatus.mockResolvedValue({ open: true });
+    fetchOfficeHoursConfig.mockResolvedValue({ banner_title: '오피스아워 진행 중!' });
+    await act(async () => { vi.advanceTimersByTime(30_000); });
+    expect(screen.getByText('오피스아워 진행 중!')).toBeTruthy();
 });
 
-it('offers native links for main navigation, ranked games and the full ranking', async () => {
+it('offers native links for search, browsing, ranked games, the full ranking and the worldcup', async () => {
     data.trending = Array.from({ length: 6 }, (_, id) => ({ id, name: `게임 ${id}`, category: '전략' }));
     await mount();
-    const category = screen.getByRole('link', { name: /추천 보드게임/ });
-    expect(category.getAttribute('href')).toBe('/categories');
-    category.focus();
-    expect(document.activeElement).toBe(category);
-    expect(screen.getByRole('link', { name: /직접 검색하기/ }).getAttribute('href')).toBe('/search');
+    const search = screen.getByRole('link', { name: /어떤 게임을 찾으세요/ });
+    expect(search.getAttribute('href')).toBe('/search');
+    search.focus();
+    expect(document.activeElement).toBe(search);
+    expect(screen.getByRole('link', { name: /게임 모두 보기/ }).getAttribute('href')).toBe('/search');
+    expect(screen.getByRole('link', { name: /카테고리별로/ }).getAttribute('href')).toBe('/categories');
     expect(screen.getByRole('link', { name: /게임 0/ }).getAttribute('href')).toBe('/game/0');
-    expect(screen.getByRole('link', { name: /인기 순위 더보기/ }).getAttribute('href')).toBe('/search?type=trending');
+    expect(screen.getByRole('link', { name: '전체 순위' }).getAttribute('href')).toBe('/search?type=trending');
+    expect(screen.getByRole('link', { name: /이상형 월드컵/ }).getAttribute('href')).toBe('/play/worldcup?theme=all-boardgames');
+});
+
+it('puts non-member short-term rental near the top only for signed-out visitors', async () => {
+    const view = await mount();
+    expect(screen.getByRole('link', { name: /비회원 단기 대여/ }).getAttribute('href')).toBe('/org-rental');
+    view.unmount();
+    Object.assign(auth, { user: { id: 'u1' }, profile: { name: '부원', is_paid: true } });
+    await mount();
+    expect(screen.queryByRole('link', { name: /비회원 단기 대여/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /부원 가입 신청/ })).toBeNull();
+});
+
+it('shows admin recommendation bundles as switchable tags with a detail link', async () => {
+    data.games = [
+        { id: 1, name: '카탄', category: '보드게임', tags: '#팀모임' },
+        { id: 2, name: '스플렌더', category: '보드게임', tags: '#룸메' },
+    ];
+    data.config = [
+        { key: 'a', label: '🎲 팀모임 추천', value: '#팀모임' },
+        { key: 'b', label: '🏠 룸메 추천', value: '#룸메' },
+    ];
+    await mount();
+    expect(screen.getByRole('tab', { name: '#팀모임', selected: true })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /카탄/ })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /자세히 보기/ }).getAttribute('href')).toBe(`/search?query=${encodeURIComponent('#팀모임')}`);
+    await act(async () => { vi.advanceTimersByTime(6_000); });
+    expect(screen.getByRole('tab', { name: '#룸메', selected: true })).toBeTruthy();
+    fireEvent.click(screen.getByRole('tab', { name: '#팀모임' }));
+    await act(async () => { vi.advanceTimersByTime(12_000); });
+    expect(screen.getByRole('tab', { name: '#팀모임', selected: true })).toBeTruthy();
 });
 
 it.each(['error', 'trendingError'])('shows %s with retry instead of zero-game rankings', async key => {

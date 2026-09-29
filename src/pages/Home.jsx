@@ -1,26 +1,36 @@
-import React, { useEffect, useCallback, useState } from 'react';
+// src/pages/Home.jsx
+// 최종 수정일: 2026.09.29 (메인 개편)
+// 설명: 메인 — 오피스아워(운영 중일 때만) · 검색 · 인기 게임 · 놀이터 · 상황별 추천 · 하단 정보
+//   색은 강조색 하나(보라) + 무채색. 상황별 추천은 관리자 설정(app_config.recommendations) 그대로.
+
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGameData } from '../contexts/GameDataContext';
-import { getOptimizedImageUrl } from '../utils/imageOptimizer';
+import { useAuth } from '../contexts/AuthContext';
 import InfoBar from '../components/InfoBar';
 import InfoModal from '../components/InfoModal';
 import PoweredByBGG from '../components/PoweredByBGG';
-import Header from '../components/Header'; // [NEW] Header Component
-import LazyImage from '../components/common/LazyImage'; // [NEW] Lazy Image
+import Header from '../components/Header';
 import { sendLog, fetchOfficeStatus, fetchOfficeHoursConfig } from '../api';
-import './Home.css'; // [NEW] External CSS
+import { fetchWorldcupRanking } from '../api_fun';
+import { LINKS } from '../infoData';
+import { HomeGameCard, RecommendationDeck } from './home/HomeSections';
+import './Home.css';
+
+const EXEMPT_ROLES = ['admin', 'executive', 'payment_exempt'];
+const DEFAULT_OPEN_COLOR = 'linear-gradient(135deg, #1a5c2a, #27ae60)';
+const CLOSING_SOON_COLOR = 'linear-gradient(135deg, #7d3800, #e67e22)';
 
 const Home = () => {
-    const { games, trending, loading, error, trendingError, refreshGames } = useGameData();
+    const { games, trending, config, loading, error, trendingError, refreshGames } = useGameData();
+    const { user, profile, roles = [], loading: authLoading } = useAuth();
     const [officeStatus, setOfficeStatus] = useState(null);
     const [officeHoursConfig, setOfficeHoursConfig] = useState(null);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
+    const [wcTop, setWcTop] = useState(null);
 
     const [now, setNow] = useState(Date.now);
-    const [officeError, setOfficeError] = useState(false);
-    const [officeRetry, setOfficeRetry] = useState(0);
 
-    // Office schedules are Korea time even when the visitor's browser is abroad.
     const getCloseTime = () => {
         if (officeStatus?.auto_close_at) return new Date(officeStatus.auto_close_at);
         if (officeHoursConfig?.auto_close_hour != null) {
@@ -31,7 +41,8 @@ const Home = () => {
         return null;
     };
     const closeTime = getCloseTime();
-    const isOfficeOpen = !officeError && officeStatus?.open &&
+    // 운영 중일 때만 카드를 보여준다. 닫혀 있거나 상태를 못 불러오면 아무것도 표시하지 않는다.
+    const isOfficeOpen = officeStatus?.open &&
         (!officeStatus.auto_close_at || now < new Date(officeStatus.auto_close_at).getTime());
     const msToClose = closeTime ? closeTime.getTime() - now : null;
     const isClosingSoon = isOfficeOpen && msToClose > 0 && msToClose <= 30 * 60 * 1000;
@@ -47,13 +58,12 @@ const Home = () => {
             pending = true;
             setNow(Date.now());
             try {
-                const [status, config] = await Promise.all([fetchOfficeStatus(), fetchOfficeHoursConfig()]);
+                const [status, officeConfig] = await Promise.all([fetchOfficeStatus(), fetchOfficeHoursConfig()]);
                 if (!active) return;
                 setOfficeStatus(status);
-                setOfficeHoursConfig(config);
-                setOfficeError(false);
+                setOfficeHoursConfig(officeConfig);
             } catch {
-                if (active) setOfficeError(true);
+                // 못 불러오면 직전 상태를 유지한다 (처음부터 실패면 카드 없음). 30초 뒤 다시 시도.
             } finally {
                 pending = false;
             }
@@ -71,16 +81,23 @@ const Home = () => {
             window.removeEventListener('focus', refreshOffice);
             document.removeEventListener('visibilitychange', onVisible);
         };
-    }, [officeRetry]);
+    }, []);
+
+    // 놀이터 카드의 "지금 1위" (순위 표본이 찬 게임이 있을 때만)
+    useEffect(() => {
+        let active = true;
+        fetchWorldcupRanking('all-boardgames', 'all')
+            .then((r) => { if (active) setWcTop(r?.items?.find((i) => i.ranked) ?? null); })
+            .catch(() => {});
+        return () => { active = false; };
+    }, []);
 
     useEffect(() => {
-        // 페이지 진입 로그
         if (!loading) {
             sendLog(null, 'VIEW', { value: 'Home Page' });
         }
     }, [loading]);
 
-    // 스크롤 위치 복원 (Home) - 뒤로가기 복원 후 즉시 삭제
     useEffect(() => {
         const savedScrollY = sessionStorage.getItem('home_scroll_y');
         if (savedScrollY) {
@@ -89,189 +106,126 @@ const Home = () => {
         }
     }, []);
 
-    // [OPTIMIZATION] useCallback for handler
     const saveScroll = useCallback(() => {
         sessionStorage.setItem('home_scroll_y', window.scrollY);
     }, []);
 
-    // [PERF] 전체 스피너 제거. 레이아웃은 즉시 렌더하고 트렌딩만 스켈레톤 처리.
+    const isPaidUser = user && (profile?.is_paid || roles.some((r) => EXEMPT_ROLES.includes(r)));
+    const browsableCount = useMemo(() => games.filter((g) => g.name && g.category !== 'TRPG').length, [games]);
+    const officeIcon = isClosingSoon
+        ? '⏰'
+        : (officeHoursConfig?.banner_icon && officeHoursConfig.banner_icon !== '🟢' ? officeHoursConfig.banner_icon : null);
 
     return (
         <div className="home-container">
-            {/* [1] 헤더 (로고, 로그인, 입부신청) - [RESTORED] */}
             <Header />
 
-            {/* 처음 방문자용 가이드 진입점 — 모두에게 노출, 비강제 */}
-            <button
-                type="button"
-                onClick={() => setIsGuideOpen(true)}
-                className="home-guide-entry"
-            >
-                <span aria-hidden="true">🆕</span>
-                <span>처음이신가요? 이용 가이드</span>
-                <span aria-hidden="true" className="home-guide-entry-arrow">→</span>
-            </button>
-
-            {officeError && (
-                <div className="home-status-message" role="alert">
-                    <p>오피스아워 운영 상태를 확인하지 못했습니다.</p>
-                    <button type="button" onClick={() => setOfficeRetry(value => value + 1)}>운영 상태 다시 시도</button>
-                </div>
-            )}
-
-            {/* 운영 예정 시간 안내 (오프라인일 때) */}
-            {!officeError && !isOfficeOpen && officeHoursConfig && (
-                <div style={{
-                    margin: "12px 16px 0",
-                    padding: "11px 16px",
-                    background: "rgba(100, 120, 160, 0.1)",
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    border: "1px solid rgba(100, 120, 160, 0.2)",
-                    fontSize: "0.9rem",
-                    color: "#555"
-                }}>
-                    <span style={{ fontSize: "1.1rem" }}>{officeHoursConfig.schedule_icon || '📅'}</span>
-                    <span>{officeHoursConfig.schedule_text || officeHoursConfig.offline_text || '현재 오피스아워를 운영하고 있지 않아요'}</span>
-                </div>
-            )}
-
-            {/* 오피스아워 배너 */}
             {isOfficeOpen && (
-                <div style={{
-                    margin: "12px 16px 0",
-                    padding: "14px 20px",
-                    background: isClosingSoon
-                        ? "linear-gradient(135deg, #7d3800, #e67e22)"
-                        : (officeHoursConfig?.banner_color ?? "linear-gradient(135deg, #1a5c2a, #27ae60)"),
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    color: "white",
-                    fontWeight: "bold",
-                    fontSize: "1rem",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
-                }}>
-                    <span style={{ fontSize: "1.4rem" }}>
-                        {isClosingSoon ? '⏰' : (officeHoursConfig?.banner_icon ?? '🟢')}
-                    </span>
+                <section
+                    className="home-office"
+                    style={{ background: isClosingSoon ? CLOSING_SOON_COLOR : (officeHoursConfig?.banner_color ?? DEFAULT_OPEN_COLOR) }}
+                >
+                    {officeIcon
+                        ? <span className="home-office-icon" aria-hidden="true">{officeIcon}</span>
+                        : <span className="home-office-dot" aria-hidden="true" />}
                     <div>
-                        <div>
+                        <div className="home-office-title">
                             {isClosingSoon
                                 ? `${closeTimeStr}에 오피스아워가 끝나요!`
                                 : (officeHoursConfig?.banner_title ?? '오피스아워 진행 중!')}
                         </div>
-                        <div style={{ fontWeight: "normal", fontSize: "0.82rem", opacity: 0.85, marginTop: "2px" }}>
+                        <div className="home-office-sub">
                             {isClosingSoon
                                 ? '마감 전에 방문해 주세요'
                                 : (officeHoursConfig?.banner_subtitle ?? '지금 방문하시면 게임을 대여할 수 있어요')}
                         </div>
                     </div>
-                </div>
+                </section>
             )}
 
-            {/* [2] 메인 내비게이션 (Big Buttons) */}
-            <section className="home-nav-section">
-                <Link
-                    to="/categories" onClick={saveScroll}
-                    className="home-nav-btn category">
-                    <div className="nav-icon">✨</div>
-                    <div className="nav-title">추천 보드게임</div>
-                    <div className="nav-desc">카테고리로 찾기</div>
+            <section className="home-search">
+                <Link to="/search" onClick={saveScroll} className="home-search-box">
+                    <span aria-hidden="true">🔍</span>
+                    <span>어떤 게임을 찾으세요?</span>
                 </Link>
-
-                <Link
-                    to="/search" onClick={saveScroll}
-                    className="home-nav-btn search">
-                    <div className="nav-icon">🔍</div>
-                    <div className="nav-title">직접 검색하기</div>
-                    <div className="nav-desc">게임명, 필터</div>
-                </Link>
+                <div className="home-browse">
+                    <Link to="/search" onClick={saveScroll}>게임 모두 보기{browsableCount ? ` (${browsableCount})` : ''} →</Link>
+                    <Link to="/categories" onClick={saveScroll}>카테고리별로 →</Link>
+                </div>
             </section>
 
+            {/* 비로그인: 비회원 단기 대여를 위로 (로그인하면 하단 정보에만) */}
+            {!authLoading && !user && (
+                <Link to="/org-rental" className="home-org-card">
+                    <span>
+                        <strong>비회원 단기 대여</strong>
+                        <span>동아리·단체 행사에 보드게임이 필요하다면</span>
+                    </span>
+                    <span aria-hidden="true">→</span>
+                </Link>
+            )}
 
-
-            {/* [4] 요즘 뜨는 게임 (Horizontal Scroll) */}
-            <section className="trending-section">
-                <h2 className="section-title" style={{ paddingLeft: "20px" }}>🔥 요즘 뜨는 게임</h2>
+            <section className="home-section">
+                <div className="home-section-head">
+                    <h2>요즘 뜨는 게임</h2>
+                    <Link to="/search?type=trending" onClick={saveScroll}>전체 순위</Link>
+                </div>
                 {(error || trendingError) && (
                     <div className="home-status-message" role="alert">
-                        <p>{error ? '게임 목록을' : '인기 순위를'} 불러오지 못했습니다.</p>
+                        <p>게임 목록을 불러오지 못했습니다.</p>
                         <button type="button" onClick={refreshGames}>게임 목록 다시 시도</button>
                     </div>
                 )}
                 {!loading && !error && !trendingError && trending.length === 0 && (
                     <p className="home-status-message">최근 7일간 집계된 인기 게임이 없습니다.</p>
                 )}
-                <div className="trending-list">
-                    {loading && trending.length === 0 && (
-                        [0, 1, 2, 3, 4].map(i => (
-                            <div key={`skel-${i}`} className="trending-item" aria-hidden="true">
-                                <div className="trending-skeleton-img" />
-                                <div className="trending-skeleton-line" />
-                                <div className="trending-skeleton-line short" />
-                            </div>
-                        ))
-                    )}
-                    {!error && !trendingError && trending.slice(0, 5).map((game, index) => (
-                        <Link
-                            key={game.id}
-                            to={`/game/${game.id}`}
-                            state={{ game, from: '/' }}
-                            onClick={saveScroll}
-                            className="trending-item"
-                        >
-                            <div className="trending-img-wrapper">
-                                <div className="trending-rank">
-                                    {index + 1}위
-                                </div>
-                                {game.image ? (
-                                    <LazyImage
-                                        src={getOptimizedImageUrl(game.image, 200)}
-                                        fallbackSrc={game.image}
-                                        alt={game.name}
-                                        className="trending-img"
-                                        aspectRatio="1/1"
-                                    />
-                                ) : (
-                                    <div className="trending-img" style={{ background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <span style={{ fontSize: '1.5em' }}>🎲</span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="trending-name">
-                                {game.name}
-                            </div>
-                            <div className="trending-category">{game.category}</div>
-                        </Link>
+                <div className="home-rail">
+                    {loading && trending.length === 0 && Array.from({ length: 4 }, (_, i) => (
+                        <div key={`skel-${i}`} className="home-game is-skeleton" aria-hidden="true" />
                     ))}
-
-                    {/* [NEW] 더보기 버튼 (순위 확장) */}
-                    {!error && !trendingError && trending.length > 5 && (
-                        <Link
-                            to="/search?type=trending"
-                            onClick={saveScroll}
-                            className="trending-item more-item"
-                        >
-                            <div className="trending-img-wrapper more-wrapper">
-                                <div className="more-content">
-                                    <span className="more-icon">➡️</span>
-                                    <span>인기 순위<br />더보기</span>
-                                </div>
-                            </div>
-                        </Link>
-                    )}
+                    {!error && !trendingError && trending.slice(0, 8).map((game, index) => (
+                        <HomeGameCard key={game.id} game={game} rank={index + 1} onClick={saveScroll} />
+                    ))}
                 </div>
             </section>
 
-            {/* [5] 하단 정보 바 (InfoBar) - [MOVED TO FOOTER] */}
+            <section className="home-section">
+                <div className="home-section-head">
+                    <h2>놀이터</h2>
+                </div>
+                <Link to="/play/worldcup?theme=all-boardgames" onClick={saveScroll} className="home-play-card">
+                    <span className="home-play-icon" aria-hidden="true">🏆</span>
+                    <span className="home-play-body">
+                        <span className="home-play-name">보드게임 이상형 월드컵</span>
+                        <span className="home-play-sub">
+                            {wcTop ? `지금 1위 · ${wcTop.name}` : '둘 중 하나! 나의 원픽 보드게임 찾기'}
+                        </span>
+                    </span>
+                    <span className="home-play-go" aria-hidden="true">→</span>
+                </Link>
+            </section>
+
+            {!error && config?.length > 0 && (
+                <RecommendationDeck games={games} recs={config} onGameClick={saveScroll} />
+            )}
+
+            {!authLoading && !isPaidUser && (
+                <a href={LINKS.recruit} target="_blank" rel="noopener noreferrer" className="home-recruit">
+                    <span>
+                        <strong>덜지니어스 부원 가입 신청</strong>
+                        <span>가입 안내와 신청서를 확인해 보세요</span>
+                    </span>
+                    <span aria-hidden="true">→</span>
+                </a>
+            )}
+
             <footer className="home-footer">
+                <button type="button" className="home-guide" onClick={() => setIsGuideOpen(true)}>
+                    처음이신가요? 이용 가이드 →
+                </button>
                 {!loading && !error && <InfoBar games={games} />}
                 <div className="home-footer-bgg">
-                    <PoweredByBGG variant="light" height={26} />
+                    <PoweredByBGG variant="light" height={22} />
                     <span className="home-footer-bgg-caption">Game data from BoardGameGeek</span>
                 </div>
             </footer>

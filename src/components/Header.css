@@ -1,211 +1,73 @@
-.hero-header {
-    background: white;
-    padding: 5px 20px 10px 20px;
-    /* Reduced from 15px */
-    /* Increased bottom padding */
-    border-bottom: 1px solid #eee;
-    transition: all 0.3s ease;
-}
+/* src/components/Header.css — 메인 상단 한 줄 헤더 (2026-09-29 개편) */
 
-/* [NEW] 유료 회원용 헤더 스타일 (버튼이 없을 때 여백 조정) */
-.hero-header.paid-user {
-    padding-bottom: 15px;
-    /* Reduced from 25px */
-    /* 헤더 내부 여백을 좀 더 줘서 안정감 확보 */
-    margin-bottom: 0px;
-    /* Reduced from 10px */
-    /* 헤더와 바디 사이의 추가 공간 */
-}
-
-/* 상단 바 (우측 정렬) */
-.header-top-bar {
+.site-header {
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: 0px;
-    /* Reduced from 2px */
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 16px;
 }
 
-.user-action-group {
+.site-brand {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.9em;
-    position: relative;
-    /* [FIX] Tooltip absolute positioning anchor */
-    z-index: 20;
-    /* Ensure it stays above other content */
+    min-width: 0;
 }
 
-.user-greeting {
-    margin-right: 5px;
-    color: #555;
-    font-weight: 500;
-}
-
-.user-name {
-    font-weight: bold;
-    color: #333;
-}
-
-.header-sm-btn {
-    padding: 6px 14px;
-    border: 1px solid #3498db;
-    background: #3498db;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.85em;
-    color: white;
-    transition: all 0.2s;
-    font-weight: 600;
-}
-
-.header-sm-btn:hover {
-    background: #2980b9;
-    border-color: #2980b9;
-    color: white;
-}
-
-.header-sm-btn.outline {
-    background: white;
-    color: #3498db;
-    border: 1px solid #3498db;
-}
-
-.header-sm-btn.outline:hover {
-    background: #ebf5fb;
-    color: #2980b9;
-}
-
-/* [FIX] 메인 바 레이아웃 추가 (버튼 늘어남 방지) */
-.header-main-bar {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* 가로 늘어남 방지 (Center align) */
-    width: 100%;
-    margin-top: 5px;
-    margin-bottom: 10px;
-}
-
-/* 중앙 브랜딩 영역 */
-.header-branding {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-}
-
-/* [MODIFIED] 로고 컨테이너 스타일 */
-.branding-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    /* 로고와 텍스트 사이 간격 */
-}
-
-/* 텍스트 링크 스타일 */
-.branding-text-link {
-    text-decoration: none;
-}
-
-.branding-text {
-    font-size: 3.2em;
-    /* Increased from 2.8em */
-    font-weight: 800;
-    color: #333;
-    letter-spacing: -3px;
-    /* Tighter tracking for large text */
-    word-break: keep-all;
-    /* 텍스트 줄바꿈 방지 */
-    line-height: 1.0;
-    /* 높이 초과 방지를 위해 줄간격 조절 */
-}
-
-.branding-logo-img {
-    height: 70px;
-    /* 로고 크기 조절 */
-    width: auto;
+.site-brand-logo {
+    width: 30px;
+    height: 30px;
     object-fit: contain;
-    /* transition: transform 0.1s; */
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
-.branding-logo-img:active {
-    transform: scale(0.95);
-    /* 클릭 시 살짝 눌리는 효과 */
-}
-
-/* 새 아이콘 🕊️ 사용 시 이모지 스타일 조정 */
-.branding-icon {
-    font-size: 1.0em;
-}
-
-/* 부원 가입 신청 버튼 (Pill Shape) */
-/* 부원 가입 신청 버튼 (Premium Style - Clean & Professional) */
-.recruit-pill-btn {
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-    /* Blue Theme Gradient */
-    color: white;
+.site-brand-text {
+    color: #1d1a26;
     text-decoration: none;
-    padding: 12px 30px;
-    border-radius: 50px;
     font-weight: 800;
-    font-size: 1.1em;
-    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
-    /* Elegant Glow */
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    position: relative;
+    font-size: 1.05rem;
+    white-space: nowrap;
     overflow: hidden;
-    z-index: 1;
+    text-overflow: ellipsis;
 }
 
-.recruit-pill-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: 0.5s;
-    z-index: -1;
+.site-header-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
-.recruit-pill-btn:hover::before {
-    left: 100%;
-    /* Shine effect */
+.site-header-btn {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid #ece9f3;
+    background: #fff;
+    color: #1d1a26;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
 }
 
-.recruit-pill-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.5);
+.site-header-btn.is-primary {
+    background: #5b2bd6;
+    border-color: #5b2bd6;
+    color: #fff;
 }
 
-/* @keyframes removed to clean up */
-@media (max-width: 480px) {
-    .branding-title {
-        font-size: 1.8em;
-    }
+.site-header-btn.is-ghost {
+    border-color: transparent;
+    background: transparent;
+    color: #6b6878;
+    padding: 0 8px;
+}
 
-    .branding-logo-img {
-        height: 50px;
-    }
-
-    .branding-text {
-        font-size: 2.2em;
-        /* Increased from 1.6em */
-        margin-left: 5px;
-    }
-
-    .recruit-pill-btn {
-        padding: 8px 20px;
-        font-size: 0.9em;
-    }
-
-    .header-top-bar {
-        margin-bottom: 15px;
-    }
+.site-header-btn.is-placeholder {
+    visibility: hidden;
 }

@@ -23,16 +23,6 @@ const FunHub = () => {
                     </div>
                 </Link>
 
-                <div className="fun-hub-card is-soon" aria-disabled="true">
-                    <span className="fun-hub-icon" aria-hidden="true">🧭</span>
-                    <div>
-                        <div className="fun-hub-name">
-                            보드게임 성향 검사
-                            <span className="fun-soon-badge">준비 중</span>
-                        </div>
-                        <div className="fun-hub-desc">나는 어떤 게이머일까?</div>
-                    </div>
-                </div>
             </div>
         </div>
     );
