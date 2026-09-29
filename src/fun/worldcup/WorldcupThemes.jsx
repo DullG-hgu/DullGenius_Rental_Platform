@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchWorldcupThemes } from '../../api_fun';
+import { useAuth } from '../../contexts/AuthContext';
 import { clearProgress, loadProgress } from './worldcupProgress';
 import { getMatchState, ROUND_LABEL } from './worldcupLogic';
 import '../fun.css';
@@ -27,6 +28,7 @@ const describeProgress = (saved) => {
 
 const WorldcupThemes = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [themes, setThemes] = useState(null);
     const [error, setError] = useState(null);
     const [sheetTheme, setSheetTheme] = useState(null);
@@ -216,6 +218,12 @@ const WorldcupThemes = () => {
                                 랭킹 먼저 보기 →
                             </Link>
                         </div>
+                        {/* 수집 목적 안내 (spec §6-2) */}
+                        <p className="wc-record-note">
+                            {user
+                                ? '로그인 상태라 고른 기록이 내 계정에 저장돼 「내 취향 리포트」와 추천에 쓰여요.'
+                                : '로그인하지 않고 한 판은 익명 통계에만 쓰여요.'}
+                        </p>
                     </div>
                 </div>
             )}

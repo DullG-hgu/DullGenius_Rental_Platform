@@ -11,7 +11,7 @@
 const KEY = 'pr';
 
 // 로그인·가입 후 복귀할 수 있는 앱 내부 화면만 허용한다.
-const ALLOWED = /^(?:\/admin-secret(?:\/[\w-]+)*|\/event\/[\w-]+(?:\/[\w-]+)?|\/game\/\d+|\/mypage|\/search|\/categories|\/)$/;
+const ALLOWED = /^(?:\/admin-secret(?:\/[\w-]+)*|\/event\/[\w-]+(?:\/[\w-]+)?|\/game\/\d+|\/mypage|\/play\/me|\/search|\/categories|\/)$/;
 
 export const getSafeReturnPath = (path) => {
     if (typeof path !== 'string' || /[\\\s]/.test(path)) return null;

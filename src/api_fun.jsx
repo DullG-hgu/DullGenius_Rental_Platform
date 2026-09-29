@@ -67,6 +67,10 @@ export const fetchWorldcupRanking = (slug, scope = 'member') =>
 export const fetchWorldcupInsights = (slug, scope = 'all', minSample = 5) =>
     callRpc('fun_wc_insights', { p_slug: slug, p_scope: scope, p_min: minSample });
 
+// [Member] 내 보드게임 취향 — 본인 기록만 (auth.uid() 기준, 비로그인은 호출 불가)
+// { runs_finished, runs_total, matches, unplayed_marks, top_picks[], champions[], curious[], genres[] }
+export const fetchMyWorldcupProfile = () => callRpc('fun_wc_my_profile');
+
 // [Public] 게임 정보 오류 신고 — field: players | playtime | image | name | other
 // shownValue: 신고 당시 화면에 보인 값 (운영진이 무엇을 보고 신고했는지 알 수 있게)
 export const reportGameInfo = ({ gameId, field, note = null, shownValue = null, source = 'worldcup' }) =>

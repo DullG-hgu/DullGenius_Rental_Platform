@@ -33,6 +33,7 @@ const WorldcupThemes = lazy(() => import('./fun/worldcup/WorldcupThemes'));
 const WorldcupPlay = lazy(() => import('./fun/worldcup/WorldcupPlay'));
 const WorldcupResult = lazy(() => import('./fun/worldcup/WorldcupResult'));
 const WorldcupRanking = lazy(() => import('./fun/worldcup/WorldcupRanking'));
+const WorldcupMyReport = lazy(() => import('./fun/worldcup/WorldcupMyReport'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginTooltip from './components/LoginTooltip';
@@ -80,6 +81,7 @@ function App() {
                   <Route path="/event/team/:code" element={<EventTeamJoinPage />} />
                   <Route path="/org-rental" element={<OrgRental />} />
                   <Route path="/play" element={<FunHub />} />
+                  <Route path="/play/me" element={<WorldcupMyReport />} />
                   <Route path="/play/worldcup" element={<WorldcupThemes />} />
                   <Route path="/play/worldcup/:slug/play" element={<WorldcupPlay />} />
                   <Route path="/play/worldcup/:slug/ranking" element={<WorldcupRanking />} />

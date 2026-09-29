@@ -382,6 +382,15 @@ const MyPage = () => {
         )}
       </section>
 
+      {/* 2-a. 내 보드게임 취향 (이상형 월드컵 기록, 본인만 봄) */}
+      <Link to="/play/me" style={{ ...styles.card, marginTop: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", textDecoration: "none", color: "inherit" }}>
+        <span>
+          <strong style={{ display: "block", fontSize: "1.05em", color: "#34495e" }}>🏆 내 보드게임 취향</strong>
+          <span style={{ fontSize: "0.85em", color: "#7f8c8d" }}>이상형 월드컵에서 고른 기록으로 보는 내 취향</span>
+        </span>
+        <span aria-hidden="true">→</span>
+      </Link>
+
       {/* 2-b. 과거 대여 이력 섹션 */}
       <section style={{ ...styles.card, marginTop: "20px" }}>
         <h3

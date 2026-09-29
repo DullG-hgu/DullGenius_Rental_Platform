@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 8:47:08
+-- 생성 시각: 2026. 9. 29. PM 8:53:56
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 112개 함수
+-- 총 113개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -2633,6 +2633,90 @@ BEGIN
   WHERE status = 'started' AND started_at < now() - interval '6 hours';
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_count;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_my_profile
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_my_profile()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION '로그인이 필요합니다.'; END IF;
+
+  RETURN (
+    WITH my_runs AS (
+      SELECT * FROM public.fun_worldcup_runs WHERE user_id = v_uid
+    ),
+    sides AS (
+      SELECT m.top_game_id AS gid, m.winner_game_id = m.top_game_id AS won, m.top_unplayed AS unplayed
+      FROM public.fun_worldcup_matches m JOIN my_runs r ON r.id = m.run_id
+      UNION ALL
+      SELECT m.bottom_game_id, m.winner_game_id = m.bottom_game_id, m.bottom_unplayed
+      FROM public.fun_worldcup_matches m JOIN my_runs r ON r.id = m.run_id
+    ),
+    per_game AS (
+      SELECT gid,
+             count(*) FILTER (WHERE won) AS wins,
+             count(*) FILTER (WHERE NOT won) AS losses,
+             bool_or(unplayed) AS ever_unplayed,
+             count(*) FILTER (WHERE won AND unplayed) AS unplayed_wins
+      FROM sides GROUP BY gid
+    ),
+    genre_sides AS (
+      SELECT btrim(gen) AS genre, s.won
+      FROM sides s JOIN public.games g ON g.id = s.gid, unnest(g.genres) AS gen
+      WHERE btrim(gen) <> ''
+    ),
+    genres AS (
+      SELECT genre, count(*) FILTER (WHERE won) AS wins, count(*) AS total
+      FROM genre_sides GROUP BY genre HAVING count(*) >= 3
+    ),
+    champs AS (
+      SELECT champion_game_id AS gid, count(*) AS n, max(finished_at) AS last_at
+      FROM my_runs WHERE status = 'finished' AND champion_game_id IS NOT NULL
+      GROUP BY champion_game_id
+    )
+    SELECT jsonb_build_object(
+      'runs_finished', (SELECT count(*) FROM my_runs WHERE status = 'finished'),
+      'runs_total', (SELECT count(*) FROM my_runs),
+      'matches', (SELECT count(*) FROM sides) / 2,
+      'unplayed_marks', (SELECT count(*) FROM sides WHERE unplayed),
+      'top_picks', (
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                 'id', p.gid, 'name', g.name, 'image', g.image, 'wins', p.wins, 'losses', p.losses
+               ) ORDER BY p.wins DESC, p.wins::numeric / (p.wins + p.losses) DESC), '[]'::jsonb)
+        FROM (SELECT * FROM per_game WHERE wins > 0 ORDER BY wins DESC, wins::numeric / (wins + losses) DESC LIMIT 10) p
+        JOIN public.games g ON g.id = p.gid
+      ),
+      'champions', (
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                 'id', c.gid, 'name', g.name, 'image', g.image, 'times', c.n
+               ) ORDER BY c.last_at DESC), '[]'::jsonb)
+        FROM (SELECT * FROM champs ORDER BY last_at DESC LIMIT 10) c
+        JOIN public.games g ON g.id = c.gid
+      ),
+      'curious', (
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                 'id', p.gid, 'name', g.name, 'image', g.image, 'wins', p.unplayed_wins
+               ) ORDER BY p.unplayed_wins DESC), '[]'::jsonb)
+        FROM (SELECT * FROM per_game WHERE unplayed_wins > 0 ORDER BY unplayed_wins DESC LIMIT 10) p
+        JOIN public.games g ON g.id = p.gid
+      ),
+      'genres', (
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                 'genre', genre, 'pick_rate', round(wins::numeric / total, 4), 'seen', total
+               ) ORDER BY (wins + 1)::numeric / (total + 2) DESC, total DESC), '[]'::jsonb)
+        FROM (SELECT * FROM genres ORDER BY (wins + 1)::numeric / (total + 2) DESC, total DESC LIMIT 8) x
+      )
+    )
+  );
 END;
 $function$
 

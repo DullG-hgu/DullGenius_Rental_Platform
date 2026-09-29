@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { fetchWorldcupRun } from '../../api_fun';
 import { useGameData } from '../../contexts/GameDataContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { ROUND_LABEL } from './worldcupLogic';
 import '../fun.css';
 
@@ -15,6 +16,7 @@ const WorldcupResult = () => {
     const navigate = useNavigate();
     const { showToast } = useToast();
     const { games } = useGameData();
+    const { user } = useAuth();
 
     const fresh = location.state?.fresh === true;
     const [result, setResult] = useState(location.state?.result ?? undefined);
@@ -148,6 +150,9 @@ const WorldcupResult = () => {
                     </div>
                 ) : (
                     <Link to="/play/worldcup" className="fun-secondary-btn wc-link-btn">나도 해보기</Link>
+                )}
+                {fresh && user && (
+                    <Link to="/play/me" className="wc-text-link">내 취향 리포트 보기 →</Link>
                 )}
                 <Link to={`/play/worldcup/${result.slug}/ranking`} className="wc-text-link">전체 랭킹 보기 →</Link>
             </div>

@@ -27,7 +27,7 @@ function renderRoute(path) {
 }
 
 describe('safe login return paths', () => {
-    it.each(['/event/tournament/apply', '/event/team/ABC123', '/admin-secret/events/abc', '/game/1?from=search'])('preserves %s', path => {
+    it.each(['/event/tournament/apply', '/event/team/ABC123', '/admin-secret/events/abc', '/game/1?from=search', '/play/me'])('preserves %s', path => {
         expect(getSafeReturnPath(path)).toBe(path);
     });
     it.each(['https://evil.invalid', '//evil.invalid', '/\\evil.invalid', '/event/%2f%2fevil.invalid', 'javascript:alert(1)', '/login', '/signup', '/event/..\\evil'])('rejects %s', path => {
