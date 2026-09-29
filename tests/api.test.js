@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const database = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn() }));
+const database = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn(), auth: { getSession: vi.fn() } }));
 // This is a complete module replacement: no Supabase client or network is created.
 vi.mock('../src/lib/supabaseClient', () => ({ supabase: database }));
-import { fetchTrending, fetchGameById, fetchReviews, fetchOfficeStatus, fetchOfficeHoursConfig } from '../src/api';
+import { fetchTrending, fetchGameById, fetchReviews, fetchOfficeStatus, fetchOfficeHoursConfig, sendLog, increaseViewCount } from '../src/api';
 
 function tableResult(result) {
   const query = {
@@ -74,4 +74,27 @@ describe('office configuration reads', () => {
     tableResult({ data: null, error: null });
     await expect(fetchOfficeHoursConfig()).resolves.toMatchObject({ auto_close_hour: 21, auto_close_minute: 0 });
   });
+});
+
+describe('signed-out visitors do not call RPCs that anon may not execute', () => {
+    // send_user_log · increment_view_count 는 anon EXECUTE 가 없다 (2026-09-02). 부르면 401 만 남는다.
+    it('skips logging and view counting without a session', async () => {
+        database.auth.getSession.mockResolvedValue({ data: { session: null } });
+        await sendLog(1, 'VIEW', { value: 'x' });
+        await increaseViewCount(1);
+        expect(database.rpc).not.toHaveBeenCalled();
+    });
+    it('keeps logging and view counting for signed-in users (members, kiosk)', async () => {
+        database.auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
+        database.rpc.mockResolvedValue({ data: null, error: null });
+        await sendLog(1, 'VIEW', 'Home Page');
+        await increaseViewCount(7);
+        expect(database.rpc).toHaveBeenCalledWith('send_user_log', { p_game_id: 1, p_action_type: 'VIEW', p_details: { value: 'Home Page' } });
+        expect(database.rpc).toHaveBeenCalledWith('increment_view_count', { p_game_id: 7 });
+    });
+    it('treats a failing session lookup as signed out', async () => {
+        database.auth.getSession.mockRejectedValue(new Error('storage blocked'));
+        await sendLog(null, 'VIEW', {});
+        expect(database.rpc).not.toHaveBeenCalled();
+    });
 });

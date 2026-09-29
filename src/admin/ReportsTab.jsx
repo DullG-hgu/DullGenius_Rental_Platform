@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDamageReports, fetchGameRequests, updateDamageReportStatus, updateGameRequestStatus } from '../api';
+import { fetchGameInfoReports } from '../api_fun';
 import { useToast } from '../contexts/ToastContext';
+import GameInfoReportsPanel from './GameInfoReportsPanel';
 
 function ReportsTab() {
     const [activeSubTab, setActiveSubTab] = useState('damage'); // 'damage' or 'request'
     const [reports, setReports] = useState([]);
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [infoPending, setInfoPending] = useState(null); // 게임 정보 오류 신고 대기 건수
     const { showToast } = useToast();
 
     const [selectedReport, setSelectedReport] = useState(null); // [NEW] Modal state
 
     useEffect(() => {
         loadData();
+        fetchGameInfoReports('pending').then((l) => setInfoPending((l ?? []).length)).catch(() => {});
     }, []);
 
     const loadData = async () => {
@@ -98,10 +102,18 @@ function ReportsTab() {
                     >
                         🎲 게임 신청 ({requests.filter(r => r.status === 'pending').length})
                     </button>
+                    <button
+                        style={activeSubTab === 'info' ? styles.activeSubTab : styles.subTab}
+                        onClick={() => setActiveSubTab('info')}
+                    >
+                        🧩 정보 오류 {infoPending !== null && `(${infoPending})`}
+                    </button>
                 </div>
             </div>
 
-            {loading ? (
+            {activeSubTab === 'info' ? (
+                <GameInfoReportsPanel onPendingCount={setInfoPending} />
+            ) : loading ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#bbb' }}>로딩 중...</div>
             ) : (
                 <div className="admin-table-wrap" style={styles.tableContainer}>

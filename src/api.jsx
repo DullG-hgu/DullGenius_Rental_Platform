@@ -230,12 +230,25 @@ export const updateReview = async (reviewId, updatedData) => {
   if (error) throw error;
 };
 
+// 비회원(anon)은 send_user_log·increment_view_count 실행 권한이 없다 (2026-09-02 anon 노출면 강화).
+// 세션 없이 부르면 서버가 거절하고 콘솔에 401 만 남으므로 요청 자체를 보내지 않는다.
+// getSession 은 저장된 세션만 읽는다 (네트워크 요청 없음). 키오스크 계정은 세션이 있어 그대로 기록된다.
+const hasSignedInSession = async () => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return Boolean(data?.session);
+  } catch {
+    return false;
+  }
+};
+
 /**
  * 게임의 조회수를 1 증가시킵니다.
  * 
  * @param {number} gameId - 게임 ID
  */
 export const increaseViewCount = async (gameId) => {
+  if (!(await hasSignedInSession())) return;
   await supabase.rpc('increment_view_count', { p_game_id: gameId });
 };
 
@@ -1570,6 +1583,7 @@ export const withdrawAccount = async (userId) => {
 export const sendLog = async (gameId, actionType, details) => {
   try {
     // [FIX] 상세 정보를 JSON 객체로 구조화 (통계 분석 용이성)
+    if (!(await hasSignedInSession())) return; // 비회원은 기록 권한이 없음 (위 hasSignedInSession 참고)
     const structuredDetails = typeof details === 'object' ? details : { value: details };
 
     await supabase.rpc('send_user_log', {
