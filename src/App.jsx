@@ -28,6 +28,9 @@ const EventPage = lazy(() => import('./event/EventPage'));
 const EventApplyPage = lazy(() => import('./event/EventApplyPage'));
 const EventTeamJoinPage = lazy(() => import('./event/EventTeamJoinPage'));
 const OrgRental = lazy(() => import('./pages/OrgRental'));
+const FunHub = lazy(() => import('./fun/FunHub'));
+const WorldcupThemes = lazy(() => import('./fun/worldcup/WorldcupThemes'));
+const WorldcupPlay = lazy(() => import('./fun/worldcup/WorldcupPlay'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginTooltip from './components/LoginTooltip';
@@ -74,6 +77,9 @@ function App() {
                   <Route path="/event/:slug/apply" element={<EventApplyPage />} />
                   <Route path="/event/team/:code" element={<EventTeamJoinPage />} />
                   <Route path="/org-rental" element={<OrgRental />} />
+                  <Route path="/play" element={<FunHub />} />
+                  <Route path="/play/worldcup" element={<WorldcupThemes />} />
+                  <Route path="/play/worldcup/:slug/play" element={<WorldcupPlay />} />
                   <Route path="/kiosk" element={<KioskPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
