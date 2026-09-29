@@ -169,11 +169,12 @@
 
 | 지표 | 정의 | 용도 |
 |---|---|---|
-| 1:1 승률 | `wins / (wins + losses)` | **랭킹 기본 정렬.** 표본 `wins+losses ≥ 20` 이상만 순위 표시 |
+| 1:1 승률 | `wins / (wins + losses)` — **완료·진행 중·이탈 판의 대결 전부** | **랭킹 기본 정렬.** 표본 `wins+losses ≥ 20` 이상만 순위 표시 |
 | 우승률 | `우승 횟수 / 그 게임이 대진에 포함된 판 수` | 등장 대비라서 무작위 추출의 편향을 줄임 |
 | 우승 비율 | `우승 횟수 / 전체 완료 판 수` | 결과 화면의 "N%가 우승시킴" |
 | 위치 편향 | 전체 대결 중 `picked_top` 비율 | 관리자 통계. 50%에서 크게 벗어나면 UI 점검 |
 | 완주율 | `finished / started` (강수별) | 관리자 통계. 강수 기본값 조정 근거 |
+| 이탈 지점 | 이탈 판이 마지막으로 도달한 라운드 분포 | 관리자 통계 (`dropoff`) |
 | 선호도 점수 (LATER) | 대결 기록 전체에 Bradley-Terry 적합 | 대진 운까지 보정한 순위 |
 
 - 개발자 계정(`tester` role)의 판은 모든 집계에서 제외
@@ -205,15 +206,16 @@ B안의 비회원 도배 제한 (서버에서):
 |---|---|---|
 | `fun_wc_list_themes()` | Y | 활성 테마 + 후보 수 + 참여 수 |
 | `fun_wc_start(p_slug, p_size, p_anon_id)` | Y (B안) | 풀 계산 → 추출 → `runs` 생성 → `{ run_id, bracket:[{id,name,image,players,time}], top_first }` 반환. 제한 초과 시 오류 |
-| `fun_wc_finish(p_run_id, p_anon_id, p_picks)` | Y (B안) | `p_picks` = 대결 순서대로 `[{winner_id, decide_ms}]`. 대진과 맞는지 검증 → `matches` 일괄 기록 → champion 기록. 본인 판(`user_id` 또는 `anon_id` 일치)만 가능. 이미 끝난 판이면 거부 |
+| `fun_wc_record(p_run_id, p_picks, p_anon_id)` | Y | 고를 때마다 **지금까지의 선택 전체**를 보냄(응답 대기 없음). 대진으로 처음부터 재검증하고 없는 대결만 추가 → 중복·순서 뒤바뀜에 안전. 기록된 것과 다른 선택은 거부. 끝난 판이면 `{ok:false}` 로 조용히 무시 |
+| `fun_wc_finish(p_run_id, p_picks, p_anon_id)` | Y | `p_picks` = 대결 순서대로 `[{w, ms}]` 전체. 같은 검증으로 빠진 대결을 채우고 champion 확정. 본인 판(`user_id` 또는 `anon_id` 일치)만 가능. 이미 끝난 판이면 거부 |
 | `fun_wc_get_run(p_run_id)` | Y | 결과·공유 화면용. **user_id·anon_id는 내려주지 않는다** |
 | `fun_wc_ranking(p_slug, p_scope)` | Y | `p_scope` = `member` / `all`. 게임별 승·패·승률·우승률 |
 | `fun_wc_admin_stats(p_slug, p_from, p_to)` | - | 관리자 통계. `REVOKE EXECUTE ... FROM PUBLIC, anon` |
 | `fun_wc_admin_upsert_theme(...)` / 활성 토글 | - | 테마 관리. 동일하게 anon 회수 |
 
 - 모두 `SECURITY DEFINER` + `SET search_path TO 'public', 'pg_temp'`
-- 적용 후 `npm run pull-schema` → `_LIVE/grants.sql`에서 anon=Y인 새 함수가 **위 표의 Y 행뿐인지** 확인
-- 중도 이탈 판: `started`로 남은 판을 크론이 일정 시간 뒤 `abandoned` 처리 (기존 cleanup 크론에 합침). 1차는 이탈 판의 부분 대결은 저장하지 않음 (§11-3)
+- 적용 후 `npm run pull-schema` → `_LIVE/grants.sql`에서 anon=Y인 새 함수가 **위 표의 Y 행뿐인지** 확인 (공개 6개)
+- 중도 이탈 판: 6시간 넘게 `started`인 판을 별도 크론 `fun-worldcup-abandon`(매시 17분)이 `abandoned` 처리. 이탈 전까지의 대결은 `fun_wc_record` 로 이미 저장돼 있음 (§11-3)
 
 ---
 
@@ -245,7 +247,7 @@ B안의 비회원 도배 제한 (서버에서):
 
 1. **비회원 처리**: B — 비회원도 참여, 통계는 회원/비회원 분리 집계
 2. **공개 랭킹 기본 범위**: 회원 기준, `전체` 토글 제공
-3. **중도 이탈 판의 부분 대결**: 1차 미저장 (`abandoned` 상태만 남김)
+3. **중도 이탈 판의 부분 대결**: ~~1차 미저장~~ → **저장** (같은 날 변경). 고를 때마다 `fun_wc_record` 로 진행분 전송. 1:1 승률에 포함, 등장·우승 지표에서는 제외
 4. **삭제된 게임의 기록**: FK 없이 보존, 조회 시 LEFT JOIN
 5. **1차 테마**: 「전체 보드게임」 하나. 장르 테마는 영문 장르 정리 후
 6. **머더미스터리·TRPG**: 1차 제외 (`category = '보드게임'`)

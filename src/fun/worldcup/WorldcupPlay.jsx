@@ -1,8 +1,9 @@
 // 월드컵 대결 화면 (/play/worldcup/:slug/play?size=16 | ?resume=1)
-// 대진·위아래 배치는 서버(fun_wc_start)가 정한 그대로 쓰고, 끝나면 선택 전체를 fun_wc_finish 로 한 번에 제출한다.
+// 대진·위아래 배치는 서버(fun_wc_start)가 정한 그대로 쓴다. 고를 때마다 fun_wc_record 로 진행분을 보내고(응답 대기 없음),
+// 마지막 선택에서 fun_wc_finish 로 우승을 확정한다.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { finishWorldcup, startWorldcup } from '../../api_fun';
+import { finishWorldcup, recordWorldcupPicks, startWorldcup } from '../../api_fun';
 import { getMatchState, getUpcomingCandidates, ROUND_LABEL } from './worldcupLogic';
 import { clearProgress, loadProgress, saveProgress } from './worldcupProgress';
 import '../fun.css';
@@ -126,6 +127,7 @@ const WorldcupPlay = () => {
             setChosenId(null);
             saveProgress(run, next);
             if (next.length === state.totalMatches) submit(next);
+            else recordWorldcupPicks(run.run_id, next); // 끝까지 안 하고 꺼도 여기까지의 대결은 남는다
         }, PICK_ANIMATION_MS);
     };
 

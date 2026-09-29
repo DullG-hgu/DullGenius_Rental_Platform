@@ -38,6 +38,14 @@ export const fetchWorldcupThemes = () => callRpc('fun_wc_list_themes');
 export const startWorldcup = (slug, size) =>
     callRpc('fun_wc_start', { p_slug: slug, p_size: size, p_anon_id: getFunAnonId() });
 
+// [Public] 진행 중 기록 — 고를 때마다 지금까지의 선택 전체를 보낸다. 끝까지 안 하고 끈 판의 대결도 모으기 위함.
+// fire-and-forget 전용: await·catch 없이 불러도 되도록 실패를 삼킨다 (빠진 대결은 다음 전송·finish 가 채움)
+export const recordWorldcupPicks = (runId, picks) => {
+    supabase
+        .rpc('fun_wc_record', { p_run_id: runId, p_picks: picks, p_anon_id: getFunAnonId() })
+        .then(() => {}, () => {});
+};
+
 // [Public] 판 제출 — picks = 대결 순서대로 [{ w: 승자 game_id, ms: 고른 시간 }]. 결과(getWorldcupRun 과 같은 모양) 반환
 export const finishWorldcup = (runId, picks) =>
     callRpc('fun_wc_finish', { p_run_id: runId, p_picks: picks, p_anon_id: getFunAnonId() });

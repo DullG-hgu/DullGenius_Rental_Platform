@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 5:41:14
+-- 생성 시각: 2026. 9. 29. PM 6:02:19
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -12,7 +12,7 @@
 --   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.
 
 -- ----------------------------------------------------------------
--- 함수 EXECUTE  (105개)
+-- 함수 EXECUTE  (107개)
 -- ----------------------------------------------------------------
 -- anon  auth  security  function
 --  -     -    INVOKER   _active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
@@ -20,6 +20,7 @@
 --  Y     Y    INVOKER   _event_generate_invite_code()
 --  Y     Y    INVOKER   _event_is_full(p_event_id uuid)
 --  Y     Y    INVOKER   _event_make_depositor_name(p_event_slug text, p_name text)
+--  -     -    INVOKER   _fun_wc_apply_picks(p_run fun_worldcup_runs, p_picks jsonb)
 --  -     -    INVOKER   _fun_wc_eligible_runs(p_theme_id uuid, p_scope text)
 --  -     -    INVOKER   _fun_wc_game_stats(p_theme_id uuid, p_scope text)
 --  -     -    INVOKER   _fun_wc_pool(p_filter jsonb)
@@ -69,6 +70,7 @@
 --  Y     Y    DEFINER   fun_wc_list_themes()
 --  -     -    DEFINER   fun_wc_mark_abandoned()
 --  Y     Y    DEFINER   fun_wc_ranking(p_slug text, p_scope text)
+--  Y     Y    DEFINER   fun_wc_record(p_run_id uuid, p_picks jsonb, p_anon_id uuid)
 --  Y     Y    DEFINER   fun_wc_start(p_slug text, p_size integer, p_anon_id uuid)
 --  -     Y    DEFINER   get_admin_analytics_activity(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)
 --  -     Y    DEFINER   get_admin_analytics_rankings(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)

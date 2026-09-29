@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 5:40:50
+-- 생성 시각: 2026. 9. 29. PM 6:01:54
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 105개 함수
+-- 총 107개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -142,6 +142,80 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: _fun_wc_apply_picks
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._fun_wc_apply_picks(p_run fun_worldcup_runs, p_picks jsonb)
+ RETURNS integer[]
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_n      integer;
+  v_cur    integer[] := p_run.bracket;
+  v_next   integer[];
+  v_len    integer;
+  v_idx    integer := 0;
+  v_pick   jsonb;
+  v_a      integer;
+  v_b      integer;
+  v_w      integer;
+  v_top    integer;
+  v_bottom integer;
+  v_ms     integer;
+BEGIN
+  IF jsonb_typeof(p_picks) IS DISTINCT FROM 'array' OR jsonb_array_length(p_picks) > p_run.size - 1 THEN
+    RAISE EXCEPTION '선택 기록이 올바르지 않습니다.';
+  END IF;
+  v_n := jsonb_array_length(p_picks);
+
+  WHILE cardinality(v_cur) > 1 AND v_idx < v_n LOOP
+    v_len := cardinality(v_cur);
+    v_next := '{}';
+    FOR i IN 1 .. v_len / 2 LOOP
+      EXIT WHEN v_idx >= v_n;
+      v_a := v_cur[2 * i - 1];
+      v_b := v_cur[2 * i];
+      v_pick := p_picks -> v_idx;
+
+      IF jsonb_typeof(v_pick->'w') IS DISTINCT FROM 'number' THEN
+        RAISE EXCEPTION '선택 기록이 올바르지 않습니다.';
+      END IF;
+      v_w := (v_pick->>'w')::integer;
+      IF v_w IS DISTINCT FROM v_a AND v_w IS DISTINCT FROM v_b THEN
+        RAISE EXCEPTION '선택 기록이 대진과 맞지 않습니다.';
+      END IF;
+
+      IF p_run.top_first[v_idx + 1] THEN
+        v_top := v_a; v_bottom := v_b;
+      ELSE
+        v_top := v_b; v_bottom := v_a;
+      END IF;
+
+      v_ms := CASE WHEN jsonb_typeof(v_pick->'ms') = 'number'
+                   THEN LEAST(GREATEST((v_pick->>'ms')::numeric, 0), 600000)::integer END;
+
+      INSERT INTO public.fun_worldcup_matches
+        (run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id, picked_top, decide_ms)
+      VALUES (p_run.id, v_len, i, v_top, v_bottom, v_w, v_w = v_top, v_ms)
+      ON CONFLICT (run_id, round_size, match_no) DO NOTHING;
+
+      IF NOT FOUND THEN
+        PERFORM 1 FROM public.fun_worldcup_matches
+        WHERE run_id = p_run.id AND round_size = v_len AND match_no = i AND winner_game_id = v_w;
+        IF NOT FOUND THEN RAISE EXCEPTION '이미 기록된 선택과 다릅니다.'; END IF;
+      END IF;
+
+      v_next := v_next || v_w;
+      v_idx := v_idx + 1;
+    END LOOP;
+    v_cur := v_next;
+  END LOOP;
+
+  RETURN v_cur;
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: _fun_wc_eligible_runs
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public._fun_wc_eligible_runs(p_theme_id uuid, p_scope text)
@@ -173,21 +247,30 @@ AS $function$
   WITH er AS (
     SELECT * FROM public._fun_wc_eligible_runs(p_theme_id, p_scope)
   ),
+  any_run AS (
+    SELECT r.id
+    FROM public.fun_worldcup_runs r
+    WHERE r.theme_id = p_theme_id
+      AND (p_scope = 'all' OR r.is_member)
+      AND NOT EXISTS (
+        SELECT 1 FROM public.user_roles ur
+        WHERE ur.user_id = r.user_id AND ur.role_key = 'tester'
+      )
+  ),
   m AS (
-    SELECT m.* FROM public.fun_worldcup_matches m JOIN er ON er.id = m.run_id
+    SELECT m.* FROM public.fun_worldcup_matches m JOIN any_run ON any_run.id = m.run_id
   ),
   wl AS (
     SELECT winner_game_id AS gid, 1 AS w, 0 AS l FROM m
     UNION ALL
     SELECT CASE WHEN winner_game_id = top_game_id THEN bottom_game_id ELSE top_game_id END, 0, 1 FROM m
   ),
-  ap AS (SELECT unnest(bracket) AS gid FROM er),
-  a AS (SELECT gid, count(*) AS appearances FROM ap GROUP BY gid),
+  a AS (SELECT gid, count(*) AS appearances FROM (SELECT unnest(bracket) AS gid FROM er) ap GROUP BY gid),
   w AS (SELECT gid, sum(w)::bigint AS wins, sum(l)::bigint AS losses FROM wl GROUP BY gid),
   c AS (SELECT champion_game_id AS gid, count(*) AS champs FROM er GROUP BY champion_game_id)
-  SELECT a.gid, COALESCE(w.wins, 0), COALESCE(w.losses, 0), a.appearances, COALESCE(c.champs, 0)
-  FROM a
-  LEFT JOIN w USING (gid)
+  SELECT gid, COALESCE(w.wins, 0), COALESCE(w.losses, 0), COALESCE(a.appearances, 0), COALESCE(c.champs, 0)
+  FROM w
+  FULL JOIN a USING (gid)
   LEFT JOIN c USING (gid)
 $function$
 
@@ -2142,6 +2225,12 @@ BEGIN
     ),
     m AS (
       SELECT m.* FROM public.fun_worldcup_matches m JOIN r ON r.id = m.run_id
+    ),
+    dropped AS (
+      SELECT r.size, COALESCE(min(m.round_size), r.size) AS reached_round, count(m.*) AS played
+      FROM r LEFT JOIN m ON m.run_id = r.id
+      WHERE r.status = 'abandoned'
+      GROUP BY r.id, r.size
     )
     SELECT jsonb_build_object(
       'runs', jsonb_build_object(
@@ -2156,7 +2245,15 @@ BEGIN
                  'rate', round(f::numeric / NULLIF(n, 0), 4)) ORDER BY size), '[]'::jsonb)
         FROM (SELECT size, count(*) n, count(*) FILTER (WHERE status = 'finished') f FROM r GROUP BY size) x
       ),
+      'dropoff', (
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                 'size', size, 'reached_round', reached_round, 'runs', n, 'avg_played', avg_played)
+                 ORDER BY size, reached_round DESC), '[]'::jsonb)
+        FROM (SELECT size, reached_round, count(*) n, round(avg(played), 1) avg_played
+              FROM dropped GROUP BY size, reached_round) x
+      ),
       'matches', (SELECT count(*) FROM m),
+      'matches_from_unfinished', (SELECT count(*) FROM m JOIN r ON r.id = m.run_id WHERE r.status <> 'finished'),
       'top_pick_rate', (SELECT round(avg(picked_top::int)::numeric, 4) FROM m),
       'median_decide_ms', (SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY decide_ms) FROM m WHERE decide_ms IS NOT NULL)
     )
@@ -2217,19 +2314,9 @@ CREATE OR REPLACE FUNCTION public.fun_wc_finish(p_run_id uuid, p_picks jsonb, p_
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  v_uid    uuid := auth.uid();
-  v_run    public.fun_worldcup_runs%ROWTYPE;
-  v_cur    integer[];
-  v_next   integer[];
-  v_len    integer;
-  v_idx    integer := 0;
-  v_pick   jsonb;
-  v_a      integer;
-  v_b      integer;
-  v_w      integer;
-  v_top    integer;
-  v_bottom integer;
-  v_ms     integer;
+  v_uid   uuid := auth.uid();
+  v_run   public.fun_worldcup_runs%ROWTYPE;
+  v_final integer[];
 BEGIN
   SELECT * INTO v_run FROM public.fun_worldcup_runs WHERE id = p_run_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION '판을 찾을 수 없습니다.'; END IF;
@@ -2245,44 +2332,10 @@ BEGIN
     RAISE EXCEPTION '선택 기록이 올바르지 않습니다.';
   END IF;
 
-  v_cur := v_run.bracket;
-  WHILE cardinality(v_cur) > 1 LOOP
-    v_len := cardinality(v_cur);
-    v_next := '{}';
-    FOR i IN 1 .. v_len / 2 LOOP
-      v_a := v_cur[2 * i - 1];
-      v_b := v_cur[2 * i];
-      v_pick := p_picks -> v_idx;
-
-      IF jsonb_typeof(v_pick->'w') IS DISTINCT FROM 'number' THEN
-        RAISE EXCEPTION '선택 기록이 올바르지 않습니다.';
-      END IF;
-      v_w := (v_pick->>'w')::integer;
-      IF v_w IS DISTINCT FROM v_a AND v_w IS DISTINCT FROM v_b THEN
-        RAISE EXCEPTION '선택 기록이 대진과 맞지 않습니다.';
-      END IF;
-
-      IF v_run.top_first[v_idx + 1] THEN
-        v_top := v_a; v_bottom := v_b;
-      ELSE
-        v_top := v_b; v_bottom := v_a;
-      END IF;
-
-      v_ms := CASE WHEN jsonb_typeof(v_pick->'ms') = 'number'
-                   THEN LEAST(GREATEST((v_pick->>'ms')::numeric, 0), 600000)::integer END;
-
-      INSERT INTO public.fun_worldcup_matches
-        (run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id, picked_top, decide_ms)
-      VALUES (v_run.id, v_len, i, v_top, v_bottom, v_w, v_w = v_top, v_ms);
-
-      v_next := v_next || v_w;
-      v_idx := v_idx + 1;
-    END LOOP;
-    v_cur := v_next;
-  END LOOP;
+  v_final := public._fun_wc_apply_picks(v_run, p_picks);
 
   UPDATE public.fun_worldcup_runs
-  SET status = 'finished', champion_game_id = v_cur[1], finished_at = now()
+  SET status = 'finished', champion_game_id = v_final[1], finished_at = now()
   WHERE id = v_run.id;
 
   RETURN public.fun_wc_get_run(v_run.id);
@@ -2426,7 +2479,8 @@ BEGIN
                                 THEN round(s.wins::numeric / (s.wins + s.losses), 4) END,
                'appearances', s.appearances,
                'championships', s.championships,
-               'champion_rate', round(s.championships::numeric / s.appearances, 4),
+               'champion_rate', CASE WHEN s.appearances > 0
+                                     THEN round(s.championships::numeric / s.appearances, 4) END,
                'ranked', s.wins + s.losses >= c_min_matches
              ) ORDER BY (s.wins + s.losses >= c_min_matches) DESC,
                         s.wins::numeric / NULLIF(s.wins + s.losses, 0) DESC NULLS LAST,
@@ -2435,6 +2489,36 @@ BEGIN
       JOIN public.games g ON g.id = s.game_id
     )
   );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_record
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_record(p_run_id uuid, p_picks jsonb, p_anon_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_run public.fun_worldcup_runs%ROWTYPE;
+BEGIN
+  SELECT * INTO v_run FROM public.fun_worldcup_runs WHERE id = p_run_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION '판을 찾을 수 없습니다.'; END IF;
+
+  IF NOT ((v_uid IS NOT NULL AND v_run.user_id = v_uid)
+       OR (p_anon_id IS NOT NULL AND v_run.anon_id = p_anon_id)) THEN
+    RAISE EXCEPTION '이 판을 제출할 권한이 없습니다.';
+  END IF;
+
+  IF v_run.status <> 'started' THEN
+    RETURN jsonb_build_object('ok', false, 'reason', v_run.status);
+  END IF;
+
+  PERFORM public._fun_wc_apply_picks(v_run, p_picks);
+  RETURN jsonb_build_object('ok', true, 'recorded', jsonb_array_length(p_picks));
 END;
 $function$
 
