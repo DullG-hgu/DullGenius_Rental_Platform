@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 9:23:31
+-- 생성 시각: 2026. 9. 29. PM 9:50:24
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -325,7 +325,8 @@ CREATE OR REPLACE FUNCTION public._fun_wc_pool(p_filter jsonb)
 AS $function$
   SELECT g.id
   FROM public.games g
-  WHERE (p_filter->>'category' IS NULL OR g.category = p_filter->>'category')
+  WHERE g.base_game_id IS NULL  -- 확장판은 본판 없이 비교 대상이 아니므로 제외
+    AND (p_filter->>'category' IS NULL OR g.category = p_filter->>'category')
     AND (NOT COALESCE((p_filter->>'rentable_only')::boolean, false) OR COALESCE(g.is_rentable, true))
     AND (NOT COALESCE((p_filter->>'require_image')::boolean, false) OR NULLIF(btrim(g.image), '') IS NOT NULL)
     AND (
@@ -2783,6 +2784,7 @@ BEGIN
                         s.wins DESC), '[]'::jsonb)
       FROM public._fun_wc_game_stats(v_theme.id, p_scope) s
       JOIN public.games g ON g.id = s.game_id
+      WHERE g.base_game_id IS NULL  -- 과거 판의 확장판 전적은 보존하되 랭킹에는 노출하지 않는다
     )
   );
 END;

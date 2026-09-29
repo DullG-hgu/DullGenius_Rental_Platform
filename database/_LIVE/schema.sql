@@ -1,7 +1,7 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 9:23:59
+-- 생성 시각: 2026. 9. 29. PM 9:50:53
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -280,7 +280,8 @@ CREATE TABLE public.games (
   max_players int4,
   genres _text,
   min_playtime int4,
-  max_playtime int4
+  max_playtime int4,
+  base_game_id int4  -- FK → games(id)
 );
 
 -- ----------------------------------------------------------------
