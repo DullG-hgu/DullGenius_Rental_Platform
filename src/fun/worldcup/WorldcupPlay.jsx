@@ -8,7 +8,8 @@ import { useToast } from '../../contexts/ToastContext';
 import { useGameData } from '../../contexts/GameDataContext';
 import { translateGenre } from '../../constants/genreMap';
 import { getMatchState, getUpcomingCandidates, ROUND_LABEL } from './worldcupLogic';
-import { clearProgress, loadProgress, saveProgress } from './worldcupProgress';
+import { clearProgress, GUEST_TTL_MS, loadProgress, MEMBER_TTL_MS, saveProgress } from './worldcupProgress';
+import { useAuth } from '../../contexts/AuthContext';
 import '../fun.css';
 
 const PICK_ANIMATION_MS = 380;
@@ -187,6 +188,9 @@ const WorldcupPlay = () => {
     const { slug } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
+    // 로그인 판은 3일, 비로그인 판은 5시간 동안 이어하기
+    const persist = (r, p, u) => saveProgress(r, p, u, user ? MEMBER_TTL_MS : GUEST_TTL_MS);
 
     const [run, setRun] = useState(null);
     const [picks, setPicks] = useState([]);
@@ -224,7 +228,7 @@ const WorldcupPlay = () => {
         startWorldcup(slug, size, players)
             .then((data) => {
                 setRun(data);
-                saveProgress(data, [], []);
+                persist(data, [], []);
             })
             .catch((e) => setError(e?.message || '월드컵을 시작하지 못했어요.'));
     }, [slug, searchParams]);
@@ -275,7 +279,7 @@ const WorldcupPlay = () => {
         setUnplayed((prev) => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id); else next.add(id);
-            saveProgress(run, picks, [...next]);
+            persist(run, picks, [...next]);
             return next;
         });
     };
@@ -290,7 +294,7 @@ const WorldcupPlay = () => {
             setPicks(next);
             setChosenId(null);
             setCanUndo(true);
-            saveProgress(run, next, [...unplayed]);
+            persist(run, next, [...unplayed]);
             if (next.length === state.totalMatches) submit(next);
             else recordWorldcupPicks(run.run_id, next); // 끝까지 안 하고 꺼도 여기까지의 대결은 남는다
         }, PICK_ANIMATION_MS);
@@ -302,7 +306,7 @@ const WorldcupPlay = () => {
         const prev = picks.slice(0, -1);
         setPicks(prev);
         setCanUndo(false);
-        saveProgress(run, prev, [...unplayed]);
+        persist(run, prev, [...unplayed]);
         recordWorldcupPicks(run.run_id, prev);
     };
 

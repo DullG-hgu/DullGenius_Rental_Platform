@@ -69,6 +69,10 @@ export const fetchWorldcupRanking = (slug, scope = 'member') =>
 export const fetchWorldcupInsights = (slug, scope = 'all', minSample = 5) =>
     callRpc('fun_wc_insights', { p_slug: slug, p_scope: scope, p_min: minSample });
 
+// [Member] 내 진행 중인 판 (다른 기기에서 이어하기, 3일) — { run, picks, unplayed, last_activity } 또는 null
+export const fetchMyOpenWorldcupRun = (slug = null) =>
+    callRpc('fun_wc_my_open_run', slug ? { p_slug: slug } : {});
+
 // [Member] 내 보드게임 취향 — 본인 기록만 (auth.uid() 기준, 비로그인은 호출 불가)
 // { runs_finished, runs_total, matches, unplayed_marks, top_picks[], champions[], curious[], genres[] }
 export const fetchMyWorldcupProfile = () => callRpc('fun_wc_my_profile');

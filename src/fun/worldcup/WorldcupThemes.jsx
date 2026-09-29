@@ -1,9 +1,9 @@
 // 월드컵 테마 목록 (/play/worldcup) + 강수 선택 하단 시트
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { fetchWorldcupThemes } from '../../api_fun';
+import { fetchMyOpenWorldcupRun, fetchWorldcupThemes } from '../../api_fun';
 import { useAuth } from '../../contexts/AuthContext';
-import { clearProgress, loadProgress } from './worldcupProgress';
+import { clearProgress, loadProgress, MEMBER_TTL_MS, saveProgress } from './worldcupProgress';
 import { getMatchState, ROUND_LABEL } from './worldcupLogic';
 import '../fun.css';
 
@@ -28,7 +28,7 @@ const describeProgress = (saved) => {
 
 const WorldcupThemes = () => {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [themes, setThemes] = useState(null);
     const [error, setError] = useState(null);
     const [sheetTheme, setSheetTheme] = useState(null);
@@ -51,6 +51,28 @@ const WorldcupThemes = () => {
         window.scrollTo(0, 0);
         load();
     }, [load]);
+
+    // 로그인 상태면 서버에 있는 진행 중인 판도 찾는다 (다른 기기에서 하던 판 이어하기, 3일)
+    // 기기에 저장된 판과 다르면 더 최근에 진행한 쪽, 같은 판이면 더 많이 진행한 쪽을 쓴다
+    useEffect(() => {
+        if (authLoading || !user) return;
+        let active = true;
+        fetchMyOpenWorldcupRun()
+            .then((open) => {
+                if (!active || !open?.run) return;
+                const local = loadProgress();
+                const serverAt = new Date(open.last_activity).getTime();
+                const useServer = !local
+                    || (local.run.run_id === open.run.run_id
+                        ? open.picks.length > local.picks.length
+                        : serverAt > (local.savedAt || 0));
+                if (!useServer) return;
+                saveProgress(open.run, open.picks, open.unplayed ?? [], MEMBER_TTL_MS);
+                setSaved(loadProgress());
+            })
+            .catch(() => {});
+        return () => { active = false; };
+    }, [authLoading, user]);
 
     // 서버가 부전승 규칙(후보 > 강수/2)에 맞는 강수만 내려준다
     const sizesFor = (theme) => theme.allowed_sizes;
