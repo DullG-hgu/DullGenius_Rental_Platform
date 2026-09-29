@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 7:23:03
+-- 생성 시각: 2026. 9. 29. PM 7:30:26
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -2491,7 +2491,7 @@ AS $function$
 DECLARE
   v_theme public.fun_worldcup_themes%ROWTYPE;
   v_total bigint;
-  c_min_matches constant integer := 20;
+  c_min_matches constant integer := 10;
 BEGIN
   IF p_scope NOT IN ('member', 'all') THEN RAISE EXCEPTION '집계 범위가 올바르지 않습니다.'; END IF;
 
