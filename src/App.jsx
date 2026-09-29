@@ -31,6 +31,8 @@ const OrgRental = lazy(() => import('./pages/OrgRental'));
 const FunHub = lazy(() => import('./fun/FunHub'));
 const WorldcupThemes = lazy(() => import('./fun/worldcup/WorldcupThemes'));
 const WorldcupPlay = lazy(() => import('./fun/worldcup/WorldcupPlay'));
+const WorldcupResult = lazy(() => import('./fun/worldcup/WorldcupResult'));
+const WorldcupRanking = lazy(() => import('./fun/worldcup/WorldcupRanking'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginTooltip from './components/LoginTooltip';
@@ -80,6 +82,8 @@ function App() {
                   <Route path="/play" element={<FunHub />} />
                   <Route path="/play/worldcup" element={<WorldcupThemes />} />
                   <Route path="/play/worldcup/:slug/play" element={<WorldcupPlay />} />
+                  <Route path="/play/worldcup/:slug/ranking" element={<WorldcupRanking />} />
+                  <Route path="/play/worldcup/r/:runId" element={<WorldcupResult />} />
                   <Route path="/kiosk" element={<KioskPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

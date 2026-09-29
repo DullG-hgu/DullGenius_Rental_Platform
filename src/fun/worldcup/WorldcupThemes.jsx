@@ -1,6 +1,6 @@
 // 월드컵 테마 목록 (/play/worldcup) + 강수 선택 하단 시트
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { fetchWorldcupThemes } from '../../api_fun';
 import { clearProgress, loadProgress } from './worldcupProgress';
 import { getMatchState, ROUND_LABEL } from './worldcupLogic';
@@ -134,6 +134,9 @@ const WorldcupThemes = () => {
                             >
                                 {savedLabel ? `새로 ${size}강 시작` : `${size}강 시작하기`}
                             </button>
+                            <Link to={`/play/worldcup/${sheetTheme.slug}/ranking`} className="wc-text-link">
+                                랭킹 먼저 보기 →
+                            </Link>
                         </div>
                     </div>
                 </div>
