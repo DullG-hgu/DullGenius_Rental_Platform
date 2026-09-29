@@ -51,6 +51,34 @@ describe('worldcup bracket logic', () => {
         expect(last.map((c) => c.id).sort((x, y) => x - y)).toEqual([56, 81]);
     });
 
+    it('부전승 자리는 고르지 않고 통과하며, 위아래 배치는 자리 순번으로 센다', () => {
+        // 8자리 · 참가 5 · 부전승 3: [1,_][2,3][4,_][5,_]
+        const slots = [1, null, 2, 3, 4, null, 5, null].map((id) => (id === null ? null : { id }));
+        const tf = [true, false, true, true, true, false, true];
+        const s0 = getMatchState(slots, tf, []);
+        expect(s0.totalMatches).toBe(4);
+        expect(s0.roundSize).toBe(8);
+        expect(s0.roundMatches).toBe(1);
+        expect(s0.matchNo).toBe(1);
+        // 실제 첫 대결은 자리 순번 1 → tf[1]=false → 뒤 후보(3)가 위
+        expect([s0.top.id, s0.bottom.id]).toEqual([3, 2]);
+
+        // 4강: [1, 2] vs … 자리 순번 4 → tf[4]=true → 1 이 위
+        const s1 = getMatchState(slots, tf, [{ w: 2 }]);
+        expect(s1.roundSize).toBe(4);
+        expect(s1.matchNo).toBe(1);
+        expect(s1.roundMatches).toBe(2);
+        expect([s1.top.id, s1.bottom.id]).toEqual([1, 2]);
+
+        // 4강 2경기: 4 vs 5, 자리 순번 5 → tf[5]=false → 5 가 위
+        const s2 = getMatchState(slots, tf, [{ w: 2 }, { w: 1 }]);
+        expect([s2.top.id, s2.bottom.id]).toEqual([5, 4]);
+
+        const end = getMatchState(slots, tf, [{ w: 2 }, { w: 1 }, { w: 4 }, { w: 4 }]);
+        expect(end.done).toBe(true);
+        expect(end.champion.id).toBe(4);
+    });
+
     it('라운드 이름', () => {
         expect(ROUND_LABEL(16)).toBe('16강');
         expect(ROUND_LABEL(2)).toBe('결승');

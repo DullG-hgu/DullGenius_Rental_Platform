@@ -37,7 +37,8 @@ const WorldcupThemes = () => {
         load();
     }, [load]);
 
-    const sizesFor = (theme) => theme.allowed_sizes.filter((n) => n <= theme.pool_count);
+    // 서버가 부전승 규칙(후보 > 강수/2)에 맞는 강수만 내려준다
+    const sizesFor = (theme) => theme.allowed_sizes;
 
     const openSheet = (theme) => {
         const sizes = sizesFor(theme);
@@ -106,7 +107,12 @@ const WorldcupThemes = () => {
                         <div className="wc-sheet-handle" aria-hidden="true" />
                         <h3 id="wc-sheet-title">몇 강으로 할까요?</h3>
                         <p className="wc-sheet-note">
-                            후보 {sheetTheme.pool_count}개 중 <strong>{size}개</strong>가 무작위로 뽑혀요.
+                            {size <= sheetTheme.pool_count ? (
+                                <>후보 {sheetTheme.pool_count}개 중 <strong>{size}개</strong>가 무작위로 뽑혀요.</>
+                            ) : (
+                                <>후보 <strong>{sheetTheme.pool_count}개 전부</strong> 참가하고, {size - sheetTheme.pool_count}개는 첫 판 부전승이에요.</>
+                            )}
+                            {size >= 128 && <> 대결이 {Math.min(size, sheetTheme.pool_count) - 1}번이라 오래 걸려요. 중간에 나가도 이어할 수 있어요.</>}
                         </p>
                         <div className="wc-size-grid">
                             {sizesFor(sheetTheme).map((n) => (

@@ -5,9 +5,9 @@
 const KEY = 'fun_wc_progress';
 const MAX_AGE_MS = 5 * 60 * 60 * 1000;
 
-export const saveProgress = (run, picks) => {
+export const saveProgress = (run, picks, unplayed = []) => {
     try {
-        localStorage.setItem(KEY, JSON.stringify({ run, picks, savedAt: Date.now() }));
+        localStorage.setItem(KEY, JSON.stringify({ run, picks, unplayed, savedAt: Date.now() }));
     } catch {
         // 저장 불가 환경
     }

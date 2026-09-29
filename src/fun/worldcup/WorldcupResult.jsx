@@ -87,7 +87,10 @@ const WorldcupResult = () => {
             </div>
 
             <div className="wc-result-card">
-                <div className="wc-result-badge">🏆 {ROUND_LABEL(result.size)} 최종 우승</div>
+                <div className="wc-result-badge">
+                    🏆 {ROUND_LABEL(result.size)} 최종 우승
+                    {result.entrants < result.size && <span className="wc-result-entrants"> · {result.entrants}개 참가</span>}
+                </div>
                 {champion.image
                     ? <img className="wc-result-img" src={champion.image} alt="" />
                     : <div className="wc-result-img is-empty" aria-hidden="true">🎲</div>}
@@ -99,6 +102,13 @@ const WorldcupResult = () => {
                     </div>
                 )}
             </div>
+
+            {result.champion_unplayed && (
+                <p className="wc-unplayed-note">
+                    {fresh ? '안 해본 게임이 우승했어요!' : '안 해본 게임을 원픽으로 골랐어요!'}
+                    {rentable ? ' 이번 기회에 빌려서 해보세요.' : ' 다음에 꼭 해보세요.'}
+                </p>
+            )}
 
             <div className="wc-result-stats">
                 <div>

@@ -16,22 +16,35 @@ const playerText = (c) => {
     return `${c.min_players ?? 1}~${c.max_players}인`;
 };
 
-const Card = ({ candidate, state, onPick, disabled }) => {
+// 카드 선택 버튼과 「안 해봄」 칩은 형제 요소 — 칩을 눌러도 선택되지 않는다
+const Card = ({ candidate, state, onPick, disabled, unplayed, onToggleUnplayed }) => {
     const meta = [playerText(candidate), candidate.playingtime].filter(Boolean).join(' · ');
     return (
-        <button
-            type="button"
-            className={`wc-card${state ? ` is-${state}` : ''}`}
-            onClick={() => onPick(candidate.id)}
-            disabled={disabled}
-            aria-label={`${candidate.name} 선택`}
-        >
-            {candidate.image
-                ? <img className="wc-card-img" src={candidate.image} alt="" draggable="false" />
-                : <div className="wc-card-img is-empty" aria-hidden="true">🎲</div>}
-            <div className="wc-card-name">{candidate.name}</div>
-            {meta && <div className="wc-card-meta">{meta}</div>}
-        </button>
+        <div className={`wc-card-wrap${state ? ` is-${state}` : ''}`}>
+            <button
+                type="button"
+                className="wc-card"
+                onClick={() => onPick(candidate.id)}
+                disabled={disabled}
+                aria-label={`${candidate.name} 선택`}
+            >
+                {candidate.image
+                    ? <img className="wc-card-img" src={candidate.image} alt="" draggable="false" />
+                    : <div className="wc-card-img is-empty" aria-hidden="true">🎲</div>}
+                <div className="wc-card-name">{candidate.name}</div>
+                {meta && <div className="wc-card-meta">{meta}</div>}
+            </button>
+            <button
+                type="button"
+                className="wc-unplayed-chip"
+                aria-pressed={unplayed}
+                aria-label={`${candidate.name} 안 해봤어요`}
+                onClick={() => onToggleUnplayed(candidate.id)}
+                disabled={disabled}
+            >
+                {unplayed ? '안 해봄 ✓' : '안 해봄'}
+            </button>
+        </div>
     );
 };
 
@@ -42,6 +55,7 @@ const WorldcupPlay = () => {
 
     const [run, setRun] = useState(null);
     const [picks, setPicks] = useState([]);
+    const [unplayed, setUnplayed] = useState(() => new Set()); // 이 판에서 「안 해봄」 표시한 게임 id
     const [error, setError] = useState(null);
     const [chosenId, setChosenId] = useState(null);
     const [submitting, setSubmitting] = useState(false);
@@ -60,6 +74,7 @@ const WorldcupPlay = () => {
             if (saved) {
                 setRun(saved.run);
                 setPicks(saved.picks);
+                setUnplayed(new Set(saved.unplayed ?? []));
             } else {
                 setError('이어할 판이 없어요. 새로 시작해 주세요.');
             }
@@ -70,7 +85,7 @@ const WorldcupPlay = () => {
         startWorldcup(slug, size)
             .then((data) => {
                 setRun(data);
-                saveProgress(data, []);
+                saveProgress(data, [], []);
             })
             .catch((e) => setError(e?.message || '월드컵을 시작하지 못했어요.'));
     }, [slug, searchParams]);
@@ -117,15 +132,25 @@ const WorldcupPlay = () => {
             });
     }, [run, navigate]);
 
+    const toggleUnplayed = (id) => {
+        setUnplayed((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            saveProgress(run, picks, [...next]);
+            return next;
+        });
+    };
+
     const pick = (id) => {
         if (chosenId !== null || !state || state.done) return;
         const ms = Date.now() - matchShownAt.current;
+        const u = [state.top.id, state.bottom.id].filter((gid) => unplayed.has(gid));
         setChosenId(id);
         setTimeout(() => {
-            const next = [...picks, { w: id, ms }];
+            const next = [...picks, u.length ? { w: id, ms, u } : { w: id, ms }];
             setPicks(next);
             setChosenId(null);
-            saveProgress(run, next);
+            saveProgress(run, next, [...unplayed]);
             if (next.length === state.totalMatches) submit(next);
             else recordWorldcupPicks(run.run_id, next); // 끝까지 안 하고 꺼도 여기까지의 대결은 남는다
         }, PICK_ANIMATION_MS);
@@ -189,8 +214,17 @@ const WorldcupPlay = () => {
             </div>
 
             <div className="wc-arena" key={state.index}>
-                <Card candidate={state.top} state={cardState(state.top.id)} onPick={pick} disabled={chosenId !== null} />
-                <Card candidate={state.bottom} state={cardState(state.bottom.id)} onPick={pick} disabled={chosenId !== null} />
+                {[state.top, state.bottom].map((c) => (
+                    <Card
+                        key={c.id}
+                        candidate={c}
+                        state={cardState(c.id)}
+                        onPick={pick}
+                        disabled={chosenId !== null}
+                        unplayed={unplayed.has(c.id)}
+                        onToggleUnplayed={toggleUnplayed}
+                    />
+                ))}
                 <div className="wc-vs" aria-hidden="true">VS</div>
             </div>
         </div>

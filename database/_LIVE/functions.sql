@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 6:01:54
+-- 생성 시각: 2026. 9. 29. PM 7:23:03
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -150,10 +150,12 @@ CREATE OR REPLACE FUNCTION public._fun_wc_apply_picks(p_run fun_worldcup_runs, p
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
+  v_real   integer := (SELECT count(*) FROM unnest(p_run.bracket) x WHERE x IS NOT NULL) - 1;
   v_n      integer;
   v_cur    integer[] := p_run.bracket;
   v_next   integer[];
   v_len    integer;
+  v_pair   integer := 0;
   v_idx    integer := 0;
   v_pick   jsonb;
   v_a      integer;
@@ -162,19 +164,27 @@ DECLARE
   v_top    integer;
   v_bottom integer;
   v_ms     integer;
+  v_u      jsonb;
 BEGIN
-  IF jsonb_typeof(p_picks) IS DISTINCT FROM 'array' OR jsonb_array_length(p_picks) > p_run.size - 1 THEN
+  IF jsonb_typeof(p_picks) IS DISTINCT FROM 'array' OR jsonb_array_length(p_picks) > v_real THEN
     RAISE EXCEPTION '선택 기록이 올바르지 않습니다.';
   END IF;
   v_n := jsonb_array_length(p_picks);
 
-  WHILE cardinality(v_cur) > 1 AND v_idx < v_n LOOP
+  WHILE cardinality(v_cur) > 1 LOOP
     v_len := cardinality(v_cur);
     v_next := '{}';
     FOR i IN 1 .. v_len / 2 LOOP
-      EXIT WHEN v_idx >= v_n;
       v_a := v_cur[2 * i - 1];
       v_b := v_cur[2 * i];
+
+      IF v_a IS NULL OR v_b IS NULL THEN
+        v_next := array_append(v_next, COALESCE(v_a, v_b));
+        v_pair := v_pair + 1;
+        CONTINUE;
+      END IF;
+
+      EXIT WHEN v_idx >= v_n;
       v_pick := p_picks -> v_idx;
 
       IF jsonb_typeof(v_pick->'w') IS DISTINCT FROM 'number' THEN
@@ -185,7 +195,7 @@ BEGIN
         RAISE EXCEPTION '선택 기록이 대진과 맞지 않습니다.';
       END IF;
 
-      IF p_run.top_first[v_idx + 1] THEN
+      IF p_run.top_first[v_pair + 1] THEN
         v_top := v_a; v_bottom := v_b;
       ELSE
         v_top := v_b; v_bottom := v_a;
@@ -193,10 +203,13 @@ BEGIN
 
       v_ms := CASE WHEN jsonb_typeof(v_pick->'ms') = 'number'
                    THEN LEAST(GREATEST((v_pick->>'ms')::numeric, 0), 600000)::integer END;
+      v_u := CASE WHEN jsonb_typeof(v_pick->'u') = 'array' THEN v_pick->'u' ELSE '[]'::jsonb END;
 
       INSERT INTO public.fun_worldcup_matches
-        (run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id, picked_top, decide_ms)
-      VALUES (p_run.id, v_len, i, v_top, v_bottom, v_w, v_w = v_top, v_ms)
+        (run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id, picked_top, decide_ms,
+         top_unplayed, bottom_unplayed)
+      VALUES (p_run.id, v_len, i, v_top, v_bottom, v_w, v_w = v_top, v_ms,
+              v_u @> jsonb_build_array(v_top), v_u @> jsonb_build_array(v_bottom))
       ON CONFLICT (run_id, round_size, match_no) DO NOTHING;
 
       IF NOT FOUND THEN
@@ -205,9 +218,12 @@ BEGIN
         IF NOT FOUND THEN RAISE EXCEPTION '이미 기록된 선택과 다릅니다.'; END IF;
       END IF;
 
-      v_next := v_next || v_w;
+      v_next := array_append(v_next, v_w);
+      v_pair := v_pair + 1;
       v_idx := v_idx + 1;
     END LOOP;
+
+    EXIT WHEN cardinality(v_next) < v_len / 2;
     v_cur := v_next;
   END LOOP;
 
@@ -239,7 +255,7 @@ $function$
 -- 함수: _fun_wc_game_stats
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public._fun_wc_game_stats(p_theme_id uuid, p_scope text)
- RETURNS TABLE(game_id integer, wins bigint, losses bigint, appearances bigint, championships bigint)
+ RETURNS TABLE(game_id integer, wins bigint, losses bigint, appearances bigint, championships bigint, unplayed_wins bigint, unplayed_losses bigint)
  LANGUAGE sql
  STABLE
  SET search_path TO 'public', 'pg_temp'
@@ -260,15 +276,22 @@ AS $function$
   m AS (
     SELECT m.* FROM public.fun_worldcup_matches m JOIN any_run ON any_run.id = m.run_id
   ),
-  wl AS (
-    SELECT winner_game_id AS gid, 1 AS w, 0 AS l FROM m
+  sides AS (
+    SELECT top_game_id AS gid, winner_game_id = top_game_id AS won, top_unplayed AS unplayed FROM m
     UNION ALL
-    SELECT CASE WHEN winner_game_id = top_game_id THEN bottom_game_id ELSE top_game_id END, 0, 1 FROM m
+    SELECT bottom_game_id, winner_game_id = bottom_game_id, bottom_unplayed FROM m
   ),
-  a AS (SELECT gid, count(*) AS appearances FROM (SELECT unnest(bracket) AS gid FROM er) ap GROUP BY gid),
-  w AS (SELECT gid, sum(w)::bigint AS wins, sum(l)::bigint AS losses FROM wl GROUP BY gid),
+  a AS (SELECT gid, count(*) AS appearances
+        FROM (SELECT unnest(bracket) AS gid FROM er) ap WHERE gid IS NOT NULL GROUP BY gid),
+  w AS (SELECT gid,
+               count(*) FILTER (WHERE won) AS wins,
+               count(*) FILTER (WHERE NOT won) AS losses,
+               count(*) FILTER (WHERE won AND unplayed) AS u_wins,
+               count(*) FILTER (WHERE NOT won AND unplayed) AS u_losses
+        FROM sides GROUP BY gid),
   c AS (SELECT champion_game_id AS gid, count(*) AS champs FROM er GROUP BY champion_game_id)
-  SELECT gid, COALESCE(w.wins, 0), COALESCE(w.losses, 0), COALESCE(a.appearances, 0), COALESCE(c.champs, 0)
+  SELECT gid, COALESCE(w.wins, 0), COALESCE(w.losses, 0), COALESCE(a.appearances, 0), COALESCE(c.champs, 0),
+         COALESCE(w.u_wins, 0), COALESCE(w.u_losses, 0)
   FROM w
   FULL JOIN a USING (gid)
   LEFT JOIN c USING (gid)
@@ -2328,11 +2351,15 @@ BEGIN
 
   IF v_run.status <> 'started' THEN RAISE EXCEPTION '이미 끝난 판입니다.'; END IF;
 
-  IF jsonb_typeof(p_picks) IS DISTINCT FROM 'array' OR jsonb_array_length(p_picks) <> v_run.size - 1 THEN
+  IF jsonb_typeof(p_picks) IS DISTINCT FROM 'array'
+     OR jsonb_array_length(p_picks) <> (SELECT count(*) FROM unnest(v_run.bracket) x WHERE x IS NOT NULL) - 1 THEN
     RAISE EXCEPTION '선택 기록이 올바르지 않습니다.';
   END IF;
 
   v_final := public._fun_wc_apply_picks(v_run, p_picks);
+  IF cardinality(v_final) <> 1 OR v_final[1] IS NULL THEN
+    RAISE EXCEPTION '선택 기록이 올바르지 않습니다.';
+  END IF;
 
   UPDATE public.fun_worldcup_runs
   SET status = 'finished', champion_game_id = v_final[1], finished_at = now()
@@ -2371,12 +2398,19 @@ BEGIN
     'slug', v_theme.slug,
     'title', v_theme.title,
     'size', v_run.size,
+    'entrants', (SELECT count(*) FROM unnest(v_run.bracket) x WHERE x IS NOT NULL),
     'finished_at', v_run.finished_at,
     'champion', (
       SELECT jsonb_build_object(
         'id', v_run.champion_game_id, 'name', g.name, 'image', g.image,
         'min_players', g.min_players, 'max_players', g.max_players, 'playingtime', g.playingtime)
       FROM (SELECT 1) one LEFT JOIN public.games g ON g.id = v_run.champion_game_id
+    ),
+    'champion_unplayed', EXISTS (
+      SELECT 1 FROM public.fun_worldcup_matches m
+      WHERE m.run_id = v_run.id
+        AND ((m.top_game_id = v_run.champion_game_id AND m.top_unplayed)
+          OR (m.bottom_game_id = v_run.champion_game_id AND m.bottom_unplayed))
     ),
     'champion_stats', jsonb_build_object(
       'total_runs', v_total,
@@ -2410,7 +2444,8 @@ AS $function$
   SELECT COALESCE(jsonb_agg(
            jsonb_build_object(
              'slug', x.slug, 'title', x.title, 'description', x.description,
-             'allowed_sizes', to_jsonb(x.allowed_sizes),
+             'allowed_sizes', (SELECT COALESCE(jsonb_agg(n ORDER BY n), '[]'::jsonb)
+                               FROM unnest(x.allowed_sizes) n WHERE x.pool_count * 2 > n),
              'pool_count', x.pool_count, 'play_count', x.play_count
            ) ORDER BY x.sort_order, x.created_at), '[]'::jsonb)
   FROM (
@@ -2481,6 +2516,8 @@ BEGIN
                'championships', s.championships,
                'champion_rate', CASE WHEN s.appearances > 0
                                      THEN round(s.championships::numeric / s.appearances, 4) END,
+               'unplayed_wins', s.unplayed_wins,
+               'unplayed_losses', s.unplayed_losses,
                'ranked', s.wins + s.losses >= c_min_matches
              ) ORDER BY (s.wins + s.losses >= c_min_matches) DESC,
                         s.wins::numeric / NULLIF(s.wins + s.losses, 0) DESC NULLS LAST,
@@ -2532,12 +2569,18 @@ CREATE OR REPLACE FUNCTION public.fun_wc_start(p_slug text, p_size integer, p_an
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  v_uid     uuid := auth.uid();
-  v_theme   public.fun_worldcup_themes%ROWTYPE;
-  v_recent  integer;
-  v_bracket integer[];
-  v_top     boolean[];
-  v_run_id  uuid;
+  v_uid       uuid := auth.uid();
+  v_theme     public.fun_worldcup_themes%ROWTYPE;
+  v_recent    integer;
+  v_pool      integer;
+  v_n         integer;
+  v_pairs     integer;
+  v_ids       integer[];
+  v_bye_pairs integer[];
+  v_bracket   integer[] := '{}';
+  v_k         integer := 1;
+  v_top       boolean[];
+  v_run_id    uuid;
 BEGIN
   IF v_uid IS NULL AND p_anon_id IS NULL THEN
     RAISE EXCEPTION '기기 식별자가 필요합니다.';
@@ -2559,15 +2602,33 @@ BEGIN
     RAISE EXCEPTION '너무 많이 시작했어요. 잠시 후 다시 해 주세요.';
   END IF;
 
-  SELECT array_agg(p.id) INTO v_bracket
+  SELECT count(*) INTO v_pool FROM public._fun_wc_pool(v_theme.filter);
+  IF v_pool * 2 <= p_size THEN
+    RAISE EXCEPTION '후보가 부족합니다.';
+  END IF;
+
+  v_n := LEAST(p_size, v_pool);
+  v_pairs := p_size / 2;
+
+  SELECT array_agg(p.id) INTO v_ids
   FROM (
     SELECT id FROM public._fun_wc_pool(v_theme.filter) AS pool(id)
     ORDER BY random()
-    LIMIT p_size
+    LIMIT v_n
   ) p;
-  IF COALESCE(cardinality(v_bracket), 0) < p_size THEN
-    RAISE EXCEPTION '후보가 부족합니다.';
-  END IF;
+
+  SELECT COALESCE(array_agg(g), '{}') INTO v_bye_pairs
+  FROM (SELECT g FROM generate_series(1, v_pairs) g ORDER BY random() LIMIT p_size - v_n) s;
+
+  FOR p IN 1 .. v_pairs LOOP
+    IF p = ANY (v_bye_pairs) THEN
+      v_bracket := array_append(array_append(v_bracket, v_ids[v_k]), NULL::integer);
+      v_k := v_k + 1;
+    ELSE
+      v_bracket := array_append(array_append(v_bracket, v_ids[v_k]), v_ids[v_k + 1]);
+      v_k := v_k + 2;
+    END IF;
+  END LOOP;
 
   SELECT array_agg(random() < 0.5) INTO v_top FROM generate_series(1, p_size - 1);
 
@@ -2580,15 +2641,18 @@ BEGIN
     'slug', v_theme.slug,
     'title', v_theme.title,
     'size', p_size,
+    'entrants', v_n,
     'top_first', to_jsonb(v_top),
     'candidates', (
-      SELECT jsonb_agg(jsonb_build_object(
-               'id', g.id, 'name', g.name, 'image', g.image,
-               'min_players', g.min_players, 'max_players', g.max_players,
-               'playingtime', g.playingtime
-             ) ORDER BY b.ord)
+      SELECT jsonb_agg(
+               CASE WHEN b.id IS NULL THEN 'null'::jsonb
+                    ELSE jsonb_build_object(
+                      'id', g.id, 'name', g.name, 'image', g.image,
+                      'min_players', g.min_players, 'max_players', g.max_players,
+                      'playingtime', g.playingtime)
+               END ORDER BY b.ord)
       FROM unnest(v_bracket) WITH ORDINALITY AS b(id, ord)
-      JOIN public.games g ON g.id = b.id
+      LEFT JOIN public.games g ON g.id = b.id
     )
   );
 END;
