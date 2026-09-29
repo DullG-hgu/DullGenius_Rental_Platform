@@ -1,12 +1,12 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 8:54:20
+-- 생성 시각: 2026. 9. 29. PM 9:23:59
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 24개 테이블
+-- 총 25개 테이블
 
 -- ----------------------------------------------------------------
 -- 테이블: allowed_users
@@ -176,7 +176,8 @@ CREATE TABLE public.fun_worldcup_runs (
   champion_game_id int4,
   started_at timestamptz NOT NULL DEFAULT now(),
   finished_at timestamptz,
-  players int4
+  players int4,
+  last_seq int8
 );
 
 -- ----------------------------------------------------------------
@@ -193,6 +194,20 @@ CREATE TABLE public.fun_worldcup_themes (
   sort_order int4 NOT NULL DEFAULT 0,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: fun_worldcup_undos
+-- ----------------------------------------------------------------
+CREATE TABLE public.fun_worldcup_undos (
+  id int8 NOT NULL PRIMARY KEY,
+  run_id uuid NOT NULL,  -- FK → fun_worldcup_runs(id)
+  round_size int4 NOT NULL,
+  match_no int4 NOT NULL,
+  top_game_id int4 NOT NULL,
+  bottom_game_id int4 NOT NULL,
+  winner_game_id int4 NOT NULL,
+  undone_at timestamptz NOT NULL DEFAULT now()
 );
 
 -- ----------------------------------------------------------------

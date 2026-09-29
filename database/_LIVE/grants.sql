@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 8:54:22
+-- 생성 시각: 2026. 9. 29. PM 9:24:04
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -68,14 +68,14 @@
 --  -     Y    DEFINER   fun_wc_admin_preview_pool(p_filter jsonb)
 --  -     Y    DEFINER   fun_wc_admin_stats(p_slug text, p_from timestamp with time zone, p_to timestamp with time zone)
 --  -     Y    DEFINER   fun_wc_admin_upsert_theme(p_id uuid, p_slug text, p_title text, p_description text, p_filter jsonb, p_allowed_sizes integer[], p_is_active boolean, p_sort_order integer)
---  Y     Y    DEFINER   fun_wc_finish(p_run_id uuid, p_picks jsonb, p_anon_id uuid)
+--  Y     Y    DEFINER   fun_wc_finish(p_run_id uuid, p_picks jsonb, p_anon_id uuid, p_seq bigint)
 --  Y     Y    DEFINER   fun_wc_get_run(p_run_id uuid)
 --  Y     Y    DEFINER   fun_wc_insights(p_slug text, p_scope text, p_min integer)
 --  Y     Y    DEFINER   fun_wc_list_themes(p_players integer)
 --  -     -    DEFINER   fun_wc_mark_abandoned()
 --  -     Y    DEFINER   fun_wc_my_profile()
 --  Y     Y    DEFINER   fun_wc_ranking(p_slug text, p_scope text)
---  Y     Y    DEFINER   fun_wc_record(p_run_id uuid, p_picks jsonb, p_anon_id uuid)
+--  Y     Y    DEFINER   fun_wc_record(p_run_id uuid, p_picks jsonb, p_anon_id uuid, p_seq bigint)
 --  Y     Y    DEFINER   fun_wc_start(p_slug text, p_size integer, p_anon_id uuid, p_players integer)
 --  -     Y    DEFINER   get_admin_analytics_activity(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)
 --  -     Y    DEFINER   get_admin_analytics_rankings(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)

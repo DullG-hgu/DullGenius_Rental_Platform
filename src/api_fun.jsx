@@ -43,17 +43,19 @@ export const startWorldcup = (slug, size, players = null) =>
         p_slug: slug, p_size: size, p_anon_id: getFunAnonId(), ...(players ? { p_players: players } : {}),
     });
 
-// [Public] 진행 중 기록 — 고를 때마다 지금까지의 선택 전체를 보낸다. 끝까지 안 하고 끈 판의 대결도 모으기 위함.
+// [Public] 진행 중 기록 — 고를 때(되돌릴 때)마다 지금까지의 선택 전체를 보낸다. 끝까지 안 하고 끈 판의 대결도 모으기 위함.
+// 서버 기록 = 마지막으로 보낸 목록 (되돌린 선택은 서버가 지우고 되돌림 기록에 남김).
+// seq(보낸 시각 ms)가 더 오래된 요청은 서버가 무시 → 늦게 도착한 요청이 되돌린 선택을 살리지 못한다.
 // fire-and-forget 전용: await·catch 없이 불러도 되도록 실패를 삼킨다 (빠진 대결은 다음 전송·finish 가 채움)
 export const recordWorldcupPicks = (runId, picks) => {
     supabase
-        .rpc('fun_wc_record', { p_run_id: runId, p_picks: picks, p_anon_id: getFunAnonId() })
+        .rpc('fun_wc_record', { p_run_id: runId, p_picks: picks, p_anon_id: getFunAnonId(), p_seq: Date.now() })
         .then(() => {}, () => {});
 };
 
 // [Public] 판 제출 — picks = 대결 순서대로 [{ w: 승자 game_id, ms: 고른 시간 }]. 결과(getWorldcupRun 과 같은 모양) 반환
 export const finishWorldcup = (runId, picks) =>
-    callRpc('fun_wc_finish', { p_run_id: runId, p_picks: picks, p_anon_id: getFunAnonId() });
+    callRpc('fun_wc_finish', { p_run_id: runId, p_picks: picks, p_anon_id: getFunAnonId(), p_seq: Date.now() });
 
 // [Public] 결과 조회 (공유 링크) — 끝나지 않았거나 없는 판이면 null
 export const fetchWorldcupRun = (runId) => callRpc('fun_wc_get_run', { p_run_id: runId });

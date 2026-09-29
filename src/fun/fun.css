@@ -509,6 +509,31 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+.wc-play-bottom {
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+    flex-shrink: 0;
+}
+
+.wc-undo-btn {
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #4a2b8c;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.wc-undo-btn:disabled {
+    color: #bbb;
+    border-color: #eee;
+    cursor: default;
+}
+
 .wc-play-status {
     flex: 1;
     display: flex;

@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 8:53:56
+-- 생성 시각: 2026. 9. 29. PM 9:23:31
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -165,6 +165,8 @@ DECLARE
   v_bottom integer;
   v_ms     integer;
   v_u      jsonb;
+  v_old    public.fun_worldcup_matches%ROWTYPE;
+  v_slots  text[] := '{}';
 BEGIN
   IF jsonb_typeof(p_picks) IS DISTINCT FROM 'array' OR jsonb_array_length(p_picks) > v_real THEN
     RAISE EXCEPTION '선택 기록이 올바르지 않습니다.';
@@ -205,19 +207,26 @@ BEGIN
                    THEN LEAST(GREATEST((v_pick->>'ms')::numeric, 0), 600000)::integer END;
       v_u := CASE WHEN jsonb_typeof(v_pick->'u') = 'array' THEN v_pick->'u' ELSE '[]'::jsonb END;
 
-      INSERT INTO public.fun_worldcup_matches
-        (run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id, picked_top, decide_ms,
-         top_unplayed, bottom_unplayed)
-      VALUES (p_run.id, v_len, i, v_top, v_bottom, v_w, v_w = v_top, v_ms,
-              v_u @> jsonb_build_array(v_top), v_u @> jsonb_build_array(v_bottom))
-      ON CONFLICT (run_id, round_size, match_no) DO NOTHING;
+      SELECT * INTO v_old FROM public.fun_worldcup_matches
+      WHERE run_id = p_run.id AND round_size = v_len AND match_no = i;
 
       IF NOT FOUND THEN
-        PERFORM 1 FROM public.fun_worldcup_matches
-        WHERE run_id = p_run.id AND round_size = v_len AND match_no = i AND winner_game_id = v_w;
-        IF NOT FOUND THEN RAISE EXCEPTION '이미 기록된 선택과 다릅니다.'; END IF;
+        INSERT INTO public.fun_worldcup_matches
+          (run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id, picked_top, decide_ms,
+           top_unplayed, bottom_unplayed)
+        VALUES (p_run.id, v_len, i, v_top, v_bottom, v_w, v_w = v_top, v_ms,
+                v_u @> jsonb_build_array(v_top), v_u @> jsonb_build_array(v_bottom));
+      ELSIF v_old.top_game_id <> v_top OR v_old.bottom_game_id <> v_bottom OR v_old.winner_game_id <> v_w THEN
+        INSERT INTO public.fun_worldcup_undos (run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id)
+        VALUES (p_run.id, v_len, i, v_old.top_game_id, v_old.bottom_game_id, v_old.winner_game_id);
+        UPDATE public.fun_worldcup_matches
+        SET top_game_id = v_top, bottom_game_id = v_bottom, winner_game_id = v_w, picked_top = v_w = v_top,
+            decide_ms = v_ms, top_unplayed = v_u @> jsonb_build_array(v_top),
+            bottom_unplayed = v_u @> jsonb_build_array(v_bottom), created_at = now()
+        WHERE run_id = p_run.id AND round_size = v_len AND match_no = i;
       END IF;
 
+      v_slots := array_append(v_slots, v_len || ':' || i);
       v_next := array_append(v_next, v_w);
       v_pair := v_pair + 1;
       v_idx := v_idx + 1;
@@ -226,6 +235,14 @@ BEGIN
     EXIT WHEN cardinality(v_next) < v_len / 2;
     v_cur := v_next;
   END LOOP;
+
+  WITH gone AS (
+    DELETE FROM public.fun_worldcup_matches
+    WHERE run_id = p_run.id AND NOT ((round_size || ':' || match_no) = ANY (v_slots))
+    RETURNING run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id
+  )
+  INSERT INTO public.fun_worldcup_undos (run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id)
+  SELECT * FROM gone;
 
   RETURN v_cur;
 END;
@@ -2403,7 +2420,7 @@ $function$
 -- ----------------------------------------------------------------
 -- 함수: fun_wc_finish
 -- ----------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.fun_wc_finish(p_run_id uuid, p_picks jsonb, p_anon_id uuid DEFAULT NULL::uuid)
+CREATE OR REPLACE FUNCTION public.fun_wc_finish(p_run_id uuid, p_picks jsonb, p_anon_id uuid DEFAULT NULL::uuid, p_seq bigint DEFAULT NULL::bigint)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -2435,7 +2452,8 @@ BEGIN
   END IF;
 
   UPDATE public.fun_worldcup_runs
-  SET status = 'finished', champion_game_id = v_final[1], finished_at = now()
+  SET status = 'finished', champion_game_id = v_final[1], finished_at = now(),
+      last_seq = GREATEST(COALESCE(last_seq, 0), COALESCE(p_seq, 0))
   WHERE id = v_run.id;
 
   RETURN public.fun_wc_get_run(v_run.id);
@@ -2773,7 +2791,7 @@ $function$
 -- ----------------------------------------------------------------
 -- 함수: fun_wc_record
 -- ----------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.fun_wc_record(p_run_id uuid, p_picks jsonb, p_anon_id uuid DEFAULT NULL::uuid)
+CREATE OR REPLACE FUNCTION public.fun_wc_record(p_run_id uuid, p_picks jsonb, p_anon_id uuid DEFAULT NULL::uuid, p_seq bigint DEFAULT NULL::bigint)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -2795,7 +2813,14 @@ BEGIN
     RETURN jsonb_build_object('ok', false, 'reason', v_run.status);
   END IF;
 
+  IF p_seq IS NOT NULL AND v_run.last_seq IS NOT NULL AND p_seq < v_run.last_seq THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'stale');
+  END IF;
+
   PERFORM public._fun_wc_apply_picks(v_run, p_picks);
+  IF p_seq IS NOT NULL THEN
+    UPDATE public.fun_worldcup_runs SET last_seq = p_seq WHERE id = v_run.id;
+  END IF;
   RETURN jsonb_build_object('ok', true, 'recorded', jsonb_array_length(p_picks));
 END;
 $function$

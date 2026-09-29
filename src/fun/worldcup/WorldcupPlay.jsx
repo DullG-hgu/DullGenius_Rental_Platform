@@ -141,6 +141,7 @@ const WorldcupPlay = () => {
     const [picks, setPicks] = useState([]);
     const [unplayed, setUnplayed] = useState(() => new Set()); // 이 판에서 「안 해봄」 표시한 게임 id
     const [reportTarget, setReportTarget] = useState(null);
+    const [canUndo, setCanUndo] = useState(false); // 직전 한 단계만 되돌릴 수 있다 (되돌린 뒤엔 새로 골라야 다시 가능)
     const [error, setError] = useState(null);
     const [chosenId, setChosenId] = useState(null);
     const [submitting, setSubmitting] = useState(false);
@@ -236,10 +237,21 @@ const WorldcupPlay = () => {
             const next = [...picks, u.length ? { w: id, ms, u } : { w: id, ms }];
             setPicks(next);
             setChosenId(null);
+            setCanUndo(true);
             saveProgress(run, next, [...unplayed]);
             if (next.length === state.totalMatches) submit(next);
             else recordWorldcupPicks(run.run_id, next); // 끝까지 안 하고 꺼도 여기까지의 대결은 남는다
         }, PICK_ANIMATION_MS);
+    };
+
+    // 방금 선택 되돌리기: 직전 대결로 돌아간다. 서버에도 줄어든 목록을 보내 그 선택을 지운다(되돌림 기록에 남음)
+    const undo = () => {
+        if (!canUndo || chosenId !== null || reportTarget || picks.length === 0 || submitting) return;
+        const prev = picks.slice(0, -1);
+        setPicks(prev);
+        setCanUndo(false);
+        saveProgress(run, prev, [...unplayed]);
+        recordWorldcupPicks(run.run_id, prev);
     };
 
     const exit = () => navigate('/play/worldcup');
@@ -313,6 +325,16 @@ const WorldcupPlay = () => {
                     />
                 ))}
                 <div className="wc-vs" aria-hidden="true">VS</div>
+            </div>
+            <div className="wc-play-bottom">
+                <button
+                    type="button"
+                    className="wc-undo-btn"
+                    onClick={undo}
+                    disabled={!canUndo || chosenId !== null}
+                >
+                    ↶ 방금 선택 되돌리기
+                </button>
             </div>
             {reportTarget && <ReportSheet candidate={reportTarget} onClose={() => setReportTarget(null)} />}
         </div>
