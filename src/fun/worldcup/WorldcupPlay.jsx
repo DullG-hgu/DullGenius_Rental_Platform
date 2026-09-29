@@ -5,6 +5,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { finishWorldcup, recordWorldcupPicks, reportGameInfo, startWorldcup } from '../../api_fun';
 import { useToast } from '../../contexts/ToastContext';
+import { useGameData } from '../../contexts/GameDataContext';
+import { translateGenre } from '../../constants/genreMap';
 import { getMatchState, getUpcomingCandidates, ROUND_LABEL } from './worldcupLogic';
 import { clearProgress, loadProgress, saveProgress } from './worldcupProgress';
 import '../fun.css';
@@ -90,8 +92,58 @@ const ReportSheet = ({ candidate, onClose }) => {
     );
 };
 
-// 카드 선택 버튼과 「안 해봄」 칩·⚠ 신고 버튼은 형제 요소 — 눌러도 선택되지 않는다
-const Card = ({ candidate, state, onPick, disabled, unplayed, onToggleUnplayed, onReport }) => {
+// 상세 정보 시트 — 대결 화면을 벗어나지 않고 게임 정보를 본다. 정보가 틀렸으면 여기서 바로 신고.
+// 게임 정보는 앱이 이미 불러둔 게임 목록(GameDataContext)을 쓴다 (추가 요청 없음)
+const DetailSheet = ({ candidate, onClose, onReport }) => {
+    const { games } = useGameData();
+    const game = games.find((g) => g.id === candidate.id) ?? candidate;
+    const genres = (game.genres ?? []).map(translateGenre).filter(Boolean);
+    const rentable = game.status === '대여가능';
+
+    return (
+        <div className="wc-sheet-backdrop" onClick={onClose}>
+            <div className="wc-sheet wc-detail" role="dialog" aria-modal="true" aria-labelledby="wc-detail-title" onClick={(e) => e.stopPropagation()}>
+                <div className="wc-sheet-handle" aria-hidden="true" />
+                <div className="wc-detail-head">
+                    {game.image
+                        ? <img className="wc-detail-img" src={game.image} alt="" />
+                        : <div className="wc-detail-img is-empty" aria-hidden="true">🎲</div>}
+                    <div className="wc-detail-body">
+                        <h3 id="wc-detail-title">{game.name}</h3>
+                        <ul className="wc-detail-facts">
+                            <li>👥 {playerText(game) ?? '인원 정보 없음'}</li>
+                            {game.playingtime && <li>⏱ {game.playingtime}</li>}
+                            {game.difficulty ? <li>🧩 난이도 {Number(game.difficulty).toFixed(1)} / 5</li> : null}
+                        </ul>
+                        {game.status && (
+                            <span className={`wc-detail-status${rentable ? ' is-on' : ''}`}>
+                                {rentable ? '지금 빌릴 수 있어요' : game.status}
+                            </span>
+                        )}
+                    </div>
+                </div>
+                {genres.length > 0 && (
+                    <div className="wc-detail-genres">
+                        {genres.map((g) => <span key={g}>{g}</span>)}
+                    </div>
+                )}
+                {game.recommendation_text && <p className="wc-detail-reco">💡 {game.recommendation_text}</p>}
+                <div className="wc-detail-actions">
+                    <a href={`/game/${game.id}`} target="_blank" rel="noopener noreferrer" className="fun-secondary-btn wc-link-btn">
+                        게임 페이지 ↗
+                    </a>
+                    <button type="button" className="fun-primary-btn" onClick={onClose}>대결로 돌아가기</button>
+                </div>
+                <button type="button" className="wc-text-link wc-detail-report" onClick={() => onReport(candidate)}>
+                    ⚠ 정보가 이상해요
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// 카드 선택 버튼과 「안 해봄」 칩·ⓘ 상세 버튼은 형제 요소 — 눌러도 선택되지 않는다
+const Card = ({ candidate, state, onPick, disabled, unplayed, onToggleUnplayed, onDetail }) => {
     const meta = [playerText(candidate), candidate.playingtime].filter(Boolean).join(' · ');
     return (
         <div className={`wc-card-wrap${state ? ` is-${state}` : ''}`}>
@@ -120,13 +172,12 @@ const Card = ({ candidate, state, onPick, disabled, unplayed, onToggleUnplayed, 
             </button>
             <button
                 type="button"
-                className="wc-report-btn"
-                aria-label={`${candidate.name} 정보 오류 신고`}
-                title="정보가 이상해요"
-                onClick={() => onReport(candidate)}
+                className="wc-detail-btn"
+                aria-label={`${candidate.name} 상세 정보 보기`}
+                onClick={() => onDetail(candidate)}
                 disabled={disabled}
             >
-                ⚠
+                ⓘ 상세
             </button>
         </div>
     );
@@ -141,6 +192,7 @@ const WorldcupPlay = () => {
     const [picks, setPicks] = useState([]);
     const [unplayed, setUnplayed] = useState(() => new Set()); // 이 판에서 「안 해봄」 표시한 게임 id
     const [reportTarget, setReportTarget] = useState(null);
+    const [detailTarget, setDetailTarget] = useState(null);
     const [canUndo, setCanUndo] = useState(false); // 직전 한 단계만 되돌릴 수 있다 (되돌린 뒤엔 새로 골라야 다시 가능)
     const [error, setError] = useState(null);
     const [chosenId, setChosenId] = useState(null);
@@ -229,7 +281,7 @@ const WorldcupPlay = () => {
     };
 
     const pick = (id) => {
-        if (chosenId !== null || reportTarget || !state || state.done) return;
+        if (chosenId !== null || reportTarget || detailTarget || !state || state.done) return;
         const ms = Date.now() - matchShownAt.current;
         const u = [state.top.id, state.bottom.id].filter((gid) => unplayed.has(gid));
         setChosenId(id);
@@ -246,7 +298,7 @@ const WorldcupPlay = () => {
 
     // 방금 선택 되돌리기: 직전 대결로 돌아간다. 서버에도 줄어든 목록을 보내 그 선택을 지운다(되돌림 기록에 남음)
     const undo = () => {
-        if (!canUndo || chosenId !== null || reportTarget || picks.length === 0 || submitting) return;
+        if (!canUndo || chosenId !== null || reportTarget || detailTarget || picks.length === 0 || submitting) return;
         const prev = picks.slice(0, -1);
         setPicks(prev);
         setCanUndo(false);
@@ -321,7 +373,7 @@ const WorldcupPlay = () => {
                         disabled={chosenId !== null}
                         unplayed={unplayed.has(c.id)}
                         onToggleUnplayed={toggleUnplayed}
-                        onReport={setReportTarget}
+                        onDetail={setDetailTarget}
                     />
                 ))}
                 <div className="wc-vs" aria-hidden="true">VS</div>
@@ -336,6 +388,13 @@ const WorldcupPlay = () => {
                     ↶ 방금 선택 되돌리기
                 </button>
             </div>
+            {detailTarget && !reportTarget && (
+                <DetailSheet
+                    candidate={detailTarget}
+                    onClose={() => setDetailTarget(null)}
+                    onReport={(c) => { setDetailTarget(null); setReportTarget(c); }}
+                />
+            )}
             {reportTarget && <ReportSheet candidate={reportTarget} onClose={() => setReportTarget(null)} />}
         </div>
     );

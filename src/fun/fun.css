@@ -450,17 +450,18 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
-.wc-report-btn {
+.wc-detail-btn {
     position: absolute;
     top: 6px;
     left: 6px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
     background: rgba(255, 255, 255, 0.92);
-    color: #b26a00;
-    font-size: 0.95rem;
+    color: #4a2b8c;
+    font-size: 0.8rem;
+    font-weight: 700;
     cursor: pointer;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
@@ -958,4 +959,113 @@
     font-size: 0.78rem;
     color: #888;
     text-align: center;
+}
+
+/* ── 상세 정보 시트 ─────────────────── */
+
+.wc-detail {
+    max-height: 85dvh;
+    overflow-y: auto;
+}
+
+.wc-detail-head {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.wc-detail-img {
+    width: 112px;
+    height: 112px;
+    flex-shrink: 0;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #f6f6f8;
+}
+
+.wc-detail-img.is-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+}
+
+.wc-detail-body {
+    min-width: 0;
+}
+
+.wc-detail-body h3 {
+    margin: 0 0 6px;
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.wc-detail-facts {
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+    display: grid;
+    gap: 3px;
+    font-size: 0.9rem;
+    color: #444;
+}
+
+.wc-detail-status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #eee;
+    color: #666;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.wc-detail-status.is-on {
+    background: #e3f7e8;
+    color: #1d7a3a;
+}
+
+.wc-detail-genres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+}
+
+.wc-detail-genres span {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f1ecfd;
+    color: #4a2b8c;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.wc-detail-reco {
+    margin: 14px 0 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fff7e0;
+    color: #5c4300;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.wc-detail-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.wc-detail-actions > * {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wc-detail-report {
+    margin-top: 4px;
+    color: #b26a00;
+    font-size: 0.85rem;
 }
