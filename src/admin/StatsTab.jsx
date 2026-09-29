@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import { supabase } from '../lib/supabaseClient.jsx';
 import AdminAnalytics from './AdminAnalytics.jsx';
+import WorldcupStatsPanel from './WorldcupStatsPanel.jsx';
 
 const CARD_STYLE = {
   background: 'var(--admin-card-bg)',
@@ -65,6 +66,7 @@ function truncateLabel(value, max) {
 
 export default function StatsTab() {
   const [period, setPeriod] = useState(30);
+  const [showWorldcup, setShowWorldcup] = useState(false);
   const [rentalStats, setRentalStats] = useState([]);
   const [topGames, setTopGames] = useState([]);
   const [overdueStats, setOverdueStats] = useState(null);
@@ -175,6 +177,23 @@ export default function StatsTab() {
         padding: '8px 12px',
       }}>
         🛠 <b>개발자(tester) role</b> 보유 계정의 대여·검색 활동은 모든 집계에서 제외됩니다.
+      </div>
+
+      {/* 이상형 월드컵 통계: 버튼으로 펼쳐서 조회 */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowWorldcup((v) => !v)}
+          aria-expanded={showWorldcup}
+          style={{
+            padding: '10px 18px', borderRadius: '8px', border: '1px solid var(--admin-border)', cursor: 'pointer',
+            background: showWorldcup ? '#667eea' : 'var(--admin-card-bg)', color: showWorldcup ? '#fff' : 'var(--admin-text-main)',
+            fontWeight: 'bold',
+          }}
+        >
+          🏆 이상형 월드컵 통계 {showWorldcup ? '접기' : '보기'}
+        </button>
+        {showWorldcup && <div style={{ marginTop: '16px' }}><WorldcupStatsPanel /></div>}
       </div>
 
       <AdminAnalytics />
