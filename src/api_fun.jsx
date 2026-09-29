@@ -30,13 +30,18 @@ const callRpc = async (fn, params) => {
     return data;
 };
 
-// [Public] 활성 월드컵 테마 목록 — [{ slug, title, description, allowed_sizes, pool_count, play_count }]
-export const fetchWorldcupThemes = () => callRpc('fun_wc_list_themes');
+// [Public] 활성 월드컵 테마 목록 — [{ slug, title, description, allowed_sizes, pool_count, total_pool_count, play_count }]
+// players 를 주면 그 인원으로 할 수 있는 게임 기준으로 pool_count·allowed_sizes 가 계산된다
+export const fetchWorldcupThemes = (players = null) =>
+    callRpc('fun_wc_list_themes', players ? { p_players: players } : {});
 
 // [Public] 판 시작 — { run_id, slug, title, size, top_first[], candidates[] }
 // candidates 는 대진 순서. top_first[i] 가 true 면 i번째 대결에서 대진상 앞 후보를 위에 둔다.
-export const startWorldcup = (slug, size) =>
-    callRpc('fun_wc_start', { p_slug: slug, p_size: size, p_anon_id: getFunAnonId() });
+// players: 고르면 그 인원으로 할 수 있는 게임만 후보 (없으면 전체)
+export const startWorldcup = (slug, size, players = null) =>
+    callRpc('fun_wc_start', {
+        p_slug: slug, p_size: size, p_anon_id: getFunAnonId(), ...(players ? { p_players: players } : {}),
+    });
 
 // [Public] 진행 중 기록 — 고를 때마다 지금까지의 선택 전체를 보낸다. 끝까지 안 하고 끈 판의 대결도 모으기 위함.
 // fire-and-forget 전용: await·catch 없이 불러도 되도록 실패를 삼킨다 (빠진 대결은 다음 전송·finish 가 채움)
@@ -56,6 +61,25 @@ export const fetchWorldcupRun = (runId) => callRpc('fun_wc_get_run', { p_run_id:
 // [Public] 랭킹 — scope: 'member'(기본) | 'all'
 export const fetchWorldcupRanking = (slug, scope = 'member') =>
     callRpc('fun_wc_ranking', { p_slug: slug, p_scope: scope });
+
+// [Public] 「안 해봄」 통계 — 인지도·호기심 승률·경험자 승률·signal(curious|classic|first_impression)
+// 칩을 한 번이라도 누른 판만 대상. 표본이 minSample 미만인 지표는 null (spec §6-1)
+export const fetchWorldcupInsights = (slug, scope = 'all', minSample = 5) =>
+    callRpc('fun_wc_insights', { p_slug: slug, p_scope: scope, p_min: minSample });
+
+// [Public] 게임 정보 오류 신고 — field: players | playtime | image | name | other
+// shownValue: 신고 당시 화면에 보인 값 (운영진이 무엇을 보고 신고했는지 알 수 있게)
+export const reportGameInfo = ({ gameId, field, note = null, shownValue = null, source = 'worldcup' }) =>
+    callRpc('report_game_info', {
+        p_game_id: gameId, p_field: field, p_note: note, p_shown_value: shownValue,
+        p_source: source, p_anon_id: getFunAnonId(),
+    });
+
+// [Admin] 정보 오류 신고 목록 / 처리 (status: pending | resolved | dismissed)
+export const fetchGameInfoReports = (status = 'pending') =>
+    callRpc('admin_list_game_info_reports', { p_status: status });
+export const setGameInfoReportStatus = (id, status) =>
+    callRpc('admin_set_game_info_report_status', { p_id: id, p_status: status });
 
 // [Admin] 테마 전체 목록 (비활성 포함)
 export const fetchWorldcupThemesAdmin = () => callRpc('fun_wc_admin_list_themes');

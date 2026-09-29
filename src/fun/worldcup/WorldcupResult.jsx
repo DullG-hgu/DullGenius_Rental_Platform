@@ -88,7 +88,7 @@ const WorldcupResult = () => {
 
             <div className="wc-result-card">
                 <div className="wc-result-badge">
-                    🏆 {ROUND_LABEL(result.size)} 최종 우승
+                    🏆 {result.players ? `${result.players}명 · ` : ''}{ROUND_LABEL(result.size)} 최종 우승
                     {result.entrants < result.size && <span className="wc-result-entrants"> · {result.entrants}개 참가</span>}
                 </div>
                 {champion.image
@@ -144,7 +144,7 @@ const WorldcupResult = () => {
                 {fresh ? (
                     <div className="wc-result-actions-row">
                         <button type="button" className="fun-secondary-btn" onClick={share}>결과 공유하기</button>
-                        <Link to={`/play/worldcup/${result.slug}/play?size=${result.size}`} className="fun-secondary-btn wc-link-btn">다시 하기</Link>
+                        <Link to={`/play/worldcup/${result.slug}/play?size=${result.size}${result.players ? `&players=${result.players}` : ''}`} className="fun-secondary-btn wc-link-btn">다시 하기</Link>
                     </div>
                 ) : (
                     <Link to="/play/worldcup" className="fun-secondary-btn wc-link-btn">나도 해보기</Link>

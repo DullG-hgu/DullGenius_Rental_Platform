@@ -7,6 +7,14 @@ import { getMatchState, ROUND_LABEL } from './worldcupLogic';
 import '../fun.css';
 
 const DEFAULT_SIZE = 16;
+// 인원 선택: null = 상관없음. "n명이서 뭐 하지?" 용 — 그 인원으로 할 수 있는 게임만 후보로
+const PLAYER_OPTIONS = [null, 2, 3, 4, 5, 6, 7, 8, 10];
+
+const pickSize = (sizes, current) => {
+    if (sizes.includes(current)) return current;
+    if (sizes.includes(DEFAULT_SIZE)) return DEFAULT_SIZE;
+    return sizes[sizes.length - 1] ?? DEFAULT_SIZE;
+};
 
 const describeProgress = (saved) => {
     try {
@@ -26,6 +34,9 @@ const WorldcupThemes = () => {
     const [saved, setSaved] = useState(() => loadProgress());
     const [searchParams] = useSearchParams();
     const autoOpened = useRef(false);
+    const [players, setPlayers] = useState(null);
+    // 시트에 보여줄 후보 수·가능 강수 (인원을 고르면 서버에 다시 물어본다)
+    const [sheetStats, setSheetStats] = useState(null);
 
     const load = useCallback(() => {
         setError(null);
@@ -43,9 +54,28 @@ const WorldcupThemes = () => {
     const sizesFor = (theme) => theme.allowed_sizes;
 
     const openSheet = (theme) => {
-        const sizes = sizesFor(theme);
-        setSize(sizes.includes(DEFAULT_SIZE) ? DEFAULT_SIZE : sizes[sizes.length - 1]);
+        setPlayers(null);
+        setSheetStats({ pool: theme.pool_count, sizes: sizesFor(theme) });
+        setSize(pickSize(sizesFor(theme), DEFAULT_SIZE));
         setSheetTheme(theme);
+    };
+
+    const choosePlayers = (n) => {
+        setPlayers(n);
+        if (n === null) {
+            setSheetStats({ pool: sheetTheme.pool_count, sizes: sizesFor(sheetTheme) });
+            setSize((cur) => pickSize(sizesFor(sheetTheme), cur));
+            return;
+        }
+        setSheetStats((prev) => ({ ...prev, loading: true }));
+        fetchWorldcupThemes(n)
+            .then((list) => {
+                const t = list?.find((x) => x.slug === sheetTheme.slug);
+                const next = { pool: t?.pool_count ?? 0, sizes: t?.allowed_sizes ?? [] };
+                setSheetStats(next);
+                setSize((cur) => pickSize(next.sizes, cur));
+            })
+            .catch(() => setSheetStats((prev) => ({ ...prev, loading: false, error: true })));
     };
 
     // 한 번에 강수 선택까지: ?theme=slug 로 들어왔거나 열린 테마가 하나뿐이면 시트를 바로 연다
@@ -64,7 +94,7 @@ const WorldcupThemes = () => {
     const start = () => {
         clearProgress();
         setSaved(null);
-        navigate(`/play/worldcup/${sheetTheme.slug}/play?size=${size}`);
+        navigate(`/play/worldcup/${sheetTheme.slug}/play?size=${size}${players ? `&players=${players}` : ''}`);
     };
 
     const resume = () => navigate(`/play/worldcup/${sheetTheme.slug}/play?resume=1`);
@@ -120,17 +150,43 @@ const WorldcupThemes = () => {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="wc-sheet-handle" aria-hidden="true" />
-                        <h3 id="wc-sheet-title">몇 강으로 할까요?</h3>
-                        <p className="wc-sheet-note">
-                            {size <= sheetTheme.pool_count ? (
-                                <>후보 {sheetTheme.pool_count}개 중 <strong>{size}개</strong>가 무작위로 뽑혀요.</>
-                            ) : (
-                                <>후보 <strong>{sheetTheme.pool_count}개 전부</strong> 참가하고, {size - sheetTheme.pool_count}개는 첫 판 부전승이에요.</>
-                            )}
-                            {size >= 128 && <> 대결이 {Math.min(size, sheetTheme.pool_count) - 1}번이라 오래 걸려요. 중간에 나가도 이어할 수 있어요.</>}
-                        </p>
+                        <h3 className="wc-sheet-label">몇 명이서 할 게임인가요?</h3>
+                        <div className="wc-players-row" role="group" aria-label="인원">
+                            {PLAYER_OPTIONS.map((n) => (
+                                <button
+                                    key={n ?? 'any'}
+                                    type="button"
+                                    className="wc-players-btn"
+                                    aria-pressed={players === n}
+                                    onClick={() => choosePlayers(n)}
+                                >
+                                    {n === null ? '상관없음' : `${n}명`}
+                                </button>
+                            ))}
+                        </div>
+
+                        <h3 id="wc-sheet-title" className="wc-sheet-label">몇 강으로 할까요?</h3>
+                        {sheetStats?.error ? (
+                            <p className="wc-sheet-note" role="alert">후보 수를 불러오지 못했어요. 인원을 다시 골라 주세요.</p>
+                        ) : sheetStats?.loading ? (
+                            <p className="wc-sheet-note">후보를 세는 중…</p>
+                        ) : sheetStats?.sizes.length === 0 ? (
+                            <p className="wc-sheet-note" role="alert">
+                                {players}명이서 할 수 있는 게임이 {sheetStats.pool}개뿐이라 월드컵을 열 수 없어요.
+                            </p>
+                        ) : (
+                            <p className="wc-sheet-note">
+                                {players && <>{players}명이서 할 수 있는 게임만 나와요. </>}
+                                {size <= sheetStats.pool ? (
+                                    <>후보 {sheetStats.pool}개 중 <strong>{size}개</strong>가 무작위로 뽑혀요.</>
+                                ) : (
+                                    <>후보 <strong>{sheetStats.pool}개 전부</strong> 참가하고, {size - sheetStats.pool}개는 첫 판 부전승이에요.</>
+                                )}
+                                {size >= 128 && <> 대결이 {Math.min(size, sheetStats.pool) - 1}번이라 오래 걸려요. 중간에 나가도 이어할 수 있어요.</>}
+                            </p>
+                        )}
                         <div className="wc-size-grid">
-                            {sizesFor(sheetTheme).map((n) => (
+                            {(sheetStats?.loading ? [] : sheetStats?.sizes ?? []).map((n) => (
                                 <button
                                     key={n}
                                     type="button"
@@ -152,8 +208,9 @@ const WorldcupThemes = () => {
                                 type="button"
                                 className={savedLabel ? 'fun-secondary-btn' : 'fun-primary-btn'}
                                 onClick={start}
+                                disabled={!sheetStats || sheetStats.loading || sheetStats.error || !sheetStats.sizes.includes(size)}
                             >
-                                {savedLabel ? `새로 ${size}강 시작` : `${size}강 시작하기`}
+                                {savedLabel ? `새로 ${players ? `${players}명 ` : ''}${size}강 시작` : `${players ? `${players}명 · ` : ''}${size}강 시작하기`}
                             </button>
                             <Link to={`/play/worldcup/${sheetTheme.slug}/ranking`} className="wc-text-link">
                                 랭킹 먼저 보기 →

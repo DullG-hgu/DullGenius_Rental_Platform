@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 7:30:53
+-- 생성 시각: 2026. 9. 29. PM 8:47:37
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -12,7 +12,7 @@
 --   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.
 
 -- ----------------------------------------------------------------
--- 함수 EXECUTE  (107개)
+-- 함수 EXECUTE  (112개)
 -- ----------------------------------------------------------------
 -- anon  auth  security  function
 --  -     -    INVOKER   _active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
@@ -24,6 +24,7 @@
 --  -     -    INVOKER   _fun_wc_eligible_runs(p_theme_id uuid, p_scope text)
 --  -     -    INVOKER   _fun_wc_game_stats(p_theme_id uuid, p_scope text)
 --  -     -    INVOKER   _fun_wc_pool(p_filter jsonb)
+--  -     -    INVOKER   _fun_wc_pool_for(p_filter jsonb, p_players integer)
 --  -     -    DEFINER   _fuzzy_match_games(raw text)
 --  -     -    INVOKER   _parse_duration(raw text)
 --  -     -    INVOKER   _parse_fee(raw text)
@@ -33,9 +34,11 @@
 --  -     Y    DEFINER   add_game_copy(p_game_id integer)
 --  -     Y    DEFINER   admin_cancel_dibs(p_game_id integer, p_rental_id uuid, p_user_id uuid)
 --  -     Y    DEFINER   admin_extend_rentals(p_user_id uuid, p_renter_name text, p_game_id integer, p_rental_id uuid, p_days integer)
+--  -     Y    DEFINER   admin_list_game_info_reports(p_status text, p_limit integer)
 --  -     Y    DEFINER   admin_mark_lost(p_game_id integer, p_rental_id uuid)
 --  -     Y    DEFINER   admin_rent_game(p_game_id integer, p_renter_name text, p_user_id uuid, p_rental_id uuid)
 --  -     Y    DEFINER   admin_return_game(p_game_id integer, p_renter_name text, p_user_id uuid, p_rental_id uuid)
+--  -     Y    DEFINER   admin_set_game_info_report_status(p_id uuid, p_status text)
 --  -     Y    DEFINER   admin_update_user_roles(p_user_id uuid, p_role_keys text[])
 --  -     Y    DEFINER   cancel_dibs(p_game_id integer, p_user_id uuid)
 --  -     -    DEFINER   cleanup_expired_dibs()
@@ -67,11 +70,12 @@
 --  -     Y    DEFINER   fun_wc_admin_upsert_theme(p_id uuid, p_slug text, p_title text, p_description text, p_filter jsonb, p_allowed_sizes integer[], p_is_active boolean, p_sort_order integer)
 --  Y     Y    DEFINER   fun_wc_finish(p_run_id uuid, p_picks jsonb, p_anon_id uuid)
 --  Y     Y    DEFINER   fun_wc_get_run(p_run_id uuid)
---  Y     Y    DEFINER   fun_wc_list_themes()
+--  Y     Y    DEFINER   fun_wc_insights(p_slug text, p_scope text, p_min integer)
+--  Y     Y    DEFINER   fun_wc_list_themes(p_players integer)
 --  -     -    DEFINER   fun_wc_mark_abandoned()
 --  Y     Y    DEFINER   fun_wc_ranking(p_slug text, p_scope text)
 --  Y     Y    DEFINER   fun_wc_record(p_run_id uuid, p_picks jsonb, p_anon_id uuid)
---  Y     Y    DEFINER   fun_wc_start(p_slug text, p_size integer, p_anon_id uuid)
+--  Y     Y    DEFINER   fun_wc_start(p_slug text, p_size integer, p_anon_id uuid, p_players integer)
 --  -     Y    DEFINER   get_admin_analytics_activity(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)
 --  -     Y    DEFINER   get_admin_analytics_rankings(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)
 --  -     Y    DEFINER   get_admin_analytics_summary(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[])
@@ -111,6 +115,7 @@
 --  -     Y    DEFINER   rent_any_copy(p_game_id integer, p_user_id uuid)
 --  -     -    DEFINER   rent_game(p_game_id integer, p_user_id uuid, p_renter_name text)
 --  Y     Y    INVOKER   rental_due_date(p_from timestamp with time zone)
+--  Y     Y    DEFINER   report_game_info(p_game_id integer, p_field text, p_note text, p_shown_value text, p_source text, p_anon_id uuid)
 --  -     -    DEFINER   reset_own_password(p_student_id text, p_name text, p_phone text, p_new_password text)
 --  -     Y    DEFINER   reset_semester_payments()
 --  -     Y    DEFINER   reset_user_password(target_user_id uuid)

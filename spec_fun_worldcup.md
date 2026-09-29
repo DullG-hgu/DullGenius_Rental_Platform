@@ -85,6 +85,7 @@
 - 후보가 16개 미만인 테마는 목록에서 숨김
 
 ### 3-3. 강수 선택 (하단 시트)
+- **인원 선택** (상관없음 / 2~8명 / 10명): 고르면 그 인원으로 할 수 있는 게임(`min_players ≤ n ≤ max_players`)만 후보. "n명이서 뭐 하지?" 용. 인원 정보가 없는 게임은 제외. `runs.players` 에 기록 → 나중에 "n인 모임에서 뽑힌 게임" 통계
 - **8 / 16 / 32 / 64 / 128 / 256** 중 `후보 수 > 강수/2` 인 것만 제공. 기본값 16강
 - 후보가 강수보다 적으면 빈자리는 **부전승** (예: 256강 · 후보 174 → 부전승 82). 시트에 "N개 전부 참가, M개는 첫 판 부전승" 안내
 - 안내: "전체 N개 중 M개가 무작위로 뽑혀요"
@@ -93,6 +94,7 @@
 - 상단: `나가기` · `16강 3/8` · 전체 진행률 바
 - 본문: 위 카드 / VS / 아래 카드. 카드 = 박스 이미지 + 게임명 + 인원·시간 한 줄
 - 카드 탭 → 선택 애니메이션 → 다음 대결. **되돌리기 없음** (데이터가 "첫 선택"을 뜻하도록)
+- 카드 왼쪽 위 **⚠ 정보 오류 신고** 버튼 → 시트에서 인원수/플레이 시간/이미지/이름/기타 + 메모(200자). 신고 당시 화면 값도 함께 저장 (§5 `game_info_reports`)
 - 카드 오른쪽 위 **「안 해봄」 토글** (카드 선택과 별개 버튼, 한 판 안에서 유지). 고르는 건 여전히 필수. 표시 없음 = "모름"으로 취급
 - 다음 대결 이미지 2장만 미리 불러온다 (64장 한꺼번에 받지 않기)
 - 진행 상태는 localStorage에 저장 → 나갔다 오면 "이어하기 / 새로 시작"
@@ -154,6 +156,20 @@
 | champion_game_id | int null | |
 | started_at / finished_at | timestamptz | |
 
+### `game_info_reports` (게임 정보 오류 신고 — 공용)
+| 컬럼 | 설명 |
+|---|---|
+| game_id / game_name | 신고 대상 (이름은 신고 당시 값) |
+| field | players · playtime · image · name · other |
+| shown_value | 신고 당시 화면에 보인 값 (예: "2~15인") |
+| note | 메모 200자 (기타는 필수) |
+| source | worldcup · game_detail · other |
+| user_id / anon_id | 신고자 |
+| status | pending · resolved · dismissed |
+
+- `report_game_info` RPC 로만 쓴다 (비회원 가능, 1시간 10건, 같은 게임·항목 하루 1건). 관리자: `admin_list_game_info_reports` / `admin_set_game_info_report_status` (화면은 P5)
+- `damage_reports`(실물 파손, 회원 전용)와 별개
+
 ### `fun_worldcup_matches` (1:1 대결)
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
@@ -182,6 +198,19 @@
 | 완주율 | `finished / started` (강수별) | 관리자 통계. 강수 기본값 조정 근거 |
 | 이탈 지점 | 이탈 판이 마지막으로 도달한 라운드 분포 | 관리자 통계 (`dropoff`) |
 | 선호도 점수 (LATER) | 대결 기록 전체에 Bradley-Terry 적합 | 대진 운까지 보정한 순위 |
+
+### 6-1. 「안 해봄」 통계 (`fun_wc_insights`)
+표시 없음은 "모름"이다. 그래서 **칩을 한 번이라도 누른 판**(= 칩을 아는 사람)만 대상으로, 그 판에서 표시 없는 게임은 "해봤음(추정)"으로 본다.
+
+| 지표 | 정의 | 활용 |
+|---|---|---|
+| 인지도 `familiarity` | 1 − (안 해봄 표시된 판 ÷ 등장한 판) | 신입 대상 홍보·설명회 게임 선정 |
+| 호기심 승률 `curiosity_rate` | 안 해본 채로 치른 대결의 승률 | "안 해봤는데 끌리는 게임" 추천 → 대여 유도 |
+| 경험자 승률 `experienced_rate` | 해봤음(추정) 상태의 승률 | 해본 사람이 실제로 좋아하는 게임 |
+| `signal` | `first_impression`: 호기심 ≥ 0.6 & 경험자 < 0.4 (첫인상 대비 실제 만족 낮음 → 룰 안내 보강) · `classic`: 경험자 ≥ 0.6 & 인지도 ≥ 0.6 · `curious`: 호기심 ≥ 0.6 | 화면·운영 판단용 라벨 |
+
+- 표본(판·대결 수)이 `p_min`(기본 5) 미만인 지표는 null = 판단 보류
+- 1차는 서버 함수·API까지. 메인의 "안 해봤는데 끌리는 게임" 줄, 관리자 통계 화면은 데이터가 쌓인 뒤
 
 - 개발자 계정(`tester` role)의 판은 모든 집계에서 제외
 - `decide_ms`가 매우 짧은 대결만으로 이뤄진 판(연타)은 집계 제외 후보 — 임계값은 데이터를 보고 정함
@@ -214,13 +243,15 @@ B안의 비회원 도배 제한 (서버에서):
 | `fun_wc_start(p_slug, p_size, p_anon_id)` | Y (B안) | 풀 계산 → 추출 → `runs` 생성 → `{ run_id, bracket:[{id,name,image,players,time}], top_first }` 반환. 제한 초과 시 오류 |
 | `fun_wc_record(p_run_id, p_picks, p_anon_id)` | Y | 고를 때마다 **지금까지의 선택 전체**를 보냄(응답 대기 없음). 대진으로 처음부터 재검증하고 없는 대결만 추가 → 중복·순서 뒤바뀜에 안전. 기록된 것과 다른 선택은 거부. 끝난 판이면 `{ok:false}` 로 조용히 무시 |
 | `fun_wc_finish(p_run_id, p_picks, p_anon_id)` | Y | `p_picks` = 대결 순서대로 `[{w, ms}]` 전체. 같은 검증으로 빠진 대결을 채우고 champion 확정. 본인 판(`user_id` 또는 `anon_id` 일치)만 가능. 이미 끝난 판이면 거부 |
+| `fun_wc_insights(p_slug, p_scope, p_min)` | Y | 「안 해봄」 통계 (§6-1). 집계 수치만 |
+| `report_game_info(...)` | Y | 게임 정보 오류 신고 (§5) |
 | `fun_wc_get_run(p_run_id)` | Y | 결과·공유 화면용. **user_id·anon_id는 내려주지 않는다** |
 | `fun_wc_ranking(p_slug, p_scope)` | Y | `p_scope` = `member` / `all`. 게임별 승·패·승률·우승률 |
 | `fun_wc_admin_stats(p_slug, p_from, p_to)` | - | 관리자 통계. `REVOKE EXECUTE ... FROM PUBLIC, anon` |
 | `fun_wc_admin_upsert_theme(...)` / 활성 토글 | - | 테마 관리. 동일하게 anon 회수 |
 
 - 모두 `SECURITY DEFINER` + `SET search_path TO 'public', 'pg_temp'`
-- 적용 후 `npm run pull-schema` → `_LIVE/grants.sql`에서 anon=Y인 새 함수가 **위 표의 Y 행뿐인지** 확인 (공개 6개)
+- 적용 후 `npm run pull-schema` → `_LIVE/grants.sql`에서 anon=Y인 새 함수가 **위 표의 Y 행뿐인지** 확인 (공개 8개: list_themes·start·record·finish·get_run·ranking·insights·report_game_info)
 - 중도 이탈 판: 6시간 넘게 `started`인 판을 별도 크론 `fun-worldcup-abandon`(매시 17분)이 `abandoned` 처리. 이탈 전까지의 대결은 `fun_wc_record` 로 이미 저장돼 있음 (§11-3)
 
 ---

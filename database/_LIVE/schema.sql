@@ -1,12 +1,12 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 7:30:50
+-- 생성 시각: 2026. 9. 29. PM 8:47:35
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 23개 테이블
+-- 총 24개 테이블
 
 -- ----------------------------------------------------------------
 -- 테이블: allowed_users
@@ -175,7 +175,8 @@ CREATE TABLE public.fun_worldcup_runs (
   status text NOT NULL DEFAULT 'started'::text,
   champion_game_id int4,
   started_at timestamptz NOT NULL DEFAULT now(),
-  finished_at timestamptz
+  finished_at timestamptz,
+  players int4
 );
 
 -- ----------------------------------------------------------------
@@ -202,6 +203,25 @@ CREATE TABLE public.game_daily_stats (
   game_id int4 NOT NULL,  -- FK → games(id)
   date date NOT NULL DEFAULT CURRENT_DATE,
   view_count int4 DEFAULT 1
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: game_info_reports
+-- ----------------------------------------------------------------
+CREATE TABLE public.game_info_reports (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  game_id int4,  -- FK → games(id)
+  game_name text NOT NULL,
+  field text NOT NULL,
+  shown_value text,
+  note text,
+  source text NOT NULL DEFAULT 'worldcup'::text,
+  user_id uuid,
+  anon_id uuid,
+  status text NOT NULL DEFAULT 'pending'::text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  resolved_at timestamptz,
+  resolved_by uuid
 );
 
 -- ----------------------------------------------------------------

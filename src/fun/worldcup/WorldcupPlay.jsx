@@ -3,7 +3,8 @@
 // 마지막 선택에서 fun_wc_finish 로 우승을 확정한다.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { finishWorldcup, recordWorldcupPicks, startWorldcup } from '../../api_fun';
+import { finishWorldcup, recordWorldcupPicks, reportGameInfo, startWorldcup } from '../../api_fun';
+import { useToast } from '../../contexts/ToastContext';
 import { getMatchState, getUpcomingCandidates, ROUND_LABEL } from './worldcupLogic';
 import { clearProgress, loadProgress, saveProgress } from './worldcupProgress';
 import '../fun.css';
@@ -16,8 +17,81 @@ const playerText = (c) => {
     return `${c.min_players ?? 1}~${c.max_players}인`;
 };
 
-// 카드 선택 버튼과 「안 해봄」 칩은 형제 요소 — 칩을 눌러도 선택되지 않는다
-const Card = ({ candidate, state, onPick, disabled, unplayed, onToggleUnplayed }) => {
+const REPORT_FIELDS = [
+    ['players', '인원수'],
+    ['playtime', '플레이 시간'],
+    ['image', '이미지'],
+    ['name', '이름'],
+    ['other', '기타'],
+];
+
+// 신고 당시 화면에 보인 값 — 운영진이 무엇을 보고 신고했는지 알 수 있게 같이 보낸다
+const shownValueFor = (c, field) => {
+    if (field === 'players') return playerText(c);
+    if (field === 'playtime') return c.playingtime ?? null;
+    if (field === 'name') return c.name;
+    if (field === 'image') return c.image ? '이미지' : '이미지 없음';
+    return null;
+};
+
+// 게임 정보 오류 신고 시트 (선택은 멈춘 채로 열린다)
+const ReportSheet = ({ candidate, onClose }) => {
+    const { showToast } = useToast();
+    const [field, setField] = useState(null);
+    const [note, setNote] = useState('');
+    const [sending, setSending] = useState(false);
+    const needsNote = field === 'other' && !note.trim();
+
+    const send = () => {
+        setSending(true);
+        reportGameInfo({ gameId: candidate.id, field, note: note.trim() || null, shownValue: shownValueFor(candidate, field) })
+            .then(() => {
+                showToast('고마워요! 운영진이 확인할게요.');
+                onClose();
+            })
+            .catch((e) => {
+                setSending(false);
+                showToast(e?.message || '신고를 보내지 못했어요.', { type: 'error' });
+            });
+    };
+
+    return (
+        <div className="wc-sheet-backdrop" onClick={onClose}>
+            <div className="wc-sheet" role="dialog" aria-modal="true" aria-labelledby="wc-report-title" onClick={(e) => e.stopPropagation()}>
+                <div className="wc-sheet-handle" aria-hidden="true" />
+                <h3 id="wc-report-title">「{candidate.name}」 정보가 이상해요</h3>
+                <p className="wc-sheet-note">어떤 정보가 틀렸나요? 운영진이 확인해서 고칠게요.</p>
+                <div className="wc-report-fields" role="group" aria-label="틀린 항목">
+                    {REPORT_FIELDS.map(([key, label]) => (
+                        <button key={key} type="button" className="wc-players-btn" aria-pressed={field === key} onClick={() => setField(key)}>
+                            {label}
+                        </button>
+                    ))}
+                </div>
+                {field && field !== 'other' && shownValueFor(candidate, field) && field !== 'image' && (
+                    <p className="wc-sheet-note">지금 표시: <strong>{shownValueFor(candidate, field)}</strong></p>
+                )}
+                <textarea
+                    className="wc-report-note"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value.slice(0, 200))}
+                    placeholder={field === 'other' ? '어떤 점이 이상한지 적어 주세요' : '맞는 정보를 알면 적어 주세요 (선택)'}
+                    rows={3}
+                    aria-label="메모"
+                />
+                <div className="wc-sheet-actions">
+                    <button type="button" className="fun-primary-btn" onClick={send} disabled={!field || needsNote || sending}>
+                        {sending ? '보내는 중…' : '신고 보내기'}
+                    </button>
+                    <button type="button" className="wc-text-link" onClick={onClose}>취소</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// 카드 선택 버튼과 「안 해봄」 칩·⚠ 신고 버튼은 형제 요소 — 눌러도 선택되지 않는다
+const Card = ({ candidate, state, onPick, disabled, unplayed, onToggleUnplayed, onReport }) => {
     const meta = [playerText(candidate), candidate.playingtime].filter(Boolean).join(' · ');
     return (
         <div className={`wc-card-wrap${state ? ` is-${state}` : ''}`}>
@@ -44,6 +118,16 @@ const Card = ({ candidate, state, onPick, disabled, unplayed, onToggleUnplayed }
             >
                 {unplayed ? '안 해봄 ✓' : '안 해봄'}
             </button>
+            <button
+                type="button"
+                className="wc-report-btn"
+                aria-label={`${candidate.name} 정보 오류 신고`}
+                title="정보가 이상해요"
+                onClick={() => onReport(candidate)}
+                disabled={disabled}
+            >
+                ⚠
+            </button>
         </div>
     );
 };
@@ -56,6 +140,7 @@ const WorldcupPlay = () => {
     const [run, setRun] = useState(null);
     const [picks, setPicks] = useState([]);
     const [unplayed, setUnplayed] = useState(() => new Set()); // 이 판에서 「안 해봄」 표시한 게임 id
+    const [reportTarget, setReportTarget] = useState(null);
     const [error, setError] = useState(null);
     const [chosenId, setChosenId] = useState(null);
     const [submitting, setSubmitting] = useState(false);
@@ -82,7 +167,8 @@ const WorldcupPlay = () => {
         }
 
         const size = Number(searchParams.get('size'));
-        startWorldcup(slug, size)
+        const players = Number(searchParams.get('players')) || null;
+        startWorldcup(slug, size, players)
             .then((data) => {
                 setRun(data);
                 saveProgress(data, [], []);
@@ -142,7 +228,7 @@ const WorldcupPlay = () => {
     };
 
     const pick = (id) => {
-        if (chosenId !== null || !state || state.done) return;
+        if (chosenId !== null || reportTarget || !state || state.done) return;
         const ms = Date.now() - matchShownAt.current;
         const u = [state.top.id, state.bottom.id].filter((gid) => unplayed.has(gid));
         setChosenId(id);
@@ -223,10 +309,12 @@ const WorldcupPlay = () => {
                         disabled={chosenId !== null}
                         unplayed={unplayed.has(c.id)}
                         onToggleUnplayed={toggleUnplayed}
+                        onReport={setReportTarget}
                     />
                 ))}
                 <div className="wc-vs" aria-hidden="true">VS</div>
             </div>
+            {reportTarget && <ReportSheet candidate={reportTarget} onClose={() => setReportTarget(null)} />}
         </div>
     );
 };
