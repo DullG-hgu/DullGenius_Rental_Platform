@@ -120,3 +120,34 @@ export const fetchWorldcupAdminStats = ({ slug = null, from, to } = {}) =>
 
 // [Admin] 이상 징후 점검
 export const fetchWorldcupAbuseCheck = (hours = 24) => callRpc('fun_wc_abuse_check', { p_hours: hours });
+
+// ==========================================
+// [성향검사] spec_fun_quiz.md — 로그인 회원만. 채점은 서버(fun_quiz_score)가 한다.
+// ==========================================
+
+// [Member] 응답 제출 — answers: 문항 순서대로 −2(A)…+2(B) 19개. 서버가 채점·저장한 결과
+// { id, code, four[4], eight[8], answers[19], created_at, previous: { id, code, four, created_at } | null }
+export const submitQuiz = (answers, version) =>
+    callRpc('fun_quiz_submit', { p_answers: answers, p_consent: true, p_version: version });
+
+// [Member] 내 결과 하나 (본인 것만, 없으면 null)
+export const fetchQuizResult = (id) => callRpc('fun_quiz_get_result', { p_id: id });
+
+// [Member] 내 기록 목록 — [{ id, code, four, created_at }] 최신순
+export const fetchMyQuizResults = () => callRpc('fun_quiz_my_results');
+
+// [Admin] 기간 통계 — 회원별 최신 1건 기준 { responses, members, by_code, four_avg[4], eight_avg[8] }
+export const fetchQuizAdminStats = ({ from, to } = {}) =>
+    callRpc('fun_quiz_admin_stats', { ...(from ? { p_from: from } : {}), ...(to ? { p_to: to } : {}) });
+
+// [Member] 내 성향 공개 설정 — { is_public, latest: { id, code, four, created_at } | null }
+export const fetchMyQuizPublic = () => callRpc('fun_quiz_my_public');
+
+// [Member] 리뷰 옆 성향 배지 공개 켜기/끄기
+export const setQuizPublic = (isPublic) => callRpc('fun_quiz_set_public', { p_public: isPublic });
+
+// [Public] 리뷰 작성자 배지 — 공개를 켠 회원만 { "<user_id>": { code, four } } (최대 100명)
+export const fetchQuizBadges = (userIds) => {
+    const ids = [...new Set(userIds.filter(Boolean))].slice(0, 100);
+    return ids.length ? callRpc('fun_quiz_public_badges', { p_user_ids: ids }) : Promise.resolve({});
+};

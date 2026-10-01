@@ -227,6 +227,10 @@
     box-sizing: border-box;
 }
 
+.home-play-card + .home-play-card {
+    margin-top: 10px;
+}
+
 .home-play-icon {
     font-size: 2rem;
     flex-shrink: 0;

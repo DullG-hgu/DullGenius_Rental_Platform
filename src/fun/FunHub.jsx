@@ -22,7 +22,13 @@ const FunHub = () => {
                         <div className="fun-hub-desc">둘 중 하나! 나의 원픽 보드게임 찾기</div>
                     </div>
                 </Link>
-
+                <Link to="/play/quiz" className="fun-hub-card">
+                    <span className="fun-hub-icon" aria-hidden="true">🧭</span>
+                    <div>
+                        <div className="fun-hub-name">보드게임 성향검사</div>
+                        <div className="fun-hub-desc">질문 19개로 찾는 나와 맞는 게임 가족</div>
+                    </div>
+                </Link>
             </div>
         </div>
     );

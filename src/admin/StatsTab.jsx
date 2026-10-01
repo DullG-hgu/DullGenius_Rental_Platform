@@ -9,6 +9,7 @@ import {
 import { supabase } from '../lib/supabaseClient.jsx';
 import AdminAnalytics from './AdminAnalytics.jsx';
 import WorldcupStatsPanel from './WorldcupStatsPanel.jsx';
+import QuizStatsPanel from './QuizStatsPanel.jsx';
 
 const CARD_STYLE = {
   background: 'var(--admin-card-bg)',
@@ -67,6 +68,7 @@ function truncateLabel(value, max) {
 export default function StatsTab() {
   const [period, setPeriod] = useState(30);
   const [showWorldcup, setShowWorldcup] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
   const [rentalStats, setRentalStats] = useState([]);
   const [topGames, setTopGames] = useState([]);
   const [overdueStats, setOverdueStats] = useState(null);
@@ -194,6 +196,23 @@ export default function StatsTab() {
           🏆 이상형 월드컵 통계 {showWorldcup ? '접기' : '보기'}
         </button>
         {showWorldcup && <div style={{ marginTop: '16px' }}><WorldcupStatsPanel /></div>}
+      </div>
+
+      {/* 보드게임 성향검사 통계: 버튼으로 펼쳐서 조회 (운영진만, 집계만) */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowQuiz((v) => !v)}
+          aria-expanded={showQuiz}
+          style={{
+            padding: '10px 18px', borderRadius: '8px', border: '1px solid var(--admin-border)', cursor: 'pointer',
+            background: showQuiz ? '#667eea' : 'var(--admin-card-bg)', color: showQuiz ? '#fff' : 'var(--admin-text-main)',
+            fontWeight: 'bold',
+          }}
+        >
+          🧭 성향검사 통계 {showQuiz ? '접기' : '보기'}
+        </button>
+        {showQuiz && <div style={{ marginTop: '16px' }}><QuizStatsPanel /></div>}
       </div>
 
       <AdminAnalytics />

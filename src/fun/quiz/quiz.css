@@ -1,0 +1,603 @@
+/* src/fun/quiz/quiz.css — 보드게임 성향검사 (fun.css 위에 얹는다). 모바일 390px 기준 */
+
+.quiz-intro-lead {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 12px;
+}
+
+.quiz-intro-facts {
+    margin: 0 0 20px;
+    padding-left: 18px;
+    color: #555;
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+.quiz-consent {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 0 0 14px;
+    padding: 12px;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    background: #fafafa;
+    font-size: 0.88rem;
+    color: #444;
+    line-height: 1.5;
+}
+
+.quiz-consent input {
+    margin-top: 3px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.quiz-code {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #f1ecf9;
+    color: #4a2b8c;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.quiz-code.is-small {
+    font-size: 0.72rem;
+}
+
+.quiz-history {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.quiz-history a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #f0f0f0;
+    color: inherit;
+    text-decoration: none;
+}
+
+.quiz-history-date {
+    color: #888;
+    font-size: 0.85rem;
+    min-width: 64px;
+}
+
+.quiz-history-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+/* ── 문항 ───────────────────────────── */
+
+.quiz-progress {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: #eee;
+    overflow: hidden;
+}
+
+.quiz-progress span {
+    display: block;
+    height: 100%;
+    background: #6a11cb;
+    transition: width 0.2s;
+}
+
+.quiz-progress-text {
+    min-width: 44px;
+    text-align: right;
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.quiz-question,
+.quiz-section-label {
+    margin: 8px 0 16px;
+    font-size: 1.2rem;
+    line-height: 1.45;
+}
+
+.quiz-section-label {
+    color: #4a2b8c;
+}
+
+.quiz-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    background: #fff;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+/* A는 위·왼쪽, B는 아래·오른쪽 — 아래 5단계 버튼의 A(왼쪽)·B(오른쪽)와 방향을 맞춘다 */
+.quiz-option.is-a {
+    margin-right: 15%;
+}
+
+.quiz-option.is-b {
+    margin-left: 15%;
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.quiz-option-tag {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    background: #f1ecf9;
+    color: #4a2b8c;
+}
+
+.quiz-scale {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin: 14px 0;
+}
+
+.quiz-scale-btn {
+    flex: 1;
+    min-height: 44px;
+    border: 1px solid rgba(106, 17, 203, 0.3);
+    border-radius: 12px;
+    background: #fff;
+    color: #4a2b8c;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.quiz-scale-btn.size-1 {
+    min-height: 36px;
+}
+
+.quiz-scale-btn.size-0 {
+    font-size: 0.85rem;
+}
+
+.quiz-scale-btn.is-on {
+    background: #6a11cb;
+    border-color: #6a11cb;
+    color: #fff;
+}
+
+.quiz-submit {
+    margin-top: 8px;
+}
+
+.quiz-hint,
+.quiz-error {
+    margin-top: 10px;
+    font-size: 0.88rem;
+    color: #666;
+}
+
+.quiz-error {
+    color: #c0392b;
+}
+
+/* ── 결과 ───────────────────────────── */
+
+.quiz-hero {
+    padding: 20px 16px;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    background: #fff;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.quiz-hero-kicker {
+    margin: 0;
+    color: #888;
+    font-size: 0.88rem;
+}
+
+.quiz-hero-name {
+    margin: 6px 0 8px;
+    font-size: 1.45rem;
+}
+
+.quiz-hero .quiz-code {
+    margin-left: 0;
+}
+
+.quiz-compare {
+    margin: 12px 0 0;
+    color: #555;
+    font-size: 0.88rem;
+}
+
+.quiz-lines {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.quiz-lines p {
+    margin: 4px 0 0;
+    line-height: 1.5;
+}
+
+.quiz-line-axis {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #4a2b8c;
+}
+
+.quiz-line-compare {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.quiz-toggle {
+    margin-top: 12px;
+    background: none;
+    border: none;
+    color: #4a2b8c;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 44px;
+    padding: 0;
+}
+
+.quiz-bars {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.quiz-bars li {
+    display: grid;
+    grid-template-columns: 20px 1fr 20px;
+    align-items: center;
+    gap: 6px;
+}
+
+.quiz-bar-name {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 0.78rem;
+    color: #888;
+}
+
+.quiz-bar-end {
+    text-align: center;
+    font-weight: 700;
+    color: #4a2b8c;
+    font-size: 0.85rem;
+}
+
+.quiz-bar {
+    position: relative;
+    height: 8px;
+    border-radius: 999px;
+    background: #eee;
+}
+
+.quiz-bar-mid {
+    position: absolute;
+    left: 50%;
+    top: -3px;
+    width: 1px;
+    height: 14px;
+    background: #ccc;
+}
+
+.quiz-bar-dot {
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #6a11cb;
+    transform: translate(-50%, -50%);
+}
+
+.quiz-extra {
+    margin: 16px 0;
+    padding: 14px;
+    border-radius: 12px;
+    background: #fafafa;
+    border: 1px solid #eee;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.quiz-extra p {
+    margin: 0 0 8px;
+}
+
+.quiz-extra a {
+    color: #4a2b8c;
+    font-weight: 600;
+}
+
+.quiz-closing {
+    margin: 20px 0 8px;
+    color: #555;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.quiz-prev-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.quiz-prev {
+    min-height: 44px;
+    padding: 8px 18px;
+    border: none;
+    background: none;
+    color: #4a2b8c;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* 8가지 세부 성향: 양 끝이 글자 대신 짧은 말이라 끝 칸을 넓힌다 */
+.quiz-bars.is-eight li {
+    grid-template-columns: 76px 1fr 76px;
+}
+
+.quiz-bars.is-eight .quiz-bar-end {
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    word-break: keep-all;
+}
+
+/* ── 마이페이지 카드 ───────────────────── */
+
+.quiz-my-card {
+    display: grid;
+    gap: 12px;
+}
+
+.quiz-my-latest {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 4px;
+}
+
+.quiz-my-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.quiz-my-latest .quiz-my-link {
+    margin-left: auto;
+}
+
+.quiz-my-link {
+    color: #4a2b8c;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.quiz-my-note {
+    margin: 0;
+    color: #666;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.quiz-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.quiz-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.quiz-switch-track {
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 26px;
+    border-radius: 999px;
+    background: #ccc;
+    transition: background 0.2s;
+}
+
+.quiz-switch-track span {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.2s;
+}
+
+.quiz-switch input:checked + .quiz-switch-track {
+    background: #6a11cb;
+}
+
+.quiz-switch input:checked + .quiz-switch-track span {
+    transform: translateX(18px);
+}
+
+.quiz-switch input:focus-visible + .quiz-switch-track {
+    outline: 2px solid #6a11cb;
+    outline-offset: 2px;
+}
+
+/* ── 리뷰 옆 성향 배지 + 설명 창 ─────────── */
+
+.quiz-badge {
+    padding: 1px 8px;
+    min-height: 24px;
+    border: 1px solid rgba(106, 17, 203, 0.3);
+    border-radius: 999px;
+    background: #f1ecf9;
+    color: #4a2b8c;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+}
+
+.quiz-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.quiz-modal {
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 18px 16px 24px;
+    border-radius: 18px 18px 0 0;
+    background: #fff;
+}
+
+@media (min-width: 600px) {
+    .quiz-modal-overlay {
+        align-items: center;
+    }
+
+    .quiz-modal {
+        border-radius: 18px;
+    }
+}
+
+.quiz-modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.quiz-modal-kicker {
+    color: #888;
+    font-size: 0.82rem;
+}
+
+.quiz-modal-name {
+    margin-top: 4px;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.quiz-modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    border: none;
+    background: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.quiz-tabs {
+    display: flex;
+    gap: 6px;
+    margin: 14px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.quiz-tabs button {
+    min-height: 40px;
+    padding: 0 14px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: #888;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.quiz-tabs button.is-on {
+    color: #4a2b8c;
+    border-bottom-color: #6a11cb;
+}
+
+.quiz-badge-empty p {
+    margin: 0 0 8px;
+    color: #555;
+}
+
+.quiz-compare-heads {
+    display: grid;
+    gap: 6px;
+    font-size: 0.9rem;
+}
+
+.quiz-compare-summary {
+    margin: 10px 0 0;
+    font-weight: 700;
+}
+
+.quiz-legend {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.quiz-legend.is-me {
+    background: #6a11cb;
+}
+
+.quiz-legend.is-other,
+.quiz-bar-dot.is-other {
+    background: #fff;
+    border: 2px solid #e67e22;
+}
+
+.quiz-bar-dot.is-other {
+    box-sizing: border-box;
+}
+
+.quiz-modal-cta {
+    display: block;
+    margin-top: 18px;
+    text-align: center;
+    color: #4a2b8c;
+    font-weight: 700;
+    text-decoration: none;
+}
