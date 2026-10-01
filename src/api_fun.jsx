@@ -53,7 +53,8 @@ export const recordWorldcupPicks = (runId, picks) => {
         .then(() => {}, () => {});
 };
 
-// [Public] 판 제출 — picks = 대결 순서대로 [{ w: 승자 game_id, ms: 고른 시간 }]. 결과(getWorldcupRun 과 같은 모양) 반환
+// [Public] 판 제출 — picks = 대결 순서대로 [{ w: 승자 game_id, ms: 고른 시간, u?: 안 해봄[], p?: 미리 켜진 안 해봄을 끈 게임[] }].
+// 회원 판이면 u·p 가 회원별 표시(user_game_marks)에 반영된다. 결과(getWorldcupRun 과 같은 모양) 반환
 export const finishWorldcup = (runId, picks) =>
     callRpc('fun_wc_finish', { p_run_id: runId, p_picks: picks, p_anon_id: getFunAnonId(), p_seq: Date.now() });
 
@@ -72,6 +73,9 @@ export const fetchWorldcupInsights = (slug, scope = 'all', minSample = 5) =>
 // [Member] 내 진행 중인 판 (다른 기기에서 이어하기, 3일) — { run, picks, unplayed, last_activity } 또는 null
 export const fetchMyOpenWorldcupRun = (slug = null) =>
     callRpc('fun_wc_my_open_run', slug ? { p_slug: slug } : {});
+
+// [Member] 이 판 후보 중 내가 「안 해봄」으로 표시해 둔(대여 기록 없는) 게임 id[] → 토글 미리 켜기
+export const fetchWorldcupPrefill = (runId) => callRpc('fun_wc_my_prefill', { p_run_id: runId });
 
 // [Member] 내 보드게임 취향 — 본인 기록만 (auth.uid() 기준, 비로그인은 호출 불가)
 // { runs_finished, runs_total, matches, unplayed_marks, top_picks[], champions[], curious[], genres[] }

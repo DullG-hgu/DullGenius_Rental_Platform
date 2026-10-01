@@ -3,7 +3,7 @@
 // 마지막 선택에서 fun_wc_finish 로 우승을 확정한다.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { finishWorldcup, recordWorldcupPicks, reportGameInfo, startWorldcup } from '../../api_fun';
+import { fetchWorldcupPrefill, finishWorldcup, recordWorldcupPicks, reportGameInfo, startWorldcup } from '../../api_fun';
 import { useToast } from '../../contexts/ToastContext';
 import { useGameData } from '../../contexts/GameDataContext';
 import { translateGenre } from '../../constants/genreMap';
@@ -205,6 +205,21 @@ const WorldcupPlay = () => {
 
     const startedRef = useRef(false);
     const matchShownAt = useRef(Date.now());
+    const prefilledRef = useRef(new Set()); // 서버가 미리 켜 준 「안 해봄」 — 이걸 끄고 고르면 "해봤음"(p)으로 보낸다
+
+    // 회원: 지난 판들에서 「안 해봄」 표시한 게임을 이 판에서도 미리 켠다. 실패해도 플레이엔 영향 없음
+    useEffect(() => {
+        if (!run?.run_id || !user) return;
+        let cancelled = false;
+        fetchWorldcupPrefill(run.run_id)
+            .then((ids) => {
+                if (cancelled || !Array.isArray(ids) || ids.length === 0) return;
+                prefilledRef.current = new Set(ids);
+                setUnplayed((prev) => new Set([...prev, ...ids]));
+            })
+            .catch(() => {});
+        return () => { cancelled = true; };
+    }, [run?.run_id, user]);
 
     // 판 준비: 이어하기면 기기 저장분, 아니면 서버에서 새 판 발급
     useEffect(() => {
@@ -287,10 +302,12 @@ const WorldcupPlay = () => {
     const pick = (id) => {
         if (chosenId !== null || reportTarget || detailTarget || !state || state.done) return;
         const ms = Date.now() - matchShownAt.current;
-        const u = [state.top.id, state.bottom.id].filter((gid) => unplayed.has(gid));
+        const pair = [state.top.id, state.bottom.id];
+        const u = pair.filter((gid) => unplayed.has(gid));
+        const p = pair.filter((gid) => prefilledRef.current.has(gid) && !unplayed.has(gid));
         setChosenId(id);
         setTimeout(() => {
-            const next = [...picks, u.length ? { w: id, ms, u } : { w: id, ms }];
+            const next = [...picks, { w: id, ms, ...(u.length ? { u } : {}), ...(p.length ? { p } : {}) }];
             setPicks(next);
             setChosenId(null);
             setCanUndo(true);

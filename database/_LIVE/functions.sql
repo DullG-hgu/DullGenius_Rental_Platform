@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 1. PM 8:41:55
+-- 생성 시각: 2026. 10. 1. PM 8:54:41
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 125개 함수
+-- 총 128개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -142,6 +142,30 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: _fun_my_game_status
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._fun_my_game_status(p_uid uuid)
+ RETURNS TABLE(game_id integer, status text, source text, at timestamp with time zone)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  WITH m AS (
+    SELECT * FROM public.user_game_marks WHERE user_id = p_uid
+  ), rent AS (
+    SELECT r.game_id, max(r.borrowed_at) AS at
+    FROM public.rentals r
+    WHERE r.user_id = p_uid AND r.type = 'RENT' AND r.borrowed_at IS NOT NULL
+    GROUP BY r.game_id
+  )
+  SELECT COALESCE(m.game_id, rent.game_id),
+         CASE WHEN m.game_id IS NULL OR rent.at > m.updated_at THEN 'played' ELSE m.status END,
+         CASE WHEN m.game_id IS NULL OR rent.at > m.updated_at THEN 'rental' ELSE m.source END,
+         CASE WHEN m.game_id IS NULL OR rent.at > m.updated_at THEN rent.at ELSE m.updated_at END
+  FROM m FULL JOIN rent ON rent.game_id = m.game_id
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: _fun_wc_apply_picks
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public._fun_wc_apply_picks(p_run fun_worldcup_runs, p_picks jsonb)
@@ -243,6 +267,29 @@ BEGIN
   )
   INSERT INTO public.fun_worldcup_undos (run_id, round_size, match_no, top_game_id, bottom_game_id, winner_game_id)
   SELECT * FROM gone;
+
+  -- 회원 판: 「안 해봄」(u) · 미리 켜진 표시를 끈 게임(p = 해봤음)을 회원별 표시(user_game_marks)에 반영.
+  -- 같은 게임이 여러 대결에 나오면 마지막 대결 기준. 진행분 전체를 매번 다시 보내므로,
+  -- 이 판이 시작된 뒤 다른 경로(직접 변경 등)로 바뀐 표시는 덮어쓰지 않는다.
+  IF p_run.user_id IS NOT NULL THEN
+    INSERT INTO public.user_game_marks AS um (user_id, game_id, status, source, run_id)
+    SELECT DISTINCT ON (e.gid) p_run.user_id, e.gid, e.st, 'worldcup', p_run.id
+    FROM (
+      SELECT a.ord, (x.v)::numeric AS gid_n, k.st
+      FROM jsonb_array_elements(p_picks) WITH ORDINALITY AS a(pk, ord)
+      CROSS JOIN (VALUES ('u', 'unplayed'), ('p', 'played')) AS k(key, st)
+      CROSS JOIN LATERAL jsonb_array_elements(
+        CASE WHEN jsonb_typeof(a.pk -> k.key) = 'array' THEN a.pk -> k.key ELSE '[]'::jsonb END) AS x(v)
+      WHERE jsonb_typeof(x.v) = 'number'
+    ) e0
+    CROSS JOIN LATERAL (SELECT e0.ord, e0.st, b.id AS gid
+                        FROM unnest(p_run.bracket) AS b(id) WHERE b.id = e0.gid_n) e
+    ORDER BY e.gid, e.ord DESC, e.st DESC
+    ON CONFLICT (user_id, game_id) DO UPDATE
+      SET status = EXCLUDED.status, source = 'worldcup', run_id = EXCLUDED.run_id, updated_at = now()
+      WHERE um.status <> EXCLUDED.status
+        AND (um.run_id = p_run.id OR um.updated_at < p_run.started_at);
+  END IF;
 
   RETURN v_cur;
 END;
@@ -533,6 +580,23 @@ CREATE OR REPLACE FUNCTION public._tg_event_set_updated_at()
 AS $function$
 BEGIN
   NEW.updated_at := now();
+  RETURN NEW;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _user_game_marks_log
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._user_game_marks_log()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT' OR NEW.status IS DISTINCT FROM OLD.status THEN
+    INSERT INTO public.user_game_mark_events (user_id, game_id, status, source, run_id, created_at)
+    VALUES (NEW.user_id, NEW.game_id, NEW.status, NEW.source, NEW.run_id, NEW.updated_at);
+  END IF;
   RETURN NEW;
 END;
 $function$
@@ -3051,6 +3115,32 @@ BEGIN
     ),
     'last_activity', GREATEST(v_run.started_at,
       (SELECT max(created_at) FROM public.fun_worldcup_matches WHERE run_id = v_run.id))
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_wc_my_prefill
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_wc_my_prefill(p_run_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid     uuid := auth.uid();
+  v_bracket integer[];
+BEGIN
+  IF v_uid IS NULL THEN RETURN '[]'::jsonb; END IF;
+
+  SELECT bracket INTO v_bracket FROM public.fun_worldcup_runs WHERE id = p_run_id AND user_id = v_uid;
+  IF NOT FOUND THEN RETURN '[]'::jsonb; END IF;
+
+  RETURN (
+    SELECT COALESCE(jsonb_agg(s.game_id ORDER BY s.game_id), '[]'::jsonb)
+    FROM public._fun_my_game_status(v_uid) s
+    WHERE s.status = 'unplayed' AND s.game_id = ANY (v_bracket)
   );
 END;
 $function$

@@ -1,12 +1,12 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 1. PM 8:42:27
+-- 생성 시각: 2026. 10. 1. PM 8:55:19
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 27개 테이블
+-- 총 29개 테이블
 
 -- ----------------------------------------------------------------
 -- 테이블: allowed_users
@@ -443,6 +443,32 @@ CREATE TABLE public.roles (
   role_key text NOT NULL PRIMARY KEY,
   display_name text NOT NULL,
   permissions jsonb DEFAULT '{}'::jsonb
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: user_game_mark_events
+-- ----------------------------------------------------------------
+CREATE TABLE public.user_game_mark_events (
+  id int8 NOT NULL PRIMARY KEY,
+  user_id uuid NOT NULL,
+  game_id int4 NOT NULL,  -- FK → games(id)
+  status text NOT NULL,
+  source text NOT NULL,
+  run_id uuid,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: user_game_marks
+-- ----------------------------------------------------------------
+CREATE TABLE public.user_game_marks (
+  user_id uuid NOT NULL PRIMARY KEY,
+  game_id int4 NOT NULL PRIMARY KEY,  -- FK → games(id)
+  status text NOT NULL,
+  source text NOT NULL,
+  run_id uuid,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 -- ----------------------------------------------------------------

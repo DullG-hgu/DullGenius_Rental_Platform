@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 1. PM 8:42:30
+-- 생성 시각: 2026. 10. 1. PM 8:55:22
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -12,7 +12,7 @@
 --   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.
 
 -- ----------------------------------------------------------------
--- 함수 EXECUTE  (125개)
+-- 함수 EXECUTE  (128개)
 -- ----------------------------------------------------------------
 -- anon  auth  security  function
 --  -     -    INVOKER   _active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
@@ -20,6 +20,7 @@
 --  Y     Y    INVOKER   _event_generate_invite_code()
 --  Y     Y    INVOKER   _event_is_full(p_event_id uuid)
 --  Y     Y    INVOKER   _event_make_depositor_name(p_event_slug text, p_name text)
+--  -     -    INVOKER   _fun_my_game_status(p_uid uuid)
 --  -     -    INVOKER   _fun_wc_apply_picks(p_run fun_worldcup_runs, p_picks jsonb)
 --  -     -    INVOKER   _fun_wc_eligible_runs(p_theme_id uuid, p_scope text)
 --  -     -    INVOKER   _fun_wc_game_stats(p_theme_id uuid, p_scope text)
@@ -31,6 +32,7 @@
 --  -     -    INVOKER   _parse_game_count(raw text)
 --  -     -    INVOKER   _parse_pickup(raw text)
 --  Y     Y    INVOKER   _tg_event_set_updated_at()
+--  -     -    INVOKER   _user_game_marks_log()
 --  -     Y    DEFINER   add_game_copy(p_game_id integer)
 --  -     Y    DEFINER   admin_cancel_dibs(p_game_id integer, p_rental_id uuid, p_user_id uuid)
 --  -     Y    DEFINER   admin_extend_rentals(p_user_id uuid, p_renter_name text, p_game_id integer, p_rental_id uuid, p_days integer)
@@ -85,6 +87,7 @@
 --  Y     Y    DEFINER   fun_wc_list_themes(p_players integer)
 --  -     -    DEFINER   fun_wc_mark_abandoned()
 --  -     Y    DEFINER   fun_wc_my_open_run(p_slug text)
+--  -     Y    DEFINER   fun_wc_my_prefill(p_run_id uuid)
 --  -     Y    DEFINER   fun_wc_my_profile()
 --  Y     Y    DEFINER   fun_wc_ranking(p_slug text, p_scope text)
 --  Y     Y    DEFINER   fun_wc_record(p_run_id uuid, p_picks jsonb, p_anon_id uuid, p_seq bigint)
