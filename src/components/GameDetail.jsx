@@ -8,6 +8,8 @@ import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
 import NotFound from './NotFound';
 import ConfirmModal from './ConfirmModal';
+import QuizBadge from '../fun/quiz/QuizBadge';
+import { fetchQuizBadges } from '../api_fun';
 import InfoModal from './InfoModal';
 import LazyImage from './common/LazyImage'; // [NEW] Lazy Image
 import { getOptimizedImageUrl } from '../utils/imageOptimizer';
@@ -27,6 +29,7 @@ function GameDetail() {
   const [reviews, setReviews] = useState([]);
   const [reviewRefresh, setReviewRefresh] = useState(0);
   const [reviewsError, setReviewsError] = useState(null);
+  const [quizBadges, setQuizBadges] = useState({});
   const [isReviewsLoading, setIsReviewsLoading] = useState(true);
   const globalGame = games.find(item => String(item.id) === String(id));
   const currentDetail = detail?.id === id && detail?.userId === (user?.id ?? null) ? detail : null;
@@ -96,7 +99,12 @@ function GameDetail() {
     setReviewsError(null);
     setIsReviewsLoading(true);
     fetchReviews(id).then(result => {
-      if (active) setReviews(result || []);
+      if (!active) return;
+      setReviews(result || []);
+      // 성향검사 배지: 작성자가 마이페이지에서 공개를 켠 경우만 서버가 돌려준다. 실패해도 리뷰는 그대로 보인다
+      fetchQuizBadges((result || []).map(r => r.user_id))
+        .then(b => { if (active) setQuizBadges(b || {}); })
+        .catch(() => {});
     }).catch(error => {
       if (active) setReviewsError(error);
     }).finally(() => { if (active) setIsReviewsLoading(false); });
@@ -510,7 +518,10 @@ function GameDetail() {
                 /* 일반 리뷰 표시 */
                 <>
                   <div className="review-item-header">
-                    <strong>{r.author_name || r.user_name || "익명"}</strong>
+                    <span className="review-author">
+                      <strong>{r.author_name || r.user_name || "익명"}</strong>
+                      {quizBadges[r.user_id] && <QuizBadge badge={quizBadges[r.user_id]} authorName={r.author_name || r.user_name || "익명"} />}
+                    </span>
                     <span style={{ color: "#f1c40f" }}>{"⭐".repeat(r.rating)}</span>
                   </div>
                   <div style={{ color: "#333", whiteSpace: "pre-wrap" }}>{r.content}</div>

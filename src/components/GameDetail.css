@@ -463,3 +463,9 @@
         opacity: 1;
     }
 }
+/* 리뷰 작성자 이름 + 성향검사 배지 */
+.review-author {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}

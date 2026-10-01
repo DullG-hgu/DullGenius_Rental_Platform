@@ -3,6 +3,8 @@ import { fetchMyRentals, fetchUserPoints, fetchPointHistory, withdrawAccount, ca
 import MyEventsCard from '../event/MyEventsCard';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import MyQuizCard from '../fun/quiz/MyQuizCard';
+import MyReviewsCard from './MyReviewsCard';
 import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabaseClient';
@@ -290,6 +292,18 @@ const MyPage = () => {
 
       {/* 1.5. 내 행사 신청 (있을 때만 노출) */}
       <MyEventsCard />
+
+      {/* 1.6. 보드게임 성향검사 — 내 최신 결과 + 리뷰 옆 배지 공개 스위치 */}
+      <section style={{ ...styles.card, marginTop: "20px" }}>
+        <h3 style={styles.sectionTitle}>🧭 보드게임 성향</h3>
+        <MyQuizCard />
+      </section>
+
+      {/* 1.7. 내가 쓴 리뷰 */}
+      <section style={{ ...styles.card, marginTop: "20px" }}>
+        <h3 style={styles.sectionTitle}>📝 내가 쓴 리뷰</h3>
+        <MyReviewsCard userId={user?.id} />
+      </section>
 
       {/* 2. 대여 현황 섹션 */}
       <section style={{ ...styles.card, marginTop: "20px" }}>
