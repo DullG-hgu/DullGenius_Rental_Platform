@@ -207,7 +207,7 @@ const Home = () => {
                     <span className="home-play-icon" aria-hidden="true">🧭</span>
                     <span className="home-play-body">
                         <span className="home-play-name">보드게임 성향검사</span>
-                        <span className="home-play-sub">질문 19개로 찾는 나와 맞는 게임 가족</span>
+                        <span className="home-play-sub">질문 19개로 찾는 나와 맞는 게임 성향</span>
                     </span>
                     <span className="home-play-go" aria-hidden="true">→</span>
                 </Link>

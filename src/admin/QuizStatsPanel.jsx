@@ -94,7 +94,7 @@ export default function QuizStatsPanel() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                      {['코드', '가족 이름', '인원'].map((h) => <th key={h} style={TH}>{h}</th>)}
+                      {['코드', '성향 이름', '인원'].map((h) => <th key={h} style={TH}>{h}</th>)}
                     </tr>
                   </thead>
                   <tbody>

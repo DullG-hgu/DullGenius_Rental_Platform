@@ -20,7 +20,7 @@ const MyQuizCard = () => {
     if (!data.latest) {
         return (
             <div className="quiz-my-card">
-                <p className="quiz-my-note">아직 성향검사 결과가 없어요. 질문 19개로 나와 맞는 게임 가족을 찾아보세요.</p>
+                <p className="quiz-my-note">아직 성향검사 결과가 없어요. 질문 19개로 나와 맞는 게임 성향을 찾아보세요.</p>
                 <Link to="/play/quiz" className="quiz-my-link">성향검사 하러 가기 →</Link>
             </div>
         );

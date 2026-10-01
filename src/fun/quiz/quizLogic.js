@@ -40,7 +40,7 @@ export const axisLines = (four, max = 3) => four
         };
     });
 
-// 이번 학기 라인업에서 내 가족 게임 — 입문용 3개 + 익숙해지면 1개 (설계 recommend.family 와 같은 규칙)
+// 이번 학기 라인업에서 내 성향 게임 — 입문용 3개 + 익숙해지면 1개 (설계 recommend.family 와 같은 규칙)
 export const familyGames = (four) => {
     const strong = four.map((x) => Math.abs(x) >= CUT);
     const sign = four.map((x) => Math.sign(x));

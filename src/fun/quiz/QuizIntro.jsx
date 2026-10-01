@@ -51,7 +51,7 @@ const QuizIntro = () => {
             </div>
 
             <section className="quiz-intro">
-                <p className="quiz-intro-lead">둘 중 더 끌리는 쪽을 고르면, 나와 잘 맞는 게임 가족을 알려 드려요.</p>
+                <p className="quiz-intro-lead">둘 중 더 끌리는 쪽을 고르면, 나와 잘 맞는 게임 성향을 알려 드려요.</p>
                 <ul className="quiz-intro-facts">
                     <li>질문 {ITEMS.length}개 · 3분 정도</li>
                     <li>보드게임을 몰라도 답할 수 있어요. 할리갈리·윷놀이·마피아처럼 다들 해 본 놀이로 물어요.</li>

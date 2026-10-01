@@ -26,7 +26,7 @@ const FunHub = () => {
                     <span className="fun-hub-icon" aria-hidden="true">🧭</span>
                     <div>
                         <div className="fun-hub-name">보드게임 성향검사</div>
-                        <div className="fun-hub-desc">질문 19개로 찾는 나와 맞는 게임 가족</div>
+                        <div className="fun-hub-desc">질문 19개로 찾는 나와 맞는 게임 성향</div>
                     </div>
                 </Link>
             </div>
