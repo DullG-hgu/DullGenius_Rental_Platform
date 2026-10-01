@@ -10,7 +10,8 @@ const cases = JSON.parse(readFileSync(new URL('./fixtures/fun-quiz-cases.json', 
 const migration = readFileSync(new URL('../database/20261001_fun_quiz.sql', import.meta.url), 'utf8')
     + readFileSync(new URL('../database/20261001_fun_quiz_score_scale.sql', import.meta.url), 'utf8')
     + readFileSync(new URL('../database/20261001_fun_quiz_public_badges.sql', import.meta.url), 'utf8')
-    + readFileSync(new URL('../database/20261001_fun_quiz_code_four_letters.sql', import.meta.url), 'utf8');
+    + readFileSync(new URL('../database/20261001_fun_quiz_code_four_letters.sql', import.meta.url), 'utf8')
+    + readFileSync(new URL('../database/20261001_fun_quiz_delete.sql', import.meta.url), 'utf8');
 
 const close = (a, b) => a.forEach((x, i) => expect(Math.abs(x - b[i])).toBeLessThan(1e-3));
 
@@ -156,6 +157,32 @@ describe('성향검사 DB (PGlite)', () => {
         expect(await badges()).toEqual({});
         await expect(one('SELECT fun_quiz_public_badges($1::uuid[])', [Array(101).fill(me)])).rejects.toThrow('100명');
         await expect(one('SELECT * FROM public.fun_quiz_public')).rejects.toThrow();
+    });
+
+    it('본인 결과만 지울 수 있고, 지우면 배지는 그다음 최신 결과로 바뀐다', async () => {
+        await as(me);
+        const older = await submit(cases[3].answers);
+        await db.exec(`RESET ROLE; UPDATE public.fun_quiz_responses SET created_at = now() - interval '1 day';`);
+        await as(me);
+        const newer = await submit(cases[5].answers);
+        await one('SELECT fun_quiz_set_public(true)');
+        const badge = async () => (await one('SELECT fun_quiz_public_badges($1::uuid[]) AS r', [[me]])).r[me];
+
+        await as(other);
+        expect((await one('SELECT fun_quiz_delete_result($1) AS r', [newer.id])).r).toBe(false);
+        expect((await one('SELECT fun_quiz_delete_all_mine() AS r')).r).toBe(0);
+        await db.exec('RESET ROLE; SET ROLE anon;');
+        await expect(one('SELECT fun_quiz_delete_result($1)', [newer.id])).rejects.toThrow();
+
+        await as(me);
+        expect((await badge()).code).toBe(newer.code);
+        expect((await one('SELECT fun_quiz_delete_result($1) AS r', [newer.id])).r).toBe(true);
+        expect((await badge()).code).toBe(older.code);
+        expect((await one('SELECT fun_quiz_my_results() AS r')).r).toHaveLength(1);
+
+        expect((await one('SELECT fun_quiz_delete_all_mine() AS r')).r).toBe(1);
+        expect(await badge()).toBeUndefined();
+        expect((await one('SELECT fun_quiz_my_public() AS r')).r).toEqual({ is_public: false, latest: null });
     });
 
     it('통계는 운영진만, 회원별 최신 1건 기준', async () => {

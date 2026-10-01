@@ -151,3 +151,9 @@ export const fetchQuizBadges = (userIds) => {
     const ids = [...new Set(userIds.filter(Boolean))].slice(0, 100);
     return ids.length ? callRpc('fun_quiz_public_badges', { p_user_ids: ids }) : Promise.resolve({});
 };
+
+// [Member] 내 결과 한 건 지우기 — 지웠으면 true (남의 결과·없는 결과면 false)
+export const deleteQuizResult = (id) => callRpc('fun_quiz_delete_result', { p_id: id });
+
+// [Member] 내 성향검사 기록 전체 지우기 (리뷰 공개 설정도 함께) — 지운 개수
+export const deleteAllMyQuizResults = () => callRpc('fun_quiz_delete_all_mine');

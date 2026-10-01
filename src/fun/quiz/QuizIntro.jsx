@@ -1,7 +1,8 @@
 // 성향검사 소개·동의 (/play/quiz) — spec_fun_quiz.md §5. 로그인 회원만 시작할 수 있다.
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { fetchMyQuizResults } from '../../api_fun';
+import { deleteAllMyQuizResults, deleteQuizResult, fetchMyQuizResults } from '../../api_fun';
+import ConfirmModal from '../../components/ConfirmModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { familyName } from './quizLogic';
 import { ITEMS } from './quizData';
@@ -15,6 +16,8 @@ const QuizIntro = () => {
     const { user, loading: authLoading } = useAuth();
     const [consent, setConsent] = useState(false);
     const [history, setHistory] = useState([]);
+    const [pendingDelete, setPendingDelete] = useState(null); // 결과 id 또는 'all'
+    const [deleteError, setDeleteError] = useState(null);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -23,6 +26,22 @@ const QuizIntro = () => {
     }, [authLoading, user]);
 
     const start = () => navigate('/play/quiz/play', { state: { consent: true } });
+
+    const confirmDelete = async () => {
+        const target = pendingDelete;
+        setDeleteError(null);
+        try {
+            if (target === 'all') {
+                await deleteAllMyQuizResults();
+                setHistory([]);
+            } else {
+                await deleteQuizResult(target);
+                setHistory((h) => h.filter((x) => x.id !== target));
+            }
+        } catch {
+            setDeleteError('지우지 못했어요. 다시 시도해 주세요.');
+        }
+    };
 
     return (
         <div className="fun-page">
@@ -71,11 +90,30 @@ const QuizIntro = () => {
                                             <span className="quiz-history-name">{familyName(h.code)}</span>
                                             <span className="quiz-code">{h.code}</span>
                                         </Link>
+                                        <button type="button" className="quiz-history-del" onClick={() => setPendingDelete(h.id)}
+                                            aria-label={`${formatDate(h.created_at)} 결과 지우기`}>지우기</button>
                                     </li>
                                 ))}
                             </ul>
+                            {deleteError && <p className="quiz-error" role="alert">{deleteError}</p>}
+                            <button type="button" className="quiz-history-del-all" onClick={() => setPendingDelete('all')}>
+                                내 성향검사 기록 모두 지우기
+                            </button>
                         </section>
                     )}
+
+                    <ConfirmModal
+                        isOpen={pendingDelete !== null}
+                        onClose={() => setPendingDelete(null)}
+                        onConfirm={confirmDelete}
+                        title={pendingDelete === 'all' ? '기록을 모두 지울까요?' : '이 결과를 지울까요?'}
+                        message={pendingDelete === 'all'
+                            ? '지금까지의 성향검사 결과와 리뷰 옆 공개 설정이 모두 지워져요. 되돌릴 수 없어요.'
+                            : '지운 결과는 되돌릴 수 없어요. 최신 결과를 지우면 리뷰 옆 배지는 그 전 결과로 바뀌어요.'}
+                        confirmText="지우기"
+                        cancelText="취소"
+                        type="danger"
+                    />
                 </>
             )}
         </div>

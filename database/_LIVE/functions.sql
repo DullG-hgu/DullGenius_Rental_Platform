@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 1. PM 8:29:19
+-- 생성 시각: 2026. 10. 1. PM 8:41:55
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 123개 함수
+-- 총 125개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -2258,6 +2258,45 @@ BEGIN
           SELECT i, avg(eight[i]) avg_v FROM latest, generate_series(1, 8) i GROUP BY i) a)
     )
   );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_delete_all_mine
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_delete_all_mine()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_n integer;
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION '로그인이 필요합니다.'; END IF;
+  DELETE FROM public.fun_quiz_responses WHERE user_id = v_uid;
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  DELETE FROM public.fun_quiz_public WHERE user_id = v_uid;
+  RETURN v_n;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_delete_result
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_delete_result(p_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION '로그인이 필요합니다.'; END IF;
+  DELETE FROM public.fun_quiz_responses WHERE id = p_id AND user_id = v_uid;
+  RETURN FOUND;
 END;
 $function$
 

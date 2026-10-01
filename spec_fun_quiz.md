@@ -75,3 +75,9 @@
   - 「나도 해 보기 →」 (`/play/quiz`)
 - DB (`database/20261001_fun_quiz_public_badges.sql`): `fun_quiz_public` 테이블, `fun_quiz_my_public()`·`fun_quiz_set_public(bool)` (회원), `fun_quiz_public_badges(uuid[])` (누구나, 켠 회원만, 최대 100명)
 - 소개 동의 문구와 결과 화면 안내에 "마이페이지에서 켜면 리뷰 옆에 네 글자가 보여요"를 덧붙였다.
+
+## 7. 결과 지우기 (2026-10-01 추가)
+
+- 소개 화면 「지난 결과」 목록: 결과마다 「지우기」, 아래에 「내 성향검사 기록 모두 지우기」. 결과 화면 맨 아래 「이 결과 지우기」. 모두 확인 창을 거친다.
+- 본인 결과만 지울 수 있다. 최신 결과를 지우면 리뷰 배지는 그 전 결과로 바뀌고, 전부 지우면 리뷰 공개 설정도 함께 지워진다(다시 검사하면 기본 비공개).
+- DB (`database/20261001_fun_quiz_delete.sql`): `fun_quiz_delete_result(uuid)`, `fun_quiz_delete_all_mine()` (회원만)

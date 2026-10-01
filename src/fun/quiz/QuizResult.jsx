@@ -1,7 +1,8 @@
 // 성향검사 결과 (/play/quiz/r/:id) — 본인 결과만. 서버가 채점·저장한 four/eight/code 로 그린다 (spec §3).
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { fetchQuizResult } from '../../api_fun';
+import { deleteQuizResult, fetchQuizResult } from '../../api_fun';
+import ConfirmModal from '../../components/ConfirmModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGameData } from '../../contexts/GameDataContext';
 import { axisLines, extraBlocks, familyGames, familyName } from './quizLogic';
@@ -38,6 +39,7 @@ const QuizResult = () => {
     const [result, setResult] = useState(location.state?.result?.id === id ? location.state.result : null);
     const [error, setError] = useState(null);
     const [showEight, setShowEight] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(false);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -156,6 +158,20 @@ const QuizResult = () => {
             </p>
             <p className="wc-my-privacy">이 결과는 나만 볼 수 있어요. 마이페이지에서 켜면 내 리뷰 옆에 네 글자가 보여요. 운영진은 전체 통계만 봐요.</p>
             <Link to="/play/quiz" className="fun-secondary-btn wc-link-btn">처음으로</Link>
+            <button type="button" className="quiz-history-del-all" onClick={() => setConfirmDelete(true)}>이 결과 지우기</button>
+
+            <ConfirmModal
+                isOpen={confirmDelete}
+                onClose={() => setConfirmDelete(false)}
+                onConfirm={() => deleteQuizResult(result.id)
+                    .then(() => navigate('/play/quiz', { replace: true }))
+                    .catch(() => setError('결과를 지우지 못했어요. 다시 시도해 주세요.'))}
+                title="이 결과를 지울까요?"
+                message="지운 결과는 되돌릴 수 없어요. 최신 결과를 지우면 리뷰 옆 배지는 그 전 결과로 바뀌어요."
+                confirmText="지우기"
+                cancelText="취소"
+                type="danger"
+            />
         </div>
     );
 };
