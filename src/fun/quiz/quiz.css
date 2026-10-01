@@ -636,3 +636,33 @@
     text-decoration: underline;
     cursor: pointer;
 }
+
+/* ── 소개 화면 맨 위: 내 성향 다시 보기 ──── */
+
+.quiz-mine {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 18px;
+    padding: 16px;
+    border: 1px solid rgba(106, 17, 203, 0.25);
+    border-radius: 16px;
+    background: #f8f5fd;
+    color: inherit;
+    text-decoration: none;
+}
+
+.quiz-mine-kicker {
+    color: #888;
+    font-size: 0.82rem;
+}
+
+.quiz-mine-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.quiz-mine-go {
+    color: #4a2b8c;
+    font-weight: 600;
+    font-size: 0.9rem;
+}

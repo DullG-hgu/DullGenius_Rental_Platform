@@ -50,6 +50,15 @@ const QuizIntro = () => {
                 <h2 className="fun-title">보드게임 성향검사</h2>
             </div>
 
+            {/* 이미 해 본 사람은 시작하기보다 내 성향 다시 보기가 먼저 */}
+            {user && history.length > 0 && (
+                <Link to={`/play/quiz/r/${history[0].id}`} className="quiz-mine">
+                    <span className="quiz-mine-kicker">내 성향 · {formatDate(history[0].created_at)}</span>
+                    <span className="quiz-mine-name">{familyName(history[0].code)} <span className="quiz-code">{history[0].code}</span></span>
+                    <span className="quiz-mine-go">결과 다시 보기 →</span>
+                </Link>
+            )}
+
             <section className="quiz-intro">
                 <p className="quiz-intro-lead">둘 중 더 끌리는 쪽을 고르면, 나와 잘 맞는 게임 성향을 알려 드려요.</p>
                 <ul className="quiz-intro-facts">
@@ -77,7 +86,9 @@ const QuizIntro = () => {
                             전체 통계(유형별 인원 등)만 봐요. 학기 말에 다시 해 보면 이번 결과와 비교해 드려요.
                         </span>
                     </label>
-                    <button type="button" className="fun-primary-btn" disabled={!consent} onClick={start}>시작하기</button>
+                    <button type="button" className="fun-primary-btn" disabled={!consent} onClick={start}>
+                        {history.length > 0 ? '다시 해 보기' : '시작하기'}
+                    </button>
 
                     {history.length > 0 && (
                         <section className="wc-my-section">
