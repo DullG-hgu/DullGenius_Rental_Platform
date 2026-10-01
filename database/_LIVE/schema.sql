@@ -1,12 +1,12 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 9:54:27
+-- 생성 시각: 2026. 10. 1. PM 8:29:51
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 25개 테이블
+-- 총 27개 테이블
 
 -- ----------------------------------------------------------------
 -- 테이블: allowed_users
@@ -141,6 +141,30 @@ CREATE TABLE public.events (
   updated_at timestamptz NOT NULL DEFAULT now(),
   deleted_at timestamptz,
   allow_walk_in bool NOT NULL DEFAULT true
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: fun_quiz_public
+-- ----------------------------------------------------------------
+CREATE TABLE public.fun_quiz_public (
+  user_id uuid NOT NULL PRIMARY KEY,
+  is_public bool NOT NULL DEFAULT false,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: fun_quiz_responses
+-- ----------------------------------------------------------------
+CREATE TABLE public.fun_quiz_responses (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid NOT NULL,
+  answers _int2 NOT NULL,
+  eight _numeric NOT NULL,
+  four _numeric NOT NULL,
+  code text NOT NULL,
+  version text NOT NULL,
+  consented_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
 -- ----------------------------------------------------------------

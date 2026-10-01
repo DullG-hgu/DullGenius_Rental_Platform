@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 9. 29. PM 9:53:58
+-- 생성 시각: 2026. 10. 1. PM 8:29:19
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 114개 함수
+-- 총 123개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -2225,6 +2225,269 @@ BEGIN
             'duplicate_active_groups_found', v_dup_active
         )
     );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_admin_stats
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_admin_stats(p_from timestamp with time zone DEFAULT NULL::timestamp with time zone, p_to timestamp with time zone DEFAULT NULL::timestamp with time zone)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+
+  RETURN (
+    WITH ranged AS (
+      SELECT * FROM public.fun_quiz_responses
+      WHERE (p_from IS NULL OR created_at >= p_from) AND (p_to IS NULL OR created_at < p_to)
+    ),
+    latest AS (
+      SELECT DISTINCT ON (user_id) * FROM ranged ORDER BY user_id, created_at DESC
+    )
+    SELECT jsonb_build_object(
+      'responses', (SELECT count(*) FROM ranged),
+      'members', (SELECT count(*) FROM latest),
+      'by_code', coalesce((SELECT jsonb_object_agg(code, n) FROM (SELECT code, count(*) n FROM latest GROUP BY code) c), '{}'::jsonb),
+      'four_avg', (SELECT jsonb_agg(round(avg_v, 3) ORDER BY i) FROM (
+          SELECT i, avg(four[i]) avg_v FROM latest, generate_series(1, 4) i GROUP BY i) a),
+      'eight_avg', (SELECT jsonb_agg(round(avg_v, 3) ORDER BY i) FROM (
+          SELECT i, avg(eight[i]) avg_v FROM latest, generate_series(1, 8) i GROUP BY i) a)
+    )
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_get_result
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_get_result(p_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_row public.fun_quiz_responses;
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION '로그인이 필요합니다.'; END IF;
+  SELECT * INTO v_row FROM public.fun_quiz_responses WHERE id = p_id AND user_id = v_uid;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  RETURN public.fun_quiz_result_json(v_row);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_my_public
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_my_public()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION '로그인이 필요합니다.'; END IF;
+  RETURN jsonb_build_object(
+    'is_public', coalesce((SELECT is_public FROM public.fun_quiz_public WHERE user_id = v_uid), false),
+    'latest', (
+      SELECT jsonb_build_object('id', id, 'code', code, 'four', to_jsonb(four), 'created_at', created_at)
+      FROM public.fun_quiz_responses WHERE user_id = v_uid ORDER BY created_at DESC LIMIT 1
+    )
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_my_results
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_my_results()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION '로그인이 필요합니다.'; END IF;
+  RETURN coalesce((
+    SELECT jsonb_agg(jsonb_build_object('id', id, 'code', code, 'four', to_jsonb(four), 'created_at', created_at)
+                     ORDER BY created_at DESC)
+    FROM public.fun_quiz_responses WHERE user_id = v_uid
+  ), '[]'::jsonb);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_public_badges
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_public_badges(p_user_ids uuid[])
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+  IF p_user_ids IS NULL OR cardinality(p_user_ids) = 0 THEN RETURN '{}'::jsonb; END IF;
+  IF cardinality(p_user_ids) > 100 THEN RAISE EXCEPTION '한 번에 100명까지만 조회할 수 있습니다.'; END IF;
+  RETURN coalesce((
+    SELECT jsonb_object_agg(l.user_id::text, jsonb_build_object('code', l.code, 'four', to_jsonb(l.four)))
+    FROM (
+      SELECT DISTINCT ON (r.user_id) r.user_id, r.code, r.four
+      FROM public.fun_quiz_responses r
+      JOIN public.fun_quiz_public p ON p.user_id = r.user_id AND p.is_public
+      WHERE r.user_id = ANY (p_user_ids)
+      ORDER BY r.user_id, r.created_at DESC
+    ) l
+  ), '{}'::jsonb);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_result_json
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_result_json(p_row fun_quiz_responses)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT jsonb_build_object(
+    'id', p_row.id,
+    'code', p_row.code,
+    'four', to_jsonb(p_row.four),
+    'eight', to_jsonb(p_row.eight),
+    'answers', to_jsonb(p_row.answers),
+    'created_at', p_row.created_at,
+    'previous', (
+      SELECT jsonb_build_object('id', p.id, 'code', p.code, 'four', to_jsonb(p.four), 'created_at', p.created_at)
+      FROM public.fun_quiz_responses p
+      WHERE p.user_id = p_row.user_id AND p.created_at < p_row.created_at
+      ORDER BY p.created_at DESC
+      LIMIT 1
+    )
+  );
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_score
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_score(p_answers smallint[])
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  -- 문항 19 × 8축(통제·정보·상호작용·편·속도·흐름·몰입·답). 원본 items-easy.csv
+  w numeric[] := ARRAY[ARRAY[0,0,0,2,0,0,0,0],ARRAY[0,0,0,0,0,0,2,0],ARRAY[-1,0,0,0,-2,0,0,0],ARRAY[0,0,0,-2,0,0,0,0],ARRAY[0,0,0,0,1,2,0,0],ARRAY[0,2,0,0,0,0,0,0],ARRAY[0,0,0,2,0,0,0,0],ARRAY[0,0,0,0,0,0,0,2],ARRAY[0,0,0,0,0,0,-2,0],ARRAY[-2,0,0,0,0,-2,0,0],ARRAY[0,0,2,0,0,0,0,0],ARRAY[0,0,0,-2,0,0,0,0],ARRAY[0,0,0,0,0,0,0,-2],ARRAY[2,0,0,0,0,0,0,0],ARRAY[1,0,0,0,2,0,0,0],ARRAY[0,-2,0,0,0,0,0,0],ARRAY[0,0,0,0,0,0,0,2],ARRAY[0,0,-2,0,-1,0,0,0],ARRAY[0,0,0,0,0,0,0,-2]]::numeric[];
+  -- 표시 4축 × 8축. 가볍게/진지하게 · 사람/판 · 함께/대결 · 정답/창작. 원본 axes.py
+  d numeric[] := ARRAY[ARRAY[0.5,0,0,0,1,1,0,0],ARRAY[0,1,1,0,0,0,0,0],ARRAY[0,0,0,1,0,0,0.5,0],ARRAY[0,0,0,0,0,0,0,1]]::numeric[];
+  lo text[] := ARRAY['L','P','T','S'];
+  hi text[] := ARRAY['D','B','V','C'];
+  eight numeric[] := '{}';
+  four numeric[] := '{}';
+  code text := '';
+  s numeric; t numeric; i int; k int;
+BEGIN
+  IF p_answers IS NULL OR cardinality(p_answers) <> 19 THEN
+    RAISE EXCEPTION '응답은 19개여야 합니다.';
+  END IF;
+  FOR i IN 1..19 LOOP
+    IF p_answers[i] IS NULL OR p_answers[i] NOT BETWEEN -2 AND 2 THEN
+      RAISE EXCEPTION '응답 값은 -2에서 2 사이여야 합니다.';
+    END IF;
+  END LOOP;
+
+  FOR k IN 1..8 LOOP
+    s := 0; t := 0;
+    FOR i IN 1..19 LOOP
+      s := s + p_answers[i] * w[i][k];
+      t := t + abs(w[i][k]);
+    END LOOP;
+    eight := eight || CASE WHEN t = 0 THEN 0 ELSE s / (2 * t) END;  -- 응답이 ±2 라 2로 나눈다 → −1~+1
+  END LOOP;
+
+  FOR i IN 1..4 LOOP
+    s := 0; t := 0;
+    FOR k IN 1..8 LOOP
+      s := s + d[i][k] * eight[k];
+      t := t + abs(d[i][k]);
+    END LOOP;
+    four := four || (s / t);
+    -- 항상 네 글자. 정가운데(0)는 L·P·T·S. 1/3 같은 나눗셈 반올림 오차가 0을 양수로 만들지 않게 1e-9 안쪽은 0으로 본다(웹·설계와 같은 규칙)
+    code := code || CASE WHEN s / t > 0.000000001 THEN hi[i] ELSE lo[i] END;
+  END LOOP;
+
+  RETURN jsonb_build_object(
+    'eight', (SELECT jsonb_agg(round(x, 4)) FROM unnest(eight) x),
+    'four',  (SELECT jsonb_agg(round(x, 4)) FROM unnest(four) x),
+    'code',  code
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_set_public
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_set_public(p_public boolean)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION '로그인이 필요합니다.'; END IF;
+  IF p_public IS NULL THEN RAISE EXCEPTION '공개 여부가 필요합니다.'; END IF;
+  INSERT INTO public.fun_quiz_public (user_id, is_public, updated_at)
+  VALUES (v_uid, p_public, now())
+  ON CONFLICT (user_id) DO UPDATE SET is_public = EXCLUDED.is_public, updated_at = now();
+  RETURN p_public;
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: fun_quiz_submit
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fun_quiz_submit(p_answers smallint[], p_consent boolean, p_version text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_score jsonb;
+  v_row public.fun_quiz_responses;
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION '로그인이 필요합니다.'; END IF;
+  IF p_consent IS NOT TRUE THEN RAISE EXCEPTION '저장 동의가 필요합니다.'; END IF;
+  IF EXISTS (SELECT 1 FROM public.fun_quiz_responses
+             WHERE user_id = v_uid AND created_at > now() - interval '1 minute') THEN
+    RAISE EXCEPTION '잠시 후 다시 제출해 주세요.';
+  END IF;
+
+  v_score := public.fun_quiz_score(p_answers);
+
+  INSERT INTO public.fun_quiz_responses (user_id, answers, eight, four, code, version, consented_at)
+  VALUES (
+    v_uid, p_answers,
+    ARRAY(SELECT x::numeric FROM jsonb_array_elements_text(v_score->'eight') x),
+    ARRAY(SELECT x::numeric FROM jsonb_array_elements_text(v_score->'four') x),
+    v_score->>'code', left(coalesce(p_version, ''), 40), now()
+  )
+  RETURNING * INTO v_row;
+
+  RETURN public.fun_quiz_result_json(v_row);
 END;
 $function$
 
