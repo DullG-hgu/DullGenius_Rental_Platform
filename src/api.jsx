@@ -136,8 +136,12 @@ export const fetchReviews = async (gameId) => {
     throw error;
   }
 
-  // [FIX] 서버 DB에 중복된 데이터가 있을 경우를 대비해, API 레벨에서 중복 제거
-  // (작성자 + 내용 + 게임ID)가 같으면 중복으로 간주하고 최신 것만 남김
+  return dedupeReviews(data);
+};
+
+// [FIX] 서버 DB에 중복된 데이터가 있을 경우를 대비해, API 레벨에서 중복 제거
+// (작성자 + 내용 + 게임ID)가 같으면 중복으로 간주하고 최신 것만 남김 (입력이 최신순이라는 전제)
+const dedupeReviews = (data) => {
   const uniqueReviews = [];
   const seen = new Set();
 
@@ -151,6 +155,22 @@ export const fetchReviews = async (gameId) => {
   }
 
   return uniqueReviews;
+};
+
+/**
+ * 내가 쓴 리뷰 목록 (마이페이지). reviews 는 공개 읽기라 user_id 로 거른다.
+ *
+ * @param {string} userId - auth 사용자 ID
+ * @returns {Promise<Array>} 최신순, 중복 제거된 리뷰 배열
+ */
+export const fetchMyReviews = async (userId) => {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return dedupeReviews(data);
 };
 
 /**
