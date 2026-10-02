@@ -145,7 +145,7 @@ const DetailSheet = ({ candidate, onClose, onReport }) => {
 
 // 카드 선택 버튼과 「안 해봄」 칩·ⓘ 상세 버튼은 형제 요소 — 눌러도 선택되지 않는다
 const Card = ({ candidate, state, onPick, disabled, unplayed, onToggleUnplayed, onDetail }) => {
-    const meta = [playerText(candidate), candidate.playingtime].filter(Boolean).join(' · ');
+    const players = playerText(candidate);
     return (
         <div className={`wc-card-wrap${state ? ` is-${state}` : ''}`}>
             <button
@@ -159,7 +159,12 @@ const Card = ({ candidate, state, onPick, disabled, unplayed, onToggleUnplayed, 
                     ? <img className="wc-card-img" src={candidate.image} alt="" draggable="false" />
                     : <div className="wc-card-img is-empty" aria-hidden="true">🎲</div>}
                 <div className="wc-card-name">{candidate.name}</div>
-                {meta && <div className="wc-card-meta">{meta}</div>}
+                {(players || candidate.playingtime) && (
+                    <div className="wc-card-meta">
+                        {players && <span>👥 {players}</span>}
+                        {candidate.playingtime && <span>⏱ {candidate.playingtime}</span>}
+                    </div>
+                )}
             </button>
             <button
                 type="button"

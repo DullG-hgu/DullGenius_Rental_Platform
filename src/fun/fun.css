@@ -361,23 +361,57 @@
     transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
+.wc-card-wrap {
+    animation: wcCardIn 0.3s ease-out backwards;
+}
+
+.wc-arena > .wc-card-wrap:nth-child(2) {
+    animation-delay: 0.06s;
+}
+
+@keyframes wcCardIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to { opacity: 1; transform: none; }
+}
+
+/* 위(왼쪽) 카드는 보라, 아래(오른쪽) 카드는 파랑 — 진행 막대 그라데이션 양 끝 색 */
 .wc-card {
+    --wc-accent: #6a11cb;
+    --wc-tint: #f7f2fe;
     flex: 1;
     min-width: 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    text-align: center;
     border: 2px solid transparent;
-    border-radius: 18px;
-    background: #fff;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    padding: 10px 10px 14px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, var(--wc-tint) 0%, #fff 60%);
+    box-shadow: 0 4px 16px rgba(31, 21, 53, 0.1), inset 0 4px 0 var(--wc-accent);
+    padding: 14px 12px 14px;
     overflow: hidden;
     cursor: pointer;
     font: inherit;
     color: inherit;
     transition: transform 0.25s ease, opacity 0.25s ease, border-color 0.2s;
     -webkit-tap-highlight-color: transparent;
+}
+
+.wc-arena > .wc-card-wrap:nth-child(2) .wc-card {
+    --wc-accent: #2575fc;
+    --wc-tint: #eef4ff;
+}
+
+.wc-card:not(:disabled):active {
+    transform: scale(0.98);
+}
+
+@media (hover: hover) {
+    .wc-card:not(:disabled):hover {
+        border-color: var(--wc-accent);
+        box-shadow: 0 8px 22px rgba(31, 21, 53, 0.16), inset 0 4px 0 var(--wc-accent);
+    }
 }
 
 .wc-card:disabled {
@@ -395,8 +429,9 @@
     min-height: 0;
     width: 100%;
     object-fit: contain;
-    border-radius: 12px;
-    background: #f6f6f8;
+    border-radius: 14px;
+    background: radial-gradient(circle at 50% 40%, #fff 0%, #f1f0f5 75%);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
 .wc-card-img.is-empty {
@@ -408,17 +443,30 @@
 
 .wc-card-name {
     flex-shrink: 0;
-    margin-top: 8px;
+    margin-top: 10px;
     font-weight: 800;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     line-height: 1.3;
+    word-break: keep-all;
 }
 
 .wc-card-meta {
     flex-shrink: 0;
-    color: #777;
-    font-size: 0.82rem;
-    margin-top: 2px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.wc-card-meta span {
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #666;
+    font-size: 0.78rem;
+    font-weight: 600;
 }
 
 .wc-card-wrap.is-winner {
@@ -426,7 +474,35 @@
 }
 
 .wc-card-wrap.is-winner .wc-card {
-    border-color: #6a11cb;
+    border-color: var(--wc-accent);
+    box-shadow: 0 0 0 4px rgba(106, 17, 203, 0.15), 0 8px 24px rgba(31, 21, 53, 0.18), inset 0 4px 0 var(--wc-accent);
+}
+
+/* 고른 카드 가운데에 체크 도장 */
+.wc-card-wrap.is-winner::after {
+    content: '✓';
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(37, 117, 252, 0.4);
+    pointer-events: none;
+    animation: wcStamp 0.25s ease-out;
+}
+
+@keyframes wcStamp {
+    from { transform: scale(1.6); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
 .wc-card-wrap.is-loser {
@@ -496,18 +572,22 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    background: #1f1535;
-    font-size: 0.85rem;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    border: 3px solid #fff;
+    font-size: 0.9rem;
+    font-style: italic;
+    letter-spacing: -0.02em;
     color: #fff;
     font-weight: 900;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(31, 21, 53, 0.3);
 }
 
 .wc-play-bottom {
@@ -556,6 +636,7 @@
 @media (prefers-reduced-motion: reduce) {
     .wc-card,
     .wc-card-wrap,
+    .wc-card-wrap::after,
     .wc-sheet,
     .wc-progress-fill {
         transition: none;
