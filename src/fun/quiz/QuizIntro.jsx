@@ -4,12 +4,79 @@ import { Link, useNavigate } from 'react-router-dom';
 import { deleteAllMyQuizResults, deleteQuizResult, fetchMyQuizResults } from '../../api_fun';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useAuth } from '../../contexts/AuthContext';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { familyName } from './quizLogic';
-import { ITEMS } from './quizData';
+import { DISPLAY, FAMILY_NAME, ITEMS } from './quizData';
 import '../fun.css';
 import './quiz.css';
 
 const formatDate = (iso) => new Date(iso).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+
+// 축 이름 「가볍게/진지하게」에서 글자별 키워드를 뽑는다 — L→가볍게, D→진지하게 …
+const POLE_WORD = Object.fromEntries(DISPLAY.flatMap((d) => {
+    const [lo, hi] = d.name.split('/');
+    return [[d.lo, lo], [d.hi, hi]];
+}));
+
+// 소개 화면용 아주 짧은 글자 설명 (결과 화면의 긴 설명은 quizData POLE_TEXT)
+const POLE_SHORT = {
+    L: '빠르고 왁자지껄, 막판 역전도 재미',
+    D: '한 수씩 고민하며 차곡차곡 쌓기',
+    P: '표정 읽고 속고 속이기',
+    B: '내 판을 퍼즐처럼 완성하기',
+    T: '다 같이 한 팀으로 힘 모으기',
+    V: '사람끼리 확실하게 승부 가리기',
+    S: '딱 맞는 정답 찾아내기',
+    C: '웃긴 답·기발한 그림 지어내기',
+};
+
+// 시작 버튼 아래 링크 → 모달: 네 기준 요약 + 16가지 성향. mine 이 있으면 그 카드를 강조
+const QuizGuide = ({ mine }) => {
+    const [open, setOpen] = useState(false);
+    useBodyScrollLock(open);
+    const containerRef = useFocusTrap({ active: open, onEscape: () => setOpen(false) });
+
+    return (
+        <>
+            <button type="button" className="quiz-guide-open" onClick={() => setOpen(true)}>
+                🧭 어떤 성향들이 있나요? <span>16가지 보기 →</span>
+            </button>
+            {open && (
+                <div className="quiz-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+                    <div className="quiz-modal quiz-guide" role="dialog" aria-modal="true" aria-labelledby="quiz-guide-title" ref={containerRef}>
+                        <div className="quiz-modal-head">
+                            <div>
+                                <div className="quiz-modal-name" id="quiz-guide-title">네 가지 기준, 16가지 성향</div>
+                                <p className="quiz-guide-lead">기준마다 더 가까운 쪽 글자를 모아 네 글자가 돼요.</p>
+                            </div>
+                            <button type="button" className="quiz-modal-close" onClick={() => setOpen(false)} aria-label="닫기">✕</button>
+                        </div>
+                    <ul className="quiz-guide-axes">
+                        {DISPLAY.map((d) => (
+                            <li key={d.lo}>
+                                {[d.lo, d.hi].map((c) => (
+                                    <p key={c}><b>{c}</b> <strong>{POLE_WORD[c]}</strong> <span>{POLE_SHORT[c]}</span></p>
+                                ))}
+                            </li>
+                        ))}
+                    </ul>
+                    <ul className="quiz-family-grid">
+                        {Object.entries(FAMILY_NAME).map(([code, name]) => (
+                            <li key={code} className={code === mine ? 'is-mine' : undefined}>
+                                <span className="quiz-family-code">{code}</span>
+                                <span className="quiz-family-name">{name}</span>
+                                <span className="quiz-family-words">{[...code].map((c) => POLE_WORD[c]).join(' · ')}</span>
+                                {code === mine && <span className="quiz-family-mine">내 성향</span>}
+                            </li>
+                        ))}
+                    </ul>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+};
 
 const QuizIntro = () => {
     const navigate = useNavigate();
@@ -77,6 +144,8 @@ const QuizIntro = () => {
                 </div>
             )}
 
+            {!authLoading && !user && <QuizGuide />}
+
             {!authLoading && user && (
                 <>
                     <label className="quiz-consent">
@@ -89,6 +158,8 @@ const QuizIntro = () => {
                     <button type="button" className="fun-primary-btn" disabled={!consent} onClick={start}>
                         {history.length > 0 ? '다시 해 보기' : '시작하기'}
                     </button>
+
+                    <QuizGuide mine={history[0]?.code} />
 
                     {history.length > 0 && (
                         <section className="wc-my-section">
