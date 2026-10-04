@@ -1,23 +1,24 @@
 // src/pages/Home.jsx
-// 최종 수정일: 2026.09.29 (메인 개편)
+// 최종 수정일: 2026.10.04 (💡 대여 튜토리얼 + 가입 직후 안내)
 // 설명: 메인 — 오피스아워(운영 중일 때만) · 검색 · 인기 게임 · 놀이터 · 상황별 추천 · 하단 정보
 //   색은 강조색 하나(보라) + 무채색. 상황별 추천은 관리자 설정(app_config.recommendations) 그대로.
 
 import React, { useEffect, useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useGameData } from '../contexts/GameDataContext';
 import { useAuth } from '../contexts/AuthContext';
 import InfoBar from '../components/InfoBar';
 import InfoModal from '../components/InfoModal';
+import RentalTutorial from '../components/RentalTutorial';
 import PoweredByBGG from '../components/PoweredByBGG';
 import Header from '../components/Header';
 import { sendLog, fetchOfficeStatus, fetchOfficeHoursConfig } from '../api';
 import { fetchWorldcupRanking } from '../api_fun';
 import { LINKS } from '../infoData';
+import { isPaidMember } from '../lib/membership';
 import { HomeGameCard, RecommendationDeck } from './home/HomeSections';
 import './Home.css';
 
-const EXEMPT_ROLES = ['admin', 'executive', 'payment_exempt'];
 const DEFAULT_OPEN_COLOR = 'linear-gradient(135deg, #1a5c2a, #27ae60)';
 const CLOSING_SOON_COLOR = 'linear-gradient(135deg, #7d3800, #e67e22)';
 
@@ -26,7 +27,11 @@ const Home = () => {
     const { user, profile, roles = [], loading: authLoading } = useAuth();
     const [officeStatus, setOfficeStatus] = useState(null);
     const [officeHoursConfig, setOfficeHoursConfig] = useState(null);
-    const [isGuideOpen, setIsGuideOpen] = useState(false);
+    const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+    const [isReportOpen, setIsReportOpen] = useState(false);
+    // 가입 직후 1회: /?welcome=1 로 들어오면 💡 버튼 위치를 알려준다
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [showCoach, setShowCoach] = useState(false);
     const [wcTop, setWcTop] = useState(null);
 
     const [now, setNow] = useState(Date.now);
@@ -92,6 +97,21 @@ const Home = () => {
         return () => { active = false; };
     }, []);
 
+    // 표시는 한 번 읽고 바로 지운다 — 새로고침·뒤로 가기로 다시 뜨지 않게
+    useEffect(() => {
+        if (searchParams.get('welcome') !== '1') return;
+        setShowCoach(true);
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('welcome');
+        setSearchParams(nextParams, { replace: true });
+    }, [searchParams, setSearchParams]);
+
+    const openTutorial = useCallback(() => {
+        setShowCoach(false);
+        setIsTutorialOpen(true);
+    }, []);
+    const openReport = useCallback(() => setIsReportOpen(true), []);
+
     useEffect(() => {
         if (!loading) {
             sendLog(null, 'VIEW', { value: 'Home Page' });
@@ -110,7 +130,7 @@ const Home = () => {
         sessionStorage.setItem('home_scroll_y', window.scrollY);
     }, []);
 
-    const isPaidUser = user && (profile?.is_paid || roles.some((r) => EXEMPT_ROLES.includes(r)));
+    const isPaidUser = isPaidMember(user, profile, roles);
     const browsableCount = useMemo(() => games.filter((g) => g.name && g.category !== 'TRPG').length, [games]);
     const officeIcon = isClosingSoon
         ? '⏰'
@@ -144,25 +164,55 @@ const Home = () => {
             )}
 
             <section className="home-search">
-                <Link to="/search" onClick={saveScroll} className="home-search-box">
-                    <span aria-hidden="true">🔍</span>
-                    <span>어떤 게임을 찾으세요?</span>
-                </Link>
+                <div className="home-search-row">
+                    <Link to="/search" onClick={saveScroll} className="home-search-box">
+                        <span aria-hidden="true">🔍</span>
+                        <span>어떤 게임을 찾으세요?</span>
+                    </Link>
+                    <button
+                        type="button"
+                        className={`home-tutorial-btn${showCoach ? ' is-spotlight' : ''}`}
+                        onClick={openTutorial}
+                        aria-label="대여 이용법 보기"
+                    >
+                        <span aria-hidden="true">💡</span>
+                        <span className="home-tutorial-label">이용법</span>
+                    </button>
+                    {showCoach && (
+                        <div className="home-coach-bubble" role="status">
+                            <strong>가입을 환영해요! 🎉</strong>
+                            <span>빌리는 방법이 궁금하면 언제든 여기를 눌러 보세요.</span>
+                            <div className="home-coach-actions">
+                                <button type="button" onClick={() => setShowCoach(false)}>알겠어요</button>
+                                <button type="button" className="is-primary" onClick={openTutorial}>지금 보기</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
                 <div className="home-browse">
                     <Link to="/search" onClick={saveScroll}>게임 모두 보기{browsableCount ? ` (${browsableCount})` : ''} →</Link>
                     <Link to="/categories" onClick={saveScroll}>카테고리별로 →</Link>
                 </div>
             </section>
 
-            {/* 비로그인: 비회원 단기 대여를 위로 (로그인하면 하단 정보에만) */}
-            {!authLoading && !user && (
-                <Link to="/org-rental" className="home-org-card">
-                    <span>
-                        <strong>비회원 단기 대여</strong>
-                        <span>동아리·단체 행사에 보드게임이 필요하다면</span>
-                    </span>
-                    <span aria-hidden="true">→</span>
-                </Link>
+            {/* 비부원(비로그인·회비 미납): 왼쪽 비회원 단기 대여 · 오른쪽 부원 가입 신청 */}
+            {!authLoading && !isPaidUser && (
+                <div className="home-entry-pair">
+                    <Link to="/org-rental" className="home-org-card">
+                        <span>
+                            <strong>비회원 단기 대여</strong>
+                            <span>동아리·단체 행사에 보드게임이 필요하다면</span>
+                        </span>
+                        <span aria-hidden="true">→</span>
+                    </Link>
+                    <a href={LINKS.recruit} target="_blank" rel="noopener noreferrer" className="home-org-card is-join">
+                        <span>
+                            <strong>덜지니어스 가입</strong>
+                            <span>부원은 보드게임 무제한 대여</span>
+                        </span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+                </div>
             )}
 
             <section className="home-section">
@@ -217,31 +267,28 @@ const Home = () => {
                 <RecommendationDeck games={games} recs={config} onGameClick={saveScroll} />
             )}
 
-            {!authLoading && !isPaidUser && (
-                <a href={LINKS.recruit} target="_blank" rel="noopener noreferrer" className="home-recruit">
-                    <span>
-                        <strong>덜지니어스 부원 가입 신청</strong>
-                        <span>가입 안내와 신청서를 확인해 보세요</span>
-                    </span>
-                    <span aria-hidden="true">→</span>
-                </a>
-            )}
-
             <footer className="home-footer">
-                <button type="button" className="home-guide" onClick={() => setIsGuideOpen(true)}>
+                <button type="button" className="home-guide" onClick={openTutorial}>
                     처음이신가요? 이용 가이드 →
                 </button>
-                {!loading && !error && <InfoBar games={games} />}
+                {!loading && !error && <InfoBar games={games} onOpenGuide={openTutorial} />}
                 <div className="home-footer-bgg">
                     <PoweredByBGG variant="light" height={22} />
                     <span className="home-footer-bgg-caption">Game data from BoardGameGeek</span>
                 </div>
             </footer>
 
+            {showCoach && <div className="home-coach-backdrop" onClick={() => setShowCoach(false)} aria-hidden="true" />}
+
+            <RentalTutorial
+                isOpen={isTutorialOpen}
+                onClose={() => setIsTutorialOpen(false)}
+                onOpenReport={openReport}
+            />
             <InfoModal
-                isOpen={isGuideOpen}
-                onClose={() => setIsGuideOpen(false)}
-                initialTab="guide"
+                isOpen={isReportOpen}
+                onClose={() => setIsReportOpen(false)}
+                initialTab="report"
             />
         </div>
     );

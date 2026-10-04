@@ -59,7 +59,15 @@
     padding: 14px 16px 4px;
 }
 
+.home-search-row {
+    position: relative;
+    display: flex;
+    gap: 8px;
+}
+
 .home-search-box {
+    flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -72,6 +80,111 @@
     color: var(--home-sub);
     text-decoration: none;
     font-size: 1rem;
+}
+
+/* 💡 대여 튜토리얼 버튼 (2026-10-04) — 검색창 오른쪽 정사각 칸 */
+.home-tutorial-btn {
+    flex: 0 0 auto;
+    width: 56px;
+    min-height: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding: 0;
+    border-radius: 14px;
+    background: var(--home-primary-soft);
+    border: 1px solid var(--home-line);
+    color: var(--home-primary);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.home-tutorial-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+/* 가입 직후 1회 안내: 배경을 어둡게 하고 버튼만 위로 올린다 */
+.home-coach-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(20, 14, 40, 0.6);
+}
+
+.home-tutorial-btn.is-spotlight {
+    position: relative;
+    z-index: 1001;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 0 0 9px rgba(91, 43, 214, 0.55);
+    animation: homeCoachPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes homeCoachPulse {
+    50% { transform: scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-tutorial-btn.is-spotlight { animation: none; }
+}
+
+.home-coach-bubble {
+    position: absolute;
+    top: calc(100% + 14px);
+    right: 0;
+    z-index: 1001;
+    width: min(280px, calc(100vw - 32px));
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #fff;
+    color: var(--home-ink);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    word-break: keep-all;
+    box-shadow: 0 8px 24px rgba(20, 14, 40, 0.25);
+}
+
+.home-coach-bubble::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    right: 22px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    transform: rotate(45deg);
+}
+
+.home-coach-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.home-coach-actions button {
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid var(--home-line);
+    background: #fff;
+    color: var(--home-sub);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.home-coach-actions button.is-primary {
+    background: var(--home-primary);
+    border-color: var(--home-primary);
+    color: #fff;
 }
 
 .home-browse {
@@ -354,34 +467,6 @@
 }
 
 /* 부원 모집 */
-.home-recruit {
-    margin: 22px 16px 0;
-    padding: 16px;
-    border-radius: 16px;
-    background: var(--home-primary-soft);
-    color: var(--home-ink);
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.home-recruit > span:first-child {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.home-recruit strong {
-    color: var(--home-primary);
-}
-
-.home-recruit span span {
-    font-size: 0.85rem;
-    color: var(--home-sub);
-}
-
 /* 하단 */
 .home-footer {
     margin-top: 24px;
@@ -481,6 +566,43 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+}
+
+/* 비로그인 짝 카드 (2026-10-04): 왼쪽 단기 대여 · 오른쪽 가입 */
+.home-entry-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 16px 0;
+}
+
+.home-entry-pair .home-org-card {
+    margin: 0;
+    padding: 14px 12px;
+    gap: 6px;
+    min-width: 0;
+}
+
+.home-entry-pair .home-org-card > span:first-child {
+    min-width: 0;
+    word-break: keep-all;
+}
+
+.home-entry-pair .home-org-card > span[aria-hidden] {
+    display: none;
+}
+
+.home-entry-pair .home-org-card span span {
+    font-size: 0.8rem;
+}
+
+.home-org-card.is-join {
+    background: var(--home-primary-soft);
+    border-color: transparent;
+}
+
+.home-org-card.is-join strong {
+    color: var(--home-primary);
 }
 
 .home-org-card > span:first-child {

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { CLUB_INFO, LINKS, CONTACTS } from '../infoData';
 import InfoModal from './InfoModal';
 
-function InfoBar({ games }) {
+function InfoBar({ games, onOpenGuide }) {
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalTab, setModalTab] = useState('intro');
@@ -19,7 +19,7 @@ function InfoBar({ games }) {
             <div className="infobar-container">
                 {/* 상단: 핵심 액션 (크고 예쁜 버튼) */}
                 <div className="infobar-actions">
-                    <button onClick={() => openModal('guide')} className="infobar-action-btn primary">
+                    <button onClick={onOpenGuide} className="infobar-action-btn primary">
                         <span className="action-icon">📖</span> 대여 안내
                     </button>
                     <button onClick={() => openModal('report')} className="infobar-action-btn secondary">
