@@ -5,6 +5,8 @@ import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal'; // [NEW] 커스텀 확인 모달
 import { subscribeToGameChanges } from '../lib/gamesRealtime';
 import { buildRentalGroups, removeProcessed, pruneSelection } from './kioskListUtils';
+import KioskResultCard from './KioskResultCard';
+import { withTimeout, KioskTimeoutError } from './kioskFeedback';
 import './Kiosk.css';
 
 function ReturnModal({ onClose }) {
@@ -14,6 +16,8 @@ function ReturnModal({ onClose }) {
     const [processing, setProcessing] = useState(false);
     const [expandedUserId, setExpandedUserId] = useState(null); // Accordion state
     const [selectedRentals, setSelectedRentals] = useState(new Set()); // Set of rental_ids
+    // 처리 중·결과 화면 (KioskResultCard). 토스트는 이 모달 뒤에 가려져 보이지 않았다.
+    const [result, setResult] = useState(null);
 
     // [NEW] Confirm 모달 상태
     const [confirmModal, setConfirmModal] = useState({
@@ -78,6 +82,12 @@ function ReturnModal({ onClose }) {
         setSelectedRentals(newSelected);
     };
 
+    const dismissResult = () => {
+        const shouldClose = result?.closeAfter;
+        setResult(null);
+        if (shouldClose) onClose();
+    };
+
     const handleBulkReturn = async () => {
         if (selectedRentals.size === 0) {
             showToast("반납할 게임을 선택해주세요.", { type: "warning" });
@@ -93,11 +103,13 @@ function ReturnModal({ onClose }) {
             async () => {
                 sendLog(null, 'ACTION', { step: 'kiosk_return_confirm_accept', count: selectedRentals.size });
                 setProcessing(true);
-                let successCount = 0;
+                // 확인창이 닫히는 즉시 처리 중 화면을 띄운다 (빈 순간이 없게)
+                setResult({ phase: 'processing', label: '반납 처리 중', count: selectedRentals.size });
                 let pointsAwarded = 0;
                 let pointsKnown = true;
-                let failCount = 0;
-                const failedItems = []; // 실패한 항목 추적
+                const successes = [];
+                const failures = [];
+                const uncertain = []; // 응답이 늦어 결과를 모르는 건
                 const succeededIds = new Set(); // 성공한 것만 목록에서 지운다
 
                 // Process each selected rental
@@ -113,59 +125,52 @@ function ReturnModal({ onClose }) {
                     }
 
                     if (!targetRental) continue;
+                    const targetName = targetRental.game.name;
 
                     try {
-                        const result = await kioskReturn(targetRental.game_id, targetRental.profiles?.id || null, rentalId);
-                        if (result.success) {
-                            successCount++;
-                            if (Number.isFinite(result.points_awarded)) {
-                                pointsAwarded += result.points_awarded;
+                        const res = await withTimeout(kioskReturn(targetRental.game_id, targetRental.profiles?.id || null, rentalId));
+                        if (res.success) {
+                            successes.push(targetName);
+                            if (Number.isFinite(res.points_awarded)) {
+                                pointsAwarded += res.points_awarded;
                             } else {
                                 pointsKnown = false;
                             }
                             succeededIds.add(rentalId);
                         } else {
-                            failCount++;
-                            failedItems.push({
-                                name: targetRental.game.name,
-                                reason: result.message
-                            });
+                            failures.push({ name: targetName, reason: res.message || "알 수 없는 오류" });
                         }
                     } catch (e) {
-                        console.error(e);
-                        failCount++;
-                        failedItems.push({
-                            name: targetRental.game.name,
-                            reason: "네트워크 오류"
-                        });
+                        if (e instanceof KioskTimeoutError) {
+                            uncertain.push(targetName);
+                        } else {
+                            console.error(e);
+                            failures.push({ name: targetName, reason: "네트워크 오류" });
+                        }
                     }
                 }
 
                 setProcessing(false);
 
-                // 피드백 개선
-                if (successCount > 0) {
-                    const rewardMessage = pointsKnown && pointsAwarded > 0
-                        ? ` 총 ${pointsAwarded}P 지급되었습니다.`
-                        : "";
-                    showToast(`✅ ${successCount}개 반납 완료!${rewardMessage}`, { type: "success" });
-                }
-
+                let remainingUsers = userRentals;
                 if (succeededIds.size > 0) {
                     // 성공한 건만 지운다. 실패한 건은 남겨 다시 시도할 수 있게 한다.
-                    const remainingUsers = removeProcessed(userRentals, 'rentals', succeededIds);
+                    remainingUsers = removeProcessed(userRentals, 'rentals', succeededIds);
                     setUserRentals(remainingUsers);
                     setSelectedRentals(prev => pruneSelection(remainingUsers, 'rentals', prev));
-
-                    if (remainingUsers.length === 0) {
-                        onClose();
-                    }
                 }
+                // 응답이 늦은 건은 실제로는 처리됐을 수 있다. 서버 기준으로 목록을 다시 읽는다.
+                if (uncertain.length > 0) loadRentals();
 
-                if (failCount > 0) {
-                    const failedNames = failedItems.map(item => `${item.name} (${item.reason})`).join(', ');
-                    showToast(`❌ ${failCount}개 반납 실패: ${failedNames}`, { type: "error", duration: 8000 });
-                }
+                setResult({
+                    phase: 'done',
+                    verb: '반납',
+                    successes,
+                    failures,
+                    uncertain,
+                    detail: pointsKnown && pointsAwarded > 0 ? `🎁 ${pointsAwarded}P 지급` : null,
+                    closeAfter: uncertain.length === 0 && remainingUsers.length === 0,
+                });
             },
             "info"
         );
@@ -296,6 +301,8 @@ function ReturnModal({ onClose }) {
                     </button>
                 </div>
             </div>
+            <KioskResultCard result={result} onDismiss={dismissResult} />
+
             {/* [NEW] Confirm 모달 렌더링 */}
             <ConfirmModal
                 isOpen={confirmModal.isOpen}

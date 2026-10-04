@@ -65,15 +65,18 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.1s active;
+    /* 예전 값 `transform 0.1s active` 는 잘못된 CSS 라 통째로 무시되고 있었다 */
+    transition: transform 0.1s ease, filter 0.1s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
     min-height: 0;
     min-width: 0;
     overflow: hidden;
 }
 
-.kiosk-btn:active {
-    transform: scale(0.98);
+.kiosk-btn:active:not(:disabled) {
+    /* 터치 화면에서 눌린 게 확실히 보이도록 (0.98 은 큰 버튼에서 거의 안 보였다) */
+    transform: scale(0.95);
+    filter: brightness(0.85);
 }
 
 .kiosk-btn:disabled {
@@ -196,13 +199,17 @@
     transition: transform 0.2s;
 }
 
-.floating-return-btn:hover {
-    transform: scale(1.05);
+/* hover 는 마우스 기기에서만. 터치에서는 누른 뒤 커진 상태로 남는다 */
+@media (hover: hover) {
+    .floating-return-btn:hover {
+        transform: scale(1.05);
+    }
 }
 
 
 .floating-return-btn:active {
-    transform: scale(0.98);
+    transform: scale(0.92);
+    filter: brightness(0.85);
 }
 
 .floating-receive-btn {
@@ -226,12 +233,16 @@
     transition: transform 0.2s;
 }
 
-.floating-receive-btn:hover {
-    transform: scale(1.05);
+/* hover 는 마우스 기기에서만. 터치에서는 누른 뒤 커진 상태로 남는다 */
+@media (hover: hover) {
+    .floating-receive-btn:hover {
+        transform: scale(1.05);
+    }
 }
 
 .floating-receive-btn:active {
-    transform: scale(0.98);
+    transform: scale(0.92);
+    filter: brightness(0.85);
 }
 
 /* [Screen Saver] Pixel Shift */
@@ -453,10 +464,33 @@
     transition: transform 0.2s;
 }
 
-.header-timer-btn:hover {
-    transform: scale(1.05);
+/* hover 는 마우스 기기에서만. 터치에서는 누른 뒤 커진 상태로 남는다 */
+@media (hover: hover) {
+    .header-timer-btn:hover {
+        transform: scale(1.05);
+    }
 }
 
 .header-timer-btn:active {
-    transform: scale(0.98);
+    transform: scale(0.92);
+    filter: brightness(0.85);
+}
+
+/* 키오스크 안의 확인창(ConfirmModal) 버튼: 크게, 눌림이 보이게 */
+.kiosk-modal-overlay .modal-btn {
+    min-height: 60px;
+    font-size: 1.2rem;
+}
+
+/* 터치 기기에서는 hover 들림(translateY)이 누른 뒤에도 남으므로 끈다.
+   :active 규칙보다 앞에 둬야 누르는 순간의 축소가 이긴다 (명시도 동일) */
+@media (hover: none) {
+    .kiosk-modal-overlay .modal-btn:hover:not(:disabled) {
+        transform: none;
+    }
+}
+
+.kiosk-modal-overlay .modal-btn:active:not(:disabled) {
+    transform: scale(0.95);
+    filter: brightness(0.85);
 }

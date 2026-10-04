@@ -124,7 +124,9 @@ const styles = {
         width: '90%',
         maxWidth: '450px',
         boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
-        animation: 'slideUp 0.3s ease-out',
+        // 위치 이동 없이 짧게 페이드만 한다. 버튼이 움직이는 동안 누른 터치가
+        // 엉뚱한 곳(오버레이)에 떨어지지 않게 하려는 것 (키오스크 확인 클릭 유실 대비)
+        animation: 'fadeIn 0.15s ease-out',
         overflow: 'hidden'
     },
     header: {

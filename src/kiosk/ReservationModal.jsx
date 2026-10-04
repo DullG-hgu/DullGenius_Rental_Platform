@@ -5,6 +5,8 @@ import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
 import { subscribeToGameChanges } from '../lib/gamesRealtime';
 import { buildReservationGroups, removeProcessed, pruneSelection } from './kioskListUtils';
+import KioskResultCard from './KioskResultCard';
+import { withTimeout, KioskTimeoutError, formatDueDate } from './kioskFeedback';
 import './Kiosk.css';
 
 function ReservationModal({ onClose }) {
@@ -14,6 +16,8 @@ function ReservationModal({ onClose }) {
     const [processing, setProcessing] = useState(false);
     const [expandedUserId, setExpandedUserId] = useState(null); // Accordion state
     const [selectedRentalIds, setSelectedRentalIds] = useState(new Set()); // Set of rental_ids
+    // 처리 중·결과 화면 (KioskResultCard). 토스트는 이 모달 뒤에 가려져 보이지 않았다.
+    const [result, setResult] = useState(null);
 
     // Confirm 모달 상태
     const [confirmModal, setConfirmModal] = useState({
@@ -79,6 +83,12 @@ function ReservationModal({ onClose }) {
         setSelectedRentalIds(newSelected);
     };
 
+    const dismissResult = () => {
+        const shouldClose = result?.closeAfter;
+        setResult(null);
+        if (shouldClose) onClose();
+    };
+
     const handleBulkPickup = async () => {
         if (selectedRentalIds.size === 0) {
             showToast("수령할 게임을 선택해주세요.", { type: "warning" });
@@ -96,14 +106,16 @@ function ReservationModal({ onClose }) {
             async () => {
                 sendLog(null, 'ACTION', { step: 'kiosk_pickup_confirm_accept', count: selectedRentalIds.size });
                 setProcessing(true);
-                let successCount = 0;
-                let failCount = 0;
-                const failedItems = [];
+                // 확인창이 닫히는 즉시 처리 중 화면을 띄운다 (빈 순간이 없게)
+                setResult({ phase: 'processing', label: '수령 처리 중', count: selectedRentalIds.size });
+                const successes = [];
+                const failures = [];
+                const uncertain = []; // 응답이 늦어 결과를 모르는 건
                 const succeededIds = new Set(); // 성공한 것만 목록에서 지운다
+                let dueDate = null;
 
                 // Process each selected reservation
                 for (const rentalId of selectedRentalIds) {
-                    // Find info for toast
                     let targetName = "게임";
                     for (const group of userReservations) {
                         const found = group.reservations.find(r => r.rental_id === rentalId);
@@ -114,42 +126,46 @@ function ReservationModal({ onClose }) {
                     }
 
                     try {
-                        const result = await kioskPickup(rentalId);
-                        if (result.success) {
-                            successCount++;
+                        const res = await withTimeout(kioskPickup(rentalId));
+                        if (res.success) {
+                            successes.push(targetName);
                             succeededIds.add(rentalId);
+                            if (res.due_date) dueDate = res.due_date;
                         } else {
-                            failCount++;
-                            failedItems.push({ name: targetName, reason: result.message });
+                            failures.push({ name: targetName, reason: res.message || "알 수 없는 오류" });
                         }
                     } catch (e) {
-                        console.error(e);
-                        failCount++;
-                        failedItems.push({ name: targetName, reason: "네트워크 오류" });
+                        if (e instanceof KioskTimeoutError) {
+                            uncertain.push(targetName);
+                        } else {
+                            console.error(e);
+                            failures.push({ name: targetName, reason: "네트워크 오류" });
+                        }
                     }
                 }
 
                 setProcessing(false);
 
-                if (successCount > 0) {
-                    showToast(`✅ ${successCount}개 수령 완료! 즐거운 시간 되세요.`, { type: "success" });
-                }
-
+                let remainingUsers = userReservations;
                 if (succeededIds.size > 0) {
                     // 성공한 건만 지운다. 실패한 건은 남겨 다시 시도할 수 있게 한다.
-                    const remainingUsers = removeProcessed(userReservations, 'reservations', succeededIds);
+                    remainingUsers = removeProcessed(userReservations, 'reservations', succeededIds);
                     setUserReservations(remainingUsers);
                     setSelectedRentalIds(prev => pruneSelection(remainingUsers, 'reservations', prev));
-
-                    if (remainingUsers.length === 0) {
-                        onClose();
-                    }
                 }
+                // 응답이 늦은 건은 실제로는 처리됐을 수 있다. 서버 기준으로 목록을 다시 읽는다.
+                if (uncertain.length > 0) loadReservations();
 
-                if (failCount > 0) {
-                    const failedNames = failedItems.map(item => `${item.name} (${item.reason})`).join(', ');
-                    showToast(`❌ ${failCount}개 수령 실패: ${failedNames}`, { type: "error", duration: 8000 });
-                }
+                const due = formatDueDate(dueDate);
+                setResult({
+                    phase: 'done',
+                    verb: '수령',
+                    successes,
+                    failures,
+                    uncertain,
+                    detail: due ? `반납 기한: ${due}` : null,
+                    closeAfter: uncertain.length === 0 && remainingUsers.length === 0,
+                });
             },
             "info"
         );
@@ -287,6 +303,8 @@ function ReservationModal({ onClose }) {
                     </button>
                 </div>
             </div>
+
+            <KioskResultCard result={result} onDismiss={dismissResult} />
 
             <ConfirmModal
                 isOpen={confirmModal.isOpen}

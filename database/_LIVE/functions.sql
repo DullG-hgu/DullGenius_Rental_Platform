@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 1. PM 8:54:41
+-- 생성 시각: 2026. 10. 4. PM 3:42:36
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -4665,6 +4665,7 @@ DECLARE
     v_is_rentable  BOOLEAN;
     v_expired      BOOLEAN;
     v_affected     INTEGER;
+    v_new_due      TIMESTAMPTZ;
 BEGIN
     IF NOT public.is_kiosk_or_admin() THEN
         RETURN jsonb_build_object('success', false, 'message', '키오스크 권한이 필요합니다.');
@@ -4726,7 +4727,8 @@ BEGIN
     UPDATE public.rentals
     SET type = 'RENT', borrowed_at = now(), due_date = public.rental_due_date(), source = 'kiosk'
     WHERE rental_id = p_rental_id
-      AND type = 'DIBS' AND returned_at IS NULL;
+      AND type = 'DIBS' AND returned_at IS NULL
+    RETURNING due_date INTO v_new_due;
     GET DIAGNOSTICS v_affected = ROW_COUNT;
 
     IF v_affected = 0 THEN
@@ -4739,7 +4741,8 @@ BEGIN
     VALUES (v_game_id, v_user_id, 'RENT',
             jsonb_build_object('action', 'Kiosk Pickup', 'from_expired_dibs', v_expired));
 
-    RETURN jsonb_build_object('success', true);
+    -- 키오스크 결과 화면이 실제 반납 기한을 보여줄 수 있게 돌려준다 (2026-10-04)
+    RETURN jsonb_build_object('success', true, 'due_date', v_new_due);
 END;
 $function$
 

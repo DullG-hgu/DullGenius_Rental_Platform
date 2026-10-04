@@ -8,6 +8,7 @@ import RouletteModal from './RouletteModal';
 import ReturnModal from './ReturnModal';
 import ReservationModal from './ReservationModal'; // [NEW] 예약 수령 모달
 import MurderMysteryTimerModal from './MurderMysteryTimerModal'; // [NEW] 머더 미스터리 타이머
+import ScreenSaver from './ScreenSaver';
 import siteQr from './assets/site-qr.svg'; // 동아리 사이트 QR (빌드 시 고정 생성: scripts/gen_kiosk_qr.mjs)
 
 const SITE_URL = 'https://dullgrental.netlify.app/';
@@ -471,7 +472,11 @@ function KioskPage() {
     }
 
     if (isIdle && !showMurderMysteryTimer) {
-        return <ScreenSaver onWake={() => setIsIdle(false)} />;
+        return <ScreenSaver onWake={() => {
+            setIsIdle(false);
+            isIdleRef.current = false;
+            scheduleIdleTimer();
+        }} />;
     }
 
     return (
@@ -569,30 +574,6 @@ function KioskPage() {
                 timerActiveRef.current = false;
                 setGracePeriod(1); // 타이머 종료 후 1분 유예
             }} />}
-        </div>
-    );
-}
-
-// [Sub Component] Screen Saver
-function ScreenSaver({ onWake }) {
-    const [position, setPosition] = useState({ top: 30, left: 30 });
-
-    // Pixel Shift (10초마다 위치 이동)
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const top = Math.floor(Math.random() * 80) + 10; // 10% ~ 90%
-            const left = Math.floor(Math.random() * 80) + 10;
-            setPosition({ top, left });
-        }, 10000);
-        return () => clearInterval(interval);
-    }, []);
-
-    return (
-        <div className="screen-saver" onClick={onWake} onTouchStart={onWake}>
-            <div className="saver-content" style={{ top: `${position.top}%`, left: `${position.left}%` }}>
-                🎲 DullGenius
-                <div style={{ fontSize: "1rem", marginTop: "10px" }}>Touch to Wake Up</div>
-            </div>
         </div>
     );
 }

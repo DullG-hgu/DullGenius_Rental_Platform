@@ -571,7 +571,8 @@ a {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 9999;
+  /* 키오스크 수령·반납 모달(z-index 20000) 위에 떠야 한다. 9999 일 때는 모달 뒤에 깔려 결과가 안 보였다 */
+  z-index: 30000;
   display: flex;
   flex-direction: column-reverse;
   /* 아래에서 위로 쌓임 */
