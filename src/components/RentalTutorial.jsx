@@ -20,6 +20,32 @@ const SWIPE_THRESHOLD = 50;
 const ROOM = CLUB_INFO.location.trim().replace(/\.$/, '');
 // 키오스크엔 바로 대여 버튼이 없다(RentalModal 미사용) — 찜 → 「찜 수령하기」가 유일한 대여 경로
 const PICKUP_IMAGE = { src: '/tutorial/kiosk-pickup.webp', alt: '키오스크 첫 화면 오른쪽 위의 찜 수령하기 버튼' };
+// 열 때 한꺼번에 미리 받아 둔다 — 장을 넘길 때마다 빈칸에서 그림이 튀어나오지 않게
+const TUTORIAL_IMAGES = ['/tutorial/search.webp', '/tutorial/dibs.webp', PICKUP_IMAGE.src, '/tutorial/kiosk-return.webp'];
+
+// 받는 동안엔 자리표시(반짝임)로 자리를 잡아 두고, 다 받으면 서서히 드러낸다. 실패하면 아이콘으로 대신한다
+function TutorialFigure({ image, icon }) {
+    const [state, setState] = useState('loading');
+    const imgRef = useRef(null);
+    useEffect(() => {
+        // 미리 받아 둔 그림은 onLoad 전에 이미 complete 일 수 있다
+        const img = imgRef.current;
+        if (img?.complete && img.naturalWidth) setState('loaded');
+    }, []);
+    if (state === 'error') return <div className="rt-icon" aria-hidden="true">{icon}</div>;
+    return (
+        <div className={`rt-figure${state === 'loaded' ? ' is-loaded' : ''}`}>
+            <img
+                ref={imgRef}
+                src={image.src}
+                alt={image.alt}
+                decoding="async"
+                onLoad={() => setState('loaded')}
+                onError={() => setState('error')}
+            />
+        </div>
+    );
+}
 
 function RentalTutorial({ isOpen, onClose, onOpenReport }) {
     const { user, profile, roles } = useAuth();
@@ -33,6 +59,7 @@ function RentalTutorial({ isOpen, onClose, onOpenReport }) {
     useEffect(() => {
         if (!isOpen) return;
         setIndex(0);
+        TUTORIAL_IMAGES.forEach((src) => { const img = new Image(); img.src = src; });
         let active = true;
         fetchPaymentCheckEnabled()
             .then((v) => { if (active) setPaymentCheck(v); })
@@ -230,7 +257,7 @@ function RentalTutorial({ isOpen, onClose, onOpenReport }) {
 
                 <div className={`rt-page${page.compact ? ' is-compact' : ''}`} key={page.key} aria-live="polite">
                     {page.image ? (
-                        <img className="rt-figure" src={page.image.src} alt={page.image.alt} />
+                        <TutorialFigure image={page.image} icon={page.icon} />
                     ) : (
                         <div className="rt-icon" aria-hidden="true">{page.icon}</div>
                     )}

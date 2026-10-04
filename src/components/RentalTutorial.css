@@ -76,16 +76,47 @@
     margin: 8px 0 12px;
 }
 
-/* 실제 화면 캡처 — 누를 곳에 빨간 테두리가 그려져 있다 */
+/* 실제 화면 캡처 — 강조할 곳만 밝고 흰/하늘색 테두리가 그려져 있다.
+   비율로 자리를 먼저 잡아(글자 밀림 방지) 받는 동안엔 반짝임, 다 받으면 서서히 드러낸다 */
 .rt-figure {
-    display: block;
+    position: relative;
     width: 100%;
+    aspect-ratio: 16 / 10;
     max-height: 200px;
-    object-fit: contain;
     margin: 4px 0 14px;
     border-radius: 14px;
     border: 1px solid #ece9f3;
+    overflow: hidden;
+    background: linear-gradient(100deg, #f1eff6 30%, #faf9fd 50%, #f1eff6 70%) 0 0 / 300% 100%;
+    animation: rtShimmer 1.2s linear infinite;
+}
+
+.rt-figure.is-loaded {
+    animation: none;
     background: #faf9fd;
+}
+
+.rt-figure img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
+}
+
+.rt-figure.is-loaded img {
+    opacity: 1;
+}
+
+@keyframes rtShimmer {
+    to { background-position: -150% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rt-figure { animation: none; }
+    .rt-figure img { transition: none; }
 }
 
 .rt-title {
