@@ -132,8 +132,7 @@ const TierMine = () => {
                         ? `「${selected.game.name}」 놓을 줄 탭 · 카드를 탭하면 그 앞에`
                         : '해본 게임만 「안 해봄」에서 위로 · 끌거나(폰은 꾹 누른 뒤) 탭 → 줄 탭'}
             </p>
-            {/* 기준은 방향 하나 — 절대 기준(「남에게 권하겠는가」)은 두지 않는다 (spec §6-1, 2026-10-08) */}
-            <p className="tier-direction">위로 갈수록 더 좋았던 머더 · 줄 안 순서도 마음대로</p>
+            {/* 등급 기준 설명은 두지 않는다 — 티어표는 각자 상대 순위, 높낮이는 보정이 맞춤 (spec §6-1, 2026-10-08) */}
 
             <div className="tier-top">
                 <span className="tier-count"><strong>{placedCount}</strong> / {pool.length} 평가</span>

@@ -122,7 +122,6 @@ export const TierQuickPlace = ({ game, title }) => {
                     </button>
                 ))}
             </div>
-            <div className="tier-quick-guide">위로 갈수록 더 좋았던 머더</div>
             <button type="button" className="tier-quick-save" disabled={!pick || pick === current || status !== 'ready'} onClick={save}>
                 {current ? '바꾸기' : '올리기'}
             </button>

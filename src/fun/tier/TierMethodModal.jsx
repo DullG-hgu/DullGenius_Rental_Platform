@@ -34,8 +34,8 @@ const TierMethodModal = ({ open, onClose, globalMean = 3, myOffset, myCount, min
                     <section>
                         <h4>1. 등급의 뜻</h4>
                         <p>
-                            정해진 기준 없이 「위로 갈수록 더 좋았던 머더」. 다른 머더와 견준 상대 순위.
-                            각자 붙인 티어 이름과 상관없이 S~D 자리로 합산하고, 사람마다 다른 높낮이는 3번 보정으로 맞춤.
+                            정해진 기준 없음. 각자 붙인 티어 이름과 상관없이 S~D 자리로 합산하고,
+                            사람마다 다른 높낮이는 3번 보정으로 맞춤.
                         </p>
                     </section>
 

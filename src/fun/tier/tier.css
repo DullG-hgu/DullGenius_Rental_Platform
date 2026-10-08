@@ -387,14 +387,6 @@
     padding-left: 6px;
 }
 
-/* ── 방향 안내 ──────────────────────── */
-
-.tier-direction {
-    margin: 0 0 8px;
-    font-size: 0.82rem;
-    color: #6b6385;
-}
-
 .tier-inline-link {
     background: none;
     border: none;
