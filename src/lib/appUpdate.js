@@ -4,9 +4,12 @@
 //
 // PWA 에서는 location.reload() 만으로는 부족하다. 서비스워커가 캐시해 둔 옛 index.html·번들을
 // 그대로 다시 내주기 때문이다. 그래서 두 단계로 간다.
-//   1) reg.update() — 새 sw.js 가 있으면 autoUpdate 설정상 바로 활성화되고,
-//      index.jsx 의 controllerchange 처리가 새로고침한다.
-//   2) 일정 시간 안에 그게 안 일어나면 서비스워커 등록 해제 + Cache Storage 전부 삭제 후 새로고침.
+//   1) reg.update() — 새 sw.js 를 받는 중이면(installing/waiting) 그것이 넘겨받을 때까지만 기다린다.
+//      넘겨받으면 index.jsx 의 controllerchange 처리가 새로고침한다.
+//   2) 받을 게 없거나(이미 받아 둠·확인 실패) 기다려도 안 넘어오면 바로
+//      서비스워커 등록 해제 + Cache Storage 전부 삭제 후 새로고침.
+//   (2026-10-08: 예전에는 무조건 15초를 기다려 「업데이트 중」이 한참 멈춰 보였다)
+// 사람이 누른 갱신은 기대 빌드를 sessionStorage 에 적어 두고, 새로고침 뒤 checkUpdateResult() 로 성공 여부를 알린다.
 //
 // 배포 직후 잠깐 version.json 은 새것인데 CDN 이 옛 번들을 주는 구간이 있다. 그때 2)를 반복하면
 // 무한 새로고침이 되므로, 같은 빌드에 대한 시도는 localStorage 기록으로 10분에 한 번만 한다.
@@ -22,7 +25,8 @@ export const formatVersion = (v = APP_VERSION) => `v${v.version} · ${v.commit}`
 
 export const UPDATE_ATTEMPT_KEY = 'app_update_attempt';
 export const RETRY_GUARD_MS = 10 * 60 * 1000;
-const SW_UPDATE_WAIT_MS = 15000;
+const SW_UPDATE_WAIT_MS = 8000;
+export const UPDATE_EXPECT_KEY = 'app_update_expect';
 
 /** 서버의 최신 빌드 정보. 실패하면 null (네트워크 오류는 업데이트 사유가 아니다). */
 export const fetchLatestVersion = async (fetchImpl = fetch) => {
@@ -100,13 +104,19 @@ export const applyUpdate = async (latest, { storage = getStorage(), now = Date.n
         }
     }
 
+    if (force) {
+        try { sessionStorage.setItem(UPDATE_EXPECT_KEY, latest.build); } catch { /* 결과 안내만 못 할 뿐 */ }
+    }
+
     const sw = navigator.serviceWorker;
     const reg = await sw?.getRegistration().catch(() => null);
     if (reg) {
-        const changed = waitForControllerChange(SW_UPDATE_WAIT_MS);
+        let switched = false;
+        const changed = waitForControllerChange(SW_UPDATE_WAIT_MS).then((v) => { switched = v; return v; });
         await reg.update().catch(() => {});
-        // 새로고침은 index.jsx 의 controllerchange 처리가 한다
-        if (await changed) return 'sw-updated';
+        await Promise.resolve(); // update 중에 넘겨받았으면 switched 반영
+        // 새 서비스워커를 받는 중일 때만 기다린다. 받을 게 없으면 기다릴 이유가 없다
+        if (switched || ((reg.installing || reg.waiting) && await changed)) return 'sw-updated';
     }
 
     try {
@@ -136,6 +146,21 @@ export const checkForUpdate = ({ now = Date.now(), fetchImpl } = {}) => {
         };
     }
     return lastCheck.promise;
+};
+
+/**
+ * 사람이 누른 갱신 뒤 첫 실행에서 한 번: 'ok'(새 빌드로 바뀜) | 'failed'(아직 옛 빌드) | null(누른 적 없음)
+ */
+export const checkUpdateResult = (current = APP_VERSION) => {
+    let expected = null;
+    try {
+        expected = sessionStorage.getItem(UPDATE_EXPECT_KEY);
+        if (expected) sessionStorage.removeItem(UPDATE_EXPECT_KEY);
+    } catch {
+        return null;
+    }
+    if (!expected) return null;
+    return expected === current.build ? 'ok' : 'failed';
 };
 
 export const resetUpdateCheckCache = () => {

@@ -4,11 +4,13 @@
 // 패치(평소 배포)는 알리지 않는다 — 다음에 앱을 열 때 서비스워커가 조용히 바꾼다.
 // (키오스크는 무인이라 화면보호기 때 자동 적용 — src/kiosk/useKioskAutoUpdate.js)
 import { useEffect, useState } from 'react';
-import { applyUpdate, checkForUpdate } from '../lib/appUpdate';
+import { applyUpdate, checkForUpdate, checkUpdateResult } from '../lib/appUpdate';
 
 export default function useAppUpdate() {
     const [latest, setLatest] = useState(null);
     const [updating, setUpdating] = useState(false);
+    // 직전에 「업데이트」를 눌렀다면 새로고침 뒤 결과 — 'ok' | 'failed' | null
+    const [result] = useState(() => checkUpdateResult());
 
     useEffect(() => {
         if (!import.meta.env.PROD) return undefined;
@@ -35,5 +37,5 @@ export default function useAppUpdate() {
         await applyUpdate(latest, { force: true });
     };
 
-    return { updateAvailable: !!latest, updating, update };
+    return { updateAvailable: !!latest, updating, update, result };
 }

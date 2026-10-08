@@ -3,7 +3,9 @@ import {
     APP_VERSION,
     RETRY_GUARD_MS,
     UPDATE_ATTEMPT_KEY,
+    UPDATE_EXPECT_KEY,
     applyUpdate,
+    checkUpdateResult,
     canAttempt,
     checkForUpdate,
     fetchLatestVersion,
@@ -151,6 +153,32 @@ describe('applyUpdate', () => {
         expect(reload).toHaveBeenCalledTimes(1);
     });
 
+    it('받을 새 서비스워커가 없으면 기다리지 않고 바로 캐시 삭제 후 새로고침 (예전엔 15초 대기)', async () => {
+        const done = applyUpdate(latest, { storage: localStorage, now: 5, force: true });
+        await expect(done).resolves.toBe('hard-reloaded'); // 가짜 타이머 없이도 끝난다 = 대기 없음
+        expect(reload).toHaveBeenCalledTimes(1);
+        expect(sessionStorage.getItem(UPDATE_EXPECT_KEY)).toBe('b2');
+        sessionStorage.clear();
+    });
+
+    it('새 서비스워커를 받는 중이면 넘겨받을 때까지 기다린다', async () => {
+        reg.installing = {};
+        reg.update.mockImplementation(async () => { setTimeout(() => swListeners.controllerchange(), 3000); });
+        vi.useFakeTimers();
+        const done = applyUpdate(latest, { storage: localStorage, now: 5 });
+        await vi.advanceTimersByTimeAsync(3000);
+        await expect(done).resolves.toBe('sw-updated');
+        expect(reload).not.toHaveBeenCalled();
+    });
+
+    it('받는 중이어도 8초 안에 안 넘어오면 캐시 삭제 후 새로고침', async () => {
+        reg.installing = {};
+        vi.useFakeTimers();
+        const done = applyUpdate(latest, { storage: localStorage, now: 5 });
+        await vi.advanceTimersByTimeAsync(8000);
+        await expect(done).resolves.toBe('hard-reloaded');
+    });
+
     it('10분 안에 같은 빌드로 다시 부르면 아무것도 안 한다 (배포 직후 무한 새로고침 방지)', async () => {
         localStorage.setItem(UPDATE_ATTEMPT_KEY, JSON.stringify({ build: 'b2', at: 0 }));
         await expect(applyUpdate(latest, { storage: localStorage, now: 60_000 })).resolves.toBe('skipped');
@@ -170,5 +198,19 @@ describe('applyUpdate', () => {
         await expect(applyUpdate(latest, { storage, now: 5 })).resolves.toBe('skipped');
         await expect(applyUpdate(latest, { storage: null, now: 5 })).resolves.toBe('skipped');
         expect(reload).not.toHaveBeenCalled();
+    });
+});
+
+describe('checkUpdateResult (누른 뒤 새로고침된 첫 화면)', () => {
+    afterEach(() => sessionStorage.clear());
+    it('누른 적 없으면 null', () => {
+        expect(checkUpdateResult({ build: 'b2' })).toBeNull();
+    });
+    it('기대 빌드로 바뀌었으면 ok, 아니면 failed — 한 번만 알린다', () => {
+        sessionStorage.setItem(UPDATE_EXPECT_KEY, 'b2');
+        expect(checkUpdateResult({ build: 'b2' })).toBe('ok');
+        expect(checkUpdateResult({ build: 'b2' })).toBeNull();
+        sessionStorage.setItem(UPDATE_EXPECT_KEY, 'b2');
+        expect(checkUpdateResult({ build: 'b1' })).toBe('failed');
     });
 });

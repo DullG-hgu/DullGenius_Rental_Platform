@@ -52,6 +52,6 @@ describe('header update button', () => {
         mocks.auth = loggedIn;
         mocks.updateState = { updateAvailable: true, updating: true };
         renderHeader();
-        expect(screen.getByRole('button', { name: '업데이트 중' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: '받는 중…' })).toBeDisabled();
     });
 });

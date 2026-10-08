@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { stashPendingRoute } from '../lib/pendingRoute';
 import useAppUpdate from '../hooks/useAppUpdate';
+import { formatVersion } from '../lib/appUpdate';
 import logo from '../logo.png';
 import './Header.css';
 
@@ -13,7 +14,13 @@ const Header = () => {
     const { user, profile, roles, logout, loading: authLoading } = useAuth(); // [FIX] signOut -> logout
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const { updateAvailable, updating, update } = useAppUpdate();
+    const { updateAvailable, updating, update, result: updateResult } = useAppUpdate();
+
+    // 「업데이트」를 누른 뒤 새로고침된 첫 화면에서 결과를 한 번 알린다
+    useEffect(() => {
+        if (updateResult === 'ok') showToast(`새 버전으로 바뀜 · ${formatVersion()}`, { type: 'success' });
+        if (updateResult === 'failed') showToast('아직 옛 버전 · 앱을 완전히 닫았다가 다시 열기', { type: 'warning' });
+    }, [updateResult, showToast]);
 
     const handleLogout = async () => {
         try {
@@ -74,7 +81,7 @@ const Header = () => {
     // 회원가입은 로그인 화면 링크로, 로그아웃은 업데이트 직후 다시 보인다.
     const updateButton = (
         <button type="button" onClick={update} disabled={updating} className="site-header-btn is-update">
-            {updating ? '업데이트 중' : '업데이트'}
+            {updating ? '받는 중…' : '업데이트'}
         </button>
     );
 
