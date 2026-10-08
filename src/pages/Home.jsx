@@ -14,6 +14,7 @@ import PoweredByBGG from '../components/PoweredByBGG';
 import Header from '../components/Header';
 import { sendLog, fetchOfficeStatus, fetchOfficeHoursConfig } from '../api';
 import { fetchWorldcupRanking } from '../api_fun';
+import { useCommunity } from '../fun/tier/tierStore';
 import { LINKS } from '../infoData';
 import { isPaidMember } from '../lib/membership';
 import { HomeGameCard, RecommendationDeck } from './home/HomeSections';
@@ -33,6 +34,12 @@ const Home = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [showCoach, setShowCoach] = useState(false);
     const [wcTop, setWcTop] = useState(null);
+    // 놀이터 티어표 카드의 "지금 1위" (평가 인원이 찬 머더가 있을 때만 — 서버가 보정 평균 순으로 준다)
+    const { data: tierData } = useCommunity();
+    const tierTop = useMemo(() => {
+        const min = tierData?.min_sample ?? 3;
+        return tierData?.items?.find((i) => i.n >= min && i.tier) ?? null;
+    }, [tierData]);
 
     const [now, setNow] = useState(Date.now);
 
@@ -249,6 +256,16 @@ const Home = () => {
                         <span className="home-play-name">보드게임 이상형 월드컵</span>
                         <span className="home-play-sub">
                             {wcTop ? `지금 1위 · ${wcTop.name}` : '둘 중 하나! 나의 원픽 보드게임 찾기'}
+                        </span>
+                    </span>
+                    <span className="home-play-go" aria-hidden="true">→</span>
+                </Link>
+                <Link to="/play/tier/murder" onClick={saveScroll} className="home-play-card">
+                    <span className="home-play-icon" aria-hidden="true">🔪</span>
+                    <span className="home-play-body">
+                        <span className="home-play-name">머더미스터리 티어표</span>
+                        <span className="home-play-sub">
+                            {tierTop ? `지금 1위 · ${tierTop.name} (${tierTop.tier})` : '해본 머더에 등급 매기고 모두의 티어 보기'}
                         </span>
                     </span>
                     <span className="home-play-go" aria-hidden="true">→</span>

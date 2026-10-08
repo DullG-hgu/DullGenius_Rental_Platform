@@ -332,7 +332,8 @@ const WorldcupPlay = () => {
         recordWorldcupPicks(run.run_id, prev);
     };
 
-    const exit = () => navigate('/play/worldcup');
+    // 나가기: 설정 화면에서 왔으면 그리로 되돌아간다(새로 쌓지 않음 — 뒤로가기가 대결로 튀지 않게)
+    const exit = () => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/play/worldcup', { replace: true }));
 
     if (error) {
         return (

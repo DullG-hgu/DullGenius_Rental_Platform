@@ -9,7 +9,13 @@ const { data, auth, fetchOfficeStatus, fetchOfficeHoursConfig } = vi.hoisted(() 
 }));
 vi.mock('../src/contexts/GameDataContext', () => ({ useGameData: () => data }));
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => auth }));
-vi.mock('../src/api_fun', () => ({ fetchWorldcupRanking: () => Promise.resolve({ items: [] }) }));
+vi.mock('../src/api_fun', () => ({
+    fetchWorldcupRanking: () => Promise.resolve({ items: [] }),
+    fetchTierCommunity: () => Promise.resolve({ items: [], min_sample: 3 }),
+    fetchMyTier: () => Promise.resolve(null),
+    saveMyTier: () => Promise.resolve({ ok: true }),
+    setTierPublic: () => Promise.resolve(true),
+}));
 vi.mock('../src/api', () => ({ sendLog: vi.fn(), fetchOfficeStatus, fetchOfficeHoursConfig }));
 vi.mock('../src/components/Header', () => ({ default: () => null }));
 vi.mock('../src/components/InfoBar', () => ({ default: () => null }));

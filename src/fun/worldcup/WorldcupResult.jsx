@@ -84,7 +84,7 @@ const WorldcupResult = () => {
     return (
         <div className="fun-page wc-result">
             <div className="fun-header">
-                <button type="button" onClick={() => navigate('/play/worldcup')} className="fun-back-btn" aria-label="월드컵 목록으로">←</button>
+                <button type="button" onClick={() => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/play/worldcup'))} className="fun-back-btn" aria-label="뒤로가기">←</button>
                 <h2 className="fun-title">{fresh ? '나의 원픽' : '친구의 원픽'}</h2>
             </div>
 

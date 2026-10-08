@@ -1150,3 +1150,17 @@
     color: #b26a00;
     font-size: 0.85rem;
 }
+
+/* 테마가 하나뿐일 때: 강수 선택을 시트가 아니라 페이지 본문으로 */
+.wc-setup-page {
+    margin-top: 4px;
+}
+
+.wc-sheet.wc-sheet-inline {
+    max-width: none;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 16px 16px 18px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    animation: none;
+}

@@ -196,3 +196,6 @@ export const fetchTierBadges = (gameId, userIds) => {
 
 // [Admin] 부적절한 티어 이름 기본으로 되돌리기
 export const resetTierLabels = (slug, userId) => callRpc('fun_tier_admin_reset_labels', { p_slug: slug, p_user_id: userId });
+
+// [Admin] 티어표 통계 — { lists, participants, public, community: fun_tier_community 결과 }
+export const fetchTierAdminStats = (slug) => callRpc('fun_tier_admin_stats', { p_slug: slug });

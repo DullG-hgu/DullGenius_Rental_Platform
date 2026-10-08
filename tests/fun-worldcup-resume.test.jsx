@@ -46,8 +46,8 @@ describe('resume a member run started on another device', () => {
 
         await act(async () => { render(<MemoryRouter><WorldcupThemes /></MemoryRouter>); });
 
-        // 8강 3번째 대결에서 이어하기
-        expect(screen.getByText(/이어하기 · 8강 3\/4/)).toBeTruthy();
+        // 8강 3번째 대결에서 이어하기 — 테마가 하나뿐이라 설정 화면에 바로 「이어하기 (8강 3/4)」 버튼
+        expect(screen.getByRole('button', { name: /이어하기 \(8강 3\/4\)/ })).toBeTruthy();
         expect(loadProgress()?.unplayed).toEqual([3]);
     });
 

@@ -1,4 +1,6 @@
 // 월드컵 테마 목록 (/play/worldcup) + 강수 선택 하단 시트
+// 열린 테마가 하나뿐이면 목록·시트 없이 설정 화면을 한 페이지로 보여 준다 —
+// 카드 하나짜리 목록에 빠지는 일이 없게 (2026-10-08: 홈 배너 → 뒤로가기가 이상한 칸으로 가던 문제)
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchMyOpenWorldcupRun, fetchWorldcupThemes } from '../../api_fun';
@@ -25,6 +27,9 @@ const describeProgress = (saved) => {
         return null;
     }
 };
+
+// 뒤로: 앱 안에서 왔으면 온 곳으로, 주소로 바로 들어왔으면 놀이터로
+const canGoBack = () => (window.history.state?.idx ?? 0) > 0;
 
 const WorldcupThemes = () => {
     const navigate = useNavigate();
@@ -102,11 +107,14 @@ const WorldcupThemes = () => {
             .catch(() => setSheetStats((prev) => ({ ...prev, loading: false, error: true })));
     };
 
-    // 한 번에 강수 선택까지: ?theme=slug 로 들어왔거나 열린 테마가 하나뿐이면 시트를 바로 연다
+    const single = themes?.length === 1;
+
+    // 한 번에 강수 선택까지: ?theme=slug 로 들어왔거나 열린 테마가 하나뿐이면 바로 고를 수 있게 연다
+    // (하나뿐이면 시트가 아니라 페이지 본문으로 펼쳐진다)
     useEffect(() => {
         if (!themes || autoOpened.current) return;
         const wanted = searchParams.get('theme');
-        const target = themes.find((t) => t.slug === wanted) ?? (themes.length === 1 ? themes[0] : null);
+        const target = themes.length === 1 ? themes[0] : themes.find((t) => t.slug === wanted);
         if (target) {
             autoOpened.current = true;
             openSheet(target);
@@ -126,11 +134,13 @@ const WorldcupThemes = () => {
     const savedForSheet = sheetTheme && saved?.run.slug === sheetTheme.slug ? saved : null;
     const savedLabel = savedForSheet ? describeProgress(savedForSheet) : null;
 
+    const goBack = () => (canGoBack() ? navigate(-1) : navigate('/play'));
+
     return (
         <div className="fun-page">
             <div className="fun-header">
-                <button type="button" onClick={() => navigate('/play')} className="fun-back-btn" aria-label="뒤로가기">←</button>
-                <h2 className="fun-title">이상형 월드컵</h2>
+                <button type="button" onClick={goBack} className="fun-back-btn" aria-label="뒤로가기">←</button>
+                <h2 className="fun-title">{single ? `🏆 ${themes[0].title}` : '이상형 월드컵'}</h2>
             </div>
 
             {error && (
@@ -148,7 +158,14 @@ const WorldcupThemes = () => {
                 <p className="fun-status">지금 열린 월드컵이 없어요.</p>
             )}
 
-            <div className="wc-theme-list">
+            {single && (
+                <p className="fun-subtitle">
+                    {themes[0].description ? `${themes[0].description} · ` : ''}
+                    후보 {themes[0].pool_count}개 · {themes[0].play_count.toLocaleString()}명 참여
+                </p>
+            )}
+
+            {!single && <div className="wc-theme-list">
                 {themes?.map((theme) => {
                     const inProgress = saved?.run.slug === theme.slug ? describeProgress(saved) : null;
                     return (
@@ -162,18 +179,18 @@ const WorldcupThemes = () => {
                         </button>
                     );
                 })}
-            </div>
+            </div>}
 
             {sheetTheme && (
-                <div className="wc-sheet-backdrop" onClick={() => setSheetTheme(null)}>
+                <div className={single ? 'wc-setup-page' : 'wc-sheet-backdrop'} onClick={single ? undefined : () => setSheetTheme(null)}>
                     <div
-                        className="wc-sheet"
-                        role="dialog"
-                        aria-modal="true"
+                        className={single ? 'wc-sheet wc-sheet-inline' : 'wc-sheet'}
+                        role={single ? undefined : 'dialog'}
+                        aria-modal={single ? undefined : 'true'}
                         aria-labelledby="wc-sheet-title"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="wc-sheet-handle" aria-hidden="true" />
+                        {!single && <div className="wc-sheet-handle" aria-hidden="true" />}
                         <h3 className="wc-sheet-label">몇 명이서 할 게임인가요?</h3>
                         <div className="wc-players-row" role="group" aria-label="인원">
                             {PLAYER_OPTIONS.map((n) => (

@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabaseClient.jsx';
 import AdminAnalytics from './AdminAnalytics.jsx';
 import WorldcupStatsPanel from './WorldcupStatsPanel.jsx';
 import QuizStatsPanel from './QuizStatsPanel.jsx';
+import TierStatsPanel from './TierStatsPanel.jsx';
 
 const CARD_STYLE = {
   background: 'var(--admin-card-bg)',
@@ -69,6 +70,7 @@ export default function StatsTab() {
   const [period, setPeriod] = useState(30);
   const [showWorldcup, setShowWorldcup] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [showTier, setShowTier] = useState(false);
   const [rentalStats, setRentalStats] = useState([]);
   const [topGames, setTopGames] = useState([]);
   const [overdueStats, setOverdueStats] = useState(null);
@@ -213,6 +215,23 @@ export default function StatsTab() {
           🧭 성향검사 통계 {showQuiz ? '접기' : '보기'}
         </button>
         {showQuiz && <div style={{ marginTop: '16px' }}><QuizStatsPanel /></div>}
+      </div>
+
+      {/* 머더미스터리 티어표 통계: 버튼으로 펼쳐서 조회 (집계만) */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowTier((v) => !v)}
+          aria-expanded={showTier}
+          style={{
+            padding: '10px 18px', borderRadius: '8px', border: '1px solid var(--admin-border)', cursor: 'pointer',
+            background: showTier ? '#667eea' : 'var(--admin-card-bg)', color: showTier ? '#fff' : 'var(--admin-text-main)',
+            fontWeight: 'bold',
+          }}
+        >
+          🔪 머더 티어표 통계 {showTier ? '접기' : '보기'}
+        </button>
+        {showTier && <div style={{ marginTop: '16px' }}><TierStatsPanel /></div>}
       </div>
 
       <AdminAnalytics />
