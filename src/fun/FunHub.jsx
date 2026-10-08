@@ -22,6 +22,13 @@ const FunHub = () => {
                         <div className="fun-hub-desc">둘 중 하나! 나의 원픽 보드게임 찾기</div>
                     </div>
                 </Link>
+                <Link to="/play/tier/murder" className="fun-hub-card">
+                    <span className="fun-hub-icon" aria-hidden="true">🔪</span>
+                    <div>
+                        <div className="fun-hub-name">머더미스터리 티어표</div>
+                        <div className="fun-hub-desc">해본 머더에 등급 매기고 모두의 티어 보기</div>
+                    </div>
+                </Link>
                 <Link to="/play/quiz" className="fun-hub-card">
                     <span className="fun-hub-icon" aria-hidden="true">🧭</span>
                     <div>

@@ -1,0 +1,586 @@
+/* src/fun/tier/tier.css — 머더 티어표 */
+
+.tier-page {
+    padding-bottom: 40px;
+}
+
+.tier-guide {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin: 0 -16px 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #4a2b8c;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.tier-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 0.92rem;
+    color: #555;
+}
+
+.tier-count strong {
+    color: #6a11cb;
+    font-size: 1.1rem;
+}
+
+.tier-top-link {
+    color: #4a2b8c;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 8px 0;
+}
+
+/* ── 보드 ───────────────────────────── */
+
+.tier-board {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e6e6ec;
+    background: #1f1d24;
+}
+
+.tier-row {
+    display: flex;
+    min-height: 84px;
+    border-bottom: 1px solid #2f2c36;
+}
+
+.tier-row:last-child {
+    border-bottom: none;
+}
+
+.tier-row.is-armed {
+    cursor: pointer;
+}
+
+.tier-row.is-armed:hover .tier-row-cards,
+.tier-row.is-armed:active .tier-row-cards {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tier-head {
+    width: 64px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    color: #1a1a1a;
+    text-align: center;
+    word-break: keep-all;
+}
+
+.tier-head-letter {
+    font-weight: 800;
+    font-size: 1.4rem;
+    line-height: 1.1;
+}
+
+.tier-head-base {
+    font-size: 0.7rem;
+    font-weight: 700;
+    opacity: 0.6;
+}
+
+/* 별명이 들어가면 글자를 줄인다 */
+.tier-head:has(.tier-head-base) .tier-head-letter {
+    font-size: 0.82rem;
+}
+
+.tier-S { background: #ff7f7f; }
+.tier-A { background: #ffbf7f; }
+.tier-B { background: #ffdf7f; }
+.tier-C { background: #bfff7f; }
+.tier-D { background: #7fbfff; }
+.tier-tray { background: #9a98a3; }
+
+.tier-head.tier-tray .tier-head-letter {
+    font-size: 0.85rem;
+}
+
+.tier-row.is-extra {
+    border-top: 3px solid #4a4652;
+}
+
+.tier-row-cards {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 4px;
+    padding: 4px;
+    min-width: 0;
+    transition: background 0.15s;
+}
+
+.tier-drop-hint {
+    align-self: center;
+    margin-left: 6px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.8rem;
+}
+
+/* ── 카드 ───────────────────────────── */
+
+.tier-card {
+    width: 64px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+    color: #f2f2f2;
+}
+
+.tier-card.is-selected {
+    border-color: #ffd400;
+    background: rgba(255, 212, 0, 0.15);
+}
+
+.tier-card-img {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #3a3742;
+}
+
+.tier-card-img.is-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+
+.tier-card-name {
+    width: 100%;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    text-align: center;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: keep-all;
+}
+
+.tier-card-sub {
+    font-size: 0.65rem;
+    color: #aaa;
+}
+
+/* ── 아래 옵션 ──────────────────────── */
+
+.tier-options {
+    margin-top: 14px;
+    display: grid;
+    gap: 10px;
+}
+
+.tier-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-weight: 700;
+}
+
+.tier-check input {
+    width: 20px;
+    height: 20px;
+}
+
+.tier-option-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.tier-option-btns > * {
+    flex: 1;
+}
+
+.tier-note {
+    margin: 0;
+    color: #777;
+    font-size: 0.82rem;
+}
+
+/* ── 이름 시트 ──────────────────────── */
+
+.tier-label-inputs {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.tier-label-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tier-label-row input {
+    flex: 1;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+.tier-label-badge {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+
+/* ── 커뮤니티 ───────────────────────── */
+
+.tier-section-title {
+    margin: 20px 0 8px;
+    font-weight: 800;
+}
+
+.tier-collecting .tier-row-cards {
+    border-radius: 12px;
+    background: #1f1d24;
+}
+
+.tier-people {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tier-person {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 4px;
+    border-bottom: 1px solid #f0f0f0;
+    color: inherit;
+    text-decoration: none;
+}
+
+.tier-person-name {
+    font-weight: 700;
+}
+
+.tier-person-meta {
+    color: #777;
+    font-size: 0.82rem;
+}
+
+.tier-cta {
+    margin-top: 18px;
+}
+
+.tier-admin-btn {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.tier-dist {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.tier-dist-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tier-dist-bar {
+    flex: 1;
+    height: 14px;
+    border-radius: 7px;
+    background: #f0f0f3;
+    overflow: hidden;
+}
+
+.tier-dist-fill {
+    display: block;
+    height: 100%;
+}
+
+.tier-dist-n {
+    width: 20px;
+    text-align: right;
+    font-weight: 700;
+    color: #555;
+}
+
+/* ── 드래그 ─────────────────────────── */
+
+.tier-card.is-draggable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tier-card.is-dragging {
+    opacity: 0.3;
+}
+
+.tier-page.is-dragging,
+.tier-page.is-dragging * {
+    cursor: grabbing !important;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tier-row.is-over .tier-row-cards {
+    background: rgba(255, 212, 0, 0.18);
+    box-shadow: inset 0 0 0 2px #ffd400;
+}
+
+.tier-ghost {
+    position: fixed;
+    z-index: 2000;
+    width: 64px;
+    height: 64px;
+    transform: translate(-50%, -110%) scale(1.08);
+    pointer-events: none;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+    background: #3a3742;
+}
+
+.tier-ghost img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 끼워 넣을 자리 — 레이아웃을 밀지 않게 그림자로 */
+.tier-card.is-insert-before {
+    box-shadow: -4px 0 0 -1px #ffd400;
+}
+
+.tier-drop-hint.is-insert-end {
+    color: #ffd400;
+    border-left: 3px solid #ffd400;
+    padding-left: 6px;
+}
+
+/* ── 티어 기준 ──────────────────────── */
+
+.tier-guide-toggle {
+    width: 100%;
+    min-height: 40px;
+    margin-bottom: 8px;
+    padding: 0 12px;
+    border: 1px solid #e6e6ec;
+    border-radius: 10px;
+    background: #faf9fc;
+    color: #4a2b8c;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tier-guide-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+    font-size: 0.88rem;
+}
+
+.tier-guide-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tier-guide-box {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #faf9fc;
+}
+
+.tier-label-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tier-label-guide {
+    font-size: 0.75rem;
+    color: #888;
+    padding-left: 4px;
+}
+
+.tier-inline-link {
+    background: none;
+    border: none;
+    padding: 4px 0;
+    color: #4a2b8c;
+    font-weight: 700;
+    font-size: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* ── 집계 방식 모달 ─────────────────── */
+
+.tier-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.tier-modal {
+    width: 100%;
+    max-width: 520px;
+    max-height: calc(100dvh - 32px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.tier-modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 8px 12px 18px;
+    border-bottom: 1px solid #eee;
+}
+
+.tier-modal-head h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.tier-modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    border: none;
+    background: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.tier-modal-body {
+    overflow-y: auto;
+    padding: 4px 18px 18px;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: #333;
+}
+
+.tier-modal-body h4 {
+    margin: 16px 0 4px;
+    font-size: 0.95rem;
+}
+
+.tier-modal-body p {
+    margin: 0 0 6px;
+}
+
+.tier-formula {
+    margin: 6px 0 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f4f1fa;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #3a2470;
+}
+
+.tier-example {
+    width: 100%;
+    margin: 6px 0;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.tier-example caption {
+    text-align: left;
+    color: #777;
+    padding-bottom: 4px;
+}
+
+.tier-example th,
+.tier-example td {
+    padding: 6px 4px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+}
+
+.tier-my-offset {
+    font-weight: 700;
+    color: #6a11cb;
+}
+
+/* ── 비로그인 소개 · 저장 상태 ───────── */
+
+.tier-intro {
+    display: grid;
+    gap: 10px;
+    padding: 18px 16px;
+    border-radius: 14px;
+    border: 1px solid #ddd3f3;
+    background: #f6f2fd;
+}
+
+.tier-intro p {
+    margin: 0;
+    color: #444;
+    font-size: 0.92rem;
+}
+
+.tier-intro-link {
+    text-align: center;
+    text-decoration: none;
+}
+
+.tier-save-state {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.tier-save-state.is-error {
+    color: #c0392b;
+    font-weight: 700;
+}
+
+.tier-login-note {
+    margin-top: 16px;
+}

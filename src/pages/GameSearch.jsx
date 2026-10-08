@@ -7,12 +7,14 @@ import { getOptimizedImageUrl } from '../utils/imageOptimizer';
 import LazyImage from '../components/common/LazyImage';
 import { sendLog } from '../api';
 import { translateGenre } from '../constants/genreMap';
+import { TierChip, useTierSummary } from '../fun/tier/tierConnect';
 import './GameSearch.css';
 
 const GameSearch = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { games, trending, loading, error, trendingError, refreshGames } = useGameData();
+    const tierSummary = useTierSummary(); // 머더 카드의 모두의 티어 칩
     const [queryParams, setQueryParams] = useSearchParams();
     const urlQuery = queryParams.get('query') || '';
     const [inputValue, setInputValue] = useState(urlQuery);
@@ -251,6 +253,7 @@ const GameSearch = () => {
                                             <span className="badge-status unavailable">{game.status}</span>
                                         )}
                                         {game.difficulty && <span className="badge-difficulty">난이도 {game.difficulty}</span>}
+                                        <TierChip item={tierSummary.get(String(game.id))} />
                                     </div>
                                 </div>
                             </div>

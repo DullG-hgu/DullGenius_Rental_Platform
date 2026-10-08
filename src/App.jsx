@@ -37,6 +37,9 @@ const WorldcupMyReport = lazy(() => import('./fun/worldcup/WorldcupMyReport'));
 const QuizIntro = lazy(() => import('./fun/quiz/QuizIntro'));
 const QuizPlay = lazy(() => import('./fun/quiz/QuizPlay'));
 const QuizResult = lazy(() => import('./fun/quiz/QuizResult'));
+const TierMine = lazy(() => import('./fun/tier/TierMine'));
+const TierCommunity = lazy(() => import('./fun/tier/TierCommunity'));
+const TierPublic = lazy(() => import('./fun/tier/TierPublic'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginTooltip from './components/LoginTooltip';
@@ -92,6 +95,9 @@ function App() {
                   <Route path="/play/quiz" element={<QuizIntro />} />
                   <Route path="/play/quiz/play" element={<QuizPlay />} />
                   <Route path="/play/quiz/r/:id" element={<QuizResult />} />
+                  <Route path="/play/tier/murder" element={<TierMine />} />
+                  <Route path="/play/tier/murder/community" element={<TierCommunity />} />
+                  <Route path="/play/tier/murder/u/:userId" element={<TierPublic />} />
                   <Route path="/kiosk" element={<KioskPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

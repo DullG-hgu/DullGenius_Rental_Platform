@@ -4,6 +4,8 @@ import MyEventsCard from '../event/MyEventsCard';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import MyQuizCard from '../fun/quiz/MyQuizCard';
+import { isMurder, TierQuickPlace } from '../fun/tier/tierConnect';
+import { useMyTier } from '../fun/tier/tierStore';
 import MyReviewsCard from './MyReviewsCard';
 import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
@@ -22,7 +24,9 @@ const MyPage = () => {
   const { user, profile, loading: authLoading, refreshProfile, logout } = useAuth(); // [NEW]
   const navigate = useNavigate();
   const { showToast } = useToast(); // [NEW]
-  const { refreshGames } = useGameData(); // 찜 취소 후 전역 목록 갱신
+  const { games, refreshGames } = useGameData(); // 찜 취소 후 전역 목록 갱신 · 머더 판별
+  const { mine: myTier } = useMyTier(user?.id);
+  const [tierOpenFor, setTierOpenFor] = useState(null); // 반납한 머더 「티어에 올리기」 펼친 대여 id
 
   const [rentals, setRentals] = useState([]);
   const [rentalHistory, setRentalHistory] = useState([]);
@@ -437,9 +441,13 @@ const MyPage = () => {
                 const isLost = item.closureStatus === 'LOST';
                 const isUnknownClosure = item.closureStatus !== 'LOST' && item.closureStatus !== 'RETURNED';
                 const closureLabel = isLost ? '분실처리' : isUnknownClosure ? '상태 확인 필요' : '반납완료';
+                const historyGame = games.find((g) => String(g.id) === String(item.gameId));
+                const canTier = !isLost && isMurder(historyGame);
+                const placedTier = canTier ? myTier.placements[String(item.gameId)] : null;
 
                 return (
-                  <div key={item.rentalId} style={{
+                  <div key={item.rentalId}>
+                  <div style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                     padding: "10px 12px", background: "#f8f9fa", borderRadius: "8px",
                     border: "1px solid #eee"
@@ -453,6 +461,12 @@ const MyPage = () => {
                           ? (RENTAL_HISTORY_DATE_ANOMALY_LABELS[item.dateAnomalyReason] || "대여·반납 시각 확인 필요")
                           : `${formatDate(item.borrowedAt)} → ${formatDate(item.returnedAt)}`}
                       </div>
+                      {canTier && (
+                        <button type="button" className="tier-history-btn"
+                          onClick={() => setTierOpenFor((v) => (v === item.rentalId ? null : item.rentalId))}>
+                          {placedTier ? `내 티어 ${placedTier} · 바꾸기` : '티어에 올리기'}
+                        </button>
+                      )}
                     </div>
                     <span style={{
                       fontSize: "0.75em", padding: "3px 8px", borderRadius: "10px",
@@ -462,6 +476,10 @@ const MyPage = () => {
                     }}>
                       {closureLabel}
                     </span>
+                  </div>
+                  {tierOpenFor === item.rentalId && historyGame && (
+                    <TierQuickPlace game={historyGame} title={`「${item.gameName}」 해본 머더로 올리기`} />
+                  )}
                   </div>
                 );
               })}

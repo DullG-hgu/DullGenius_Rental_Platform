@@ -1,0 +1,286 @@
+/* src/fun/tier/tierConnect.css — 티어표 연결 지점 (게임 상세·검색·리뷰·마이페이지) */
+
+.tier-chip.tier-S, .tier-quick-chip.tier-S, .tier-review-badge.tier-S, .tier-quick-saved.tier-S { background: #ff7f7f; }
+.tier-chip.tier-A, .tier-quick-chip.tier-A, .tier-review-badge.tier-A, .tier-quick-saved.tier-A { background: #ffbf7f; }
+.tier-chip.tier-B, .tier-quick-chip.tier-B, .tier-review-badge.tier-B, .tier-quick-saved.tier-B { background: #ffdf7f; }
+.tier-chip.tier-C, .tier-quick-chip.tier-C, .tier-review-badge.tier-C, .tier-quick-saved.tier-C { background: #bfff7f; }
+.tier-chip.tier-D, .tier-quick-chip.tier-D, .tier-review-badge.tier-D, .tier-quick-saved.tier-D { background: #7fbfff; }
+
+/* ② 검색 카드 칩 */
+.tier-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 6px;
+    color: #1a1a1a;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+/* ① 게임 상세 티어 카드 — 왼쪽 모두의 티어, 오른쪽 내 티어 */
+.score-card.score-card-tier {
+    display: flex;
+    align-items: stretch;
+    margin: 14px 0 10px;
+    border-radius: 12px;
+    border: 1px solid #ddd3f3;
+    background: #f6f2fd;
+    color: #333;
+    text-align: left;
+    overflow: hidden;
+}
+
+.score-card-all {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 12px 12px 14px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.score-card-mine {
+    width: 96px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 6px;
+    border-left: 1px solid #ddd3f3;
+    background: #fff;
+    color: #333;
+    text-decoration: none;
+    text-align: center;
+}
+
+.score-card-mine strong {
+    font-size: 0.8rem;
+}
+
+.score-card-mine .score-card-grade {
+    width: 48px;
+    height: 48px;
+    font-size: 1.6rem;
+}
+
+.score-card-mine-sub {
+    font-size: 0.72rem;
+    color: #888;
+}
+
+.score-card-mine-go {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #6a11cb;
+    line-height: 1.3;
+    word-break: keep-all;
+}
+
+.score-card-mine.is-empty {
+    background: #fbf9ff;
+}
+
+.score-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.score-card-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    font-size: 0.75rem;
+    color: #777;
+    line-height: 1.3;
+}
+
+.score-card-meta strong {
+    font-size: 0.85rem;
+    color: #333;
+}
+
+.score-card-bars {
+    display: grid;
+    gap: 3px;
+}
+
+.score-card-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: #777;
+    line-height: 1;
+}
+
+.score-card-label {
+    width: 10px;
+    flex-shrink: 0;
+    text-align: center;
+    font-weight: 800;
+}
+
+.score-card-track {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.07);
+    overflow: hidden;
+}
+
+.score-card-fill {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+}
+
+.score-card-count {
+    width: 16px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.score-card-grade {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: #1a1a1a;
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+
+.score-card-grade.tier-none {
+    background: #e6e1f0;
+    color: #8a82a0;
+}
+
+.score-card-split {
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #ffe2c2;
+    color: #9a4d00;
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+.score-card-grade.tier-S, .score-card-fill.tier-S { background: #ff7f7f; }
+.score-card-grade.tier-A, .score-card-fill.tier-A { background: #ffbf7f; }
+.score-card-grade.tier-B, .score-card-fill.tier-B { background: #ffdf7f; }
+.score-card-grade.tier-C, .score-card-fill.tier-C { background: #bfff7f; }
+.score-card-grade.tier-D, .score-card-fill.tier-D { background: #7fbfff; }
+
+/* ④·⑥ 한 번 탭으로 올리기 */
+.tier-quick {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #e3dcf5;
+    background: #faf8ff;
+    display: grid;
+    gap: 8px;
+}
+
+.tier-quick.is-saved {
+    display: block;
+    font-size: 0.88rem;
+    color: #333;
+}
+
+.tier-quick.is-saved a {
+    color: #4a2b8c;
+    font-weight: 700;
+}
+
+.tier-quick-saved {
+    padding: 1px 7px;
+    border-radius: 6px;
+    color: #1a1a1a;
+}
+
+.tier-quick-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #4a2b8c;
+}
+
+.tier-quick-chips {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+}
+
+.tier-quick-chip {
+    min-height: 40px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    color: #1a1a1a;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    opacity: 0.55;
+}
+
+.tier-quick-chip.is-picked {
+    opacity: 1;
+    border-color: #1a1a1a;
+}
+
+.tier-quick-guide {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.tier-quick-save {
+    min-height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: #6a11cb;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tier-quick-save:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* ⑤ 리뷰 작성자 뱃지 */
+.tier-review-badge {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    color: #1a1a1a;
+    font-size: 0.72rem;
+    font-weight: 800;
+    vertical-align: middle;
+}
+
+/* ⑥ 마이페이지 대여 기록 */
+.tier-history-btn {
+    margin-top: 6px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid #d9cdf5;
+    border-radius: 8px;
+    background: #fff;
+    color: #4a2b8c;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+

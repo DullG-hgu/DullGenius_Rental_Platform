@@ -9,6 +9,7 @@ import { useToast } from '../contexts/ToastContext';
 import NotFound from './NotFound';
 import ConfirmModal from './ConfirmModal';
 import QuizBadge from '../fun/quiz/QuizBadge';
+import { GameTierCard, isMurder, ReviewerTierBadge, useTierBadges } from '../fun/tier/tierConnect';
 import { fetchQuizBadges } from '../api_fun';
 import InfoModal from './InfoModal';
 import LazyImage from './common/LazyImage'; // [NEW] Lazy Image
@@ -45,6 +46,7 @@ function GameDetail() {
   const [editForm, setEditForm] = useState({ rating: "5", content: "" });
   const [isUpdating, setIsUpdating] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const tierBadges = useTierBadges(game, reviews); // 머더: 티어표를 공개한 리뷰 작성자의 등급
   const [videoId, setVideoId] = useState(null);
 
   const [confirmModal, setConfirmModal] = useState({
@@ -397,6 +399,9 @@ function GameDetail() {
           )}
         </div>
 
+        {/* 머더: 왼쪽 모두의 티어 · 오른쪽 내 티어(없으면 평가하러 가기) */}
+        {isMurder(game) && <GameTierCard game={game} />}
+
         <div className="main-action-area">
           {game.status === "대여 불가" ? (
             <button disabled className="main-btn using" style={{ backgroundColor: "#95a5a6", cursor: "not-allowed", border: "none" }}>
@@ -456,7 +461,7 @@ function GameDetail() {
             <div className="review-body-row">
               <textarea
                 className="review-text-input"
-                placeholder="후기를 남겨주세요"
+                placeholder={isMurder(game) ? "후기를 남겨주세요 · 진상·범인 언급은 금지" : "후기를 남겨주세요"}
                 value={newReview.comment}
                 onChange={e => setNewReview({ ...newReview, comment: e.target.value })}
               />
@@ -521,6 +526,7 @@ function GameDetail() {
                     <span className="review-author">
                       <strong>{r.author_name || r.user_name || "익명"}</strong>
                       {quizBadges[r.user_id] && <QuizBadge badge={quizBadges[r.user_id]} authorName={r.author_name || r.user_name || "익명"} />}
+                      <ReviewerTierBadge tier={tierBadges[r.user_id]} />
                     </span>
                     <span style={{ color: "#f1c40f" }}>{"⭐".repeat(r.rating)}</span>
                   </div>

@@ -161,3 +161,38 @@ export const deleteQuizResult = (id) => callRpc('fun_quiz_delete_result', { p_id
 
 // [Member] 내 성향검사 기록 전체 지우기 (리뷰 공개 설정도 함께) — 지운 개수
 export const deleteAllMyQuizResults = () => callRpc('fun_quiz_delete_all_mine');
+
+// ==========================================
+// 머더미스터리 티어표 — spec_fun_tier.md §8. 모든 읽기·쓰기는 fun_tier_* RPC 로만
+// ==========================================
+
+// [Public] 템플릿 + 후보 게임
+export const fetchTierTemplate = (slug) => callRpc('fun_tier_get_template', { p_slug: slug });
+
+// [Public] 모두의 티어 — { raters, global_mean, my_offset, my_count, min_sample, items: [{ id, n, tier, split, avg, raw_avg, dist }] }
+export const fetchTierCommunity = (slug) => callRpc('fun_tier_community', { p_slug: slug });
+
+// [Member] 내 표 — { started, is_public, labels, placements: [{ game_id, tier, pos }], played_elsewhere: [id] }
+export const fetchMyTier = (slug) => callRpc('fun_tier_my', { p_slug: slug });
+
+// [Member] 표 전체 저장. placements = [{ g, t, p }]. labels 를 null 로 주면 그대로. seq 로 늦게 온 옛 요청 무시
+export const saveMyTier = (slug, placements, labels = null, seq = Date.now()) =>
+    callRpc('fun_tier_save', { p_slug: slug, p_placements: placements, p_labels: labels, p_seq: seq });
+
+// [Member] 다른 회원에게 공개 켜기/끄기
+export const setTierPublic = (slug, isPublic) => callRpc('fun_tier_set_public', { p_slug: slug, p_public: isPublic });
+
+// [Member] 공개된 티어표 목록 — [{ user_id, name, count, updated_at }]
+export const fetchTierPublicLists = (slug) => callRpc('fun_tier_public_lists', { p_slug: slug });
+
+// [Member] 회원 공개 티어표 하나 (비공개면 null, 본인 것은 비공개여도)
+export const fetchTierPublic = (slug, userId) => callRpc('fun_tier_get_public', { p_slug: slug, p_user_id: userId });
+
+// [Member] 리뷰 작성자 티어 뱃지 — 티어표를 공개한 회원만 { "<user_id>": "S" }
+export const fetchTierBadges = (gameId, userIds) => {
+    const ids = [...new Set(userIds.filter(Boolean))].slice(0, 100);
+    return ids.length ? callRpc('fun_tier_public_badges', { p_game_id: gameId, p_user_ids: ids }) : Promise.resolve({});
+};
+
+// [Admin] 부적절한 티어 이름 기본으로 되돌리기
+export const resetTierLabels = (slug, userId) => callRpc('fun_tier_admin_reset_labels', { p_slug: slug, p_user_id: userId });
