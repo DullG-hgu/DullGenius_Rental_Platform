@@ -17,13 +17,16 @@ import { supabase } from './supabaseClient.jsx';
  * @param {Function} [opts.onReconnect]- 끊겼다 다시 붙었을 때 1회 호출 (최초 연결은 제외)
  * @param {string}   [opts.channelName]- 채널 이름. 화면마다 다르게 준다
  * @param {number}   [opts.debounceMs] - 이벤트 폭주(전체 재계산) 대비 디바운스
+ * @param {Function} [opts.isRelevant] - (payload) => boolean. false 면 그 이벤트는 무시한다.
+ *   조회수(total_views)처럼 화면에 영향 없는 변경까지 접속자 전원이 전체 목록을 다시 받던 문제 대응 (2026-10-08)
  * @returns {Function} 구독 해제 함수 (항상 호출 가능. 구독 실패 시엔 no-op)
  */
 export const subscribeToGameChanges = ({
     onChange,
     onReconnect,
     channelName = 'games-sync',
-    debounceMs = 1500
+    debounceMs = 1500,
+    isRelevant = null
 }) => {
     let timer = null;
     let channel = null;
@@ -31,8 +34,15 @@ export const subscribeToGameChanges = ({
     // 최초 SUBSCRIBED 는 재연결이 아니다. 그때는 이미 화면이 방금 데이터를 읽은 직후다.
     let connectedBefore = false;
 
-    const runDebounced = () => {
+    const runDebounced = (payload) => {
         if (disposed) return;
+        if (isRelevant) {
+            try {
+                if (!isRelevant(payload)) return;
+            } catch {
+                // 판단 실패 시에는 안전하게 갱신한다
+            }
+        }
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
             timer = null;

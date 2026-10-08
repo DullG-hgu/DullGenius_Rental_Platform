@@ -76,14 +76,15 @@ const Home = () => {
                 setOfficeStatus(status);
                 setOfficeHoursConfig(officeConfig);
             } catch {
-                // 못 불러오면 직전 상태를 유지한다 (처음부터 실패면 카드 없음). 30초 뒤 다시 시도.
+                // 못 불러오면 직전 상태를 유지한다 (처음부터 실패면 카드 없음). 60초 뒤 다시 시도.
             } finally {
                 pending = false;
             }
         };
         const onVisible = () => { if (document.visibilityState === 'visible') refreshOffice(); };
         refreshOffice();
-        const poll = setInterval(refreshOffice, 30_000);
+        // 60초마다, 화면이 보일 때만 (숨은 탭까지 30초마다 2건씩 보내던 것을 줄임 — 2026-10-08)
+        const poll = setInterval(() => { if (document.visibilityState === 'visible') refreshOffice(); }, 60_000);
         const clock = setInterval(() => setNow(Date.now()), 1000);
         window.addEventListener('focus', refreshOffice);
         document.addEventListener('visibilitychange', onVisible);

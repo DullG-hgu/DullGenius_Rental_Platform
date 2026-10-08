@@ -24,7 +24,9 @@ export const fetchGames = async () => {
       // statusData.rentals = 만료된 찜이 걸러진 유효 기록만 (버튼 노출 조건과 상태 계산의 일관성 보장)
       return {
         ...game,
-        ...statusData
+        ...statusData,
+        // DB 의 available_count 원값 — 화면용 값은 위에서 다시 계산되므로, Realtime 이벤트와 비교할 땐 이걸 쓴다
+        db_available_count: game.available_count
       };
     });
   } catch (e) {

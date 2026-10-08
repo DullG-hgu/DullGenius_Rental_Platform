@@ -1,7 +1,7 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { GameProvider, useGameData } from '../src/contexts/GameDataContext';
+import { GameProvider, isRelevantGameChange, useGameData } from '../src/contexts/GameDataContext';
 import { fetchGames, fetchTrending, fetchConfig } from '../src/api';
 const auth = vi.hoisted(() => ({ user: null, loading: false }));
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => auth }));
@@ -72,5 +72,23 @@ describe('game data', () => {
     await screen.findByText('Second');
     await act(async () => older.resolve([{ id: 1, name: 'Private first account' }]));
     expect(screen.queryByText('Private first account')).toBeNull(); expect(screen.getByText('Second')).toBeTruthy();
+  });
+});
+
+describe('realtime game changes', () => {
+  const games = [{ id: 1, name: 'Game', available_count: 1, total_views: 10, genres: ['전략'] }];
+  it('ignores a view-count-only update (no full reload for every visitor)', () => {
+    expect(isRelevantGameChange({ new: { id: 1, name: 'Game', available_count: 1, total_views: 11, genres: ['전략'] } }, games)).toBe(false);
+  });
+  it('reloads when stock or shown info changes, or the game is unknown', () => {
+    expect(isRelevantGameChange({ new: { id: 1, name: 'Game', available_count: 0, total_views: 10 } }, games)).toBe(true);
+    expect(isRelevantGameChange({ new: { id: 1, name: 'Game', available_count: 1, genres: ['파티'] } }, games)).toBe(true);
+    expect(isRelevantGameChange({ new: { id: 2, name: 'New', available_count: 1 } }, games)).toBe(true);
+    expect(isRelevantGameChange({}, games)).toBe(true);
+  });
+  it('compares stock with the raw DB value, not the recomputed screen value', () => {
+    const shown = [{ id: 1, name: 'Game', available_count: 1, db_available_count: 0, total_views: 3 }];
+    expect(isRelevantGameChange({ new: { id: 1, name: 'Game', available_count: 0, total_views: 4 } }, shown)).toBe(false);
+    expect(isRelevantGameChange({ new: { id: 1, name: 'Game', available_count: 1, total_views: 4 } }, shown)).toBe(true);
   });
 });

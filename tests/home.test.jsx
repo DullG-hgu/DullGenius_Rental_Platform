@@ -54,6 +54,9 @@ it('uses Korean office time when only configured closing time is available', asy
 it('refreshes office status on poll, focus and visibility, and cleans up after unmount', async () => {
     const view = await mount();
     fetchOfficeStatus.mockResolvedValue({ open: false });
+    // 폴링은 60초마다 (2026-10-08: 30초 → 60초, 숨은 탭에서는 멈춤)
+    await act(async () => { vi.advanceTimersByTime(30_000); });
+    expect(fetchOfficeStatus).toHaveBeenCalledTimes(1);
     await act(async () => { vi.advanceTimersByTime(30_000); });
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(2);
     await act(async () => { fireEvent.focus(window); });
@@ -61,8 +64,16 @@ it('refreshes office status on poll, focus and visibility, and cleans up after u
     await act(async () => { fireEvent(document, new Event('visibilitychange')); });
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(4);
     view.unmount();
-    await act(async () => { vi.advanceTimersByTime(30_000); fireEvent.focus(window); });
+    await act(async () => { vi.advanceTimersByTime(60_000); fireEvent.focus(window); });
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(4);
+});
+
+it('does not poll office status while the tab is hidden', async () => {
+    await mount();
+    const spy = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    await act(async () => { vi.advanceTimersByTime(120_000); });
+    expect(fetchOfficeStatus).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
 });
 
 it('shows nothing when the office status fails to load, and recovers on the next poll', async () => {
@@ -72,7 +83,7 @@ it('shows nothing when the office status fails to load, and recovers on the next
     expect(screen.queryByText(/오피스아워/)).toBeNull();
     fetchOfficeStatus.mockResolvedValue({ open: true });
     fetchOfficeHoursConfig.mockResolvedValue({ banner_title: '오피스아워 진행 중!' });
-    await act(async () => { vi.advanceTimersByTime(30_000); });
+    await act(async () => { vi.advanceTimersByTime(60_000); });
     expect(screen.getByText('오피스아워 진행 중!')).toBeTruthy();
 });
 
