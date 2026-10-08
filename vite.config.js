@@ -1,7 +1,8 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 
 // 브라우저 UA를 그대로 넘기면 BGG(Cloudflare)가 403을 준다. netlify/functions/bgg-proxy.js와 같은 값.
 const BGG_USER_AGENT = 'dullgrental/1.0 (+https://dullgrental.netlify.app)'
@@ -9,15 +10,36 @@ const BGG_USER_AGENT = 'dullgrental/1.0 (+https://dullgrental.netlify.app)'
 // 빌드 식별값. 번들에 상수로 박고 같은 값을 /version.json 으로도 내보낸다.
 // 실행 중인 화면이 서버의 최신 빌드와 다른지 비교하는 데 쓴다 (src/lib/appUpdate.js).
 // build 는 같은 커밋을 다시 배포해도(환경변수 변경 등) 달라져야 하므로 Netlify BUILD_ID 를 쓴다.
+const git = (...args) => execFileSync('git', args, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+
 const resolveCommit = () => {
     if (process.env.COMMIT_REF) return process.env.COMMIT_REF.slice(0, 7)
     try {
-        return execSync('git rev-parse --short=7 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+        return git('rev-parse', '--short=7', 'HEAD')
     } catch {
         return 'unknown'
     }
 }
+
+// 버전 = package.json 의 주.부(사람이 정함) + 패치(자동).
+// 패치는 package.json 의 "version" 줄을 마지막으로 바꾼 커밋 이후의 커밋 수 — 배포할 때마다 커지고,
+// 부 버전을 올리면(npm version minor) 0부터 다시 센다. 부 버전 이상이 바뀌어야 홈에 「업데이트」 버튼이 뜬다.
+// git 기록을 못 읽으면(얕은 클론 등) package.json 값을 그대로 쓴다.
+const resolveVersion = () => {
+    const pkgVersion = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version
+    const [major, minor] = pkgVersion.split('.')
+    try {
+        if (git('rev-parse', '--is-shallow-repository') === 'true') return pkgVersion
+        const base = git('log', '-1', '--format=%H', '-G', '"version"', '--', 'package.json')
+        if (!base) return pkgVersion
+        return `${major}.${minor}.${git('rev-list', '--count', `${base}..HEAD`)}`
+    } catch {
+        return pkgVersion
+    }
+}
+
 const APP_VERSION = {
+    version: resolveVersion(),
     commit: resolveCommit(),
     build: process.env.BUILD_ID || `local-${Date.now().toString(36)}`,
 }

@@ -15,7 +15,10 @@
 /* global __APP_VERSION__ */
 export const APP_VERSION = typeof __APP_VERSION__ !== 'undefined'
     ? __APP_VERSION__
-    : { commit: 'dev', build: 'dev' };
+    : { version: 'dev', commit: 'dev', build: 'dev' };
+
+/** 화면 표시용: "v1.0.0 · 4b62476" — 번호는 사람이 올리고, 커밋으로 정확한 빌드를 판별한다 */
+export const formatVersion = (v = APP_VERSION) => `v${v.version} · ${v.commit}`;
 
 export const UPDATE_ATTEMPT_KEY = 'app_update_attempt';
 export const RETRY_GUARD_MS = 10 * 60 * 1000;
@@ -35,6 +38,16 @@ export const fetchLatestVersion = async (fetchImpl = fetch) => {
 
 export const isOutdated = (current, latest) =>
     !!latest && current.build !== 'dev' && latest.build !== current.build;
+
+/**
+ * 주·부 버전이 바뀐 "중대한" 업데이트인지. 패치(평소 배포)는 아니다.
+ * 홈의 「업데이트」 버튼은 이때만 뜬다. 평소 배포는 다음에 앱을 열 때 서비스워커가 조용히 바꾼다.
+ */
+export const isMajorUpdate = (current, latest) => {
+    const majorMinor = (v) => (typeof v === 'string' ? v.split('.').slice(0, 2).join('.') : null);
+    const latestMM = majorMinor(latest?.version);
+    return isOutdated(current, latest) && !!latestMM && latestMM !== majorMinor(current.version);
+};
 
 export const canAttempt = (attempt, latestBuild, now) =>
     !attempt || attempt.build !== latestBuild || now - attempt.at >= RETRY_GUARD_MS;
@@ -74,14 +87,17 @@ const waitForControllerChange = (ms) => new Promise((resolve) => {
 
 /**
  * 최신 빌드로 갱신한다. 호출하는 쪽이 "지금 새로고침해도 되는 때"인지 판단해야 한다.
+ * force: 사람이 직접 누른 경우. 반복 방지 기록 없이 바로 진행한다 (누를 때마다 한 번이라 루프가 없다).
  * @returns {Promise<'skipped'|'sw-updated'|'hard-reloaded'>}
  */
-export const applyUpdate = async (latest, { storage = getStorage(), now = Date.now() } = {}) => {
-    if (!storage || !canAttempt(readAttempt(storage), latest.build, now)) return 'skipped';
-    try {
-        storage.setItem(UPDATE_ATTEMPT_KEY, JSON.stringify({ build: latest.build, at: now }));
-    } catch {
-        return 'skipped';
+export const applyUpdate = async (latest, { storage = getStorage(), now = Date.now(), force = false } = {}) => {
+    if (!force) {
+        if (!storage || !canAttempt(readAttempt(storage), latest.build, now)) return 'skipped';
+        try {
+            storage.setItem(UPDATE_ATTEMPT_KEY, JSON.stringify({ build: latest.build, at: now }));
+        } catch {
+            return 'skipped';
+        }
     }
 
     const sw = navigator.serviceWorker;
@@ -105,4 +121,23 @@ export const applyUpdate = async (latest, { storage = getStorage(), now = Date.n
     }
     window.location.reload();
     return 'hard-reloaded';
+};
+
+// 홈 헤더는 페이지를 오갈 때마다 다시 마운트된다. 확인 요청은 몇 분에 한 번만 보낸다.
+const CHECK_CACHE_MS = 5 * 60 * 1000;
+let lastCheck = null; // { at, promise }
+
+/** 중대한 새 빌드(부 버전 이상)가 있으면 그 정보, 없거나 확인 실패면 null */
+export const checkForUpdate = ({ now = Date.now(), fetchImpl } = {}) => {
+    if (!lastCheck || now - lastCheck.at >= CHECK_CACHE_MS) {
+        lastCheck = {
+            at: now,
+            promise: fetchLatestVersion(fetchImpl).then((latest) => (isMajorUpdate(APP_VERSION, latest) ? latest : null)),
+        };
+    }
+    return lastCheck.promise;
+};
+
+export const resetUpdateCheckCache = () => {
+    lastCheck = null;
 };

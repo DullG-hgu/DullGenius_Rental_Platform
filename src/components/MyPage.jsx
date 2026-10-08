@@ -8,6 +8,7 @@ import MyReviewsCard from './MyReviewsCard';
 import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabaseClient';
+import { formatVersion } from '../lib/appUpdate';
 
 const RENTAL_HISTORY_DATE_ANOMALY_LABELS = {
   MISSING_BORROWED_AT: "대여 시각 없음",
@@ -506,6 +507,9 @@ const MyPage = () => {
           회원 탈퇴하기
         </button>
       </div>
+
+      {/* 문제 신고 시 어느 빌드인지 확인용 */}
+      <div style={{ textAlign: "center", marginTop: "16px", fontSize: "0.75em", color: "#b2b2b2" }}>{formatVersion()}</div>
 
       {/* [NEW] 유튜브 모달 */}
       {

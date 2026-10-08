@@ -50,7 +50,7 @@ function ScreenSaver({ onWake, version }) {
                 🎲 DullGenius
                 <div style={{ fontSize: "1rem", marginTop: "10px" }}>화면을 한 번 터치하면 켜져요</div>
                 {/* 기기 사진 한 장으로 어느 빌드인지 알 수 있게. 글자와 함께 움직여 번인 걱정 없음 */}
-                {version && <div className="saver-version">v{version}</div>}
+                {version && <div className="saver-version">{version}</div>}
             </div>
         </div>
     );

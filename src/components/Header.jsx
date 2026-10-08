@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { stashPendingRoute } from '../lib/pendingRoute';
+import useAppUpdate from '../hooks/useAppUpdate';
 import logo from '../logo.png';
 import './Header.css';
 
@@ -12,6 +13,7 @@ const Header = () => {
     const { user, profile, roles, logout, loading: authLoading } = useAuth(); // [FIX] signOut -> logout
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const { updateAvailable, updating, update } = useAppUpdate();
 
     const handleLogout = async () => {
         try {
@@ -68,6 +70,14 @@ const Header = () => {
         // 반응을 주면 "숨은 관리자 입구가 존재한다"는 사실만 알려주는 꼴이다.
     };
 
+    // 새 빌드가 있을 때만 두 번째 버튼(로그아웃/회원가입) 자리를 차지한다.
+    // 회원가입은 로그인 화면 링크로, 로그아웃은 업데이트 직후 다시 보인다.
+    const updateButton = (
+        <button type="button" onClick={update} disabled={updating} className="site-header-btn is-update">
+            {updating ? '업데이트 중' : '업데이트'}
+        </button>
+    );
+
     return (
         <header className="site-header">
             <div className="site-brand">
@@ -90,12 +100,16 @@ const Header = () => {
                         <Link to="/mypage" className="site-header-btn">
                             {profile?.name || user?.user_metadata?.full_name || '부원'}님
                         </Link>
-                        <button type="button" onClick={handleLogout} className="site-header-btn is-ghost">로그아웃</button>
+                        {updateAvailable ? updateButton : (
+                            <button type="button" onClick={handleLogout} className="site-header-btn is-ghost">로그아웃</button>
+                        )}
                     </>
                 ) : (
                     <>
                         <Link to="/login" className="site-header-btn is-primary">로그인</Link>
-                        <Link to="/signup" className="site-header-btn is-ghost">회원가입</Link>
+                        {updateAvailable ? updateButton : (
+                            <Link to="/signup" className="site-header-btn is-ghost">회원가입</Link>
+                        )}
                     </>
                 )}
             </div>

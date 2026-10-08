@@ -10,7 +10,7 @@ import ReservationModal from './ReservationModal'; // [NEW] 예약 수령 모달
 import MurderMysteryTimerModal from './MurderMysteryTimerModal'; // [NEW] 머더 미스터리 타이머
 import ScreenSaver from './ScreenSaver';
 import useKioskAutoUpdate from './useKioskAutoUpdate';
-import { APP_VERSION } from '../lib/appUpdate';
+import { formatVersion } from '../lib/appUpdate';
 import siteQr from './assets/site-qr.svg'; // 동아리 사이트 QR (빌드 시 고정 생성: scripts/gen_kiosk_qr.mjs)
 
 const SITE_URL = 'https://dullgrental.netlify.app/';
@@ -455,7 +455,7 @@ function KioskPage() {
     }
 
     if (isIdle && !showMurderMysteryTimer) {
-        return <ScreenSaver version={APP_VERSION.commit} onWake={() => {
+        return <ScreenSaver version={formatVersion()} onWake={() => {
             setIsIdle(false);
             isIdleRef.current = false;
             scheduleIdleTimer();
@@ -468,7 +468,7 @@ function KioskPage() {
             <header style={{ padding: "20px", borderBottom: "1px solid #333", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
                     🎲 덜지니어스 키오스크
-                    <span className="kiosk-version">v{APP_VERSION.commit}</span>
+                    <span className="kiosk-version">{formatVersion()}</span>
                 </div>
                 <div className="kiosk-header-right">
                     <div style={{ fontSize: "1.3rem", color: "#888", fontFamily: "'Courier New', Consolas, monospace", fontWeight: "600", letterSpacing: "2px" }}>

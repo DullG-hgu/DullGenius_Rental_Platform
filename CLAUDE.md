@@ -194,6 +194,13 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 
 ---
 
+## 앱 버전·업데이트 (2026-10-08)
+
+- 버전은 `주.부.패치`. **패치는 빌드 때 자동**(package.json 의 "version" 줄을 마지막으로 바꾼 커밋 이후 커밋 수, `vite.config.js`). 손으로 올리지 않는다.
+- **사용자가 지금 화면도 바로 바꿔야 할 만큼 중대한 변경이면 `npm version minor --no-git-tag-version`** 후 커밋 → 홈 헤더 두 번째 버튼이 「업데이트」로 바뀐다. 패치만 바뀐 배포는 버튼 없이 다음 실행 때 서비스워커가 조용히 바꾼다.
+- 갱신 판단은 버전 번호가 아니라 `version.json` 의 `build`(Netlify BUILD_ID)로 한다. 키오스크는 번호와 무관하게 모든 배포를 화면보호기 때 자동 적용(`src/kiosk/useKioskAutoUpdate.js`).
+- 화면 표시 `v1.0.3 · <커밋>`: 홈은 마이페이지 맨 아래, 키오스크는 헤더·화면보호기. 신고가 오면 이 값부터 받는다.
+
 ## BGG 연동 데이터 규칙 (2026-09-10)
 
 - `bgg_id`는 **게임 폼의 이름 검색(한글 그대로 됨)에서 고른 항목**만 넣는다. 손으로 ID를 적어 넣지 않는다.

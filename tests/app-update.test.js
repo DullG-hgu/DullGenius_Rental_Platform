@@ -5,8 +5,12 @@ import {
     UPDATE_ATTEMPT_KEY,
     applyUpdate,
     canAttempt,
+    checkForUpdate,
     fetchLatestVersion,
+    formatVersion,
+    isMajorUpdate,
     isOutdated,
+    resetUpdateCheckCache,
 } from '../src/lib/appUpdate';
 
 const latest = { commit: 'abc1234', build: 'b2' };
@@ -24,6 +28,44 @@ describe('version comparison', () => {
 
     it('개발 번들은 갱신 대상이 아니다', () => {
         expect(isOutdated({ build: 'dev' }, latest)).toBe(false);
+    });
+
+    it('표시는 사람이 올리는 번호와 커밋을 함께 보여준다', () => {
+        expect(formatVersion({ version: '1.0.0', commit: '4b62476', build: 'x' })).toBe('v1.0.0 · 4b62476');
+    });
+});
+
+describe('isMajorUpdate (홈 버튼 조건)', () => {
+    const cur = { version: '1.0.3', build: 'b1' };
+    it.each([
+        ['1.0.9', false], // 평소 배포 — 패치만
+        ['1.1.0', true],
+        ['2.0.0', true],
+    ])('%s → %s', (version, expected) => {
+        expect(isMajorUpdate(cur, { version, build: 'b2' })).toBe(expected);
+    });
+    it('같은 빌드이거나 버전 정보가 없으면 아니다', () => {
+        expect(isMajorUpdate(cur, { version: '1.1.0', build: 'b1' })).toBe(false);
+        expect(isMajorUpdate(cur, { build: 'b2' })).toBe(false);
+        expect(isMajorUpdate(cur, null)).toBe(false);
+    });
+});
+
+describe('checkForUpdate', () => {
+    beforeEach(() => resetUpdateCheckCache());
+
+    it('5분 안의 재확인은 같은 결과를 재사용한다 (헤더가 페이지마다 다시 마운트됨)', async () => {
+        const fetchImpl = vi.fn().mockResolvedValue({ ok: true, json: async () => latest });
+        await checkForUpdate({ now: 0, fetchImpl });
+        await checkForUpdate({ now: 60_000, fetchImpl });
+        expect(fetchImpl).toHaveBeenCalledTimes(1);
+        await checkForUpdate({ now: 5 * 60_000, fetchImpl });
+        expect(fetchImpl).toHaveBeenCalledTimes(2);
+    });
+
+    it('개발·테스트 번들에서는 새 빌드가 있어도 null', async () => {
+        const fetchImpl = vi.fn().mockResolvedValue({ ok: true, json: async () => latest });
+        await expect(checkForUpdate({ now: 0, fetchImpl })).resolves.toBeNull();
     });
 });
 
@@ -114,6 +156,13 @@ describe('applyUpdate', () => {
         await expect(applyUpdate(latest, { storage: localStorage, now: 60_000 })).resolves.toBe('skipped');
         expect(reg.update).not.toHaveBeenCalled();
         expect(reload).not.toHaveBeenCalled();
+    });
+
+    it('사람이 직접 누른 갱신은 10분 제한 없이 진행한다', async () => {
+        localStorage.setItem(UPDATE_ATTEMPT_KEY, JSON.stringify({ build: 'b2', at: 0 }));
+        reg.update.mockImplementation(async () => { swListeners.controllerchange(); });
+        await expect(applyUpdate(latest, { storage: localStorage, now: 60_000, force: true })).resolves.toBe('sw-updated');
+        await expect(applyUpdate(latest, { storage: null, now: 60_000, force: true })).resolves.toBe('sw-updated');
     });
 
     it('시도 기록을 남길 수 없으면 강제 갱신하지 않는다', async () => {
