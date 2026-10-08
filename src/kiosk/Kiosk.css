@@ -267,6 +267,22 @@
     font-weight: bold;
 }
 
+/* 실행 중인 빌드 표시 — 신고 시 어느 번들인지 확인용 (src/lib/appUpdate.js) */
+.kiosk-version {
+    margin-left: 12px;
+    font-size: 0.8rem;
+    font-weight: normal;
+    color: #555;
+    font-family: 'Courier New', Consolas, monospace;
+}
+
+.saver-version {
+    font-size: 0.8rem;
+    font-weight: normal;
+    margin-top: 6px;
+    font-family: 'Courier New', Consolas, monospace;
+}
+
 /* [Modal] */
 .kiosk-modal-overlay {
     position: fixed;

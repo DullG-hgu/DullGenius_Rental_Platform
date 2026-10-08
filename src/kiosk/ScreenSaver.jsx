@@ -11,7 +11,7 @@ const WAKE_GUARD_MS = 400;
 // (오른쪽 위를 누르면 타이머가, 구석을 누르면 수령/반납이 열렸다)
 // React 의 touchstart 는 passive 라 preventDefault 로도 막을 수 없다.
 // click 시점에는 아직 화면보호기가 이벤트 대상이므로, 깨우는 탭이 아래로 새지 않는다.
-function ScreenSaver({ onWake }) {
+function ScreenSaver({ onWake, version }) {
     const [position, setPosition] = useState({ top: 30, left: 30 });
 
     // Pixel Shift (10초마다 위치 이동)
@@ -49,6 +49,8 @@ function ScreenSaver({ onWake }) {
             <div className="saver-content" style={{ top: `${position.top}%`, left: `${position.left}%` }}>
                 🎲 DullGenius
                 <div style={{ fontSize: "1rem", marginTop: "10px" }}>화면을 한 번 터치하면 켜져요</div>
+                {/* 기기 사진 한 장으로 어느 빌드인지 알 수 있게. 글자와 함께 움직여 번인 걱정 없음 */}
+                {version && <div className="saver-version">v{version}</div>}
             </div>
         </div>
     );

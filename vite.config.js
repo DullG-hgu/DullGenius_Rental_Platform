@@ -1,9 +1,34 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
 
 // 브라우저 UA를 그대로 넘기면 BGG(Cloudflare)가 403을 준다. netlify/functions/bgg-proxy.js와 같은 값.
 const BGG_USER_AGENT = 'dullgrental/1.0 (+https://dullgrental.netlify.app)'
+
+// 빌드 식별값. 번들에 상수로 박고 같은 값을 /version.json 으로도 내보낸다.
+// 실행 중인 화면이 서버의 최신 빌드와 다른지 비교하는 데 쓴다 (src/lib/appUpdate.js).
+// build 는 같은 커밋을 다시 배포해도(환경변수 변경 등) 달라져야 하므로 Netlify BUILD_ID 를 쓴다.
+const resolveCommit = () => {
+    if (process.env.COMMIT_REF) return process.env.COMMIT_REF.slice(0, 7)
+    try {
+        return execSync('git rev-parse --short=7 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+    } catch {
+        return 'unknown'
+    }
+}
+const APP_VERSION = {
+    commit: resolveCommit(),
+    build: process.env.BUILD_ID || `local-${Date.now().toString(36)}`,
+}
+
+const versionFilePlugin = () => ({
+    name: 'app-version-file',
+    apply: 'build',
+    generateBundle() {
+        this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify(APP_VERSION) })
+    },
+})
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -11,6 +36,7 @@ export default defineConfig(({ mode }) => {
     return {
         plugins: [
             react(),
+            versionFilePlugin(),
             VitePWA({
                 registerType: 'autoUpdate',
                 devOptions: {
@@ -49,6 +75,9 @@ export default defineConfig(({ mode }) => {
                 }
             })
         ],
+        define: {
+            __APP_VERSION__: JSON.stringify(APP_VERSION),
+        },
         envPrefix: ['VITE_'],
         server: {
             port: 3000,

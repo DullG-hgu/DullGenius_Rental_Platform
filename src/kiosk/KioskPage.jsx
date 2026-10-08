@@ -9,13 +9,14 @@ import ReturnModal from './ReturnModal';
 import ReservationModal from './ReservationModal'; // [NEW] 예약 수령 모달
 import MurderMysteryTimerModal from './MurderMysteryTimerModal'; // [NEW] 머더 미스터리 타이머
 import ScreenSaver from './ScreenSaver';
+import useKioskAutoUpdate from './useKioskAutoUpdate';
+import { APP_VERSION } from '../lib/appUpdate';
 import siteQr from './assets/site-qr.svg'; // 동아리 사이트 QR (빌드 시 고정 생성: scripts/gen_kiosk_qr.mjs)
 
 const SITE_URL = 'https://dullgrental.netlify.app/';
 
 // [Constants]
 const IDLE_TIMEOUT_MS = 180000; // 3분 (번인 방지)
-const REFRESH_HOUR = 4; // 새벽 4시 자동 새로고침
 const DEVICE_KEY_STORAGE = 'kiosk_device_key';
 const LEGACY_KIOSK_HOST = 'dullgboardgamerent.netlify.app';
 const CANONICAL_KIOSK_ORIGIN = 'https://dullgrental.netlify.app';
@@ -295,26 +296,8 @@ function KioskPage() {
 
     useEffect(() => clearSessionRetry, []);
 
-    // [Effect 1] 자동 새로고침 스케줄러
-    useEffect(() => {
-        // 새벽 4시 리프레시 체크 (1분마다)
-        const refreshInterval = setInterval(async () => {
-            const now = new Date();
-            // Check if it's 4 AM AND user is idle to prevent interruption
-            if (now.getHours() === REFRESH_HOUR && now.getMinutes() === 0) {
-                if (isIdleRef.current) {
-                    // 새 sw.js를 명시적으로 체크 — 있으면 install→activate→controllerchange 트리거
-                    try {
-                        const reg = await navigator.serviceWorker?.getRegistration();
-                        await reg?.update();
-                    } catch (_) { /* 네트워크 일시 오류는 무시, reload는 진행 */ }
-                    window.location.reload();
-                }
-            }
-        }, 60000);
-
-        return () => clearInterval(refreshInterval);
-    }, []);
+    // [Effect 1] 새 빌드 자동 적용 — 확인은 수시로, 적용은 화면보호기 상태에서만
+    useKioskAutoUpdate(isIdle, isIdleRef);
 
     // [Effect: Wake Lock] Prevent screen sleep
     useEffect(() => {
@@ -472,7 +455,7 @@ function KioskPage() {
     }
 
     if (isIdle && !showMurderMysteryTimer) {
-        return <ScreenSaver onWake={() => {
+        return <ScreenSaver version={APP_VERSION.commit} onWake={() => {
             setIsIdle(false);
             isIdleRef.current = false;
             scheduleIdleTimer();
@@ -483,7 +466,10 @@ function KioskPage() {
         <div className="kiosk-container">
             {/* 상단바 */}
             <header style={{ padding: "20px", borderBottom: "1px solid #333", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>🎲 덜지니어스 키오스크</div>
+                <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
+                    🎲 덜지니어스 키오스크
+                    <span className="kiosk-version">v{APP_VERSION.commit}</span>
+                </div>
                 <div className="kiosk-header-right">
                     <div style={{ fontSize: "1.3rem", color: "#888", fontFamily: "'Courier New', Consolas, monospace", fontWeight: "600", letterSpacing: "2px" }}>
                         {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}

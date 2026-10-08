@@ -39,3 +39,9 @@
   for = "/registerSW.js"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# 키오스크 자동 업데이트가 최신 빌드를 비교하는 파일 (src/lib/appUpdate.js) — 캐시되면 영영 옛 값
+[[headers]]
+  for = "/version.json"
+  [headers.values]
+    Cache-Control = "no-store"
