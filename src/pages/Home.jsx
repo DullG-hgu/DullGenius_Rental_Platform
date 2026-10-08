@@ -14,6 +14,7 @@ import PoweredByBGG from '../components/PoweredByBGG';
 import Header from '../components/Header';
 import { sendLog, fetchOfficeStatus, fetchOfficeHoursConfig } from '../api';
 import { LINKS } from '../infoData';
+import { FUN_ITEMS } from '../fun/funItems';
 import { isPaidMember } from '../lib/membership';
 import { HomeGameCard, RecommendationDeck } from './home/HomeSections';
 import './Home.css';
@@ -30,6 +31,15 @@ const Home = () => {
     const [isReportOpen, setIsReportOpen] = useState(false);
     // 가입 직후 1회: /?welcome=1 로 들어오면 💡 버튼 위치를 알려준다
     const [searchParams, setSearchParams] = useSearchParams();
+    const [playOpen, setPlayOpen] = useState(() => {
+        try { return sessionStorage.getItem('home_play_open') === '1'; } catch { return false; }
+    });
+    // 놀이터 펼침은 이 탭에서만 기억 — 게임 보고 돌아왔을 때 그대로
+    const togglePlay = () => {
+        const next = !playOpen;
+        setPlayOpen(next);
+        try { sessionStorage.setItem('home_play_open', next ? '1' : '0'); } catch { /* 저장 불가 환경 */ }
+    };
     const [showCoach, setShowCoach] = useState(false);
 
     const [now, setNow] = useState(Date.now);
@@ -232,15 +242,32 @@ const Home = () => {
                 <div className="home-section-head">
                     <h2>놀이터</h2>
                 </div>
-                {/* 입구는 하나만 — 콘텐츠가 늘어도 홈이 번잡해지지 않게 (2026-10-08) */}
-                <Link to="/play" onClick={saveScroll} className="home-play-card">
+                {/* 입구는 하나만 — 누르면 아래로 펼쳐 콘텐츠를 고른다. 늘어도 홈이 번잡해지지 않게 (2026-10-08) */}
+                <button type="button" className={`home-play-card home-play-toggle${playOpen ? ' is-open' : ''}`}
+                    aria-expanded={playOpen} aria-controls="home-play-menu" onClick={togglePlay}>
                     <span className="home-play-icon" aria-hidden="true">🎡</span>
                     <span className="home-play-body">
-                        <span className="home-play-name">놀이터 입장</span>
-                        <span className="home-play-sub">이상형 월드컵 · 머더 티어표 · 성향검사</span>
+                        <span className="home-play-name">놀이터</span>
+                        <span className="home-play-sub">{FUN_ITEMS.map((i) => i.name.replace('보드게임 ', '')).join(' · ')}</span>
                     </span>
-                    <span className="home-play-go" aria-hidden="true">→</span>
-                </Link>
+                    <span className="home-play-go" aria-hidden="true">▾</span>
+                </button>
+                {playOpen && (
+                    <ul id="home-play-menu" className="home-play-menu">
+                        {FUN_ITEMS.map((item) => (
+                            <li key={item.to}>
+                                <Link to={item.to} onClick={saveScroll} className="home-play-item">
+                                    <span className="home-play-item-icon" aria-hidden="true">{item.icon}</span>
+                                    <span className="home-play-item-body">
+                                        <span className="home-play-item-name">{item.name}</span>
+                                        <span className="home-play-item-desc">{item.desc}</span>
+                                    </span>
+                                    <span className="home-play-item-go" aria-hidden="true">→</span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </section>
 
             {!error && config?.length > 0 && (

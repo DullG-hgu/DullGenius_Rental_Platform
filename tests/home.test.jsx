@@ -87,9 +87,17 @@ it('offers native links for search, browsing, ranked games, the full ranking and
     expect(screen.getByRole('link', { name: /카테고리별로/ }).getAttribute('href')).toBe('/categories');
     expect(screen.getByRole('link', { name: /게임 0/ }).getAttribute('href')).toBe('/game/0');
     expect(screen.getByRole('link', { name: '전체 순위' }).getAttribute('href')).toBe('/search?type=trending');
-    // 놀이터 입구는 하나 — 월드컵·티어표·성향검사는 허브에서
-    expect(screen.getByRole('link', { name: /놀이터 입장/ }).getAttribute('href')).toBe('/play');
-    expect(screen.getAllByRole('link').filter((l) => l.getAttribute('href')?.startsWith('/play/'))).toHaveLength(0);
+    // 놀이터 입구는 버튼 하나 — 누르면 아래로 펼쳐 콘텐츠 링크가 나온다
+    const playToggle = screen.getByRole('button', { name: /놀이터/ });
+    expect(playToggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('link', { name: /머더미스터리 티어표/ })).toBeNull();
+    fireEvent.click(playToggle);
+    expect(playToggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('link', { name: /이상형 월드컵/ }).getAttribute('href')).toBe('/play/worldcup');
+    expect(screen.getByRole('link', { name: /머더미스터리 티어표/ }).getAttribute('href')).toBe('/play/tier/murder');
+    expect(screen.getByRole('link', { name: /성향검사/ }).getAttribute('href')).toBe('/play/quiz');
+    fireEvent.click(playToggle);
+    sessionStorage.clear();
 });
 
 it('puts non-member short-term rental near the top only for signed-out visitors', async () => {

@@ -615,3 +615,97 @@
     font-size: 0.85rem;
     color: var(--home-sub);
 }
+
+/* 놀이터 입구 — 누르면 아래로 펼침 */
+.home-play-toggle {
+    width: calc(100% - 32px);
+    border: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.home-play-toggle .home-play-go {
+    transition: transform 0.2s;
+}
+
+.home-play-toggle.is-open {
+    border-radius: 18px 18px 0 0;
+}
+
+.home-play-toggle.is-open .home-play-go {
+    transform: rotate(180deg);
+}
+
+.home-play-menu {
+    list-style: none;
+    margin: 0 16px;
+    padding: 6px;
+    border: 1px solid #e4dcfa;
+    border-top: none;
+    border-radius: 0 0 18px 18px;
+    background: #faf8ff;
+    animation: homePlayDown 0.18s ease-out;
+}
+
+.home-play-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    color: #2a1f45;
+    text-decoration: none;
+}
+
+.home-play-item:hover,
+.home-play-item:focus-visible {
+    background: #efe9fd;
+}
+
+.home-play-menu li + li .home-play-item {
+    border-top: 1px solid #eee8fb;
+    border-radius: 0 0 12px 12px;
+}
+
+.home-play-item-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.home-play-item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.home-play-item-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.home-play-item-desc {
+    font-size: 0.8rem;
+    color: #6b6385;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.home-play-item-go {
+    flex-shrink: 0;
+    color: #8a4dff;
+}
+
+@keyframes homePlayDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-play-menu { animation: none; }
+    .home-play-toggle .home-play-go { transition: none; }
+}
