@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchTierBadges } from '../../api_fun';
 import { useAuth } from '../../contexts/AuthContext';
-import { DEFAULT_MIN_SAMPLE, isMurder, TIER_GUIDE, TIERS } from './tierData';
+import { DEFAULT_MIN_SAMPLE, isMurder, TIERS } from './tierData';
 import { placeMyTier, useCommunity, useMyTier } from './tierStore';
 import './tierConnect.css';
 
@@ -117,12 +117,12 @@ export const TierQuickPlace = ({ game, title }) => {
                 {TIERS.map((t) => (
                     <button key={t} type="button" role="radio" aria-checked={pick === t}
                         className={`tier-quick-chip tier-${t}${pick === t ? ' is-picked' : ''}`}
-                        onClick={() => setPick(t)} title={TIER_GUIDE[t]}>
+                        onClick={() => setPick(t)}>
                         {t}
                     </button>
                 ))}
             </div>
-            {pick && <div className="tier-quick-guide">{pick} · {TIER_GUIDE[pick]}</div>}
+            <div className="tier-quick-guide">위로 갈수록 더 좋았던 머더</div>
             <button type="button" className="tier-quick-save" disabled={!pick || pick === current || status !== 'ready'} onClick={save}>
                 {current ? '바꾸기' : '올리기'}
             </button>

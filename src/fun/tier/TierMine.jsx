@@ -8,7 +8,7 @@ import { useGameData } from '../../contexts/GameDataContext';
 import { useToast } from '../../contexts/ToastContext';
 import TierBoard, { TierDragGhost } from './TierBoard';
 import useTierDrag from './useTierDrag';
-import { isMurder, rowsFor, TIER_GUIDE, TIERS } from './tierData';
+import { isMurder, rowsFor, TIERS } from './tierData';
 import { flushTierSave, loadMyTier, placeMyTier, retryTierSave, setMyTierLabels, setMyTierPublic, useMyTier } from './tierStore';
 import '../fun.css';
 import './tier.css';
@@ -25,7 +25,6 @@ const TierMine = () => {
     const { status, mine, save } = useMyTier(user?.id);
     const [selected, setSelected] = useState(null); // { game, from: 'tray' | 'S'... }
     const [labelSheet, setLabelSheet] = useState(false);
-    const [showGuide, setShowGuide] = useState(false);
     const [draftLabels, setDraftLabels] = useState(mine.labels);
 
     const pool = useMemo(
@@ -131,20 +130,10 @@ const TierMine = () => {
                     ? '놓을 줄로 끌기 · 「안 해봄」에 놓으면 빼기'
                     : selected
                         ? `「${selected.game.name}」 놓을 줄 탭 · 카드를 탭하면 그 앞에`
-                        : '해본 게임만 「안 해봄」에서 위로 · 줄 안 순서도 자유 · 끌거나(폰은 꾹 누른 뒤) 탭 → 줄 탭'}
+                        : '해본 게임만 「안 해봄」에서 위로 · 끌거나(폰은 꾹 누른 뒤) 탭 → 줄 탭'}
             </p>
-
-            <button type="button" className="tier-guide-toggle" aria-expanded={showGuide}
-                onClick={() => setShowGuide((v) => !v)}>
-                티어 기준 · 「안 해본 사람에게 권하겠는가」 {showGuide ? '▲' : '▼'}
-            </button>
-            {showGuide && (
-                <ul className="tier-guide-list tier-guide-box">
-                    {TIERS.map((t) => (
-                        <li key={t}><span className={`tier-label-badge tier-${t}`}>{t}</span>{TIER_GUIDE[t]}</li>
-                    ))}
-                </ul>
-            )}
+            {/* 기준은 방향 하나 — 절대 기준(「남에게 권하겠는가」)은 두지 않는다 (spec §6-1, 2026-10-08) */}
+            <p className="tier-direction">위로 갈수록 더 좋았던 머더 · 줄 안 순서도 마음대로</p>
 
             <div className="tier-top">
                 <span className="tier-count"><strong>{placedCount}</strong> / {pool.length} 평가</span>
@@ -203,16 +192,13 @@ const TierMine = () => {
                     <div className="wc-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="티어 이름 바꾸기">
                         <div className="wc-sheet-handle" />
                         <h3>티어 이름</h3>
-                        <p className="wc-sheet-note">줄마다 10자까지 · 빈칸은 기본 글자 · 이름만 바뀌고 뜻은 아래 기준 그대로</p>
+                        <p className="wc-sheet-note">줄마다 10자까지 · 빈칸은 기본 글자 · 모두의 티어에는 S~D 로 합산</p>
                         <div className="tier-label-inputs">
                             {TIERS.map((t, i) => (
                                 <label key={t} className="tier-label-row">
                                     <span className={`tier-label-badge tier-${t}`}>{t}</span>
-                                    <span className="tier-label-field">
-                                        <input type="text" maxLength={10} value={draftLabels[i]} placeholder={t}
-                                            onChange={(e) => setDraftLabels((d) => d.map((v, j) => (j === i ? e.target.value : v)))} />
-                                        <span className="tier-label-guide">{TIER_GUIDE[t]}</span>
-                                    </span>
+                                    <input type="text" maxLength={10} value={draftLabels[i]} placeholder={t}
+                                        onChange={(e) => setDraftLabels((d) => d.map((v, j) => (j === i ? e.target.value : v)))} />
                                 </label>
                             ))}
                         </div>

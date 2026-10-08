@@ -2,7 +2,7 @@
 import React, { useId } from 'react';
 import { useFocusTrap } from '../../hooks/useFocusTrap.jsx';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock.jsx';
-import { DEFAULT_MIN_SAMPLE, SHRINK_K, SPLIT_SHARE, TIER_GUIDE, TIERS } from './tierData';
+import { DEFAULT_MIN_SAMPLE, SHRINK_K, SPLIT_SHARE } from './tierData';
 
 const fmt = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}`;
 
@@ -33,12 +33,10 @@ const TierMethodModal = ({ open, onClose, globalMean = 3, myOffset, myCount, min
                 <div className="tier-modal-body">
                     <section>
                         <h4>1. 등급의 뜻</h4>
-                        <p>기준은 「안 해본 사람에게 권하겠는가」. 각자 붙인 티어 이름과 상관없이 아래 뜻으로 합산.</p>
-                        <ul className="tier-guide-list">
-                            {TIERS.map((t) => (
-                                <li key={t}><span className={`tier-label-badge tier-${t}`}>{t}</span>{TIER_GUIDE[t]}</li>
-                            ))}
-                        </ul>
+                        <p>
+                            정해진 기준 없이 「위로 갈수록 더 좋았던 머더」. 다른 머더와 견준 상대 순위.
+                            각자 붙인 티어 이름과 상관없이 S~D 자리로 합산하고, 사람마다 다른 높낮이는 3번 보정으로 맞춤.
+                        </p>
                     </section>
 
                     <section>

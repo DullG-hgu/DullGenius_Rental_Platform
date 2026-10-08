@@ -387,56 +387,12 @@
     padding-left: 6px;
 }
 
-/* ── 티어 기준 ──────────────────────── */
+/* ── 방향 안내 ──────────────────────── */
 
-.tier-guide-toggle {
-    width: 100%;
-    min-height: 40px;
-    margin-bottom: 8px;
-    padding: 0 12px;
-    border: 1px solid #e6e6ec;
-    border-radius: 10px;
-    background: #faf9fc;
-    color: #4a2b8c;
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-align: left;
-    cursor: pointer;
-}
-
-.tier-guide-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 6px;
-    font-size: 0.88rem;
-}
-
-.tier-guide-list li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.tier-guide-box {
-    margin-bottom: 10px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: #faf9fc;
-}
-
-.tier-label-field {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.tier-label-guide {
-    font-size: 0.75rem;
-    color: #888;
-    padding-left: 4px;
+.tier-direction {
+    margin: 0 0 8px;
+    font-size: 0.82rem;
+    color: #6b6385;
 }
 
 .tier-inline-link {

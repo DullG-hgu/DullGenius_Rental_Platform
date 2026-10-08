@@ -10,15 +10,6 @@ export const SHRINK_K = 3;
 export const SPLIT_SHARE = 0.25;
 export const DEFAULT_MIN_SAMPLE = 3;
 
-// 개인 배정 기준 — 「안 해본 사람에게 권하겠는가」 (spec §6-1)
-export const TIER_GUIDE = {
-    S: '꼭 해볼 작품 · 누구에게나 권함',
-    A: '추천 · 머더 좋아하면 만족',
-    B: '무난 · 할 만함',
-    C: '사람 따라 · 취향 맞으면',
-    D: '비추 · 시간이 아까움',
-};
-
 export const isMurder = (game) => game?.category === MURDER_CATEGORY && !game?.base_game_id;
 
 export const EMPTY_MINE = {
