@@ -13,8 +13,6 @@ import RentalTutorial from '../components/RentalTutorial';
 import PoweredByBGG from '../components/PoweredByBGG';
 import Header from '../components/Header';
 import { sendLog, fetchOfficeStatus, fetchOfficeHoursConfig } from '../api';
-import { fetchWorldcupRanking } from '../api_fun';
-import { useCommunity } from '../fun/tier/tierStore';
 import { LINKS } from '../infoData';
 import { isPaidMember } from '../lib/membership';
 import { HomeGameCard, RecommendationDeck } from './home/HomeSections';
@@ -33,13 +31,6 @@ const Home = () => {
     // 가입 직후 1회: /?welcome=1 로 들어오면 💡 버튼 위치를 알려준다
     const [searchParams, setSearchParams] = useSearchParams();
     const [showCoach, setShowCoach] = useState(false);
-    const [wcTop, setWcTop] = useState(null);
-    // 놀이터 티어표 카드의 "지금 1위" (평가 인원이 찬 머더가 있을 때만 — 서버가 보정 평균 순으로 준다)
-    const { data: tierData } = useCommunity();
-    const tierTop = useMemo(() => {
-        const min = tierData?.min_sample ?? 3;
-        return tierData?.items?.find((i) => i.n >= min && i.tier) ?? null;
-    }, [tierData]);
 
     const [now, setNow] = useState(Date.now);
 
@@ -93,15 +84,6 @@ const Home = () => {
             window.removeEventListener('focus', refreshOffice);
             document.removeEventListener('visibilitychange', onVisible);
         };
-    }, []);
-
-    // 놀이터 카드의 "지금 1위" (순위 표본이 찬 게임이 있을 때만)
-    useEffect(() => {
-        let active = true;
-        fetchWorldcupRanking('all-boardgames', 'all')
-            .then((r) => { if (active) setWcTop(r?.items?.find((i) => i.ranked) ?? null); })
-            .catch(() => {});
-        return () => { active = false; };
     }, []);
 
     // 표시는 한 번 읽고 바로 지운다 — 새로고침·뒤로 가기로 다시 뜨지 않게
@@ -250,31 +232,12 @@ const Home = () => {
                 <div className="home-section-head">
                     <h2>놀이터</h2>
                 </div>
-                <Link to="/play/worldcup?theme=all-boardgames" onClick={saveScroll} className="home-play-card">
-                    <span className="home-play-icon" aria-hidden="true">🏆</span>
+                {/* 입구는 하나만 — 콘텐츠가 늘어도 홈이 번잡해지지 않게 (2026-10-08) */}
+                <Link to="/play" onClick={saveScroll} className="home-play-card">
+                    <span className="home-play-icon" aria-hidden="true">🎡</span>
                     <span className="home-play-body">
-                        <span className="home-play-name">보드게임 이상형 월드컵</span>
-                        <span className="home-play-sub">
-                            {wcTop ? `지금 1위 · ${wcTop.name}` : '둘 중 하나! 나의 원픽 보드게임 찾기'}
-                        </span>
-                    </span>
-                    <span className="home-play-go" aria-hidden="true">→</span>
-                </Link>
-                <Link to="/play/tier/murder" onClick={saveScroll} className="home-play-card">
-                    <span className="home-play-icon" aria-hidden="true">🔪</span>
-                    <span className="home-play-body">
-                        <span className="home-play-name">머더미스터리 티어표</span>
-                        <span className="home-play-sub">
-                            {tierTop ? `지금 1위 · ${tierTop.name} (${tierTop.tier})` : '해본 머더에 등급 매기고 모두의 티어 보기'}
-                        </span>
-                    </span>
-                    <span className="home-play-go" aria-hidden="true">→</span>
-                </Link>
-                <Link to="/play/quiz" onClick={saveScroll} className="home-play-card">
-                    <span className="home-play-icon" aria-hidden="true">🧭</span>
-                    <span className="home-play-body">
-                        <span className="home-play-name">보드게임 성향검사</span>
-                        <span className="home-play-sub">질문 19개로 찾는 나와 맞는 게임 성향</span>
+                        <span className="home-play-name">놀이터 입장</span>
+                        <span className="home-play-sub">이상형 월드컵 · 머더 티어표 · 성향검사</span>
                     </span>
                     <span className="home-play-go" aria-hidden="true">→</span>
                 </Link>

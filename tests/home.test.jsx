@@ -76,7 +76,7 @@ it('shows nothing when the office status fails to load, and recovers on the next
     expect(screen.getByText('오피스아워 진행 중!')).toBeTruthy();
 });
 
-it('offers native links for search, browsing, ranked games, the full ranking and the worldcup', async () => {
+it('offers native links for search, browsing, ranked games, the full ranking and the playground', async () => {
     data.trending = Array.from({ length: 6 }, (_, id) => ({ id, name: `게임 ${id}`, category: '전략' }));
     await mount();
     const search = screen.getByRole('link', { name: /어떤 게임을 찾으세요/ });
@@ -87,7 +87,9 @@ it('offers native links for search, browsing, ranked games, the full ranking and
     expect(screen.getByRole('link', { name: /카테고리별로/ }).getAttribute('href')).toBe('/categories');
     expect(screen.getByRole('link', { name: /게임 0/ }).getAttribute('href')).toBe('/game/0');
     expect(screen.getByRole('link', { name: '전체 순위' }).getAttribute('href')).toBe('/search?type=trending');
-    expect(screen.getByRole('link', { name: /이상형 월드컵/ }).getAttribute('href')).toBe('/play/worldcup?theme=all-boardgames');
+    // 놀이터 입구는 하나 — 월드컵·티어표·성향검사는 허브에서
+    expect(screen.getByRole('link', { name: /놀이터 입장/ }).getAttribute('href')).toBe('/play');
+    expect(screen.getAllByRole('link').filter((l) => l.getAttribute('href')?.startsWith('/play/'))).toHaveLength(0);
 });
 
 it('puts non-member short-term rental near the top only for signed-out visitors', async () => {
