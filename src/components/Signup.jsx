@@ -58,9 +58,10 @@ function Signup() {
       });
 
       showToast("가입 성공! 환영합니다.", { type: "success" });
-      // 가입 직후엔 원래 가려던 곳 대신 항상 홈으로 — 💡 이용법 버튼 위치를 1회 알려준다 (Home: ?welcome=1)
-      takePendingRoute(returnPath); // 남은 복귀 경로는 비워서 다음 로그인 때 엉뚱하게 튀지 않게
-      navigate("/?welcome=1", { replace: true });
+      // 행사·팀 링크처럼 가려던 곳이 있으면 그리로 돌려보낸다 (가입 목적이 그 페이지다).
+      // 없으면 홈으로 — 💡 이용법 버튼 위치를 1회 알려준다 (Home: ?welcome=1)
+      const destination = takePendingRoute(returnPath);
+      navigate(destination && destination !== "/" ? destination : "/?welcome=1", { replace: true });
     } catch (error) {
       console.error("Signup Error:", error);
       showToast(getAuthErrorMessage(error), { type: "error" });

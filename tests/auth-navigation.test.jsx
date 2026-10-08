@@ -65,6 +65,15 @@ describe('login and recovery flow', () => {
         fireEvent.click(screen.getByRole('button', { name: '가입하기' }));
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('/event/team/ABC'));
     });
+    it('sends a plain signup to the home welcome guide', async () => {
+        renderRoute('/signup');
+        fireEvent.change(screen.getByPlaceholderText('이름'), { target: { value: '진단용 회원' } });
+        fireEvent.change(screen.getByPlaceholderText('학번 (8자리)'), { target: { value: '00000000' } });
+        fireEvent.change(screen.getByPlaceholderText('비밀번호'), { target: { value: 'test-only' } });
+        fireEvent.change(screen.getByPlaceholderText('전화번호'), { target: { value: '01000000000' } });
+        fireEvent.click(screen.getByRole('button', { name: '가입하기' }));
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('/?welcome=1'));
+    });
     it('offers assisted reset and preserves the return path without requesting email or password', () => {
         renderRoute('/reset-password?redirect=%2Fevent%2Fteam%2FABC');
         expect(screen.getByRole('link', { name: '운영진에게 초기화 요청하기' }).getAttribute('href')).toMatch(/^mailto:/);

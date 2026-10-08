@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ReturnModal from '../src/kiosk/ReturnModal.jsx';
 
@@ -17,18 +17,21 @@ describe('return reward feedback', () => {
         })));
     });
 
+    // 결과는 토스트가 아니라 모달 안 결과 카드로 보여준다 (토스트가 모달 뒤에 가려졌다 — 2026-10-04)
     it.each([
-        [[50, 0], '✅ 2개 반납 완료! 총 50P 지급되었습니다.'],
-        [[0, 0], '✅ 2개 반납 완료!'],
-        [[50, undefined], '✅ 2개 반납 완료!'],
-    ])('reports only confirmed server reward totals (%j)', async (points, message) => {
+        [[50, 0], '🎁 50P 지급'],
+        [[0, 0], null],
+        [[50, undefined], null],
+    ])('reports only confirmed server reward totals (%j)', async (points, detail) => {
         points.forEach(value => mocks.returnRental.mockResolvedValueOnce({ success: true, points_awarded: value }));
         render(<ReturnModal onClose={vi.fn()} />);
         fireEvent.click(await screen.findByRole('button', { name: /테스트 회원/ }));
         screen.getAllByRole('checkbox').forEach(checkbox => fireEvent.click(checkbox));
         fireEvent.click(screen.getByRole('button', { name: '선택한 2개 반납하기' }));
         fireEvent.click(screen.getByRole('button', { name: '✓ 확인' }));
-        await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(message, { type: 'success' }));
+        expect(await screen.findByText('2개 반납 완료!')).toBeInTheDocument();
+        if (detail) expect(screen.getByText(detail)).toBeInTheDocument();
+        else expect(screen.queryByText(/P 지급/)).toBeNull();
         expect(mocks.returnRental).toHaveBeenCalledWith(1, 'fixture-user', 'rental-1');
     });
 });
