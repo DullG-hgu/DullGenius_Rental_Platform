@@ -192,10 +192,10 @@ function RentalTutorial({ isOpen, onClose, onOpenReport }) {
                             )}
                         </div>
                         <div className="rt-path">
-                            <strong>🏢 비회원 단기 대여</strong>
-                            <p>동아리·단체 행사용 유료 대여예요. 픽업 3일 전까지 신청해 주세요.</p>
+                            <strong>🏢 행사·단체 대여</strong>
+                            <p>동아리·단체 행사용 대여예요. 봉사·공익 행사는 무료, 픽업 3일 전까지 신청해 주세요.</p>
                             <button type="button" className="rt-btn" onClick={() => goAndClose('/org-rental')}>
-                                단기 대여 안내 →
+                                행사·단체 대여 안내 →
                             </button>
                         </div>
                     </div>

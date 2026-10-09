@@ -1,7 +1,9 @@
+// src/pages/OrgRental.jsx — 행사·단체 대여 안내 (2026-10-09 개편, 구 '단기 대여')
+// 신청은 구글 폼(LINKS.orgRentalForm) 그대로. 폼 제출은 Apps Script → ingest_rental_request 로 관리자 「외부 대여 신청」 탭에 쌓인다.
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LINKS, CONTACTS } from '../infoData';
-import { ORG_RENTAL_TEXTS } from '../constants';
+import { ORG_RENTAL_TEXTS as T } from '../constants';
 import InfoModal from '../components/InfoModal';
 import './OrgRental.css';
 
@@ -13,59 +15,103 @@ const OrgRental = () => {
         window.scrollTo(0, 0);
     }, []);
 
+    // 외부 공유 링크로 바로 들어오면 뒤로 갈 곳이 없으므로 홈으로
+    const goBack = () => {
+        if (window.history.state?.idx > 0) navigate(-1);
+        else navigate('/');
+    };
+
     return (
-        <div className="org-rental-container">
-            <header className="org-header">
-                <button className="back-btn" onClick={() => navigate(-1)}>
-                    ← 뒤로가기
+        <div className="org-page">
+            <header className="org-top">
+                <button type="button" className="org-back" onClick={goBack} aria-label="뒤로가기">
+                    ←
                 </button>
-                <h2>{ORG_RENTAL_TEXTS.TITLE}</h2>
+                <span>{T.TITLE}</span>
             </header>
 
-            <div className="org-content">
-                <section className="org-section">
-                    <h3>{ORG_RENTAL_TEXTS.GUIDE_TITLE}</h3>
-                    <p>{ORG_RENTAL_TEXTS.GUIDE_DESC}</p>
-                    <ul>
-                        {ORG_RENTAL_TEXTS.RULES.map((rule, idx) => (
-                            <li key={idx}><strong>{rule.label}:</strong> {rule.desc}</li>
-                        ))}
-                    </ul>
-                </section>
+            <section className="org-hero">
+                <h1>{T.TITLE}</h1>
+                <p className="org-lead">{T.LEAD}</p>
+                <p className="org-desc">{T.DESC}</p>
+            </section>
 
-                <section className="org-section caution">
-                    <h3>{ORG_RENTAL_TEXTS.CAUTION_TITLE}</h3>
-                    <ul>
-                        {ORG_RENTAL_TEXTS.CAUTIONS.map((caution, idx) => (
-                            <li key={idx}>{caution}</li>
-                        ))}
-                    </ul>
-                </section>
+            <section className="org-plans">
+                {T.PLANS.map((plan) => (
+                    <div key={plan.key} className={`org-plan is-${plan.key}`}>
+                        <div className="org-plan-head">
+                            <span className="org-badge">{plan.badge}</span>
+                            <strong>{plan.title}</strong>
+                        </div>
+                        {plan.examples && (
+                            <p className="org-plan-examples">{plan.examples.join(' · ')} 등</p>
+                        )}
+                        {plan.prices && (
+                            <ul className="org-price-list">
+                                {plan.prices.map((p) => (
+                                    <li key={p.label}>
+                                        <span>{p.label}</span>
+                                        <strong>{p.price}</strong>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        {plan.note && <p className="org-plan-note">{plan.note}</p>}
+                    </div>
+                ))}
+            </section>
 
-                <div className="org-contact">
-                    <p>문의사항: <a href={`mailto:${CONTACTS.email}`}>{CONTACTS.email}</a></p>
-                </div>
+            <section className="org-section">
+                <h2>{T.STEPS_TITLE}</h2>
+                <ol className="org-steps">
+                    {T.STEPS.map((step) => (
+                        <li key={step.title}>
+                            <strong>{step.title}</strong>
+                            <span>{step.desc}</span>
+                        </li>
+                    ))}
+                </ol>
+            </section>
 
-                <div className="org-action">
-                    <p style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', lineHeight: '1.5' }}>
-                        신청 시{' '}
-                        <button
-                            onClick={() => setShowTerms(true)}
-                            style={{ background: 'none', border: 'none', padding: 0, color: '#4a6cf7', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}
-                        >
-                            동아리 이용 약관
-                        </button>
-                        에 동의한 것으로 간주합니다.
-                    </p>
-                    <a
-                        href={LINKS.orgRentalForm}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="org-apply-btn"
-                    >
-                        {ORG_RENTAL_TEXTS.BTN_APPLY}
-                    </a>
-                </div>
+            <section className="org-section">
+                <h2>{T.PREPARE_TITLE}</h2>
+                <ul className="org-checklist">
+                    {T.PREPARE.map((item) => (
+                        <li key={item}>{item}</li>
+                    ))}
+                </ul>
+                <Link to="/search" className="org-browse">{T.BROWSE_LINK} →</Link>
+            </section>
+
+            <section className="org-section org-caution">
+                <h2>{T.CAUTION_TITLE}</h2>
+                <ul>
+                    {T.CAUTIONS.map((caution) => (
+                        <li key={caution}>{caution}</li>
+                    ))}
+                </ul>
+            </section>
+
+            <p className="org-contact">
+                문의 <a href={`mailto:${CONTACTS.email}`}>{CONTACTS.email}</a>
+            </p>
+
+            <div className="org-cta">
+                <a
+                    href={LINKS.orgRentalForm}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="org-apply-btn"
+                >
+                    {T.BTN_APPLY}
+                </a>
+                <p>
+                    신청 시{' '}
+                    <button type="button" className="org-terms-link" onClick={() => setShowTerms(true)}>
+                        동아리 이용 약관
+                    </button>
+                    에 동의한 것으로 간주합니다.
+                </p>
             </div>
 
             <InfoModal

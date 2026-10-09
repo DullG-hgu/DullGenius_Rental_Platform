@@ -195,12 +195,12 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* 비부원(비로그인·회비 미납): 왼쪽 비회원 단기 대여 · 오른쪽 부원 가입 신청 */}
+            {/* 비부원(비로그인·회비 미납): 왼쪽 행사·단체 대여 · 오른쪽 부원 가입 신청 */}
             {!authLoading && !isPaidUser && (
                 <div className="home-entry-pair">
                     <Link to="/org-rental" className="home-org-card">
                         <span>
-                            <strong>비회원 단기 대여</strong>
+                            <strong>행사·단체 대여</strong>
                             <span>동아리·단체 행사에 보드게임이 필요하다면</span>
                         </span>
                         <span aria-hidden="true">→</span>

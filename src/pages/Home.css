@@ -553,7 +553,7 @@
     cursor: pointer;
 }
 
-/* 비회원 단기 대여 (비로그인일 때 위쪽) */
+/* 행사·단체 대여 (비로그인일 때 위쪽) */
 .home-org-card {
     margin: 12px 16px 0;
     padding: 14px 16px;
@@ -568,7 +568,7 @@
     gap: 12px;
 }
 
-/* 비로그인 짝 카드 (2026-10-04): 왼쪽 단기 대여 · 오른쪽 가입 */
+/* 비로그인 짝 카드 (2026-10-04): 왼쪽 행사·단체 대여 · 오른쪽 가입 */
 .home-entry-pair {
     display: grid;
     grid-template-columns: 1fr 1fr;

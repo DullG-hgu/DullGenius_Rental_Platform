@@ -1,137 +1,331 @@
-.org-rental-container {
-    max-width: 600px;
+/* src/pages/OrgRental.css — 행사·단체 대여 (2026-10-09 개편). 색은 홈(Home.css)과 같은 보라 + 무채색 */
+
+.org-page {
+    --org-primary: #5b2bd6;
+    --org-primary-soft: #f1ecfd;
+    --org-ink: #1d1a26;
+    --org-sub: #6b6878;
+    --org-line: #ece9f3;
+    --org-bg: #faf9fd;
+    --org-card: #ffffff;
+    --org-ok: #1d7a3a;
+    --org-ok-soft: #e8f5ec;
+
+    max-width: 640px;
     margin: 0 auto;
-    padding: 20px;
-    background-color: #f8f9fa;
     min-height: 100vh;
+    background: var(--org-bg);
+    color: var(--org-ink);
+    word-break: keep-all;
 }
 
-.org-header {
+/* 상단 바 */
+.org-top {
+    position: sticky;
+    top: 0;
+    z-index: 5;
     display: flex;
     align-items: center;
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #dee2e6;
+    gap: 4px;
+    padding: 8px 8px;
+    background: rgba(250, 249, 253, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--org-line);
+    font-weight: 600;
+    font-size: 0.95rem;
 }
 
-.org-header .back-btn {
-    background: none;
+.org-back {
+    width: 40px;
+    height: 40px;
     border: none;
-    font-size: 1rem;
-    color: #495057;
+    background: none;
+    font-size: 1.2rem;
+    color: var(--org-ink);
     cursor: pointer;
-    margin-right: 16px;
-    padding: 8px 0;
+    border-radius: 10px;
 }
 
-.org-header h2 {
+.org-back:hover {
+    background: var(--org-line);
+}
+
+/* 머리말 */
+.org-hero {
+    padding: 24px 16px 8px;
+}
+
+.org-hero h1 {
+    margin: 0 0 8px;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+}
+
+.org-lead {
+    margin: 0 0 6px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--org-primary);
+}
+
+.org-desc {
     margin: 0;
-    font-size: 1.3rem;
-    color: #212529;
-}
-
-.org-content {
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.org-section {
-    margin-bottom: 24px;
-}
-
-.org-section h3 {
-    margin-top: 0;
-    margin-bottom: 12px;
-    font-size: 1.1rem;
-    color: #343a40;
-}
-
-.org-section p {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     line-height: 1.6;
-    color: #495057;
-    margin-bottom: 12px;
+    color: var(--org-sub);
 }
 
-.org-section ul {
-    padding-left: 20px;
-    margin: 0;
-}
-
-.org-section li {
-    font-size: 0.95rem;
-    line-height: 1.6;
-    color: #495057;
-    margin-bottom: 8px;
-}
-
-.org-section.caution {
-    background-color: #fff5f5;
+/* 무료·유료 두 갈래 */
+.org-plans {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
     padding: 16px;
-    border-radius: 8px;
-    border-left: 4px solid #fa5252;
 }
 
-.org-section.caution h3 {
-    color: #c92a2a;
+@media (max-width: 420px) {
+    .org-plans {
+        grid-template-columns: 1fr;
+    }
+}
+
+.org-plan {
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--org-card);
+    border: 1px solid var(--org-line);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.org-plan.is-free {
+    background: var(--org-ok-soft);
+    border-color: transparent;
+}
+
+.org-plan-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+}
+
+.org-badge {
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--org-primary-soft);
+    color: var(--org-primary);
+}
+
+.org-plan.is-free .org-badge {
+    background: var(--org-ok);
+    color: #fff;
+}
+
+.org-plan-examples {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--org-ok);
+}
+
+.org-plan-note {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--org-sub);
+}
+
+.org-price-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.org-price-list li {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.92rem;
+}
+
+.org-price-list li span {
+    color: var(--org-sub);
+}
+
+/* 공통 섹션 */
+.org-section {
+    margin: 0 16px 12px;
+    padding: 18px 16px;
+    border-radius: 16px;
+    background: var(--org-card);
+    border: 1px solid var(--org-line);
+}
+
+.org-section h2 {
+    margin: 0 0 12px;
+    font-size: 1.05rem;
+}
+
+/* 진행 순서 */
+.org-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: org-step;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.org-steps li {
+    counter-increment: org-step;
+    position: relative;
+    padding-left: 38px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.org-steps li::before {
+    content: counter(org-step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--org-primary-soft);
+    color: var(--org-primary);
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.org-steps li strong {
+    font-size: 0.95rem;
+    line-height: 26px;
+}
+
+.org-steps li span {
+    font-size: 0.85rem;
+    color: var(--org-sub);
+    line-height: 1.5;
+}
+
+/* 준비물 */
+.org-checklist {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+}
+
+@media (max-width: 480px) {
+    .org-checklist {
+        grid-template-columns: 1fr;
+    }
+}
+
+.org-checklist li {
+    position: relative;
+    padding-left: 18px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.org-checklist li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--org-primary);
+    font-weight: 700;
+}
+
+.org-browse {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--org-primary);
+    text-decoration: none;
+}
+
+/* 주의사항 */
+.org-caution ul {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.org-caution li {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--org-sub);
 }
 
 .org-contact {
+    margin: 4px 16px 0;
+    font-size: 0.85rem;
+    color: var(--org-sub);
     text-align: center;
-    margin: 32px 0 24px;
-    font-size: 0.95rem;
-    color: #868e96;
 }
 
 .org-contact a {
-    color: #339af0;
-    text-decoration: none;
-    font-weight: 500;
+    color: var(--org-sub);
 }
 
-.org-action {
-    display: flex;
-    justify-content: center;
-    margin-top: 24px;
+/* 하단 고정 신청 버튼 */
+.org-cta {
+    position: sticky;
+    bottom: 0;
+    margin-top: 16px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--org-bg) 75%, rgba(250, 249, 253, 0));
+    text-align: center;
 }
 
 .org-apply-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #228be6;
-    color: white;
-    font-size: 1.1rem;
-    font-weight: bold;
+    display: block;
+    padding: 15px;
+    border-radius: 14px;
+    background: var(--org-primary);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
     text-decoration: none;
-    padding: 16px 24px;
-    border-radius: 8px;
-    width: 100%;
-    transition: background-color 0.2s ease;
-    box-shadow: 0 4px 6px rgba(34, 139, 230, 0.2);
+    box-shadow: 0 6px 16px rgba(91, 43, 214, 0.25);
 }
 
-.org-apply-btn:hover {
-    background-color: #1c7ed6;
+.org-apply-btn:active {
+    transform: translateY(1px);
 }
 
-/* 모바일 대응 */
-@media (max-width: 480px) {
-    .org-rental-container {
-        padding: 12px;
-    }
-    
-    .org-content {
-        padding: 16px;
-    }
-    
-    .org-section h3 {
-        font-size: 1.05rem;
-    }
-    
-    .org-section li {
-        font-size: 0.9rem;
-    }
+.org-cta p {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    color: var(--org-sub);
+}
+
+.org-terms-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--org-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
 }
