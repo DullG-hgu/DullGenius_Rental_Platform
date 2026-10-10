@@ -46,7 +46,20 @@ if (!PROJECT_REF) {
 if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
 // ── SQL 쿼리 실행 ──────────────────────────────────────────────────────────────
+// 운영 DB가 Nano 라 카탈로그 조회를 연달아 날리면 멈출 수 있다 (2026-10-04 장애). 조회 사이 2초 간격.
+// 동시에 불려도 한 줄로 세운다 — 앞 조회가 끝나고 2초 뒤에 다음 조회.
+// 각 조회에는 서버 쪽 statement_timeout 을 건다 (클라이언트가 끊어도 서버 쿼리는 계속 돌기 때문).
+const QUERY_GAP_MS = 2000;
+const STATEMENT_TIMEOUT = '20s';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let queue = Promise.resolve();
 function query(sql) {
+    const run = queue.then(() => rawQuery(`SET statement_timeout = '${STATEMENT_TIMEOUT}';\n${sql}`));
+    queue = run.catch(() => {}).then(() => sleep(QUERY_GAP_MS));
+    return run;
+}
+
+function rawQuery(sql) {
     return new Promise((resolve, reject) => {
         const body = JSON.stringify({ query: sql });
         const options = {
@@ -128,43 +141,41 @@ async function pullFunctions() {
 
 // ── schema.sql ────────────────────────────────────────────────────────────────
 async function pullSchema() {
+    // information_schema 대신 pg_catalog 를 직접 읽는다 (2026-10-10).
+    // information_schema 뷰는 행마다 권한 검사를 하고 auth·storage 등 모든 스키마를 훑은 뒤 거른다.
+    // 예전 FK 조인은 제약조건 이름만으로 붙여 다른 스키마까지 계산했고, 10/8 Nano 다운 직전 524 가 이 조회였다.
+    // 여기서는 public 테이블에서 시작해 oid 로만 따라간다. 출력 칸은 예전과 같다.
     const rows = await query(`
         SELECT
-            t.table_name,
-            c.column_name,
-            c.ordinal_position,
-            c.udt_name           AS data_type,
-            c.is_nullable,
-            c.column_default,
-            c.character_maximum_length,
-            CASE WHEN pk.column_name IS NOT NULL THEN true ELSE false END AS is_pk,
+            c.relname            AS table_name,
+            a.attname            AS column_name,
+            a.attnum             AS ordinal_position,
+            COALESCE(bt.typname, t.typname) AS data_type,
+            CASE WHEN a.attnotnull OR (t.typtype = 'd' AND t.typnotnull) THEN 'NO' ELSE 'YES' END AS is_nullable,
+            CASE WHEN a.attgenerated = '' THEN pg_get_expr(d.adbin, d.adrelid) END AS column_default,
+            information_schema._pg_char_max_length(COALESCE(bt.oid, t.oid), a.atttypmod) AS character_maximum_length,
+            COALESCE(a.attnum = ANY(pk.conkey), false) AS is_pk,
             fk.foreign_table_name,
             fk.foreign_column_name
-        FROM information_schema.tables t
-        JOIN information_schema.columns c
-            ON c.table_schema = t.table_schema AND c.table_name = t.table_name
-        LEFT JOIN (
-            SELECT kcu.table_name, kcu.column_name
-            FROM information_schema.table_constraints tc
-            JOIN information_schema.key_column_usage kcu
-                ON tc.constraint_name = kcu.constraint_name
-                AND tc.table_schema   = kcu.table_schema
-            WHERE tc.constraint_type = 'PRIMARY KEY' AND tc.table_schema = 'public'
-        ) pk ON pk.table_name = c.table_name AND pk.column_name = c.column_name
-        LEFT JOIN (
-            SELECT
-                kcu.table_name, kcu.column_name,
-                ccu.table_name  AS foreign_table_name,
-                ccu.column_name AS foreign_column_name
-            FROM information_schema.table_constraints tc
-            JOIN information_schema.key_column_usage kcu
-                ON tc.constraint_name = kcu.constraint_name
-            JOIN information_schema.constraint_column_usage ccu
-                ON tc.constraint_name = ccu.constraint_name
-            WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = 'public'
-        ) fk ON fk.table_name = c.table_name AND fk.column_name = c.column_name
-        WHERE t.table_schema = 'public' AND t.table_type = 'BASE TABLE'
-        ORDER BY t.table_name, c.ordinal_position
+        FROM pg_class c
+        JOIN pg_namespace n  ON n.oid = c.relnamespace AND n.nspname = 'public'
+        JOIN pg_attribute a  ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+        JOIN pg_type t       ON t.oid = a.atttypid
+        LEFT JOIN pg_type bt ON t.typtype = 'd' AND bt.oid = t.typbasetype
+        LEFT JOIN pg_attrdef d     ON d.adrelid = c.oid AND d.adnum = a.attnum
+        LEFT JOIN pg_constraint pk ON pk.conrelid = c.oid AND pk.contype = 'p'
+        LEFT JOIN LATERAL (
+            SELECT rc.relname AS foreign_table_name, ra.attname AS foreign_column_name
+            FROM pg_constraint f
+            JOIN pg_class rc     ON rc.oid = f.confrelid
+            JOIN pg_attribute ra ON ra.attrelid = f.confrelid
+                                AND ra.attnum = f.confkey[array_position(f.conkey, a.attnum)]
+            WHERE f.conrelid = c.oid AND f.contype = 'f' AND a.attnum = ANY(f.conkey)
+            ORDER BY f.conname
+            LIMIT 1
+        ) fk ON true
+        WHERE c.relkind IN ('r', 'p')
+        ORDER BY c.relname, a.attnum
     `);
 
     // 테이블별로 그룹핑
@@ -329,28 +340,36 @@ async function pullGrants() {
         ORDER BY p.proname, args
     `);
 
+    // 테이블·컬럼 권한도 information_schema.role_*_grants 대신 ACL 을 직접 푼다 (위 pullSchema 와 같은 이유)
     const tableRows = await query(`
-        SELECT table_name, grantee,
-               string_agg(privilege_type, ', ' ORDER BY privilege_type) AS privs
-        FROM information_schema.role_table_grants
-        WHERE table_schema = 'public' AND grantee IN ('anon', 'authenticated')
-        GROUP BY table_name, grantee
-        ORDER BY table_name, grantee
+        SELECT c.relname AS table_name, r.rolname AS grantee,
+               string_agg(x.privilege_type, ', ' ORDER BY x.privilege_type) AS privs
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
+        CROSS JOIN LATERAL aclexplode(c.relacl) x
+        JOIN pg_roles r ON r.oid = x.grantee AND r.rolname IN ('anon', 'authenticated')
+        WHERE c.relkind IN ('r', 'v', 'f', 'p', 'm')
+          AND x.privilege_type IN ('SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER')
+        GROUP BY c.relname, r.rolname
+        ORDER BY c.relname, r.rolname
     `);
 
     // 테이블 단위 권한이 없는데 컬럼 단위로만 열린 것 (예: rentals → anon)
     const colRows = await query(`
-        SELECT c.table_name, c.grantee, c.privilege_type,
-               string_agg(c.column_name, ', ' ORDER BY c.column_name) AS cols
-        FROM information_schema.role_column_grants c
-        WHERE c.table_schema = 'public' AND c.grantee IN ('anon', 'authenticated')
+        SELECT c.relname AS table_name, r.rolname AS grantee, x.privilege_type,
+               string_agg(a.attname, ', ' ORDER BY a.attname) AS cols
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
+        JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+        CROSS JOIN LATERAL aclexplode(a.attacl) x
+        JOIN pg_roles r ON r.oid = x.grantee AND r.rolname IN ('anon', 'authenticated')
+        WHERE c.relkind IN ('r', 'v', 'f', 'p', 'm')
           AND NOT EXISTS (
-              SELECT 1 FROM information_schema.role_table_grants t
-              WHERE t.table_schema = c.table_schema AND t.table_name = c.table_name
-                AND t.grantee = c.grantee AND t.privilege_type = c.privilege_type
+              SELECT 1 FROM aclexplode(c.relacl) tx
+              WHERE tx.grantee = x.grantee AND tx.privilege_type = x.privilege_type
           )
-        GROUP BY c.table_name, c.grantee, c.privilege_type
-        ORDER BY c.table_name, c.grantee, c.privilege_type
+        GROUP BY c.relname, r.rolname, x.privilege_type
+        ORDER BY c.relname, r.rolname, x.privilege_type
     `);
 
     const lines = [
@@ -433,15 +452,12 @@ function writeReadme(stats) {
 async function main() {
     console.log(`\n🔌 Supabase 스키마 풀 — 프로젝트: ${PROJECT_REF}\n`);
 
-    const [fnCount, tableCount] = await Promise.all([
-        pullFunctions(),
-        pullSchema(),
-    ]);
-    await Promise.all([
-        pullPolicies(),
-        pullTypes(),
-        pullGrants(),
-    ]);
+    // 한 번에 하나씩 (query() 가 줄을 세우지만, 읽는 사람이 동시 실행으로 오해하지 않게)
+    const fnCount    = await pullFunctions();
+    const tableCount = await pullSchema();
+    await pullPolicies();
+    await pullTypes();
+    await pullGrants();
 
     writeReadme({ functions: fnCount, tables: tableCount });
 

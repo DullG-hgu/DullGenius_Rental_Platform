@@ -1,12 +1,12 @@
 -- ================================================================
 -- RLS POLICIES — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 4. PM 3:43:16
+-- 생성 시각: 2026. 10. 10. PM 6:52:38
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 44개 정책
+-- 총 48개 정책
 
 -- ----------------------------------------------------------------
 -- 테이블: app_config  (2개 정책)
@@ -21,6 +21,18 @@ CREATE POLICY "Admin Manage Config" ON public.app_config
 ;
 
 CREATE POLICY "Allow public read access" ON public.app_config
+  AS PERMISSIVE
+  FOR SELECT
+  TO anon,authenticated
+  USING (true)
+;
+
+-- ----------------------------------------------------------------
+-- 테이블: bgg_terms  (1개 정책)
+-- ----------------------------------------------------------------
+ALTER TABLE public.bgg_terms ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read bgg_terms" ON public.bgg_terms
   AS PERMISSIVE
   FOR SELECT
   TO anon,authenticated
@@ -134,6 +146,18 @@ CREATE POLICY "events_public_read" ON public.events
 ;
 
 -- ----------------------------------------------------------------
+-- 테이블: game_bgg_terms  (1개 정책)
+-- ----------------------------------------------------------------
+ALTER TABLE public.game_bgg_terms ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read game_bgg_terms" ON public.game_bgg_terms
+  AS PERMISSIVE
+  FOR SELECT
+  TO anon,authenticated
+  USING (true)
+;
+
+-- ----------------------------------------------------------------
 -- 테이블: game_daily_stats  (2개 정책)
 -- ----------------------------------------------------------------
 ALTER TABLE public.game_daily_stats ENABLE ROW LEVEL SECURITY;
@@ -176,6 +200,18 @@ CREATE POLICY "User View Own Request" ON public.game_requests
   FOR SELECT
   TO authenticated
   USING ((auth.uid() = user_id))
+;
+
+-- ----------------------------------------------------------------
+-- 테이블: game_tags  (1개 정책)
+-- ----------------------------------------------------------------
+ALTER TABLE public.game_tags ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read confirmed game_tags" ON public.game_tags
+  AS PERMISSIVE
+  FOR SELECT
+  TO anon,authenticated
+  USING ((confirmed OR (source <> 'jev'::text)))
 ;
 
 -- ----------------------------------------------------------------
@@ -378,6 +414,18 @@ CREATE POLICY "Public Read" ON public.reviews
 ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public Read" ON public.roles
+  AS PERMISSIVE
+  FOR SELECT
+  TO anon,authenticated
+  USING (true)
+;
+
+-- ----------------------------------------------------------------
+-- 테이블: tags  (1개 정책)
+-- ----------------------------------------------------------------
+ALTER TABLE public.tags ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read tags" ON public.tags
   AS PERMISSIVE
   FOR SELECT
   TO anon,authenticated

@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 4. PM 3:43:18
+-- 생성 시각: 2026. 10. 10. PM 6:52:49
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -12,7 +12,7 @@
 --   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.
 
 -- ----------------------------------------------------------------
--- 함수 EXECUTE  (128개)
+-- 함수 EXECUTE  (140개)
 -- ----------------------------------------------------------------
 -- anon  auth  security  function
 --  -     -    INVOKER   _active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
@@ -21,6 +21,8 @@
 --  Y     Y    INVOKER   _event_is_full(p_event_id uuid)
 --  Y     Y    INVOKER   _event_make_depositor_name(p_event_slug text, p_name text)
 --  -     -    INVOKER   _fun_my_game_status(p_uid uuid)
+--  -     -    INVOKER   _fun_tier_my_json(p_uid uuid, p_template fun_tier_templates)
+--  -     -    INVOKER   _fun_tier_pool(p_filter jsonb)
 --  -     -    INVOKER   _fun_wc_apply_picks(p_run fun_worldcup_runs, p_picks jsonb)
 --  -     -    INVOKER   _fun_wc_eligible_runs(p_theme_id uuid, p_scope text)
 --  -     -    INVOKER   _fun_wc_game_stats(p_theme_id uuid, p_scope text)
@@ -76,6 +78,16 @@
 --  -     -    INVOKER   fun_quiz_score(p_answers smallint[])
 --  -     Y    DEFINER   fun_quiz_set_public(p_public boolean)
 --  -     Y    DEFINER   fun_quiz_submit(p_answers smallint[], p_consent boolean, p_version text)
+--  -     Y    DEFINER   fun_tier_admin_reset_labels(p_slug text, p_user_id uuid)
+--  -     Y    DEFINER   fun_tier_admin_stats(p_slug text)
+--  Y     Y    DEFINER   fun_tier_community(p_slug text)
+--  -     Y    DEFINER   fun_tier_get_public(p_slug text, p_user_id uuid)
+--  Y     Y    DEFINER   fun_tier_get_template(p_slug text)
+--  -     Y    DEFINER   fun_tier_my(p_slug text)
+--  -     Y    DEFINER   fun_tier_public_badges(p_game_id integer, p_user_ids uuid[])
+--  -     Y    DEFINER   fun_tier_public_lists(p_slug text)
+--  -     Y    DEFINER   fun_tier_save(p_slug text, p_placements jsonb, p_labels text[], p_seq bigint)
+--  -     Y    DEFINER   fun_tier_set_public(p_slug text, p_public boolean)
 --  -     Y    DEFINER   fun_wc_abuse_check(p_hours integer, p_device_threshold integer)
 --  -     Y    DEFINER   fun_wc_admin_list_themes()
 --  -     Y    DEFINER   fun_wc_admin_preview_pool(p_filter jsonb)
@@ -145,12 +157,14 @@
 --  -     Y    DEFINER   withdraw_user(p_user_id uuid)
 
 -- ----------------------------------------------------------------
--- 테이블 권한  (39개)
+-- 테이블 권한  (47개)
 -- ----------------------------------------------------------------
 GRANT SELECT ON public.allowed_users TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.allowed_users TO authenticated;
 GRANT SELECT ON public.app_config TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.app_config TO authenticated;
+GRANT SELECT ON public.bgg_terms TO anon;
+GRANT SELECT ON public.bgg_terms TO authenticated;
 GRANT SELECT ON public.damage_reports TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.damage_reports TO authenticated;
 GRANT SELECT ON public.event_payment_logs TO anon;
@@ -161,10 +175,14 @@ GRANT SELECT ON public.event_teams TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.event_teams TO authenticated;
 GRANT SELECT ON public.events TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.events TO authenticated;
+GRANT SELECT ON public.game_bgg_terms TO anon;
+GRANT SELECT ON public.game_bgg_terms TO authenticated;
 GRANT SELECT ON public.game_daily_stats TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.game_daily_stats TO authenticated;
 GRANT SELECT ON public.game_requests TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.game_requests TO authenticated;
+GRANT SELECT ON public.game_tags TO anon;
+GRANT SELECT ON public.game_tags TO authenticated;
 GRANT SELECT ON public.games TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.games TO authenticated;
 GRANT SELECT ON public.logs TO anon;
@@ -184,6 +202,8 @@ GRANT SELECT ON public.reviews TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.reviews TO authenticated;
 GRANT SELECT ON public.roles TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.roles TO authenticated;
+GRANT SELECT ON public.tags TO anon;
+GRANT SELECT ON public.tags TO authenticated;
 GRANT SELECT ON public.user_roles TO anon;
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_roles TO authenticated;
 

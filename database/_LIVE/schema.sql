@@ -1,12 +1,12 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 4. PM 3:43:15
+-- 생성 시각: 2026. 10. 10. PM 6:52:36
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 29개 테이블
+-- 총 36개 테이블
 
 -- ----------------------------------------------------------------
 -- 테이블: allowed_users
@@ -26,6 +26,19 @@ CREATE TABLE public.app_config (
   key text NOT NULL PRIMARY KEY,
   value jsonb NOT NULL,
   updated_at timestamptz NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: bgg_terms
+-- ----------------------------------------------------------------
+CREATE TABLE public.bgg_terms (
+  id int4 NOT NULL PRIMARY KEY,
+  kind text NOT NULL,
+  name_en text NOT NULL,
+  name_ko text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  family_group text,
+  tag_id int4  -- FK → tags(id)
 );
 
 -- ----------------------------------------------------------------
@@ -168,6 +181,49 @@ CREATE TABLE public.fun_quiz_responses (
 );
 
 -- ----------------------------------------------------------------
+-- 테이블: fun_tier_lists
+-- ----------------------------------------------------------------
+CREATE TABLE public.fun_tier_lists (
+  user_id uuid NOT NULL PRIMARY KEY,  -- FK → users(id)
+  template_id uuid NOT NULL PRIMARY KEY,  -- FK → fun_tier_templates(id)
+  labels _text NOT NULL DEFAULT ARRAY[''::text, ''::text, ''::text, ''::text, ''::text],
+  is_public bool NOT NULL DEFAULT false,
+  started_at timestamptz,
+  last_seq int8,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: fun_tier_placements
+-- ----------------------------------------------------------------
+CREATE TABLE public.fun_tier_placements (
+  user_id uuid NOT NULL PRIMARY KEY,  -- FK → fun_tier_lists(user_id)
+  template_id uuid NOT NULL PRIMARY KEY,  -- FK → fun_tier_lists(template_id)
+  game_id int4 NOT NULL PRIMARY KEY,  -- FK → games(id)
+  tier bpchar(1) NOT NULL,
+  pos int2 NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: fun_tier_templates
+-- ----------------------------------------------------------------
+CREATE TABLE public.fun_tier_templates (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  slug text NOT NULL,
+  title text NOT NULL,
+  description text,
+  filter jsonb NOT NULL DEFAULT '{}'::jsonb,
+  min_sample int4 NOT NULL DEFAULT 3,
+  is_active bool NOT NULL DEFAULT true,
+  sort_order int4 NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ----------------------------------------------------------------
 -- 테이블: fun_worldcup_matches
 -- ----------------------------------------------------------------
 CREATE TABLE public.fun_worldcup_matches (
@@ -235,6 +291,15 @@ CREATE TABLE public.fun_worldcup_undos (
 );
 
 -- ----------------------------------------------------------------
+-- 테이블: game_bgg_terms
+-- ----------------------------------------------------------------
+CREATE TABLE public.game_bgg_terms (
+  game_id int4 NOT NULL PRIMARY KEY,  -- FK → games(id)
+  term_id int4 NOT NULL PRIMARY KEY,  -- FK → bgg_terms(id)
+  fetched_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ----------------------------------------------------------------
 -- 테이블: game_daily_stats
 -- ----------------------------------------------------------------
 CREATE TABLE public.game_daily_stats (
@@ -273,6 +338,19 @@ CREATE TABLE public.game_requests (
   description text,
   created_at timestamptz NOT NULL DEFAULT timezone('utc'::text, now()),
   status text DEFAULT 'pending'::text
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: game_tags
+-- ----------------------------------------------------------------
+CREATE TABLE public.game_tags (
+  game_id int4 NOT NULL PRIMARY KEY,  -- FK → games(id)
+  tag_id int4 NOT NULL PRIMARY KEY,  -- FK → tags(id)
+  is_core bool NOT NULL DEFAULT false,
+  source text NOT NULL,
+  confirmed bool NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 -- ----------------------------------------------------------------
@@ -357,7 +435,7 @@ CREATE TABLE public.private_config (
 -- 테이블: profiles
 -- ----------------------------------------------------------------
 CREATE TABLE public.profiles (
-  id uuid NOT NULL PRIMARY KEY,
+  id uuid NOT NULL PRIMARY KEY,  -- FK → users(id)
   student_id text NOT NULL,
   name text NOT NULL,
   phone text,
@@ -446,11 +524,24 @@ CREATE TABLE public.roles (
 );
 
 -- ----------------------------------------------------------------
+-- 테이블: tags
+-- ----------------------------------------------------------------
+CREATE TABLE public.tags (
+  id int4 NOT NULL DEFAULT nextval('tags_id_seq'::regclass) PRIMARY KEY,
+  name text NOT NULL,
+  layer text NOT NULL,
+  grp text,
+  sort int4 NOT NULL DEFAULT 0,
+  description text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ----------------------------------------------------------------
 -- 테이블: user_game_mark_events
 -- ----------------------------------------------------------------
 CREATE TABLE public.user_game_mark_events (
   id int8 NOT NULL PRIMARY KEY,
-  user_id uuid NOT NULL,
+  user_id uuid NOT NULL,  -- FK → users(id)
   game_id int4 NOT NULL,  -- FK → games(id)
   status text NOT NULL,
   source text NOT NULL,
@@ -462,7 +553,7 @@ CREATE TABLE public.user_game_mark_events (
 -- 테이블: user_game_marks
 -- ----------------------------------------------------------------
 CREATE TABLE public.user_game_marks (
-  user_id uuid NOT NULL PRIMARY KEY,
+  user_id uuid NOT NULL PRIMARY KEY,  -- FK → users(id)
   game_id int4 NOT NULL PRIMARY KEY,  -- FK → games(id)
   status text NOT NULL,
   source text NOT NULL,
@@ -475,7 +566,6 @@ CREATE TABLE public.user_game_marks (
 -- 테이블: user_roles
 -- ----------------------------------------------------------------
 CREATE TABLE public.user_roles (
-  user_id uuid NOT NULL PRIMARY KEY,  -- FK → profiles(id)
   user_id uuid NOT NULL PRIMARY KEY,  -- FK → profiles(id)
   role_key text NOT NULL PRIMARY KEY,  -- FK → roles(role_key)
   assigned_at timestamptz DEFAULT now()
