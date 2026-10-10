@@ -316,6 +316,19 @@ export const fetchConfig = async () => {
   return data.value;
 };
 
+const DEFAULT_OFFICE_STATUS = { open: false, auto_close_at: null };
+const DEFAULT_OFFICE_HOURS_CONFIG = {
+    auto_close_hour: 21,
+    auto_close_minute: 0,
+    banner_icon: '🟢',
+    banner_title: '오피스아워 진행 중!',
+    banner_subtitle: '지금 방문하시면 게임을 대여할 수 있어요',
+    banner_color: 'linear-gradient(135deg, #1a5c2a, #27ae60)',
+    schedule_icon: '📅',
+    schedule_text: '',
+    offline_text: '현재 오피스아워를 운영하고 있지 않아요'
+};
+
 // 오피스아워 상태 조회
 export const fetchOfficeStatus = async () => {
   const { data, error } = await supabase
@@ -324,7 +337,7 @@ export const fetchOfficeStatus = async () => {
     .eq('key', 'office_status')
     .maybeSingle();
   if (error) throw error;
-  return data?.value ?? { open: false, auto_close_at: null };
+  return data?.value ?? { ...DEFAULT_OFFICE_STATUS };
 };
 
 // 오피스아워 배너 설정 조회
@@ -335,16 +348,20 @@ export const fetchOfficeHoursConfig = async () => {
     .eq('key', 'office_hours_config')
     .maybeSingle();
   if (error) throw error;
-  return data?.value ?? {
-    auto_close_hour: 21,
-    auto_close_minute: 0,
-    banner_icon: '🟢',
-    banner_title: '오피스아워 진행 중!',
-    banner_subtitle: '지금 방문하시면 게임을 대여할 수 있어요',
-    banner_color: 'linear-gradient(135deg, #1a5c2a, #27ae60)',
-    schedule_icon: '📅',
-    schedule_text: '',
-    offline_text: '현재 오피스아워를 운영하고 있지 않아요'
+  return data?.value ?? { ...DEFAULT_OFFICE_HOURS_CONFIG };
+};
+
+// 오피스아워 상태 + 배너 설정을 한 번에 (홈 60초 폴링용 — 키마다 1건씩이던 것을 1건으로, 2026-10-10)
+export const fetchOfficeInfo = async () => {
+  const { data, error } = await supabase
+    .from('app_config')
+    .select('key, value')
+    .in('key', ['office_status', 'office_hours_config']);
+  if (error) throw error;
+  const byKey = Object.fromEntries((data || []).map(row => [row.key, row.value]));
+  return {
+    status: byKey.office_status ?? { ...DEFAULT_OFFICE_STATUS },
+    config: byKey.office_hours_config ?? { ...DEFAULT_OFFICE_HOURS_CONFIG },
   };
 };
 

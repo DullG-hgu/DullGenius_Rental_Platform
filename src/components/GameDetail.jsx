@@ -174,7 +174,7 @@ function GameDetail() {
           const result = await dibsGame(game.id, user.id);
 
           if (result.success) {
-            await refreshGames();
+            await refreshGames({ gamesOnly: true });
             setRetry(value => value + 1);
             showToast("찜 완료! 30분 내에 수령해주세요.", {
               showButton: true,
@@ -201,7 +201,7 @@ function GameDetail() {
         try {
           const result = await cancelDibsGame(game.id, user.id);
           if (result.success) {
-            await refreshGames();
+            await refreshGames({ gamesOnly: true });
             setRetry(value => value + 1);
             showToast("찜이 취소되었습니다.");
           } else {

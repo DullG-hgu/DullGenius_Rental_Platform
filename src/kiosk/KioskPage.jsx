@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './Kiosk.css';
 import { useToast } from '../contexts/ToastContext'; // Toast 알림
 import { useAuth } from '../contexts/AuthContext';
+import { useSuspendGameData } from '../contexts/GameDataContext';
 import { supabase } from '../lib/supabaseClient.jsx';
 import RouletteModal from './RouletteModal';
 import ReturnModal from './ReturnModal';
@@ -28,6 +29,9 @@ const SESSION_RETRY_MAX_MS = 60000;
 function KioskPage() {
     const { showToast } = useToast();
     const { user, hasRole, logout, loading: authLoading } = useAuth();
+    // 키오스크 화면은 전역 게임 목록을 쓰지 않는다. 24시간 켜진 기기가 5분마다·변경마다 전체 목록을 받지 않게 멈춘다
+    // (대여·룰렛 모달은 열릴 때 useKioskData 로 직접 받는다)
+    useSuspendGameData();
 
     // [State]
     const [isIdle, setIsIdle] = useState(false);

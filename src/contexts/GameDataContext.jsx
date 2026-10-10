@@ -28,6 +28,10 @@ export const isRelevantGameChange = (payload, games) => {
         return JSON.stringify(next[f] ?? null) !== JSON.stringify(mine ?? null);
     });
 };
+// 키오스크는 자체 목록(useKioskData)과 구독을 따로 갖는다. 거기서도 전역 목록·인기·설정·구독을 또 돌리면
+// 변경 한 번에 전체 목록을 두 번 받는다 (2026-10-10). 키오스크 화면에 있는 동안 전역 동기화를 멈춘다.
+const isKioskPath = () => typeof window !== 'undefined' && window.location.pathname.startsWith('/kiosk');
+
 const emptyData = { games: [], trending: [], config: null, loading: true, error: null, trendingError: null, configError: null };
 
 export const GameProvider = ({ children }) => {
@@ -39,27 +43,42 @@ export const GameProvider = ({ children }) => {
     const [data, setData] = useState({ ...emptyData, scope: undefined });
     const gamesRef = useRef([]);
     gamesRef.current = data.games;
+    const dataScopeRef = useRef(undefined);
+    dataScopeRef.current = data.scope;
     const lastRefreshAt = useRef(0);
     const inFlight = useRef(false);
+    const [suspended, setSuspended] = useState(isKioskPath);
 
-    const refreshGames = useCallback(async () => {
-        if (scope === undefined) return;
+    // gamesOnly: 재고·대여 상태만 바뀐 경우(Realtime 신호, 찜·취소 직후). 인기·추천 설정은 대여로 바뀌지 않으므로
+    // 다시 받지 않고, 들고 있던 인기 목록을 새 게임 객체로 바꿔 끼운다. 전체 갱신(최초·앱 전환·5분 주기·재연결)은 그대로 3건
+    const refreshGames = useCallback(async ({ gamesOnly = false } = {}) => {
+        if (scope === undefined || suspended) return;
+        // 이미 받은 목록이 없으면(최초·계정 전환 직후) 전부 받는다
+        const partial = gamesOnly === true && dataScopeRef.current === scope && gamesRef.current.length > 0;
         const request = ++requestId.current;
         lastRefreshAt.current = Date.now();
         inFlight.current = true;
         setData(previous => previous.scope === scope
             ? { ...previous, loading: previous.games.length === 0 }
             : { ...emptyData, scope });
-        const [gamesResult, trendingResult, configResult] = await Promise.allSettled([
-            fetchGames(), fetchTrending(), fetchConfig()
-        ]);
+        const [gamesResult, trendingResult, configResult] = await Promise.allSettled(partial
+            ? [fetchGames()]
+            : [fetchGames(), fetchTrending(), fetchConfig()]);
         if (request === requestId.current) inFlight.current = false;
         if (request !== requestId.current || scopeRef.current !== scope) return;
         setData(previous => {
             const games = gamesResult.status === 'fulfilled'
                 ? gamesResult.value.filter(game => game.name?.trim()) : previous.games;
+            const findGame = (id) => games.find(game => String(game.id) === String(id));
+            if (partial) {
+                return {
+                    ...previous, scope, games, loading: false,
+                    trending: previous.trending.map(item => findGame(item.id)).filter(Boolean),
+                    error: gamesResult.status === 'rejected' ? gamesResult.reason : null,
+                };
+            }
             const trending = trendingResult.status === 'fulfilled'
-                ? trendingResult.value.map(item => games.find(game => String(game.id) === String(item.id))).filter(Boolean)
+                ? trendingResult.value.map(item => findGame(item.id)).filter(Boolean)
                 : [];
             return {
                 scope, games, trending, loading: false,
@@ -69,7 +88,7 @@ export const GameProvider = ({ children }) => {
                 configError: configResult.status === 'rejected' ? configResult.reason : null,
             };
         });
-    }, [scope]);
+    }, [scope, suspended]);
 
     useEffect(() => {
         // Old persistent caches may contain a previous account's rental information.
@@ -84,7 +103,7 @@ export const GameProvider = ({ children }) => {
     }, [refreshGames]);
 
     useEffect(() => {
-        if (scope === undefined) return;
+        if (scope === undefined || suspended) return;
         // 자동 갱신(앱 전환·주기)은 진행 중이거나 방금 받았으면 건너뛴다. 사람이 누르는 갱신(refreshGames)은 그대로
         const refreshIfStale = () => {
             if (inFlight.current || Date.now() - lastRefreshAt.current < AUTO_REFRESH_MIN_GAP) return;
@@ -93,7 +112,7 @@ export const GameProvider = ({ children }) => {
         let reconnectTimer = null;
         const unsubscribe = subscribeToGameChanges({
             channelName: 'games-sync-app',
-            onChange: refreshGames,
+            onChange: () => refreshGames({ gamesOnly: true }),
             isRelevant: (payload) => isRelevantGameChange(payload, gamesRef.current),
             onReconnect: () => {
                 clearTimeout(reconnectTimer);
@@ -111,10 +130,21 @@ export const GameProvider = ({ children }) => {
             window.removeEventListener('focus', onVisible);
             document.removeEventListener('visibilitychange', onVisible);
         };
-    }, [scope, refreshGames]);
+    }, [scope, suspended, refreshGames]);
 
     const visible = scope !== undefined && data.scope === scope ? data : emptyData;
-    return <GameDataContext.Provider value={{ ...visible, refreshGames }}>{children}</GameDataContext.Provider>;
+    return <GameDataContext.Provider value={{ ...visible, refreshGames, setSuspended }}>{children}</GameDataContext.Provider>;
+};
+
+// 이 훅을 쓰는 화면이 떠 있는 동안 전역 게임 동기화를 멈춘다 (키오스크). 화면을 벗어나면 다시 받는다
+export const useSuspendGameData = () => {
+    const context = useContext(GameDataContext);
+    const setSuspended = context?.setSuspended;
+    useEffect(() => {
+        if (!setSuspended) return undefined;
+        setSuspended(true);
+        return () => setSuspended(false);
+    }, [setSuspended]);
 };
 
 export const useGameData = () => {

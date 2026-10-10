@@ -209,7 +209,7 @@ const MyPage = () => {
         // [FIX] gameId 만으로 거르면 같은 게임의 '대여중' 기록까지 화면에서 사라진다.
         //       취소된 것은 찜(DIBS) 뿐이므로 타입까지 확인한다.
         setRentals(prev => prev.filter(r => !(r.gameId === gameId && r.type === 'DIBS')));
-        refreshGames();
+        refreshGames({ gamesOnly: true });
       } else {
         showToast(result.message || "취소 실패", { type: "error" });
       }

@@ -1,19 +1,20 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { GameProvider, isRelevantGameChange, useGameData } from '../src/contexts/GameDataContext';
+import { GameProvider, isRelevantGameChange, useGameData, useSuspendGameData } from '../src/contexts/GameDataContext';
 import { fetchGames, fetchTrending, fetchConfig } from '../src/api';
 const auth = vi.hoisted(() => ({ user: null, loading: false }));
+const realtime = vi.hoisted(() => ({ opts: null }));
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('../src/api', () => ({ fetchGames: vi.fn(), fetchTrending: vi.fn(), fetchConfig: vi.fn() }));
-vi.mock('../src/lib/gamesRealtime', () => ({ subscribeToGameChanges: () => () => {} }));
+vi.mock('../src/lib/gamesRealtime', () => ({ subscribeToGameChanges: (opts) => { realtime.opts = opts; return () => {}; } }));
 function Probe() {
   const data = useGameData();
-  return <div><span>{data.loading ? 'loading' : data.games.map(g => g.name).join(',')}</span>{data.error && <span>games failed</span>}{data.trendingError && <span>trending failed</span>}<button onClick={data.refreshGames}>refresh</button></div>;
+  return <div><span>{data.loading ? 'loading' : data.games.map(g => g.name).join(',')}</span><span data-testid="trending">{data.trending.map(g => `${g.name}:${g.available_count}`).join(',')}</span>{data.error && <span>games failed</span>}{data.trendingError && <span>trending failed</span>}<button onClick={data.refreshGames}>refresh</button></div>;
 }
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
 beforeEach(() => {
-  vi.resetAllMocks(); auth.user = null; auth.loading = false; localStorage.clear();
+  vi.resetAllMocks(); realtime.opts = null; window.history.replaceState(null, '', '/'); auth.user = null; auth.loading = false; localStorage.clear();
   fetchGames.mockResolvedValue([{ id: 1, name: 'Game' }]); fetchTrending.mockResolvedValue([]); fetchConfig.mockResolvedValue({});
 });
 afterEach(cleanup);
@@ -72,6 +73,50 @@ describe('game data', () => {
     await screen.findByText('Second');
     await act(async () => older.resolve([{ id: 1, name: 'Private first account' }]));
     expect(screen.queryByText('Private first account')).toBeNull(); expect(screen.getByText('Second')).toBeTruthy();
+  });
+});
+
+describe('lighter refreshes (2026-10-10)', () => {
+  it('a realtime stock change reloads only the game list and re-points trending at the new objects', async () => {
+    fetchGames.mockResolvedValue([{ id: 1, name: 'Game', available_count: 1 }]);
+    fetchTrending.mockResolvedValue([{ id: 1 }]);
+    render(<GameProvider><Probe /></GameProvider>);
+    await waitFor(() => expect(screen.getByTestId('trending').textContent).toBe('Game:1'));
+    expect(fetchTrending).toHaveBeenCalledTimes(1);
+    fetchGames.mockResolvedValue([{ id: 1, name: 'Game', available_count: 0 }]);
+    await act(async () => { await realtime.opts.onChange(); });
+    expect(fetchGames).toHaveBeenCalledTimes(2);
+    expect(fetchTrending).toHaveBeenCalledTimes(1);
+    expect(fetchConfig).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('trending').textContent).toBe('Game:0');
+  });
+  it('a games-only refresh still loads everything when nothing has been loaded yet', async () => {
+    fetchGames.mockRejectedValueOnce(new Error('offline'));
+    render(<GameProvider><Probe /></GameProvider>);
+    await screen.findByText('games failed');
+    await act(async () => { await realtime.opts.onChange(); });
+    expect(fetchTrending).toHaveBeenCalledTimes(2);
+    expect(screen.getByText('Game')).toBeTruthy();
+  });
+  it('the manual retry button keeps doing a full refresh', async () => {
+    render(<GameProvider><Probe /></GameProvider>);
+    await screen.findByText('Game');
+    fireEvent.click(screen.getByText('refresh'));
+    await waitFor(() => expect(fetchTrending).toHaveBeenCalledTimes(2));
+    expect(fetchConfig).toHaveBeenCalledTimes(2);
+  });
+  it('stays idle on the kiosk screen and resumes after leaving it', async () => {
+    window.history.replaceState(null, '', '/kiosk');
+    function Kiosk() { useSuspendGameData(); return null; }
+    const view = render(<GameProvider><Kiosk /><Probe /></GameProvider>);
+    await act(async () => {});
+    expect(fetchGames).not.toHaveBeenCalled();
+    expect(realtime.opts).toBeNull();
+    window.history.replaceState(null, '', '/');
+    view.rerender(<GameProvider><Probe /></GameProvider>);
+    await screen.findByText('Game');
+    expect(fetchGames).toHaveBeenCalledTimes(1);
+    expect(realtime.opts).not.toBeNull();
   });
 });
 

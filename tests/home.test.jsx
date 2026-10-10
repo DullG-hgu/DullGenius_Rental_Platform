@@ -4,9 +4,13 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom';
 import Home from '../src/pages/Home';
 
-const { data, auth, fetchOfficeStatus, fetchOfficeHoursConfig } = vi.hoisted(() => ({
-    data: {}, auth: {}, fetchOfficeStatus: vi.fn(), fetchOfficeHoursConfig: vi.fn(),
-}));
+const { data, auth, fetchOfficeStatus, fetchOfficeHoursConfig, fetchOfficeInfo } = vi.hoisted(() => {
+    const fetchOfficeStatus = vi.fn();
+    const fetchOfficeHoursConfig = vi.fn();
+    // 홈은 상태·설정을 한 요청으로 받는다. 테스트는 두 값을 따로 조절할 수 있게 나눠 둔다
+    const fetchOfficeInfo = vi.fn(async () => ({ status: await fetchOfficeStatus(), config: await fetchOfficeHoursConfig() }));
+    return { data: {}, auth: {}, fetchOfficeStatus, fetchOfficeHoursConfig, fetchOfficeInfo };
+});
 vi.mock('../src/contexts/GameDataContext', () => ({ useGameData: () => data }));
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('../src/api_fun', () => ({
@@ -16,7 +20,7 @@ vi.mock('../src/api_fun', () => ({
     saveMyTier: () => Promise.resolve({ ok: true }),
     setTierPublic: () => Promise.resolve(true),
 }));
-vi.mock('../src/api', () => ({ sendLog: vi.fn(), fetchOfficeStatus, fetchOfficeHoursConfig }));
+vi.mock('../src/api', () => ({ sendLog: vi.fn(), fetchOfficeInfo }));
 vi.mock('../src/components/Header', () => ({ default: () => null }));
 vi.mock('../src/components/InfoBar', () => ({ default: () => null }));
 vi.mock('../src/components/InfoModal', () => ({ default: () => null }));
@@ -59,13 +63,24 @@ it('refreshes office status on poll, focus and visibility, and cleans up after u
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(1);
     await act(async () => { vi.advanceTimersByTime(30_000); });
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(2);
+    // 앱 전환 직후(폴링 5초 안)의 focus 는 건너뛴다
     await act(async () => { fireEvent.focus(window); });
+    expect(fetchOfficeStatus).toHaveBeenCalledTimes(2);
+    await act(async () => { vi.advanceTimersByTime(5_000); fireEvent.focus(window); });
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(3);
-    await act(async () => { fireEvent(document, new Event('visibilitychange')); });
+    await act(async () => { vi.advanceTimersByTime(5_000); fireEvent(document, new Event('visibilitychange')); });
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(4);
     view.unmount();
     await act(async () => { vi.advanceTimersByTime(60_000); fireEvent.focus(window); });
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(4);
+    expect(fetchOfficeInfo).toHaveBeenCalledTimes(4); // 상태·설정이 매번 한 요청
+});
+
+it('counts one app switch (focus + visibilitychange together) as one office request', async () => {
+    await mount();
+    await act(async () => { vi.advanceTimersByTime(10_000); });
+    await act(async () => { fireEvent.focus(window); fireEvent(document, new Event('visibilitychange')); });
+    expect(fetchOfficeInfo).toHaveBeenCalledTimes(2);
 });
 
 it('does not poll office status while the tab is hidden', async () => {
@@ -111,13 +126,13 @@ it('offers native links for search, browsing, ranked games, the full ranking and
     sessionStorage.clear();
 });
 
-it('puts non-member short-term rental near the top only for signed-out visitors', async () => {
+it('puts event/group rental near the top only for signed-out visitors', async () => {
     const view = await mount();
-    expect(screen.getByRole('link', { name: /비회원 단기 대여/ }).getAttribute('href')).toBe('/org-rental');
+    expect(screen.getByRole('link', { name: /행사·단체 대여/ }).getAttribute('href')).toBe('/org-rental');
     view.unmount();
     Object.assign(auth, { user: { id: 'u1' }, profile: { name: '부원', is_paid: true } });
     await mount();
-    expect(screen.queryByRole('link', { name: /비회원 단기 대여/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /행사·단체 대여/ })).toBeNull();
     expect(screen.queryByRole('link', { name: /부원 가입 신청/ })).toBeNull();
 });
 

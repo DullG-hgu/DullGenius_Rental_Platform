@@ -12,7 +12,7 @@ import InfoModal from '../components/InfoModal';
 import RentalTutorial from '../components/RentalTutorial';
 import PoweredByBGG from '../components/PoweredByBGG';
 import Header from '../components/Header';
-import { sendLog, fetchOfficeStatus, fetchOfficeHoursConfig } from '../api';
+import { sendLog, fetchOfficeInfo } from '../api';
 import { LINKS } from '../infoData';
 import { FUN_ITEMS } from '../fun/funItems';
 import { isPaidMember } from '../lib/membership';
@@ -66,12 +66,16 @@ const Home = () => {
     useEffect(() => {
         let active = true;
         let pending = false;
+        let lastAt = 0;
         const refreshOffice = async () => {
-            if (pending) return;
+            // 앱 전환 때 focus·visibilitychange 가 연달아 오므로 5초 안의 재요청은 건너뛴다
+            if (pending || Date.now() - lastAt < 5_000) return;
             pending = true;
+            lastAt = Date.now();
             setNow(Date.now());
             try {
-                const [status, officeConfig] = await Promise.all([fetchOfficeStatus(), fetchOfficeHoursConfig()]);
+                // 상태·배너 설정을 한 번에 (2건 → 1건, 2026-10-10)
+                const { status, config: officeConfig } = await fetchOfficeInfo();
                 if (!active) return;
                 setOfficeStatus(status);
                 setOfficeHoursConfig(officeConfig);

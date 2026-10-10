@@ -18,6 +18,8 @@ export const AuthProvider = ({ children }) => {
     // useRef를 사용하여 마운트 상태 추적 (비동기 콜백에서의 상태 업데이트 방지)
     const isMounted = useRef(true);
     const lastUserId = useRef(null);
+    // 프로필·역할을 이미 받아 둔 사용자. 탭 복귀·토큰 갱신 때 같은 사용자면 다시 받지 않는다
+    const loadedUserId = useRef(null);
     const fetchGenRef = useRef(0); // 로그아웃 시 in-flight fetch 무효화용
 
     const fetchProfileAndRoles = async (userId, retryCount = 0) => {
@@ -46,6 +48,7 @@ export const AuthProvider = ({ children }) => {
                     if (roleKeys.includes('kiosk')) {
                         setProfile(null);
                         setRoles(roleKeys);
+                        loadedUserId.current = userId;
                         return;
                     }
                     console.warn('탈퇴했거나 정보가 없는 회원입니다. 자동 로그아웃 처리합니다.');
@@ -62,6 +65,7 @@ export const AuthProvider = ({ children }) => {
 
             setProfile(profileData);
             setRoles(roleData.map(r => r.role_key));
+            loadedUserId.current = userId;
             console.debug(`[Auth] 프로필+역할 로드 완료 (gen=${gen}, name=${profileData?.name}, roles=${roleData.map(r => r.role_key).join(',')})`);
 
         } catch (error) {
@@ -114,10 +118,16 @@ export const AuthProvider = ({ children }) => {
             if (session?.user) {
                 if (currentId !== prevId) {
                     console.debug(`[Auth] 새 유저 감지 (prev=${prevId} → curr=${currentId}), setLoading(true)`);
+                    loadedUserId.current = null;
                     setLoading(true);
                 }
-                fetchProfileAndRoles(session.user.id);
+                // supabase-js 는 탭이 다시 보일 때마다 SIGNED_IN 을, 한 시간마다 TOKEN_REFRESHED 를 보낸다.
+                // 같은 사용자 정보를 이미 받았으면 다시 받지 않는다 (폰 앱 전환마다 profiles·user_roles 2건 — 2026-10-10)
+                const sameUserRepeat = (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED')
+                    && loadedUserId.current === currentId;
+                if (!sameUserRepeat) fetchProfileAndRoles(session.user.id);
             } else {
+                loadedUserId.current = null;
                 fetchGenRef.current++; // in-flight fetch 무효화 (낙관적 로그아웃 미경유 시 대비)
                 console.debug(`[Auth] SIGNED_OUT, fetchGen 무효화 → ${fetchGenRef.current}`);
                 setProfile(null);
@@ -175,6 +185,7 @@ export const AuthProvider = ({ children }) => {
         // 낙관적 로그아웃: 네트워크 응답 전에 즉시 상태 초기화 → UI 즉시 반응
         console.debug(`[Auth] logout() 호출 - 낙관적 상태 초기화`);
         fetchGenRef.current++; // in-flight fetchProfileAndRoles 무효화
+        loadedUserId.current = null;
         setUser(null);
         setProfile(null);
         setRoles([]);
