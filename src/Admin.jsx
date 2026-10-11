@@ -267,7 +267,7 @@ function Admin() {
         )}
 
         {activeTab === "reports" && (
-          <ReportsTab />
+          <ReportsTab games={games} onReloadGames={loadData} />
         )}
 
         {activeTab === "rental_requests" && (

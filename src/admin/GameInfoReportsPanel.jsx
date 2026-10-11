@@ -1,8 +1,12 @@
 // 게임 정보 오류 신고 목록 (신고/신청 관리 탭 → 「정보 오류」)
 // 신고는 월드컵 카드 ⚠ 등에서 들어온다 (game_info_reports). 신고 당시 값과 지금 값을 나란히 보여준다.
+// 「✏️ 바로 수정」으로 여기서 게임을 고친다. 신고 처리 상태는 저장과 별개로 운영자가 직접 바꾼다.
 import { useCallback, useEffect, useState } from 'react';
 import { fetchGameInfoReports, setGameInfoReportStatus } from '../api_fun';
 import { useToast } from '../contexts/ToastContext';
+import ConfirmModal from '../components/ConfirmModal';
+import GameFormModal from './GameFormModal';
+import { saveGameEdit } from './saveGameEdit';
 
 const FIELD_LABEL = { players: '인원수', playtime: '플레이 시간', image: '이미지', name: '이름', other: '기타' };
 const SOURCE_LABEL = { worldcup: '이상형 월드컵', game_detail: '게임 상세', other: '기타' };
@@ -31,12 +35,15 @@ const BTN = {
     background: 'var(--admin-card-bg)', color: 'var(--admin-text-main)', cursor: 'pointer',
 };
 
-export default function GameInfoReportsPanel({ onPendingCount }) {
+export default function GameInfoReportsPanel({ onPendingCount, games = [], onReloadGames }) {
     const { showToast } = useToast();
     const [status, setStatus] = useState('pending');
     const [items, setItems] = useState(null);
     const [error, setError] = useState(null);
     const [busyId, setBusyId] = useState(null);
+    const [editingGame, setEditingGame] = useState(null);
+    const [pendingSave, setPendingSave] = useState(null); // 확인 대기 중인 폼 값
+    const [saving, setSaving] = useState(false);
 
     const load = useCallback(() => {
         setError(null);
@@ -68,6 +75,24 @@ export default function GameInfoReportsPanel({ onPendingCount }) {
             .finally(() => setBusyId(null));
     };
 
+    const saveEdit = async () => {
+        const game = editingGame;
+        const formData = pendingSave;
+        setSaving(true);
+        try {
+            await saveGameEdit(game.id, formData, showToast);
+            showToast(`「${formData.name}」 정보를 수정했어요.`, { type: 'success' });
+            setEditingGame(null);
+            onReloadGames?.();
+            load(); // 「지금」 값 갱신
+        } catch (e) {
+            console.error('Game edit error:', e);
+            showToast('수정 실패: ' + (e?.message || String(e)), { type: 'error' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '4px 0' }}>
             <div className="admin-btn-row" role="group" aria-label="처리 상태">
@@ -84,7 +109,7 @@ export default function GameInfoReportsPanel({ onPendingCount }) {
                 ))}
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--admin-text-sub)' }}>
-                게임 정보(인원수·플레이 시간·이미지·이름)가 이상하다는 신고예요. 게임은 「대여 현황」 탭에서 고친 뒤 처리 완료로 바꿔 주세요.
+                게임 정보(인원수·플레이 시간·이미지·이름)가 이상하다는 신고예요. 「✏️ 바로 수정」으로 고친 뒤 완료 처리를 눌러 주세요.
             </div>
 
             {error && (
@@ -101,6 +126,7 @@ export default function GameInfoReportsPanel({ onPendingCount }) {
 
             {items?.map((r) => {
                 const now = currentValue(r);
+                const game = r.game_id ? games.find((g) => g.id === r.game_id) : null;
                 return (
                     <div key={r.id} style={CARD}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
@@ -137,6 +163,9 @@ export default function GameInfoReportsPanel({ onPendingCount }) {
                             {r.game_id && (
                                 <a href={`/game/${r.game_id}`} target="_blank" rel="noopener noreferrer" style={{ ...BTN, textDecoration: 'none' }}>게임 보기</a>
                             )}
+                            {game && (
+                                <button type="button" style={{ ...BTN, borderColor: '#8e44ad' }} onClick={() => setEditingGame(game)}>✏️ 바로 수정</button>
+                            )}
                             {r.status === 'pending' ? (
                                 <>
                                     <button type="button" style={BTN} disabled={busyId === r.id} onClick={() => change(r, 'resolved')}>완료 처리</button>
@@ -149,6 +178,22 @@ export default function GameInfoReportsPanel({ onPendingCount }) {
                     </div>
                 );
             })}
+
+            <GameFormModal
+                isOpen={!!editingGame}
+                onClose={() => setEditingGame(null)}
+                initialData={editingGame}
+                onSubmit={(formData) => setPendingSave(formData)}
+                title="✏️ 게임 정보 수정"
+                busy={saving}
+            />
+            <ConfirmModal
+                isOpen={!!pendingSave}
+                onClose={() => setPendingSave(null)}
+                onConfirm={saveEdit}
+                title="게임 정보 수정"
+                message={`[${pendingSave?.name}] 정보를 수정하시겠습니까?`}
+            />
         </div>
     );
 }

@@ -4,7 +4,7 @@ import { fetchGameInfoReports } from '../api_fun';
 import { useToast } from '../contexts/ToastContext';
 import GameInfoReportsPanel from './GameInfoReportsPanel';
 
-function ReportsTab() {
+function ReportsTab({ games, onReloadGames }) {
     const [activeSubTab, setActiveSubTab] = useState('damage'); // 'damage' or 'request'
     const [reports, setReports] = useState([]);
     const [requests, setRequests] = useState([]);
@@ -112,7 +112,7 @@ function ReportsTab() {
             </div>
 
             {activeSubTab === 'info' ? (
-                <GameInfoReportsPanel onPendingCount={setInfoPending} />
+                <GameInfoReportsPanel onPendingCount={setInfoPending} games={games} onReloadGames={onReloadGames} />
             ) : loading ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#bbb' }}>로딩 중...</div>
             ) : (
