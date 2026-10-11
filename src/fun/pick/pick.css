@@ -1,4 +1,4 @@
-/* 놀이터 「골라 지우기」 (/play/pick, 2026-10-12) — 폰 우선, fun.css 보라 톤 */
+/* 놀이터 「소거법으로 할 보드게임 정하기」 (/play/pick, 2026-10-12) — 폰 우선, fun.css 보라 톤 */
 
 .pk-title-mode {
     color: #666;
@@ -241,4 +241,46 @@
     text-decoration: none;
     width: 100%;
     box-sizing: border-box;
+}
+
+/* 애니메이션 (2026-10-12) — 깔릴 때 차례로, 지우면 자리가 오므라들고, 결정 카드는 튀어 오른다 */
+@keyframes pkDeal {
+    from { opacity: 0; transform: translateY(12px) scale(0.96); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes pkSweep {
+    from { transform: scale(1); background: #efe9fa; }
+    to { transform: scale(0.94); background: transparent; }
+}
+
+@keyframes pkReveal {
+    0% { opacity: 0; transform: scale(0.86); }
+    60% { opacity: 1; transform: scale(1.04); }
+    100% { transform: scale(1); }
+}
+
+.pk-card:not(.pk-card-removed) {
+    animation: pkDeal 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.pk-card-removed {
+    animation: pkSweep 0.25s ease-out both;
+}
+
+.pk-result {
+    animation: pkReveal 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.pk-results.is-split .pk-result:nth-child(2) {
+    animation-delay: 0.12s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pk-card,
+    .pk-card-removed,
+    .pk-result {
+        animation: none !important;
+    }
 }

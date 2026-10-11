@@ -1,4 +1,4 @@
-// 골라 지우기 (2026-10-11)
+// 소거법으로 할 보드게임 정하기 (2026-10-11, 구 골라 지우기)
 // 인원을 고르면 그 인원의 베스트·추천 게임 8장을 한 화면에 깔고, ✕로 한 장씩 지워 1장(4/4 는 2장)이 남으면 결정.
 // 공용 기기라 진행 상태는 저장하지 않는다 — 화면보호기에 들어가면 KioskPage 가 이 화면을 닫는다.
 import React, { useMemo, useState } from 'react';
@@ -17,11 +17,13 @@ const Difficulty = ({ value }) => {
     return Number.isFinite(n) && n > 0 ? <span>난이도 {n.toFixed(1)}</span> : null;
 };
 
-function GameCard({ game, onRemove, removed, gone }) {
-    if (removed) return <div className="pe-card pe-card-removed" aria-hidden="true" />;
+// index: 깔릴 때 한 장씩 차례로 나타나는 지연(--i)
+function GameCard({ game, onRemove, removed, gone, index = 0 }) {
+    const style = { '--i': index };
+    if (removed) return <div className="pe-card pe-card-removed" style={style} aria-hidden="true" />;
     const best = formatPlayers(game.best_players);
     return (
-        <div className={`pe-card${gone ? ' pe-card-gone' : ''}`}>
+        <div className={`pe-card${gone ? ' pe-card-gone' : ''}`} style={style}>
             {gone && <GoneBadge />}
             <button type="button" className="pe-remove" onClick={onRemove} aria-label={`${game.name} 지우기`}>✕</button>
             <div className="pe-card-img">
@@ -93,7 +95,7 @@ function PickEliminateModal({ onClose }) {
             {/* 바깥을 눌러도 닫지 않는다 — 실수로 진행 중인 판을 잃지 않게. 닫기는 ✕ 로만 */}
             <div className="pe-panel">
                 <div className="pe-header">
-                    <h2>골라 지우기{mode != null && <span className="pe-header-mode"> · {modeLabel(mode)}</span>}</h2>
+                    <h2>소거법으로 할 보드게임 정하기{mode != null && <span className="pe-header-mode"> · {modeLabel(mode)}</span>}</h2>
                     <button type="button" className="pe-close" onClick={onClose} aria-label="닫기">✕</button>
                 </div>
 
@@ -143,8 +145,8 @@ function PickEliminateModal({ onClose }) {
                             {cards.length < PICK_COUNT && ` · 맞는 게임이 ${cards.length}개뿐`}
                         </p>
                         <div className="pe-grid">
-                            {cards.map((g) => (
-                                <GameCard key={g.id} game={g} removed={removed.includes(g.id)} gone={isGone(g)} onRemove={() => remove(g.id)} />
+                            {cards.map((g, i) => (
+                                <GameCard key={g.id} index={i} game={g} removed={removed.includes(g.id)} gone={isGone(g)} onRemove={() => remove(g.id)} />
                             ))}
                         </div>
                         <div className="pe-actions">

@@ -1,4 +1,4 @@
-/* 골라 지우기 (2026-10-11) — 키오스크 큰 화면 터치 기준 */
+/* 소거법으로 할 보드게임 정하기 (2026-10-11) — 키오스크 큰 화면 터치 기준 */
 
 .pe-overlay {
     align-items: stretch;
@@ -309,4 +309,46 @@
 
 .pe-result-card {
     position: relative;
+}
+
+/* 애니메이션 (2026-10-12) — 깔릴 때 차례로, 지우면 자리가 오므라들고, 결정 카드는 튀어 오른다 */
+@keyframes peDeal {
+    from { opacity: 0; transform: translateY(16px) scale(0.95); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes peSweep {
+    from { transform: scale(1); background: #3a3a3a; }
+    to { transform: scale(0.93); background: transparent; }
+}
+
+@keyframes peReveal {
+    0% { opacity: 0; transform: scale(0.84); }
+    60% { opacity: 1; transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.pe-card:not(.pe-card-removed) {
+    animation: peDeal 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 50ms);
+}
+
+.pe-card-removed {
+    animation: peSweep 0.25s ease-out both;
+}
+
+.pe-result-card {
+    animation: peReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.pe-result-row .pe-result-card:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pe-card,
+    .pe-card-removed,
+    .pe-result-card {
+        animation: none !important;
+    }
 }

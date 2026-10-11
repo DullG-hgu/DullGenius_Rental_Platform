@@ -1,4 +1,4 @@
-// 놀이터 「골라 지우기」 (/play/pick, 2026-10-12)
+// 놀이터 「소거법으로 할 보드게임 정하기」(구 골라 지우기) (/play/pick, 2026-10-12)
 // 인원을 고르면 지금 대여 가능한 게임 중 그 인원의 베스트·추천 게임 8장 → ✕로 하나씩 지워 1장(4/4 는 2장)으로 결정.
 // 동방에서 폰 하나로 같이 고르는 용도. 로그인 불필요, 새 조회 없음(전역 게임 목록), 진행 상태는 저장하지 않는다.
 // 추첨 규칙은 키오스크와 같은 roulette.js. 키오스크 화면은 src/kiosk/PickEliminateModal.jsx
@@ -24,10 +24,12 @@ const Meta = ({ game }) => {
     );
 };
 
-function Card({ game, removed, gone, onRemove }) {
-    if (removed) return <li className="pk-card pk-card-removed" aria-hidden="true" />;
+// index: 깔릴 때 한 장씩 차례로 나타나는 지연(--i)
+function Card({ game, removed, gone, onRemove, index = 0 }) {
+    const style = { '--i': index };
+    if (removed) return <li className="pk-card pk-card-removed" style={style} aria-hidden="true" />;
     return (
-        <li className={`pk-card${gone ? ' is-gone' : ''}`}>
+        <li className={`pk-card${gone ? ' is-gone' : ''}`} style={style}>
             <button type="button" className="pk-remove" onClick={onRemove} aria-label={`${game.name} 지우기`}>✕</button>
             {gone && <span className="pk-gone">지금 대여 불가</span>}
             <div className="pk-img">
@@ -63,7 +65,7 @@ export default function PickPlay() {
             <div className="fun-header">
                 <button type="button" onClick={() => (mode == null ? navigate('/play') : pick.backToChoose())}
                     className="fun-back-btn" aria-label={mode == null ? '놀이터로' : '인원 다시 고르기'}>←</button>
-                <h2 className="fun-title">골라 지우기{mode != null && <span className="pk-title-mode"> · {modeLabel(mode)}</span>}</h2>
+                <h2 className="fun-title">소거법으로 할 보드게임 정하기{mode != null && <span className="pk-title-mode"> · {modeLabel(mode)}</span>}</h2>
             </div>
 
             {loading && games.length === 0 ? (
@@ -116,8 +118,8 @@ export default function PickPlay() {
                         {cards.length < PICK_COUNT && ` · 맞는 게임이 ${cards.length}개뿐`}
                     </p>
                     <ul className="pk-grid">
-                        {cards.map((g) => (
-                            <Card key={g.id} game={g} removed={removed.some((id) => String(id) === String(g.id))}
+                        {cards.map((g, i) => (
+                            <Card key={g.id} index={i} game={g} removed={removed.some((id) => String(id) === String(g.id))}
                                 gone={pick.isGone(g)} onRemove={() => pick.remove(g.id)} />
                         ))}
                     </ul>
