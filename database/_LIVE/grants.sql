@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 10. PM 6:52:49
+-- 생성 시각: 2026. 10. 12. AM 1:38:06
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -12,10 +12,11 @@
 --   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.
 
 -- ----------------------------------------------------------------
--- 함수 EXECUTE  (140개)
+-- 함수 EXECUTE  (145개)
 -- ----------------------------------------------------------------
 -- anon  auth  security  function
 --  -     -    INVOKER   _active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
+--  -     -    INVOKER   _admin_cron_mask(p_message text)
 --  Y     Y    INVOKER   _event_calc_fee(p_pricing jsonb, p_tier text)
 --  Y     Y    INVOKER   _event_generate_invite_code()
 --  Y     Y    INVOKER   _event_is_full(p_event_id uuid)
@@ -37,6 +38,7 @@
 --  -     -    INVOKER   _user_game_marks_log()
 --  -     Y    DEFINER   add_game_copy(p_game_id integer)
 --  -     Y    DEFINER   admin_cancel_dibs(p_game_id integer, p_rental_id uuid, p_user_id uuid)
+--  -     Y    DEFINER   admin_cron_status(p_limit integer)
 --  -     Y    DEFINER   admin_extend_rentals(p_user_id uuid, p_renter_name text, p_game_id integer, p_rental_id uuid, p_days integer)
 --  -     Y    DEFINER   admin_list_game_info_reports(p_status text, p_limit integer)
 --  -     Y    DEFINER   admin_mark_lost(p_game_id integer, p_rental_id uuid)
@@ -45,6 +47,7 @@
 --  -     Y    DEFINER   admin_set_game_info_report_status(p_id uuid, p_status text)
 --  -     Y    DEFINER   admin_update_user_roles(p_user_id uuid, p_role_keys text[])
 --  -     Y    DEFINER   cancel_dibs(p_game_id integer, p_user_id uuid)
+--  -     Y    DEFINER   cancel_rental_request(p_request_id uuid, p_reason text)
 --  -     -    DEFINER   cleanup_expired_dibs()
 --  -     Y    DEFINER   confirm_rental_request(p_request_id uuid, p_game_ids integer[], p_pickup_at timestamp with time zone, p_duration_days integer)
 --  Y     Y    INVOKER   count_active_occupancy(p_game_id integer)
@@ -110,6 +113,7 @@
 --  -     Y    DEFINER   get_admin_analytics_timeline(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[])
 --  -     Y    DEFINER   get_admin_game_purchase_requests(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_limit integer)
 --  -     Y    DEFINER   get_admin_unavailable_game_views(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_limit integer)
+--  -     Y    DEFINER   get_external_rental_stats(p_start_date date, p_end_date date)
 --  Y     Y    DEFINER   get_game_with_rentals(p_game_id integer)
 --  Y     Y    DEFINER   get_games_with_rentals()
 --  -     Y    DEFINER   get_my_rental_history()
@@ -149,6 +153,7 @@
 --  -     Y    DEFINER   reset_user_password(target_user_id uuid)
 --  -     -    DEFINER   resolve_membership_tier(p_user_id uuid)
 --  -     -    DEFINER   return_game(p_game_id integer, p_user_id uuid)
+--  -     Y    DEFINER   return_rental_request(p_request_id uuid)
 --  -     Y    DEFINER   safe_delete_game(p_game_id integer)
 --  -     Y    DEFINER   send_user_log(p_game_id integer, p_action_type text, p_details jsonb)
 --  -     Y    DEFINER   set_private_config(p_key text, p_value text)

@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 10. PM 6:52:33
+-- 생성 시각: 2026. 10. 12. AM 1:37:48
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 140개 함수
+-- 총 145개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -29,6 +29,10 @@ AS $function$
           'returned_at', r.returned_at,
           'due_date',    r.due_date,
           'borrowed_at', r.borrowed_at,
+          -- 2026-10-11: 단체대여(HOLD) 행의 신청 id — 관리자에게만 (대여 현황에서 신청 단위 반납 처리용)
+          'request_id',  CASE WHEN p_admin AND r.type = 'HOLD'
+                                   AND r.note ~ '^HOLD request:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+                              THEN substr(r.note, 14)::uuid END,
           'profiles',    CASE WHEN (p_admin OR r.user_id = p_uid) AND p.id IS NOT NULL
                               THEN jsonb_build_object('name', p.name) END
         )
@@ -42,6 +46,19 @@ AS $function$
     ),
     '[]'::jsonb
   );
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _admin_cron_mask
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._admin_cron_mask(p_message text)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'pg_temp'
+AS $function$
+  SELECT CASE WHEN p_message IS NULL THEN NULL
+              ELSE left(regexp_replace(p_message, '[A-Za-z0-9_\-\.=+/]{24,}', '[가림]', 'g'), 300) END
 $function$
 
 -- ----------------------------------------------------------------
@@ -753,6 +770,72 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: admin_cron_status
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.admin_cron_status(p_limit integer DEFAULT 20)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  c_window constant integer := 2000;  -- 잡별 마지막 실행·실패를 찾을 최근 실행 기록 범위(runid)
+  v_limit  integer := least(greatest(coalesce(p_limit, 20), 1), 50);
+  v_floor  bigint;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+
+  IF to_regclass('cron.job') IS NULL OR to_regclass('cron.job_run_details') IS NULL THEN
+    RETURN jsonb_build_object('available', false, 'jobs', '[]'::jsonb, 'recent', '[]'::jsonb, 'window', c_window);
+  END IF;
+
+  -- 기본키(runid) 역순 1건 → 하한. 아래 조회는 전부 runid > v_floor 범위 안에서만 (전체 스캔 없음)
+  SELECT coalesce(max(d.runid), 0) - c_window INTO v_floor FROM cron.job_run_details d;
+
+  RETURN jsonb_build_object(
+    'available', true,
+    'window', c_window,
+    'now', now(),
+    'jobs', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'jobid', j.jobid, 'name', j.jobname, 'schedule', j.schedule, 'active', j.active,
+        'last_status', lr.status, 'last_start', lr.start_time, 'last_end', lr.end_time,
+        'last_message', CASE WHEN lr.status = 'failed' THEN public._admin_cron_mask(lr.return_message) END,
+        'last_fail_at', lf.start_time, 'last_fail_message', public._admin_cron_mask(lf.return_message)
+      ) ORDER BY j.jobname NULLS LAST, j.jobid)
+      FROM cron.job j
+      LEFT JOIN LATERAL (
+        SELECT d.status, d.start_time, d.end_time, d.return_message
+        FROM cron.job_run_details d
+        WHERE d.jobid = j.jobid AND d.runid > v_floor
+        ORDER BY d.runid DESC LIMIT 1
+      ) lr ON true
+      LEFT JOIN LATERAL (
+        SELECT d.start_time, d.return_message
+        FROM cron.job_run_details d
+        WHERE d.jobid = j.jobid AND d.runid > v_floor AND d.status = 'failed'
+        ORDER BY d.runid DESC LIMIT 1
+      ) lf ON true
+    ), '[]'::jsonb),
+    'recent', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'runid', x.runid, 'name', j.jobname, 'status', x.status,
+        'start', x.start_time, 'end', x.end_time,
+        'message', CASE WHEN x.status = 'failed' THEN public._admin_cron_mask(x.return_message) END
+      ) ORDER BY x.runid DESC)
+      FROM (
+        SELECT d.runid, d.jobid, d.status, d.start_time, d.end_time, d.return_message
+        FROM cron.job_run_details d
+        WHERE d.runid > v_floor
+        ORDER BY d.runid DESC LIMIT v_limit
+      ) x
+      LEFT JOIN cron.job j ON j.jobid = x.jobid
+    ), '[]'::jsonb)
+  );
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: admin_extend_rentals
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.admin_extend_rentals(p_user_id uuid DEFAULT NULL::uuid, p_renter_name text DEFAULT NULL::text, p_game_id integer DEFAULT NULL::integer, p_rental_id uuid DEFAULT NULL::uuid, p_days integer DEFAULT 7)
@@ -775,8 +858,10 @@ BEGIN
     IF p_user_id IS NULL AND p_renter_name IS NULL AND p_game_id IS NULL AND p_rental_id IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '연장 대상을 특정할 수 없습니다. (모든 식별자가 비어있음)', 'count', 0);
     END IF;
-    -- 현재 시간의 날짜(자정 00:00:00) 기준으로 N일을 더한 뒤, 23시간 59분 59초를 더해 해당일 밤 12시 세팅
-    v_new_due_date := date_trunc('day', now()) + (p_days || ' days')::interval + interval '23 hours 59 minutes 59 seconds';
+    -- 오늘(KST) 기준으로 N일을 더한 날의 밤 12시(23:59:59 KST). DB 타임존이 UTC라 KST로 잘라야 한다
+    v_new_due_date := (date_trunc('day', now() AT TIME ZONE 'Asia/Seoul')
+                       + (COALESCE(p_days, 7) || ' days')::interval
+                       + interval '23 hours 59 minutes 59 seconds') AT TIME ZONE 'Asia/Seoul';
     FOR r IN
         SELECT rental_id, game_id, user_id, renter_name
         FROM public.rentals
@@ -1177,6 +1262,73 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: cancel_rental_request
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.cancel_rental_request(p_request_id uuid, p_reason text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+-- 단체대여 신청 취소 (반려와 구분). 수령 전 취소·노쇼·연체 후 미수령 정리에 쓴다.
+-- 열린 HOLD 를 전부 닫고 재고를 즉시 돌린다. 신청자 통지 없음. 사유는 선택.
+DECLARE
+    v_req    public.rental_requests%ROWTYPE;
+    v_note   text;
+    v_row    uuid;
+    v_gid    int;
+    v_gids   int[] := '{}';
+    v_closed int := 0;
+BEGIN
+    IF NOT public.is_admin() THEN
+        RAISE EXCEPTION '관리자 권한이 필요합니다.';
+    END IF;
+
+    -- 락 순서: rental_requests → games (confirm·reject·cleanup 과 같다)
+    SELECT * INTO v_req FROM public.rental_requests WHERE id = p_request_id FOR UPDATE;
+    IF v_req.id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '요청을 찾을 수 없습니다.');
+    END IF;
+    IF v_req.status NOT IN ('pending', 'needs_review', 'auto_confirmed', 'manual_confirmed') THEN
+        RETURN jsonb_build_object('success', false, 'message', '이미 처리된 요청입니다.');
+    END IF;
+
+    v_note := 'HOLD request:' || v_req.id::text;
+    FOR v_row, v_gid IN
+        SELECT r.rental_id, r.game_id FROM public.rentals r
+        WHERE (r.rental_id = ANY(COALESCE(v_req.hold_rental_ids, '{}')) OR r.note = v_note)
+          AND r.type = 'HOLD' AND r.returned_at IS NULL
+        ORDER BY r.game_id, r.rental_id
+    LOOP
+        PERFORM 1 FROM public.games WHERE id = v_gid FOR UPDATE;
+        UPDATE public.rentals SET returned_at = now()
+        WHERE rental_id = v_row AND returned_at IS NULL;
+        v_closed := v_closed + 1;
+        v_gids := array_append(v_gids, v_gid);
+    END LOOP;
+
+    UPDATE public.rental_requests
+    SET status = 'cancelled',
+        review_note = COALESCE(review_note || ' | ', '') || '취소'
+                      || COALESCE(': ' || NULLIF(btrim(p_reason), ''), ''),
+        reviewed_by = auth.uid(),
+        reviewed_at = now()
+    WHERE id = p_request_id;
+
+    FOR v_gid IN SELECT DISTINCT g FROM unnest(v_gids) AS t(g) ORDER BY g LOOP
+        PERFORM public.recalc_game_availability(v_gid);
+    END LOOP;
+
+    INSERT INTO public.logs (game_id, user_id, action_type, details)
+    VALUES (NULL, auth.uid(), 'RENTAL_REQUEST_CANCEL',
+            jsonb_build_object('request_id', p_request_id, 'prior_status', v_req.status,
+                               'reason', NULLIF(btrim(p_reason), ''), 'closed_holds', v_closed));
+
+    RETURN jsonb_build_object('success', true, 'closed_holds', v_closed);
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: cleanup_expired_dibs
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.cleanup_expired_dibs()
@@ -1196,10 +1348,13 @@ DECLARE
     v_recalced   INTEGER := 0;
     v_n          INTEGER;
 BEGIN
-    -- [1] 만료 DIBS/HOLD 정리 — 게임 단위로 games 락 선획득 (락 순서: games→rentals)
+    -- [1] 만료 DIBS 정리 — 게임 단위로 games 락 선획득 (락 순서: games→rentals)
+    --     2026-10-11: HOLD(단체대여)는 더 이상 자동 종료하지 않는다. 관리자가 return_rental_request 로
+    --     반납 처리할 때까지 점유하고, 기한 다음 날부터 관리자 화면에 「단체 연체」로 뜬다.
+    --     expired_hold_count 는 호환을 위해 0 으로 계속 돌려준다.
     FOR v_gid IN
         SELECT DISTINCT game_id FROM public.rentals
-        WHERE returned_at IS NULL AND type IN ('DIBS','HOLD') AND due_date < now()
+        WHERE returned_at IS NULL AND type = 'DIBS' AND due_date < now()
         ORDER BY game_id
     LOOP
         PERFORM 1 FROM public.games WHERE id = v_gid FOR UPDATE;
@@ -1208,11 +1363,6 @@ BEGIN
         WHERE game_id = v_gid AND type = 'DIBS' AND returned_at IS NULL AND due_date < now();
         GET DIAGNOSTICS v_n = ROW_COUNT;
         v_dibs_count := v_dibs_count + v_n;
-
-        UPDATE public.rentals SET returned_at = now()
-        WHERE game_id = v_gid AND type = 'HOLD' AND returned_at IS NULL AND due_date < now();
-        GET DIAGNOSTICS v_n = ROW_COUNT;
-        v_hold_count := v_hold_count + v_n;
     END LOOP;
 
     -- [2] needs_review 5일 경과 자동 반려 (2026-08-20 회장 확정 유예)
@@ -1253,7 +1403,7 @@ BEGIN
         v_rejected := v_rejected + 1;
     END LOOP;
 
-    -- [3] 만료 정리분 + 7일 창 진입 HOLD + 타 경로 드리프트 일괄 보정
+    -- [3] 만료 정리분 + 7일 창 진입 HOLD + 타 경로 드리프트 일괄 보정 (needs_review 5일 자동 반려는 유지)
     v_recalced := public.recalc_all_game_availability();
 
     RETURN jsonb_build_object(
@@ -1291,17 +1441,41 @@ DECLARE
     v_due_date       timestamptz;
     v_note           text;
     v_claimed        int;
+    v_open_holds     int;
 BEGIN
     IF NOT public.is_admin() THEN
         RAISE EXCEPTION '관리자 권한이 필요합니다.';
     END IF;
 
-    SELECT * INTO v_req FROM public.rental_requests WHERE id = p_request_id;
+    -- 신청 행을 잠가 같은 신청의 동시 확정·재확정·반려를 줄 세운다
+    -- (락 순서 rental_requests → games: reject_rental_request·cleanup_expired_dibs 와 같다)
+    SELECT * INTO v_req FROM public.rental_requests WHERE id = p_request_id FOR UPDATE;
     IF v_req.id IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', '요청을 찾을 수 없습니다.');
     END IF;
-    IF v_req.status NOT IN ('pending', 'needs_review') THEN
+    -- 2026-10-11: 확정된 신청(auto_confirmed·manual_confirmed)도 게임·날짜 변경 재확정 허용
+    IF v_req.status NOT IN ('pending', 'needs_review', 'auto_confirmed', 'manual_confirmed') THEN
         RETURN jsonb_build_object('success', false, 'message', '이미 처리된 요청입니다.');
+    END IF;
+    -- 확정 건은 아직 열린 HOLD 가 있을 때만 (끝난 대여를 다시 살리지 않는다)
+    IF v_req.status IN ('auto_confirmed', 'manual_confirmed') THEN
+        SELECT COUNT(*) INTO v_open_holds
+        FROM public.rentals r
+        WHERE (r.rental_id = ANY(COALESCE(v_req.hold_rental_ids, '{}'))
+               OR r.note = 'HOLD request:' || v_req.id::text)
+          AND r.type = 'HOLD' AND r.returned_at IS NULL;
+        IF v_open_holds = 0 THEN
+            RETURN jsonb_build_object('success', false, 'message', '이미 종료된 대여입니다. 다시 확정할 수 없습니다.');
+        END IF;
+        -- 2026-10-11: 수령 후에는 게임 목록 변경 불가 (실물이 이미 나감). 기간·날짜 조정만 허용
+        --   수령일도 고정한다: 수령일을 미래로 옮기면 다음 재확정에서 이 잠금이 풀리는 우회가 생긴다 (%3 검증)
+        IF v_req.pickup_at IS NOT NULL AND now() >= v_req.pickup_at
+           AND ((SELECT array_agg(x ORDER BY x) FROM unnest(p_game_ids) AS t(x))
+                 IS DISTINCT FROM
+                (SELECT array_agg(x ORDER BY x) FROM unnest(v_req.matched_game_ids) AS t(x))
+                OR date_trunc('minute', p_pickup_at) IS DISTINCT FROM date_trunc('minute', v_req.pickup_at)) THEN  -- 화면 입력은 분 단위
+            RETURN jsonb_build_object('success', false, 'message', '수령 후 게임·수령일 변경 불가 — 기간만 조정');
+        END IF;
     END IF;
     IF p_pickup_at IS NULL OR p_duration_days IS NULL OR p_duration_days <= 0 THEN
         RETURN jsonb_build_object('success', false, 'message', '수령일/기간이 올바르지 않습니다.');
@@ -1334,9 +1508,13 @@ BEGIN
           AND (
               type = 'RENT'
               OR (type = 'DIBS' AND due_date > now())
-              OR (type = 'HOLD' AND due_date > now())
+              OR type = 'HOLD'
           )
-          AND tstzrange(borrowed_at, due_date, '[)')
+          -- 반납 처리 전 HOLD 는 기한이 지나도 언제 돌아올지 모르므로 끝을 무기한으로 본다
+          -- (GREATEST(due_date, now()) 로는 다음 주 신청과 겹치지 않아 없는 게임에 HOLD 가 잡힌다)
+          AND tstzrange(borrowed_at,
+                        CASE WHEN type = 'HOLD' AND due_date <= now() THEN 'infinity'::timestamptz ELSE due_date END,
+                        '[)')
               && tstzrange(v_borrowed_at, v_due_date, '[)')
           AND NOT (rental_id = ANY(COALESCE(v_req.hold_rental_ids, '{}')))
           AND (note IS DISTINCT FROM v_note);
@@ -1358,7 +1536,7 @@ BEGIN
     SET status = 'manual_confirmed',
         reviewed_by = auth.uid(),
         reviewed_at = now()
-    WHERE id = p_request_id AND status IN ('pending', 'needs_review');
+    WHERE id = p_request_id AND status = v_req.status;
     GET DIAGNOSTICS v_claimed = ROW_COUNT;
     IF v_claimed = 0 THEN
         RETURN jsonb_build_object('success', false, 'message', '이미 처리된 요청입니다. (동시 처리 감지)');
@@ -1432,9 +1610,9 @@ AS $function$
     AND (
         r.type = 'RENT'
         OR (r.type = 'DIBS' AND r.due_date > now())
+        -- HOLD: 수령 8일 전(borrowed_at = 수령 24시간 전, 선행 7일)부터 반납 처리 전까지. 기한이 지나도 점유
         OR (r.type = 'HOLD'
-            AND r.borrowed_at <= now() + interval '7 days'
-            AND r.due_date > now())
+            AND r.borrowed_at <= now() + interval '7 days')
     );
 $function$
 
@@ -2313,11 +2491,7 @@ BEGIN
         RETURNING rental_id
     ) SELECT COUNT(*) INTO v_expired_dibs FROM e;
 
-    WITH e AS (
-        UPDATE public.rentals SET returned_at = now()
-        WHERE type = 'HOLD' AND returned_at IS NULL AND due_date < now()
-        RETURNING rental_id
-    ) SELECT COUNT(*) INTO v_expired_holds FROM e;
+    -- 2026-10-11: 기한 지난 HOLD 자동 종료 제거 (관리자 반납 처리 전까지 점유). expired_holds_closed 는 0
 
     v_recalced := public.recalc_all_game_availability();
 
@@ -4223,6 +4397,86 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: get_external_rental_stats
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_external_rental_stats(p_start_date date, p_end_date date)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+-- 외부(단체) 대여 통계 — 관리자 전용 읽기. 회원 대여 통계(type=RENT)와 섞지 않는다.
+-- 기간은 KST 날짜, 양끝 포함.
+--   신청 건수(requests·by_status): 접수일(received_at) 기준, 현재 상태별
+--   대여 지표(rentals 이하): 수령일(pickup_at) 기준, 현재 확정·반납 완료 건
+--     (재확정은 옛 HOLD 를 닫고 새로 만들므로 게임 수는 HOLD 행이 아니라 최종 matched_game_ids 로 센다)
+--   연체: 반납 시각(미반납이면 지금)이 기한 다음 날(KST) 이후
+DECLARE
+    v_from timestamptz := (p_start_date::timestamp) AT TIME ZONE 'Asia/Seoul';
+    v_to   timestamptz := ((p_end_date + 1)::timestamp) AT TIME ZONE 'Asia/Seoul';
+    v_result jsonb;
+BEGIN
+    IF NOT public.is_admin() THEN
+        RAISE EXCEPTION '관리자 권한이 필요합니다.';
+    END IF;
+    IF p_start_date IS NULL OR p_end_date IS NULL OR p_end_date < p_start_date THEN
+        RAISE EXCEPTION '기간이 올바르지 않습니다.';
+    END IF;
+
+    WITH req AS (
+        SELECT * FROM public.rental_requests
+        WHERE received_at >= v_from AND received_at < v_to
+    ),
+    rent AS (
+        SELECT q.*,
+               q.pickup_at + make_interval(days => q.duration_days) AS due_at,
+               (SELECT MAX(r.returned_at) FROM public.rentals r
+                 WHERE r.rental_id = ANY(q.hold_rental_ids)) AS returned_at,
+               EXISTS (SELECT 1 FROM public.rentals r
+                        WHERE r.rental_id = ANY(q.hold_rental_ids) AND r.returned_at IS NULL) AS is_open
+        FROM public.rental_requests q
+        WHERE q.status IN ('auto_confirmed', 'manual_confirmed', 'returned')
+          AND q.pickup_at >= v_from AND q.pickup_at < v_to
+          AND q.duration_days IS NOT NULL
+    ),
+    rent_x AS (
+        SELECT rent.*,
+               ((CASE WHEN is_open THEN now() ELSE returned_at END) AT TIME ZONE 'Asia/Seoul')::date
+                 > ((due_at - interval '1 millisecond') AT TIME ZONE 'Asia/Seoul')::date AS overdue
+        FROM rent
+    ),
+    top AS (
+        SELECT g.id, g.name, COUNT(*)::int AS copies, COUNT(DISTINCT x.id)::int AS requests
+        FROM rent_x x
+        CROSS JOIN LATERAL unnest(x.matched_game_ids) AS m(gid)
+        JOIN public.games g ON g.id = m.gid
+        GROUP BY g.id, g.name
+        ORDER BY copies DESC, requests DESC, g.name
+        LIMIT 10
+    )
+    SELECT jsonb_build_object(
+        'period', jsonb_build_object('start', p_start_date, 'end', p_end_date),
+        'requests', (SELECT COUNT(*) FROM req),
+        'by_status', COALESCE((SELECT jsonb_object_agg(status, n)
+                               FROM (SELECT status, COUNT(*)::int AS n FROM req GROUP BY status) s), '{}'::jsonb),
+        'rentals', (SELECT COUNT(*) FROM rent_x),
+        'rentals_open', (SELECT COUNT(*) FROM rent_x WHERE is_open),
+        'rentals_returned', (SELECT COUNT(*) FROM rent_x WHERE status = 'returned'),
+        'game_copies', COALESCE((SELECT SUM(cardinality(matched_game_ids)) FROM rent_x), 0),
+        'avg_duration_days', (SELECT ROUND(AVG(duration_days)::numeric, 1) FROM rent_x),
+        'overdue', (SELECT COUNT(*) FROM rent_x WHERE overdue),
+        'overdue_open', (SELECT COUNT(*) FROM rent_x WHERE overdue AND is_open),
+        'top_games', COALESCE((SELECT jsonb_agg(jsonb_build_object('game_id', id, 'name', name,
+                                                                  'copies', copies, 'requests', requests)
+                                                ORDER BY copies DESC, requests DESC, name)
+                               FROM top), '[]'::jsonb)
+    ) INTO v_result;
+
+    RETURN v_result;
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: get_game_with_rentals
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_game_with_rentals(p_game_id integer)
@@ -4831,9 +5085,12 @@ BEGIN
               AND (
                   type = 'RENT'
                   OR (type = 'DIBS' AND due_date > now())
-                  OR (type = 'HOLD' AND due_date > now())
+                  OR type = 'HOLD'
               )
-              AND tstzrange(borrowed_at, due_date, '[)')
+              -- 반납 처리 전 HOLD 는 기한이 지나도 끝을 무기한으로 본다 (confirm_rental_request 와 같은 식)
+              AND tstzrange(borrowed_at,
+                            CASE WHEN type = 'HOLD' AND due_date <= now() THEN 'infinity'::timestamptz ELSE due_date END,
+                            '[)')
                   && tstzrange(v_borrowed_at, v_due_date, '[)');
 
             IF v_conflict_count + v_needed > COALESCE(v_quantity, 0) THEN
@@ -5367,9 +5624,9 @@ BEGIN
               AND (
                   r.type = 'RENT'
                   OR (r.type = 'DIBS' AND r.due_date > now())
+                  -- HOLD: count_active_occupancy 와 같은 식 (기한이 지나도 반납 처리 전까지 점유)
                   OR (r.type = 'HOLD'
-                      AND r.borrowed_at <= now() + interval '7 days'
-                      AND r.due_date > now())
+                      AND r.borrowed_at <= now() + interval '7 days')
               )
         ) o ON true
     )
@@ -5453,7 +5710,7 @@ BEGIN
         review_note = p_reason,
         reviewed_by = auth.uid(),
         reviewed_at = now()
-    WHERE id = p_request_id AND status NOT IN ('rejected', 'cancelled')
+    WHERE id = p_request_id AND status NOT IN ('rejected', 'cancelled', 'returned')
     RETURNING hold_rental_ids INTO v_hold_ids;
 
     IF NOT FOUND THEN
@@ -5811,6 +6068,91 @@ BEGIN
     VALUES (p_game_id, p_user_id, 'RETURN', jsonb_build_object('action', 'USER RETURN'));
 
     RETURN jsonb_build_object('success', true, 'message', '반납 완료');
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: return_rental_request
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.return_rental_request(p_request_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+-- 단체대여 반납 처리 — 신청 단위로 한 번에 (부분 반납 없음). 관리자만, 키오스크는 받지 않는다.
+-- 열린 HOLD 를 전부 닫고 재고를 즉시 돌린다. 상태 returned.
+DECLARE
+    v_req      public.rental_requests%ROWTYPE;
+    v_note     text;
+    v_row      uuid;
+    v_gid      int;
+    v_gids     int[] := '{}';
+    v_closed   int := 0;
+    v_first    timestamptz;
+    v_due      timestamptz;
+    v_overdue  int;
+BEGIN
+    IF NOT public.is_admin() THEN
+        RAISE EXCEPTION '관리자 권한이 필요합니다.';
+    END IF;
+
+    -- 락 순서: rental_requests → games
+    SELECT * INTO v_req FROM public.rental_requests WHERE id = p_request_id FOR UPDATE;
+    IF v_req.id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '요청을 찾을 수 없습니다.');
+    END IF;
+    IF v_req.status NOT IN ('auto_confirmed', 'manual_confirmed') THEN
+        RETURN jsonb_build_object('success', false, 'message', '확정된 대여만 반납 처리 가능');
+    END IF;
+
+    v_note := 'HOLD request:' || v_req.id::text;
+    SELECT MIN(r.borrowed_at), MAX(r.due_date) INTO v_first, v_due
+    FROM public.rentals r
+    WHERE (r.rental_id = ANY(COALESCE(v_req.hold_rental_ids, '{}')) OR r.note = v_note)
+      AND r.type = 'HOLD' AND r.returned_at IS NULL;
+    IF v_first IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', '열린 대여 없음');
+    END IF;
+    -- borrowed_at = 수령 24시간 전. 그 전이면 아직 아무것도 안 나간 것 → 취소로 처리
+    IF now() < v_first THEN
+        RETURN jsonb_build_object('success', false, 'message', '수령 전 — 취소로 처리');
+    END IF;
+
+    FOR v_row, v_gid IN
+        SELECT r.rental_id, r.game_id FROM public.rentals r
+        WHERE (r.rental_id = ANY(COALESCE(v_req.hold_rental_ids, '{}')) OR r.note = v_note)
+          AND r.type = 'HOLD' AND r.returned_at IS NULL
+        ORDER BY r.game_id, r.rental_id
+    LOOP
+        PERFORM 1 FROM public.games WHERE id = v_gid FOR UPDATE;
+        UPDATE public.rentals SET returned_at = now()
+        WHERE rental_id = v_row AND returned_at IS NULL;
+        v_closed := v_closed + 1;
+        v_gids := array_append(v_gids, v_gid);
+    END LOOP;
+
+    UPDATE public.rental_requests
+    SET status = 'returned',
+        reviewed_by = auth.uid(),
+        reviewed_at = now()
+    WHERE id = p_request_id;
+
+    FOR v_gid IN SELECT DISTINCT g FROM unnest(v_gids) AS t(g) ORDER BY g LOOP
+        PERFORM public.recalc_game_availability(v_gid);
+    END LOOP;
+
+    -- 단체 연체 일수: 기한 다음 날(KST)부터 1일 (프런트 holdOverdueDays 와 같은 식)
+    v_overdue := GREATEST(0,
+        (now() AT TIME ZONE 'Asia/Seoul')::date
+        - ((v_due - interval '1 millisecond') AT TIME ZONE 'Asia/Seoul')::date);
+
+    INSERT INTO public.logs (game_id, user_id, action_type, details)
+    VALUES (NULL, auth.uid(), 'RENTAL_REQUEST_RETURN',
+            jsonb_build_object('request_id', p_request_id, 'closed_holds', v_closed,
+                               'due_date', v_due, 'overdue_days', v_overdue));
+
+    RETURN jsonb_build_object('success', true, 'closed_holds', v_closed, 'overdue_days', v_overdue);
 END;
 $function$
 
