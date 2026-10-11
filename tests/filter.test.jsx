@@ -42,3 +42,18 @@ describe('combined game filters', () => {
         expect(normalizePlayerFilter(value)).toBe(expected);
     });
 });
+
+describe('overdue filter (rentalDue 기준, 2026-10-11)', () => {
+    const rented = { ...game, adminStatus: '대여중' };
+    it('keeps only rented games past their due time; unreadable dates are not overdue', () => {
+        const past = new Date(Date.now() - 60_000).toISOString();
+        const future = new Date(Date.now() + 60 * 60_000).toISOString();
+        const games = [
+            { ...rented, id: 1, dueDate: past },
+            { ...rented, id: 2, dueDate: future },
+            { ...rented, id: 3, dueDate: 'not a date' },
+            { ...game, id: 4, adminStatus: '대여가능', dueDate: past },
+        ];
+        expect(filter(games, { onlyOverdue: true }).map(g => g.id)).toEqual([1]);
+    });
+});

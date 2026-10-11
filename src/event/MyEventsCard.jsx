@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { listMyRegistrations, cancelMyRegistration } from './api_events_public';
+import ConfirmModal from '../components/ConfirmModal';
 
 const REG_STATUS = {
   pending: { label: '입금 대기', color: '#e67e22' },
@@ -22,6 +23,7 @@ export default function MyEventsCard() {
   const { showToast } = useToast();
   const [regs, setRegs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cancelTarget, setCancelTarget] = useState(null); // 취소 확인 중인 신청
 
   const load = async () => {
     if (!user) return;
@@ -36,8 +38,9 @@ export default function MyEventsCard() {
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [user?.id]);
 
-  const handleCancel = async (reg) => {
-    if (!confirm(`"${reg.events?.title}" 신청을 취소하시겠어요?`)) return;
+  const handleCancel = (reg) => setCancelTarget(reg);
+
+  const cancelRegistration = async (reg) => {
     try {
       await cancelMyRegistration(reg.id);
       showToast('신청이 취소되었습니다.', { type: 'success' });
@@ -70,6 +73,17 @@ export default function MyEventsCard() {
           </div>
         </details>
       )}
+
+      <ConfirmModal
+        isOpen={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={() => cancelRegistration(cancelTarget)}
+        title="행사 신청 취소"
+        message={`"${cancelTarget?.events?.title}" 신청을 취소하시겠어요?`}
+        confirmText="신청 취소"
+        cancelText="유지"
+        type="warning"
+      />
     </div>
   );
 }

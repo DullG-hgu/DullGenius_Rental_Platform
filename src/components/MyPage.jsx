@@ -11,6 +11,8 @@ import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabaseClient';
 import { formatVersion } from '../lib/appUpdate';
+import { rentalDDayLabel } from '../lib/rentalDue';
+import ConfirmModal from './ConfirmModal';
 
 const RENTAL_HISTORY_DATE_ANOMALY_LABELS = {
   MISSING_BORROWED_AT: "대여 시각 없음",
@@ -166,16 +168,31 @@ const MyPage = () => {
     }
   };
 
-  // [NEW] 회원 탈퇴 처리
-  const handleWithdraw = async () => {
+  // 확인 대화상자 (네이티브 confirm 은 모바일 브라우저의 대화상자 차단에 걸리면 조용히 실패한다)
+  // { title, message, confirmText, type, onConfirm }. 확인이 다음 단계를 열 수 있으므로
+  // 닫기는 자기 자신이 아직 떠 있을 때만 지운다 (ConfirmModal 은 onConfirm 직후 onClose 를 부른다).
+  const [confirmState, setConfirmState] = useState(null);
+  const closeConfirm = (shown) => setConfirmState(cur => (cur === shown ? null : cur));
+
+  // [NEW] 회원 탈퇴 처리 — 두 번 확인
+  const handleWithdraw = () => {
     if (!user) return;
+    setConfirmState({
+      title: "회원 탈퇴",
+      message: "정말로 탈퇴하시겠습니까?\n계정은 비활성화되지만, 동아리 운영을 위해 대여 기록과 기본 정보는 보존됩니다.",
+      confirmText: "탈퇴 진행",
+      type: "warning",
+      onConfirm: () => setConfirmState({
+        title: "마지막 확인",
+        message: "재가입하더라도 이전 대여 기록이나 포인트는 연동되지 않습니다.\n그래도 진행하시겠습니까?",
+        confirmText: "탈퇴",
+        type: "danger",
+        onConfirm: withdraw,
+      }),
+    });
+  };
 
-    const confirm1 = window.confirm("정말로 탈퇴하시겠습니까?\n계정은 비활성화되지만, 동아리 운영을 위해 대여 기록과 기본 정보는 보존됩니다.");
-    if (!confirm1) return;
-
-    const confirm2 = window.confirm("마지막 확인입니다.\n재가입하더라도 이전 대여 기록이나 포인트는 연동되지 않습니다.\n그래도 진행하시겠습니까?");
-    if (!confirm2) return;
-
+  const withdraw = async () => {
     try {
       const result = await withdrawAccount(user.id);
       if (result.success) {
@@ -193,10 +210,20 @@ const MyPage = () => {
 
   // [NEW] 찜 취소 처리. 중복 클릭 방지를 위해 처리 중인 gameId set 유지
   const [cancelingIds, setCancelingIds] = useState(() => new Set());
-  const handleCancelDibs = async (gameId, gameName) => {
+  const handleCancelDibs = (gameId, gameName) => {
     if (cancelingIds.has(gameId)) return;
-    if (!window.confirm(`'${gameName}' 찜을 취소하시겠습니까?`)) return;
+    setConfirmState({
+      title: "찜 취소",
+      message: `'${gameName}' 찜을 취소하시겠습니까?`,
+      confirmText: "찜 취소",
+      cancelText: "유지",
+      type: "warning",
+      onConfirm: () => cancelDibs(gameId),
+    });
+  };
 
+  const cancelDibs = async (gameId) => {
+    if (cancelingIds.has(gameId)) return;
     setCancelingIds(prev => {
       const next = new Set(prev);
       next.add(gameId);
@@ -553,6 +580,17 @@ const MyPage = () => {
           </div>
         )
       }
+
+      <ConfirmModal
+        isOpen={!!confirmState}
+        onClose={() => closeConfirm(confirmState)}
+        onConfirm={() => confirmState?.onConfirm()}
+        title={confirmState?.title}
+        message={confirmState?.message || ""}
+        confirmText={confirmState?.confirmText}
+        cancelText={confirmState?.cancelText}
+        type={confirmState?.type}
+      />
     </div >
   );
 };
@@ -580,18 +618,8 @@ const getDDayString = (dueDateString, type = 'RENT') => {
     return `${diffMinutes}분 남음`;
   }
 
-  // [RENT] 일 단위 D-Day
-  // 날짜 차이 계산 (시간 무시, 날짜만 비교)
-  const todayZero = new Date(now); todayZero.setHours(0, 0, 0, 0);
-  const dueZero = new Date(due); dueZero.setHours(0, 0, 0, 0);
-
-  // (대여 기한은 '내일 23:59:59' 이므로, 날짜 차이만 보면 됨)
-  const dayDiffTime = dueZero - todayZero;
-  const diffDays = Math.ceil(dayDiffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 0) return `연체 ${Math.abs(diffDays)}일`;
-  if (diffDays === 0) return "오늘 반납";
-  return `반납까지 D-${diffDays}`;
+  // [RENT] 일 단위 D-Day — KST 달력 기준 (키오스크 마감 00:00 = 전날 밤 12시)
+  return rentalDDayLabel(dueDateString, now);
 };
 
 const formatDate = (dateString) => {
@@ -614,6 +642,7 @@ import { DEFAULT_SEMESTER } from '../constants'; // [NEW]
 const SemesterItem = ({ semester, isFixed, onUpdate }) => {
   const [editing, setEditing] = useState(false);
   const [tempSemester, setTempSemester] = useState(semester || DEFAULT_SEMESTER);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -622,8 +651,6 @@ const SemesterItem = ({ semester, isFixed, onUpdate }) => {
 
   const handleSave = async () => {
     try {
-      if (!window.confirm(`${tempSemester}학기로 확정하시겠습니까?\n저장 후에는 수정할 수 없습니다.`)) return;
-
       await updateMySemester(tempSemester);
       showToast("가입 학기가 저장되었습니다.", { type: "success" });
       setEditing(false);
@@ -659,9 +686,18 @@ const SemesterItem = ({ semester, isFixed, onUpdate }) => {
             placeholder="예: 2025-1"
             style={{ padding: '5px', width: '80px', border: '1px solid #ddd', borderRadius: '4px' }}
           />
-          <button onClick={handleSave} style={{ ...styles.miniBtn, background: '#2ecc71' }}>저장</button>
+          <button onClick={() => setConfirmOpen(true)} style={{ ...styles.miniBtn, background: '#2ecc71' }}>저장</button>
           <button onClick={() => setEditing(false)} style={{ ...styles.miniBtn, background: '#95a5a6' }}>취소</button>
         </div>
+        <ConfirmModal
+          isOpen={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={handleSave}
+          title="가입 학기 확정"
+          message={`${tempSemester}학기로 확정하시겠습니까?\n저장 후에는 수정할 수 없습니다.`}
+          confirmText="확정"
+          type="warning"
+        />
       </div>
     );
   }

@@ -2,6 +2,7 @@
 // Custom Hook: 게임 필터링 로직 통합 (App.js, DashboardTab.js 중복 제거)
 
 import { useMemo } from 'react';
+import { rentalDueDays } from '../lib/rentalDue';
 
 // Canonical URL/select values, including links saved before player filters were standardized.
 export const normalizePlayerFilter = (value = 'all') => {
@@ -127,12 +128,13 @@ export const useGameFilter = (games, filters) => {
             // 상태 필터 (대여 가능만)
             if (onlyAvailable && game.status !== "대여가능") return false;
 
-            // [Admin 전용] 연체 필터: dueDate가 지났고 대여 중인 상태만
+            // [Admin 전용] 연체 필터: 마감 시각이 지났고 대여 중인 상태만.
+            // 판정은 화면의 「연체 N일」 표시와 같은 rentalDue 한 곳 (날짜를 못 읽으면 연체로 치지 않는다)
             if (onlyOverdue) {
                 if (!game.dueDate) return false;
                 const isRentedOut = game.adminStatus === '대여중' || game.adminStatus === '일부대여중';
                 if (!isRentedOut) return false;
-                if (new Date(game.dueDate).getTime() >= Date.now()) return false;
+                if (!rentalDueDays(game.dueDate)?.overdue) return false;
             }
 
             // 난이도 필터
