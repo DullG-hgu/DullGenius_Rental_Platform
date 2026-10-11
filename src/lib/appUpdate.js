@@ -9,7 +9,8 @@
 //   2) 받을 게 없거나(이미 받아 둠·확인 실패) 기다려도 안 넘어오면 바로
 //      서비스워커 등록 해제 + Cache Storage 전부 삭제 후 새로고침.
 //   (2026-10-08: 예전에는 무조건 15초를 기다려 「업데이트 중」이 한참 멈춰 보였다)
-// 사람이 누른 갱신은 기대 빌드를 sessionStorage 에 적어 두고, 새로고침 뒤 checkUpdateResult() 로 성공 여부를 알린다.
+// 사람이 누른 갱신은 누르기 전 빌드를 sessionStorage 에 적어 두고, 새로고침 뒤 checkUpdateResult() 로 성공 여부를 알린다.
+// (기대 빌드와 비교하면 버튼이 떠 있는 사이 배포가 한 번 더 있을 때 더 새것을 받고도 「옛 버전」이라 알린다)
 //
 // 배포 직후 잠깐 version.json 은 새것인데 CDN 이 옛 번들을 주는 구간이 있다. 그때 2)를 반복하면
 // 무한 새로고침이 되므로, 같은 빌드에 대한 시도는 localStorage 기록으로 10분에 한 번만 한다.
@@ -26,6 +27,8 @@ export const formatVersion = (v = APP_VERSION) => `v${v.version} · ${v.commit}`
 export const UPDATE_ATTEMPT_KEY = 'app_update_attempt';
 export const RETRY_GUARD_MS = 10 * 60 * 1000;
 const SW_UPDATE_WAIT_MS = 8000;
+export const UPDATE_FROM_KEY = 'app_update_from';
+// 1.1.7 이하가 누른 갱신이 남기는 기록(기대 빌드). 그 빌드들이 사라질 때까지 결과 안내용으로만 읽는다
 export const UPDATE_EXPECT_KEY = 'app_update_expect';
 
 /** 서버의 최신 빌드 정보. 실패하면 null (네트워크 오류는 업데이트 사유가 아니다). */
@@ -44,13 +47,20 @@ export const isOutdated = (current, latest) =>
     !!latest && current.build !== 'dev' && latest.build !== current.build;
 
 /**
- * 주·부 버전이 바뀐 "중대한" 업데이트인지. 패치(평소 배포)는 아니다.
+ * 주·부 버전이 올라간 "중대한" 업데이트인지. 패치(평소 배포)는 아니다.
  * 홈의 「업데이트」 버튼은 이때만 뜬다. 평소 배포는 다음에 앱을 열 때 서비스워커가 조용히 바꾼다.
+ * 낮아진 경우(Netlify 에서 이전 배포로 되돌림)는 업데이트로 권하지 않는다.
  */
 export const isMajorUpdate = (current, latest) => {
-    const majorMinor = (v) => (typeof v === 'string' ? v.split('.').slice(0, 2).join('.') : null);
-    const latestMM = majorMinor(latest?.version);
-    return isOutdated(current, latest) && !!latestMM && latestMM !== majorMinor(current.version);
+    const majorMinor = (v) => {
+        const m = typeof v === 'string' ? /^(\d+)\.(\d+)/.exec(v) : null;
+        return m ? [Number(m[1]), Number(m[2])] : null;
+    };
+    const next = majorMinor(latest?.version);
+    if (!isOutdated(current, latest) || !next) return false;
+    const cur = majorMinor(current.version);
+    if (!cur) return true; // 내 번호를 모르면 예전처럼 알린다
+    return next[0] > cur[0] || (next[0] === cur[0] && next[1] > cur[1]);
 };
 
 export const canAttempt = (attempt, latestBuild, now) =>
@@ -94,7 +104,7 @@ const waitForControllerChange = (ms) => new Promise((resolve) => {
  * force: 사람이 직접 누른 경우. 반복 방지 기록 없이 바로 진행한다 (누를 때마다 한 번이라 루프가 없다).
  * @returns {Promise<'skipped'|'sw-updated'|'hard-reloaded'>}
  */
-export const applyUpdate = async (latest, { storage = getStorage(), now = Date.now(), force = false } = {}) => {
+export const applyUpdate = async (latest, { storage = getStorage(), now = Date.now(), force = false, current = APP_VERSION } = {}) => {
     if (!force) {
         if (!storage || !canAttempt(readAttempt(storage), latest.build, now)) return 'skipped';
         try {
@@ -105,7 +115,7 @@ export const applyUpdate = async (latest, { storage = getStorage(), now = Date.n
     }
 
     if (force) {
-        try { sessionStorage.setItem(UPDATE_EXPECT_KEY, latest.build); } catch { /* 결과 안내만 못 할 뿐 */ }
+        try { sessionStorage.setItem(UPDATE_FROM_KEY, current.build); } catch { /* 결과 안내만 못 할 뿐 */ }
     }
 
     const sw = navigator.serviceWorker;
@@ -152,15 +162,19 @@ export const checkForUpdate = ({ now = Date.now(), fetchImpl } = {}) => {
  * 사람이 누른 갱신 뒤 첫 실행에서 한 번: 'ok'(새 빌드로 바뀜) | 'failed'(아직 옛 빌드) | null(누른 적 없음)
  */
 export const checkUpdateResult = (current = APP_VERSION) => {
+    let from = null;
     let expected = null;
     try {
+        from = sessionStorage.getItem(UPDATE_FROM_KEY);
         expected = sessionStorage.getItem(UPDATE_EXPECT_KEY);
-        if (expected) sessionStorage.removeItem(UPDATE_EXPECT_KEY);
+        sessionStorage.removeItem(UPDATE_FROM_KEY);
+        sessionStorage.removeItem(UPDATE_EXPECT_KEY);
     } catch {
         return null;
     }
-    if (!expected) return null;
-    return expected === current.build ? 'ok' : 'failed';
+    if (from) return from !== current.build ? 'ok' : 'failed';
+    if (expected) return expected === current.build ? 'ok' : 'failed';
+    return null;
 };
 
 export const resetUpdateCheckCache = () => {

@@ -4,6 +4,7 @@ import {
     RETRY_GUARD_MS,
     UPDATE_ATTEMPT_KEY,
     UPDATE_EXPECT_KEY,
+    UPDATE_FROM_KEY,
     applyUpdate,
     checkUpdateResult,
     canAttempt,
@@ -42,7 +43,10 @@ describe('isMajorUpdate (홈 버튼 조건)', () => {
     it.each([
         ['1.0.9', false], // 평소 배포 — 패치만
         ['1.1.0', true],
+        ['1.10.0', true], // 문자열이 아니라 숫자로 비교
         ['2.0.0', true],
+        ['0.9.0', false], // 이전 배포로 되돌림 — 다운그레이드는 권하지 않는다
+        ['1.0.0', false],
     ])('%s → %s', (version, expected) => {
         expect(isMajorUpdate(cur, { version, build: 'b2' })).toBe(expected);
     });
@@ -154,10 +158,10 @@ describe('applyUpdate', () => {
     });
 
     it('받을 새 서비스워커가 없으면 기다리지 않고 바로 캐시 삭제 후 새로고침 (예전엔 15초 대기)', async () => {
-        const done = applyUpdate(latest, { storage: localStorage, now: 5, force: true });
+        const done = applyUpdate(latest, { storage: localStorage, now: 5, force: true, current: { build: 'b1' } });
         await expect(done).resolves.toBe('hard-reloaded'); // 가짜 타이머 없이도 끝난다 = 대기 없음
         expect(reload).toHaveBeenCalledTimes(1);
-        expect(sessionStorage.getItem(UPDATE_EXPECT_KEY)).toBe('b2');
+        expect(sessionStorage.getItem(UPDATE_FROM_KEY)).toBe('b1'); // 기대 빌드가 아니라 누르기 전 빌드
         sessionStorage.clear();
     });
 
@@ -206,7 +210,18 @@ describe('checkUpdateResult (누른 뒤 새로고침된 첫 화면)', () => {
     it('누른 적 없으면 null', () => {
         expect(checkUpdateResult({ build: 'b2' })).toBeNull();
     });
-    it('기대 빌드로 바뀌었으면 ok, 아니면 failed — 한 번만 알린다', () => {
+    it('누르기 전 빌드에서 바뀌었으면 ok, 그대로면 failed — 한 번만 알린다', () => {
+        sessionStorage.setItem(UPDATE_FROM_KEY, 'b1');
+        expect(checkUpdateResult({ build: 'b2' })).toBe('ok');
+        expect(checkUpdateResult({ build: 'b2' })).toBeNull();
+        sessionStorage.setItem(UPDATE_FROM_KEY, 'b1');
+        expect(checkUpdateResult({ build: 'b1' })).toBe('failed');
+    });
+    it('버튼이 떠 있는 사이 배포가 또 있어 더 새 빌드를 받아도 ok', () => {
+        sessionStorage.setItem(UPDATE_FROM_KEY, 'b1');
+        expect(checkUpdateResult({ build: 'b3' })).toBe('ok');
+    });
+    it('1.1.7 이하가 남긴 기대 빌드 기록도 읽는다', () => {
         sessionStorage.setItem(UPDATE_EXPECT_KEY, 'b2');
         expect(checkUpdateResult({ build: 'b2' })).toBe('ok');
         expect(checkUpdateResult({ build: 'b2' })).toBeNull();
