@@ -510,3 +510,22 @@
     transform: scale(0.95);
     filter: brightness(0.85);
 }
+
+/* 왼쪽 아래 칸 — 게임 추천(룰렛)과 골라 지우기를 나란히 (2026-10-11) */
+.kiosk-pick-cell {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
+    min-height: 0;
+}
+
+.kiosk-pick-cell .btn-roulette {
+    grid-column: auto;
+    grid-row: auto;
+}
+
+.btn-pick {
+    background: linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%);
+}

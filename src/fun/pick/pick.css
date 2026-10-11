@@ -1,0 +1,244 @@
+/* 놀이터 「골라 지우기」 (/play/pick, 2026-10-12) — 폰 우선, fun.css 보라 톤 */
+
+.pk-title-mode {
+    color: #666;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.pk-choose-label {
+    margin: 0 0 10px;
+    font-size: 1rem;
+}
+
+.pk-choose-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.pk-choose-btn {
+    min-height: 72px;
+    border-radius: 14px;
+    border: 1px solid rgba(106, 17, 203, 0.25);
+    background: #fff;
+    color: #1f1535;
+    font-size: 1.25rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.pk-choose-btn:active {
+    background: #f1ecfd;
+}
+
+.pk-choose-split {
+    background: #6a11cb;
+    border-color: #6a11cb;
+    color: #fff;
+}
+
+.pk-choose-split span {
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.pk-choose-split:active {
+    background: #5a0fb0;
+}
+
+.pk-note {
+    margin: 0 0 12px;
+    color: #555;
+    font-size: 0.92rem;
+    text-align: center;
+}
+
+/* 카드: 폰 2열×4줄, 넓으면 4열 */
+.pk-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+@media (min-width: 640px) {
+    .pk-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.pk-card {
+    position: relative;
+    background: #fff;
+    border: 1px solid #ece9f3;
+    border-radius: 14px;
+    padding: 0 0 10px;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 196px;
+}
+
+.pk-card.is-gone {
+    opacity: 0.55;
+}
+
+/* 지운 자리는 비워 두어 나머지 카드가 밀려 오지 않게 (연속 탭 실수 방지) */
+.pk-card-removed {
+    background: transparent;
+    border: 2px dashed #e0dcea;
+}
+
+.pk-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(31, 21, 53, 0.72);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.pk-remove:active {
+    background: #c0392b;
+}
+
+.pk-gone {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 1;
+    background: #c0392b;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.pk-img {
+    height: 104px;
+    background: #f6f4fb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b9b3c9;
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.pk-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.pk-name {
+    padding: 8px 10px 4px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    line-height: 1.3;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+
+.pk-meta {
+    padding: 0 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.pk-best {
+    color: #6a11cb;
+    font-weight: 700;
+}
+
+.pk-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.pk-actions .fun-secondary-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* 결정 */
+.pk-results {
+    display: grid;
+    gap: 12px;
+}
+
+.pk-results.is-split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pk-result {
+    background: #fff;
+    border: 2px solid #6a11cb;
+    border-radius: 16px;
+    padding: 14px;
+    text-align: center;
+    min-width: 0;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.pk-result-label {
+    color: #6a11cb;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.pk-result img {
+    width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+    margin-bottom: 8px;
+}
+
+.pk-result-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    margin-bottom: 6px;
+}
+
+.pk-result .pk-meta {
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.pk-gone-note {
+    color: #c0392b;
+    font-size: 0.85rem;
+    margin: 0 0 8px;
+}
+
+.pk-result-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    width: 100%;
+    box-sizing: border-box;
+}

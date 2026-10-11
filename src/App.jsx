@@ -38,6 +38,7 @@ const QuizIntro = lazy(() => import('./fun/quiz/QuizIntro'));
 const QuizPlay = lazy(() => import('./fun/quiz/QuizPlay'));
 const QuizResult = lazy(() => import('./fun/quiz/QuizResult'));
 const TierMine = lazy(() => import('./fun/tier/TierMine'));
+const PickPlay = lazy(() => import('./fun/pick/PickPlay'));
 const TierCommunity = lazy(() => import('./fun/tier/TierCommunity'));
 const TierPublic = lazy(() => import('./fun/tier/TierPublic'));
 
@@ -95,6 +96,7 @@ function App() {
                   <Route path="/play/quiz" element={<QuizIntro />} />
                   <Route path="/play/quiz/play" element={<QuizPlay />} />
                   <Route path="/play/quiz/r/:id" element={<QuizResult />} />
+                  <Route path="/play/pick" element={<PickPlay />} />
                   <Route path="/play/tier/murder" element={<TierMine />} />
                   <Route path="/play/tier/murder/community" element={<TierCommunity />} />
                   <Route path="/play/tier/murder/u/:userId" element={<TierPublic />} />

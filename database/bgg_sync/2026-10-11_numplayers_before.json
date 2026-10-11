@@ -1,0 +1,3267 @@
+[
+ {
+  "id": 1,
+  "name": "1%의 기적",
+  "bgg_id": "378040",
+  "difficulty": 1.5,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 10,
+  "max_playtime": 30,
+  "playingtime": "10~30분",
+  "genres": [
+   "카드",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 2,
+  "name": "12칩 트릭",
+  "bgg_id": "358669",
+  "difficulty": 1.63,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "트릭테이킹"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 4,
+  "name": "갬블러 X 갬블!",
+  "bgg_id": "197071",
+  "difficulty": 1.33,
+  "min_players": 3,
+  "max_players": 4,
+  "min_playtime": 15,
+  "max_playtime": 30,
+  "playingtime": "15~30분",
+  "genres": [
+   "블러핑",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 5,
+  "name": "갱 오브 다이스",
+  "bgg_id": "366129",
+  "difficulty": 1.16,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "주사위",
+   "배팅"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 6,
+  "name": "갱스터스 딜레마",
+  "bgg_id": "294231",
+  "difficulty": 1.83,
+  "min_players": 3,
+  "max_players": 7,
+  "min_playtime": 30,
+  "max_playtime": 45,
+  "playingtime": "30~45분",
+  "genres": [
+   "블러핑",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 7,
+  "name": "구두룡 저택의 살인",
+  "bgg_id": "336495",
+  "difficulty": 2,
+  "min_players": 7,
+  "max_players": 9,
+  "min_playtime": 120,
+  "max_playtime": 180,
+  "playingtime": "120~180분",
+  "genres": [
+   "머더미스터리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 8,
+  "name": "그러는 너는 어떤데?",
+  "bgg_id": "375146",
+  "difficulty": 1.7,
+  "min_players": 3,
+  "max_players": 6,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "파티",
+   "대화"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 11,
+  "name": "글룸헤이븐",
+  "bgg_id": "174430",
+  "difficulty": 3.92,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 120,
+  "playingtime": "60~120분",
+  "genres": [
+   "전략",
+   "던전크롤러"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 12,
+  "name": "꼬치의 달인",
+  "bgg_id": "264797",
+  "difficulty": 1.17,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "Action / Dexterity",
+   "Real-time"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 14,
+  "name": "노 터치 크라켄",
+  "bgg_id": "253786",
+  "difficulty": 1.32,
+  "min_players": 4,
+  "max_players": 8,
+  "min_playtime": 1,
+  "max_playtime": 30,
+  "playingtime": "0~30분",
+  "genres": [
+   "마피아",
+   "블러핑"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 15,
+  "name": "노닥노닥 TRPG",
+  "bgg_id": "267744",
+  "difficulty": 1,
+  "min_players": 3,
+  "max_players": 5,
+  "min_playtime": 30,
+  "max_playtime": 60,
+  "playingtime": "30~60분",
+  "genres": [
+   "TRPG",
+   "입문용"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 16,
+  "name": "노땡스",
+  "bgg_id": "12942",
+  "difficulty": 1.13,
+  "min_players": 3,
+  "max_players": 7,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "Card Game"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 17,
+  "name": "노팅엄의 지방관",
+  "bgg_id": "298638",
+  "difficulty": 1.71,
+  "min_players": 3,
+  "max_players": 6,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "블러핑",
+   "협상"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 18,
+  "name": "늑대인간 마을의 축제",
+  "bgg_id": "393283",
+  "difficulty": 2.5,
+  "min_players": 7,
+  "max_players": 8,
+  "min_playtime": 120,
+  "max_playtime": 120,
+  "playingtime": "120분",
+  "genres": [
+   "머더미스터리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 19,
+  "name": "다빈치 코드",
+  "bgg_id": "8946",
+  "difficulty": 1.48,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "Deduction"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 22,
+  "name": "달무티",
+  "bgg_id": "929",
+  "difficulty": 1.28,
+  "min_players": 4,
+  "max_players": 8,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "파티",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 23,
+  "name": "당신은 사건현장에 있습니다 2",
+  "bgg_id": "423717",
+  "difficulty": 1,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 60,
+  "playingtime": "30~60분",
+  "genres": [
+   "TRPG",
+   "추리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 24,
+  "name": "더 게임",
+  "bgg_id": "173090",
+  "difficulty": 1.24,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "협력",
+   "숫자"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 25,
+  "name": "더 지니어스 : 호러 레이스",
+  "bgg_id": "180870",
+  "difficulty": 1,
+  "min_players": 3,
+  "max_players": 12,
+  "min_playtime": 20,
+  "max_playtime": 30,
+  "playingtime": "20~30분",
+  "genres": [
+   "Bluffing",
+   "Horror",
+   "Racing"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 27,
+  "name": "도적단의 월급날",
+  "bgg_id": "391761",
+  "difficulty": 1.5,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 15,
+  "max_playtime": 30,
+  "playingtime": "15~30분",
+  "genres": [
+   "Animals",
+   "Deduction"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 29,
+  "name": "두부 왕국",
+  "bgg_id": "186475",
+  "difficulty": 1.58,
+  "min_players": 3,
+  "max_players": 8,
+  "min_playtime": 10,
+  "max_playtime": 30,
+  "playingtime": "10~30분",
+  "genres": [
+   "블러핑",
+   "추리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 30,
+  "name": "디크립토",
+  "bgg_id": "225694",
+  "difficulty": 1.82,
+  "min_players": 3,
+  "max_players": 8,
+  "min_playtime": 15,
+  "max_playtime": 45,
+  "playingtime": "15~45분",
+  "genres": [
+   "추리",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 31,
+  "name": "라멘! 라멘!",
+  "bgg_id": "314971",
+  "difficulty": 1.46,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "셋컬렉션",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 32,
+  "name": "라스베가스",
+  "bgg_id": "117959",
+  "difficulty": 1.17,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "주사위",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 33,
+  "name": "러브레터",
+  "bgg_id": "129622",
+  "difficulty": 1.18,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "블러핑",
+   "추리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 34,
+  "name": "레디 셋 벳",
+  "bgg_id": "351040",
+  "difficulty": 1.35,
+  "min_players": 2,
+  "max_players": 9,
+  "min_playtime": 45,
+  "max_playtime": 60,
+  "playingtime": "45~60분",
+  "genres": [
+   "레이싱",
+   "실시간"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 35,
+  "name": "레지스탕스 아발론",
+  "bgg_id": "128882",
+  "difficulty": 1.74,
+  "min_players": 5,
+  "max_players": 10,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "블러핑",
+   "마피아"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 37,
+  "name": "렉시오",
+  "bgg_id": "19184",
+  "difficulty": 1.92,
+  "min_players": 3,
+  "max_players": 5,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "클라이밍",
+   "타일"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 38,
+  "name": "로보 77",
+  "bgg_id": "3337",
+  "difficulty": 1.05,
+  "min_players": 2,
+  "max_players": 8,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "연산",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 39,
+  "name": "로빈 후드의 모험",
+  "bgg_id": "326494",
+  "difficulty": 1.83,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "협력",
+   "어드벤처"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 40,
+  "name": "로스트 시티",
+  "bgg_id": "50",
+  "difficulty": 1.48,
+  "min_players": 2,
+  "max_players": 2,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "전략",
+   "2인용"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 41,
+  "name": "로오-딩",
+  "bgg_id": "329293",
+  "difficulty": 1.2,
+  "min_players": 2,
+  "max_players": 7,
+  "min_playtime": 5,
+  "max_playtime": 5,
+  "playingtime": "5분",
+  "genres": [
+   "실시간",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 42,
+  "name": "롱 샷",
+  "bgg_id": "295374",
+  "difficulty": 1.96,
+  "min_players": 1,
+  "max_players": 8,
+  "min_playtime": 25,
+  "max_playtime": 25,
+  "playingtime": "25분",
+  "genres": [
+   "레이싱",
+   "주사위"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 43,
+  "name": "루미큐브",
+  "bgg_id": "811",
+  "difficulty": 1.71,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "추리",
+   "숫자"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 44,
+  "name": "루트",
+  "bgg_id": "237182",
+  "difficulty": 3.84,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 90,
+  "playingtime": "60~90분",
+  "genres": [
+   "전략",
+   "비대칭"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 45,
+  "name": "루트 확장판 : 리버포크",
+  "bgg_id": "241386",
+  "difficulty": 3.86,
+  "min_players": 1,
+  "max_players": 6,
+  "min_playtime": 60,
+  "max_playtime": 90,
+  "playingtime": "60~90분",
+  "genres": [
+   "전략",
+   "확장"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 49,
+  "name": "머핀타임",
+  "bgg_id": "286735",
+  "difficulty": 1.03,
+  "min_players": 2,
+  "max_players": 8,
+  "min_playtime": 20,
+  "max_playtime": 40,
+  "playingtime": "20~40분",
+  "genres": [
+   "파티",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 50,
+  "name": "먼치킨",
+  "bgg_id": "1927",
+  "difficulty": 1.82,
+  "min_players": 3,
+  "max_players": 6,
+  "min_playtime": 60,
+  "max_playtime": 120,
+  "playingtime": "60~120분",
+  "genres": [
+   "파티",
+   "판타지"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 51,
+  "name": "몇 번이고 푸른 달에 불을 붙였다",
+  "bgg_id": "393282",
+  "difficulty": 2.5,
+  "min_players": 6,
+  "max_players": 7,
+  "min_playtime": 150,
+  "max_playtime": 150,
+  "playingtime": "150분",
+  "genres": [
+   "머더미스터리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 53,
+  "name": "문스톤 저택 살인 사건",
+  "bgg_id": "415627",
+  "difficulty": 2.5,
+  "min_players": 4,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": 90,
+  "playingtime": "90분",
+  "genres": [
+   "머더미스터리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 54,
+  "name": "미스터리 포켓 : 막이 내리다",
+  "bgg_id": "366466",
+  "difficulty": 1.2,
+  "min_players": 1,
+  "max_players": 6,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "머더미스터리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 55,
+  "name": "미크로 마크로 : 크라임시티",
+  "bgg_id": "318977",
+  "difficulty": 1.11,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 15,
+  "max_playtime": 45,
+  "playingtime": "15~45분",
+  "genres": [
+   "추리",
+   "퍼즐"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 56,
+  "name": "바보타임",
+  "bgg_id": "291008",
+  "difficulty": 1.25,
+  "min_players": 3,
+  "max_players": 8,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "파티",
+   "퀴즈"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 58,
+  "name": "바퀴벌레 포커 로얄",
+  "bgg_id": "129736",
+  "difficulty": 1.14,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 15,
+  "max_playtime": 25,
+  "playingtime": "15~25분",
+  "genres": [
+   "블러핑",
+   "심리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 60,
+  "name": "뱅!",
+  "bgg_id": "3955",
+  "difficulty": 1.63,
+  "min_players": 4,
+  "max_players": 7,
+  "min_playtime": 20,
+  "max_playtime": 40,
+  "playingtime": "20~40분",
+  "genres": [
+   "마피아",
+   "총싸움"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 61,
+  "name": "뱅 확장판 모음",
+  "bgg_id": "183275",
+  "difficulty": 1.6,
+  "min_players": 4,
+  "max_players": 7,
+  "min_playtime": 20,
+  "max_playtime": 40,
+  "playingtime": "20~40분",
+  "genres": [
+   "마피아",
+   "확장"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 63,
+  "name": "별의 소원",
+  "bgg_id": "424567",
+  "difficulty": 2.29,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 25,
+  "max_playtime": 25,
+  "playingtime": "25분",
+  "genres": [
+   "전략",
+   "셋컬렉션"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 64,
+  "name": "보난자",
+  "bgg_id": "11",
+  "difficulty": 1.67,
+  "min_players": 3,
+  "max_players": 7,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "협상",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 66,
+  "name": "브레인 스톰",
+  "bgg_id": "206082",
+  "difficulty": null,
+  "min_players": 2,
+  "max_players": 10,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "창의력",
+   "연상"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 69,
+  "name": "블랙 스토리즈 : 운수 나쁜 날",
+  "bgg_id": "147681",
+  "difficulty": null,
+  "min_players": 2,
+  "max_players": 15,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "추리",
+   "퀴즈"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 70,
+  "name": "블랙 스토리즈 : 황당한 죽음",
+  "bgg_id": "96345",
+  "difficulty": 1,
+  "min_players": 2,
+  "max_players": 15,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "추리",
+   "퀴즈"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 71,
+  "name": "블리츠!",
+  "bgg_id": "67877",
+  "difficulty": 1.05,
+  "min_players": 3,
+  "max_players": 6,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "순발력",
+   "단어"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 72,
+  "name": "사건의 재구성",
+  "bgg_id": "239188",
+  "difficulty": 2.06,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 90,
+  "playingtime": "60~90분",
+  "genres": [
+   "추리",
+   "앱연동"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 73,
+  "name": "사무라이 소드",
+  "bgg_id": "128667",
+  "difficulty": 1.76,
+  "min_players": 3,
+  "max_players": 7,
+  "min_playtime": 20,
+  "max_playtime": 40,
+  "playingtime": "20~40분",
+  "genres": [
+   "마피아",
+   "검술"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 74,
+  "name": "사보타지",
+  "bgg_id": "9220",
+  "difficulty": 1.32,
+  "min_players": 3,
+  "max_players": 10,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "블러핑",
+   "타일"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 75,
+  "name": "사이쓰 Scythe",
+  "bgg_id": "169786",
+  "difficulty": 3.45,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 115,
+  "max_playtime": 115,
+  "playingtime": "115분",
+  "genres": [
+   "전략",
+   "영토빌딩"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 76,
+  "name": "섀도우 레이더스",
+  "bgg_id": "288098",
+  "difficulty": 1.67,
+  "min_players": 4,
+  "max_players": 8,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "정체은닉",
+   "전투"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 77,
+  "name": "서스펙트 게임",
+  "bgg_id": "346623",
+  "difficulty": 2.5,
+  "min_players": 4,
+  "max_players": 4,
+  "min_playtime": 120,
+  "max_playtime": 480,
+  "playingtime": "120~480분",
+  "genres": [
+   "추리",
+   "시나리오"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 79,
+  "name": "세 자매",
+  "bgg_id": "291845",
+  "difficulty": 2.63,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 60,
+  "playingtime": "30~60분",
+  "genres": [
+   "전략",
+   "롤앤라이트"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 80,
+  "name": "세븐 원더스 : 듀얼",
+  "bgg_id": "173346",
+  "difficulty": 2.23,
+  "min_players": 2,
+  "max_players": 2,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "전략",
+   "문명"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 81,
+  "name": "세트",
+  "bgg_id": "1198",
+  "difficulty": 1.65,
+  "min_players": 1,
+  "max_players": 20,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "패턴인지",
+   "퍼즐"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 82,
+  "name": "셀레스티아",
+  "bgg_id": "175117",
+  "difficulty": 1.32,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "파티",
+   "운"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 84,
+  "name": "스몰 월드 오브 워크래프트",
+  "bgg_id": "309630",
+  "difficulty": 2.68,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 40,
+  "max_playtime": 80,
+  "playingtime": "40~80분",
+  "genres": [
+   "영토점령",
+   "전략"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 86,
+  "name": "스파이시",
+  "bgg_id": "299169",
+  "difficulty": 1.29,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 15,
+  "max_playtime": 20,
+  "playingtime": "15~20분",
+  "genres": [
+   "블러핑",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 87,
+  "name": "스플렌더",
+  "bgg_id": "148228",
+  "difficulty": 1.77,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "전략",
+   "자원관리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 89,
+  "name": "시체와 온천",
+  "bgg_id": "370748",
+  "difficulty": 2.5,
+  "min_players": 4,
+  "max_players": 5,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "머더미스터리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 90,
+  "name": "시크릿 히틀러",
+  "bgg_id": "188834",
+  "difficulty": 1.73,
+  "min_players": 5,
+  "max_players": 10,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "마피아",
+   "정치"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 91,
+  "name": "시타델",
+  "bgg_id": "478",
+  "difficulty": 2.05,
+  "min_players": 2,
+  "max_players": 8,
+  "min_playtime": 20,
+  "max_playtime": 60,
+  "playingtime": "20~60분",
+  "genres": [
+   "블러핑",
+   "도시건설"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 93,
+  "name": "아임 더 보스!",
+  "bgg_id": "115",
+  "difficulty": 1.97,
+  "min_players": 3,
+  "max_players": 6,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "협상",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 94,
+  "name": "아컴 미스터리 : 광기로 물든 사건집",
+  "bgg_id": "126100",
+  "difficulty": 2.13,
+  "min_players": 1,
+  "max_players": 10,
+  "min_playtime": 60,
+  "max_playtime": 120,
+  "playingtime": "60~120분",
+  "genres": [
+   "추리",
+   "호러"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 95,
+  "name": "아컴 호러",
+  "bgg_id": "15987",
+  "difficulty": 3.59,
+  "min_players": 1,
+  "max_players": 8,
+  "min_playtime": 120,
+  "max_playtime": 240,
+  "playingtime": "120~240분",
+  "genres": [
+   "협력",
+   "테마전투"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 96,
+  "name": "아컴 호러 카드게임",
+  "bgg_id": "205637",
+  "difficulty": 3.57,
+  "min_players": 1,
+  "max_players": 2,
+  "min_playtime": 60,
+  "max_playtime": 120,
+  "playingtime": "60~120분",
+  "genres": [
+   "협력",
+   "덱빌딩"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 99,
+  "name": "언락 1",
+  "bgg_id": "213460",
+  "difficulty": 2.13,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 45,
+  "max_playtime": 75,
+  "playingtime": "45~75분",
+  "genres": [
+   "방탈출",
+   "추리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 100,
+  "name": "언락 6",
+  "bgg_id": "279613",
+  "difficulty": 2.07,
+  "min_players": 1,
+  "max_players": 6,
+  "min_playtime": 60,
+  "max_playtime": 90,
+  "playingtime": "60~90분",
+  "genres": [
+   "방탈출",
+   "추리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 101,
+  "name": "에버델",
+  "bgg_id": "199792",
+  "difficulty": 2.83,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 40,
+  "max_playtime": 80,
+  "playingtime": "40~80분",
+  "genres": [
+   "전략",
+   "일꾼배치"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 103,
+  "name": "엘 그란데 빅 박스",
+  "bgg_id": "171908",
+  "difficulty": 2.8,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 90,
+  "max_playtime": 90,
+  "playingtime": "90분",
+  "genres": [
+   "전략",
+   "영향력"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 104,
+  "name": "옛날 옛적에",
+  "bgg_id": "1234",
+  "difficulty": 1.37,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "스토리텔링",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 105,
+  "name": "오토배틀 챌린저스!",
+  "bgg_id": "359970",
+  "difficulty": 1.78,
+  "min_players": 1,
+  "max_players": 8,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "덱빌딩",
+   "오토배틀"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 106,
+  "name": "왕좌의 게임 보드게임",
+  "bgg_id": "103343",
+  "difficulty": 3.74,
+  "min_players": 3,
+  "max_players": 6,
+  "min_playtime": 120,
+  "max_playtime": 240,
+  "playingtime": "120~240분",
+  "genres": [
+   "전략",
+   "외교"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 107,
+  "name": "요트다이스",
+  "bgg_id": "2243",
+  "difficulty": 1.17,
+  "min_players": 2,
+  "max_players": 10,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "주사위",
+   "확률"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 109,
+  "name": "워드 캡처: 티키타카",
+  "bgg_id": "322204",
+  "difficulty": 1.13,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 10,
+  "max_playtime": 15,
+  "playingtime": "10~15분",
+  "genres": [
+   "단어",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 110,
+  "name": "월드 오브 워크래프트 : 리치 왕의 분노 - 팬데믹 보드게임",
+  "bgg_id": "342848",
+  "difficulty": 2.29,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 45,
+  "max_playtime": 60,
+  "playingtime": "45~60분",
+  "genres": [
+   "협력",
+   "테마전투"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 111,
+  "name": "월면탐험",
+  "bgg_id": "330403",
+  "difficulty": 2.24,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 40,
+  "max_playtime": 40,
+  "playingtime": "40분",
+  "genres": [
+   "협력",
+   "자원관리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 112,
+  "name": "웬디, 어른이 되렴",
+  "bgg_id": "370749",
+  "difficulty": 2.5,
+  "min_players": 4,
+  "max_players": 5,
+  "min_playtime": 120,
+  "max_playtime": 120,
+  "playingtime": "120분",
+  "genres": [
+   "머더미스터리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 113,
+  "name": "위쳐 올드 월드",
+  "bgg_id": "331106",
+  "difficulty": 2.88,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 90,
+  "max_playtime": 150,
+  "playingtime": "90~150분",
+  "genres": [
+   "전략",
+   "어드벤처"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 116,
+  "name": "이스케이프 룸",
+  "bgg_id": "204836",
+  "difficulty": 2.25,
+  "min_players": 3,
+  "max_players": 5,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "방탈출",
+   "퍼즐"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 117,
+  "name": "익스플로딩 키튼",
+  "bgg_id": "172225",
+  "difficulty": 1.08,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "운",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 119,
+  "name": "인사이더",
+  "bgg_id": "206051",
+  "difficulty": 1.11,
+  "min_players": 4,
+  "max_players": 8,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "추리",
+   "정체은닉"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 122,
+  "name": "인코그니토",
+  "bgg_id": "466",
+  "difficulty": 2.16,
+  "min_players": 3,
+  "max_players": 5,
+  "min_playtime": 90,
+  "max_playtime": 90,
+  "playingtime": "90분",
+  "genres": [
+   "추리",
+   "팀전"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 123,
+  "name": "자두야 종치기하자",
+  "bgg_id": "2944",
+  "difficulty": 1.01,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 10,
+  "max_playtime": 10,
+  "playingtime": "10분",
+  "genres": [
+   "순발력",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 124,
+  "name": "정령섬",
+  "bgg_id": "162886",
+  "difficulty": 4.08,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": 120,
+  "playingtime": "90~120분",
+  "genres": [
+   "협력",
+   "전략"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 125,
+  "name": "정령섬 : 가지와 발톱",
+  "bgg_id": "193065",
+  "difficulty": 4.24,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": 120,
+  "playingtime": "90~120분",
+  "genres": [
+   "협력",
+   "확장"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 126,
+  "name": "젝스 님트!",
+  "bgg_id": "432",
+  "difficulty": 1.19,
+  "min_players": 2,
+  "max_players": 10,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "운",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 127,
+  "name": "지도 제작자들",
+  "bgg_id": "263918",
+  "difficulty": 1.89,
+  "min_players": 1,
+  "max_players": 100,
+  "min_playtime": 30,
+  "max_playtime": 45,
+  "playingtime": "30~45분",
+  "genres": [
+   "그리기",
+   "전략"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 130,
+  "name": "체스",
+  "bgg_id": "171",
+  "difficulty": 3.64,
+  "min_players": 2,
+  "max_players": 2,
+  "min_playtime": 0,
+  "max_playtime": 0,
+  "playingtime": "45분",
+  "genres": [
+   "추상전략",
+   "보드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 131,
+  "name": "최종변론",
+  "bgg_id": "267401",
+  "difficulty": 2.65,
+  "min_players": 1,
+  "max_players": 2,
+  "min_playtime": 60,
+  "max_playtime": 75,
+  "playingtime": "60~75분",
+  "genres": [
+   "말싸움",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 133,
+  "name": "카나리아는 지저귀지 않는다",
+  "bgg_id": "415623",
+  "difficulty": 2.5,
+  "min_players": 4,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": 90,
+  "playingtime": "90분",
+  "genres": [
+   "머더미스터리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 135,
+  "name": "카르카손",
+  "bgg_id": "822",
+  "difficulty": 1.88,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 30,
+  "max_playtime": 45,
+  "playingtime": "30~45분",
+  "genres": [
+   "타일놓기",
+   "전략"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 136,
+  "name": "카르타벤추라 : 라싸",
+  "bgg_id": "327076",
+  "difficulty": 1.12,
+  "min_players": 1,
+  "max_players": 6,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "어드벤처",
+   "역사"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 137,
+  "name": "카르타벤추라 : 빈란드",
+  "bgg_id": "327077",
+  "difficulty": 1.14,
+  "min_players": 1,
+  "max_players": 6,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "어드벤처",
+   "역사"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 138,
+  "name": "카르타벤추라 : 오클라호마",
+  "bgg_id": "344405",
+  "difficulty": 1.1,
+  "min_players": 1,
+  "max_players": 6,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "어드벤처",
+   "서부"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 139,
+  "name": "카리바",
+  "bgg_id": "84732",
+  "difficulty": 1.06,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "전략",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 140,
+  "name": "카멜 업",
+  "bgg_id": "153938",
+  "difficulty": 1.5,
+  "min_players": 2,
+  "max_players": 8,
+  "min_playtime": 20,
+  "max_playtime": 30,
+  "playingtime": "20~30분",
+  "genres": [
+   "레이싱",
+   "주사위"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 141,
+  "name": "카탄",
+  "bgg_id": "13",
+  "difficulty": 2.28,
+  "min_players": 3,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 120,
+  "playingtime": "60~120분",
+  "genres": [
+   "전략",
+   "협상"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 142,
+  "name": "카탄 확장판 : 항해사",
+  "bgg_id": "325",
+  "difficulty": 2.37,
+  "min_players": 3,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": 90,
+  "playingtime": "90분",
+  "genres": [
+   "전략",
+   "확장"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 143,
+  "name": "캐스캐디아",
+  "bgg_id": "295947",
+  "difficulty": 1.84,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 45,
+  "playingtime": "30~45분",
+  "genres": [
+   "타일놓기",
+   "자연"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 145,
+  "name": "커피 러시",
+  "bgg_id": "377061",
+  "difficulty": 1.79,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "자원관리",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 146,
+  "name": "코드네임",
+  "bgg_id": "178900",
+  "difficulty": 1.25,
+  "min_players": 2,
+  "max_players": 8,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "단어",
+   "추리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 148,
+  "name": "쿠",
+  "bgg_id": "158408",
+  "difficulty": 1.37,
+  "min_players": 2,
+  "max_players": 8,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "블러핑",
+   "심리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 150,
+  "name": "크베들린부르크의 돌팔이 약장수",
+  "bgg_id": "244521",
+  "difficulty": 1.94,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "Fantasy",
+   "Medieval"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 152,
+  "name": "클루",
+  "bgg_id": "1294",
+  "difficulty": 1.64,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "추리",
+   "보드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 154,
+  "name": "타불라의 늑대",
+  "bgg_id": "63539",
+  "difficulty": 1.21,
+  "min_players": 8,
+  "max_players": 24,
+  "min_playtime": 20,
+  "max_playtime": 40,
+  "playingtime": "20~40분",
+  "genres": [
+   "마피아",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 155,
+  "name": "타임 스토리즈",
+  "bgg_id": "146508",
+  "difficulty": 2.58,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": 90,
+  "playingtime": "90분",
+  "genres": [
+   "협력",
+   "시나리오"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 156,
+  "name": "타임 스토리즈 : 가면 아래에서",
+  "bgg_id": "189686",
+  "difficulty": 2.46,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": null,
+  "playingtime": "90분",
+  "genres": [
+   "협력",
+   "시나리오"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 157,
+  "name": "타임 스토리즈 : 용의 예언",
+  "bgg_id": "189035",
+  "difficulty": 2.64,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": 180,
+  "playingtime": "90~180분",
+  "genres": [
+   "협력",
+   "시나리오"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 158,
+  "name": "타임 스토리즈 : 해변의 형제단",
+  "bgg_id": "220839",
+  "difficulty": 2.8,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": 240,
+  "playingtime": "90~240분",
+  "genres": [
+   "협력",
+   "시나리오"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 159,
+  "name": "타코 캣 고트 치즈 피자",
+  "bgg_id": "253664",
+  "difficulty": 1.03,
+  "min_players": 2,
+  "max_players": 8,
+  "min_playtime": 10,
+  "max_playtime": 30,
+  "playingtime": "10~30분",
+  "genres": [
+   "순발력",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 161,
+  "name": "탑텐 TV",
+  "bgg_id": "300905",
+  "difficulty": 1.08,
+  "min_players": 4,
+  "max_players": 9,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "파티",
+   "협력"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 162,
+  "name": "테라포밍 마스",
+  "bgg_id": "167791",
+  "difficulty": 3.27,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 120,
+  "max_playtime": 120,
+  "playingtime": "120분",
+  "genres": [
+   "전략",
+   "엔진빌딩"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 163,
+  "name": "트래지디 루퍼",
+  "bgg_id": "148319",
+  "difficulty": 3.55,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 120,
+  "max_playtime": 120,
+  "playingtime": "120분",
+  "genres": [
+   "추리",
+   "루프물"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 164,
+  "name": "트랙스 : 사이렌 베이",
+  "bgg_id": "370984",
+  "difficulty": 1.18,
+  "min_players": 1,
+  "max_players": 6,
+  "min_playtime": 25,
+  "max_playtime": 45,
+  "playingtime": "25~45분",
+  "genres": [
+   "추리",
+   "오디오"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 165,
+  "name": "티츄",
+  "bgg_id": "215",
+  "difficulty": 2.34,
+  "min_players": 4,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 90,
+  "playingtime": "30~90분",
+  "genres": [
+   "클라이밍",
+   "팀전"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 166,
+  "name": "티켓 투 라이드 : 유럽",
+  "bgg_id": "14996",
+  "difficulty": 1.91,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 30,
+  "max_playtime": 60,
+  "playingtime": "30~60분",
+  "genres": [
+   "전략",
+   "기차"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 168,
+  "name": "판타지 왕국",
+  "bgg_id": "223040",
+  "difficulty": 1.82,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "카드",
+   "셋컬렉션"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 169,
+  "name": "패치워크",
+  "bgg_id": "163412",
+  "difficulty": 1.6,
+  "min_players": 2,
+  "max_players": 2,
+  "min_playtime": 15,
+  "max_playtime": 30,
+  "playingtime": "15~30분",
+  "genres": [
+   "추상전략",
+   "퍼즐"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 170,
+  "name": "팬데믹",
+  "bgg_id": "30549",
+  "difficulty": 2.39,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "협력",
+   "전략"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 171,
+  "name": "페이퍼 던전",
+  "bgg_id": "291962",
+  "difficulty": 2.12,
+  "min_players": 1,
+  "max_players": 8,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "던전탐험",
+   "드로잉"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 172,
+  "name": "페이퍼 사파리",
+  "bgg_id": "39534",
+  "difficulty": 1.19,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "운",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 173,
+  "name": "펭귄파티",
+  "bgg_id": "56933",
+  "difficulty": 1.11,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "카드",
+   "숫자"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 174,
+  "name": "포 더 윈",
+  "bgg_id": "390094",
+  "difficulty": 1.3,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 25,
+  "max_playtime": 40,
+  "playingtime": "25~40분",
+  "genres": [
+   "전략",
+   "타일"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 175,
+  "name": "푸에르토 리코",
+  "bgg_id": "3076",
+  "difficulty": 3.27,
+  "min_players": 3,
+  "max_players": 5,
+  "min_playtime": 90,
+  "max_playtime": 150,
+  "playingtime": "90~150분",
+  "genres": [
+   "전략",
+   "자원관리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 178,
+  "name": "할리갈리",
+  "bgg_id": "2944",
+  "difficulty": 1.01,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 10,
+  "max_playtime": 10,
+  "playingtime": "10분",
+  "genres": [
+   "Action / Dexterity",
+   "Card Game",
+   "Children&#039;s Game",
+   "Party Game",
+   "Real-time"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 179,
+  "name": "해저탐험",
+  "bgg_id": "169654",
+  "difficulty": 1.18,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "운",
+   "보드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 183,
+  "name": "EXIT : 수수께끼의 집",
+  "bgg_id": "226519",
+  "difficulty": 1.64,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 45,
+  "max_playtime": 90,
+  "playingtime": "45~90분",
+  "genres": [
+   "방탈출",
+   "퍼즐"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 186,
+  "name": "MAGIC MAZE",
+  "bgg_id": "209778",
+  "difficulty": 1.75,
+  "min_players": 1,
+  "max_players": 8,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "실시간",
+   "협력"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 187,
+  "name": "MINECRAFT EXPLORERS",
+  "bgg_id": "413403",
+  "difficulty": 1.69,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 15,
+  "max_playtime": 60,
+  "playingtime": "15~60분",
+  "genres": [
+   "어드벤처",
+   "협력"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 189,
+  "name": "QE",
+  "bgg_id": "266830",
+  "difficulty": 1.55,
+  "min_players": 3,
+  "max_players": 5,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "경매",
+   "경제"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 190,
+  "name": "RED ROOM",
+  "bgg_id": "442306",
+  "difficulty": null,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 20,
+  "max_playtime": 30,
+  "playingtime": "20~30분",
+  "genres": [
+   "호러",
+   "추리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 191,
+  "name": "Spot it!",
+  "bgg_id": "63268",
+  "difficulty": 1.04,
+  "min_players": 2,
+  "max_players": 8,
+  "min_playtime": 15,
+  "max_playtime": 15,
+  "playingtime": "15분",
+  "genres": [
+   "순발력",
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 192,
+  "name": "SURVIVE",
+  "bgg_id": "2653",
+  "difficulty": 1.7,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 45,
+  "max_playtime": 60,
+  "playingtime": "45~60분",
+  "genres": [
+   "생존",
+   "운"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 204,
+  "name": "윙스팬",
+  "bgg_id": "266192",
+  "difficulty": 2.48,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 40,
+  "max_playtime": 70,
+  "playingtime": "40~70분",
+  "genres": [
+   "전략",
+   "엔진빌딩"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 205,
+  "name": "젝스님트",
+  "bgg_id": "432",
+  "difficulty": 1.19,
+  "min_players": 2,
+  "max_players": 10,
+  "min_playtime": 45,
+  "max_playtime": 45,
+  "playingtime": "45분",
+  "genres": [
+   "카드",
+   "숫자"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 207,
+  "name": "텔레스트레이션",
+  "bgg_id": "46213",
+  "difficulty": 1.07,
+  "min_players": 4,
+  "max_players": 8,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "파티",
+   "그림"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 210,
+  "name": "클랭크!: 덱 빌딩 어드벤처",
+  "bgg_id": "201808",
+  "difficulty": 2.23,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 60,
+  "playingtime": "30~60분",
+  "genres": [
+   "전략",
+   "덱빌딩"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 211,
+  "name": "두 도시 사이에서",
+  "bgg_id": "168435",
+  "difficulty": 1.81,
+  "min_players": 1,
+  "max_players": 7,
+  "min_playtime": 25,
+  "max_playtime": 25,
+  "playingtime": "25분",
+  "genres": [
+   "타일놓기",
+   "협력"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 212,
+  "name": "우봉고 3D",
+  "bgg_id": "269971",
+  "difficulty": 1.57,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 25,
+  "max_playtime": 25,
+  "playingtime": "25분",
+  "genres": [
+   "퍼즐",
+   "실시간"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 215,
+  "name": "강변 밤의 꿈",
+  "bgg_id": "393285",
+  "difficulty": 2.5,
+  "min_players": 6,
+  "max_players": 7,
+  "min_playtime": 150,
+  "max_playtime": 150,
+  "playingtime": "150분",
+  "genres": [
+   "머더미스터리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 217,
+  "name": "마작패",
+  "bgg_id": "108018",
+  "difficulty": 3.64,
+  "min_players": 3,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 120,
+  "playingtime": "60~120분",
+  "genres": [
+   "추상 전략"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 218,
+  "name": "아그리콜라",
+  "bgg_id": "31260",
+  "difficulty": 3.64,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 30,
+  "max_playtime": 150,
+  "playingtime": "30~150분",
+  "genres": [
+   "동물",
+   "경제",
+   "Farming"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 219,
+  "name": "영리한 여우",
+  "bgg_id": "244522",
+  "difficulty": 1.85,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "주사위",
+   "Number",
+   "롤 앤 라이트"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 220,
+  "name": "트럼프 카드 카지노 칩 세트",
+  "bgg_id": "1115",
+  "difficulty": 2.42,
+  "min_players": 2,
+  "max_players": 10,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "블러핑",
+   "카드 게임"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 222,
+  "name": "테라포밍 마스 확장 : 비너스 넥스트",
+  "bgg_id": "231965",
+  "difficulty": 2.87,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 90,
+  "max_playtime": 120,
+  "playingtime": "90~120분",
+  "genres": [
+   "전략"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 223,
+  "name": "테라포밍 마스 확장: 아마조니스 보레알리스",
+  "bgg_id": "406001",
+  "difficulty": 2.56,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 120,
+  "max_playtime": 0,
+  "playingtime": "120분",
+  "genres": [
+   "전략"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 224,
+  "name": "테라포밍 마스 확장 서곡",
+  "bgg_id": "247030",
+  "difficulty": 2.56,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 90,
+  "max_playtime": 120,
+  "playingtime": "90~120분",
+  "genres": [
+   "확장판",
+   "경제",
+   "Environmental",
+   "Industry / Manufacturing",
+   "SF"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 225,
+  "name": "딕싯",
+  "bgg_id": "39856",
+  "difficulty": 1.19,
+  "min_players": 3,
+  "max_players": 6,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "파티"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 226,
+  "name": "다다다",
+  "bgg_id": "420091",
+  "difficulty": 1.11,
+  "min_players": 2,
+  "max_players": 99,
+  "min_playtime": 15,
+  "max_playtime": 30,
+  "playingtime": "15~30분",
+  "genres": [
+   "파티",
+   "협력",
+   "언어"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 231,
+  "name": "블러드 레이지",
+  "bgg_id": "170216",
+  "difficulty": 2.88,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 90,
+  "playingtime": "60~90분",
+  "genres": [
+   "전략"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 232,
+  "name": "사그라다",
+  "bgg_id": "199561",
+  "difficulty": 1.92,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 45,
+  "playingtime": "30~45분",
+  "genres": [
+   "퍼즐",
+   "타일배치"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 233,
+  "name": "네트워크: 시청률 전쟁",
+  "bgg_id": "72321",
+  "difficulty": 2.6,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 60,
+  "max_playtime": 90,
+  "playingtime": "60~90분",
+  "genres": [
+   "Economic",
+   "Humor",
+   "Movies / TV / Radio theme"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 234,
+  "name": "도미니언",
+  "bgg_id": "36218",
+  "difficulty": 2.34,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "Card Game",
+   "Medieval"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 235,
+  "name": "너도나도 파티",
+  "bgg_id": "261614",
+  "difficulty": 1,
+  "min_players": 3,
+  "max_players": 12,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "Party Game"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 236,
+  "name": "아크노바",
+  "bgg_id": "342942",
+  "difficulty": 3.8,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": 150,
+  "playingtime": "90~150분",
+  "genres": [
+   "Animals",
+   "Card Game",
+   "Environmental"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 237,
+  "name": "샤크",
+  "bgg_id": "433",
+  "difficulty": 2.2,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 90,
+  "max_playtime": 90,
+  "playingtime": "90분",
+  "genres": [
+   "Economic"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 238,
+  "name": "5분 마블",
+  "bgg_id": "253618",
+  "difficulty": 1.13,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 5,
+  "max_playtime": 5,
+  "playingtime": "5분",
+  "genres": [
+   "Card Game",
+   "Comic Book / Strip",
+   "Fighting",
+   "Real-time"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 240,
+  "name": "혁신의 시대",
+  "bgg_id": "383179",
+  "difficulty": 4.27,
+  "min_players": 1,
+  "max_players": 5,
+  "min_playtime": 40,
+  "max_playtime": 200,
+  "playingtime": "40~200분",
+  "genres": [
+   "Civilization",
+   "Economic",
+   "Fantasy",
+   "Territory Building"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 241,
+  "name": "브라스 버밍엄",
+  "bgg_id": "224517",
+  "difficulty": 3.86,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 120,
+  "playingtime": "60~120분",
+  "genres": [
+   "Age of Reason",
+   "Economic",
+   "Industry / Manufacturing",
+   "Post-Napoleonic",
+   "Trains",
+   "Transportation"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 242,
+  "name": "The Wolves 더 울브즈",
+  "bgg_id": "368058",
+  "difficulty": 2.82,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 75,
+  "max_playtime": 75,
+  "playingtime": "75분",
+  "genres": [
+   "Animals",
+   "Territory Building"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 246,
+  "name": "교토 이세계 투어",
+  "bgg_id": "419570",
+  "difficulty": 2.5,
+  "min_players": 4,
+  "max_players": 4,
+  "min_playtime": 90,
+  "max_playtime": 90,
+  "playingtime": "90분",
+  "genres": [
+   "Murder / Mystery"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 247,
+  "name": "별장살인",
+  "bgg_id": "419569",
+  "difficulty": 2.5,
+  "min_players": 5,
+  "max_players": 6,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "Murder / Mystery"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 251,
+  "name": "모텔 노바디",
+  "bgg_id": "416237",
+  "difficulty": 2.5,
+  "min_players": 4,
+  "max_players": 4,
+  "min_playtime": 150,
+  "max_playtime": 180,
+  "playingtime": "150~180분",
+  "genres": [
+   "Deduction",
+   "Murder / Mystery"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 253,
+  "name": "블러핏!",
+  "bgg_id": "450039",
+  "difficulty": 1.25,
+  "min_players": 2,
+  "max_players": 6,
+  "min_playtime": 10,
+  "max_playtime": 15,
+  "playingtime": "10~15분",
+  "genres": [
+   "Card Game",
+   "Number",
+   "Party Game"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 254,
+  "name": "탑텐TV 시트콤",
+  "bgg_id": "437938",
+  "difficulty": 1,
+  "min_players": 4,
+  "max_players": 9,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "Party Game"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 255,
+  "name": "색감과 직감",
+  "bgg_id": "302520",
+  "difficulty": 1.06,
+  "min_players": 3,
+  "max_players": 10,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "Deduction",
+   "Party Game"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 256,
+  "name": "스트림스 메트로",
+  "bgg_id": "455631",
+  "difficulty": 1,
+  "min_players": 1,
+  "max_players": 99,
+  "min_playtime": 10,
+  "max_playtime": 10,
+  "playingtime": "10분",
+  "genres": [
+   "Math",
+   "Number",
+   "Puzzle"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 260,
+  "name": "스컬킹",
+  "bgg_id": "150145",
+  "difficulty": 1.73,
+  "min_players": 2,
+  "max_players": 8,
+  "min_playtime": 30,
+  "max_playtime": 30,
+  "playingtime": "30분",
+  "genres": [
+   "전략",
+   "파티",
+   "베팅"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 261,
+  "name": "스페이스 크루",
+  "bgg_id": "284083",
+  "difficulty": 1.97,
+  "min_players": 2,
+  "max_players": 5,
+  "min_playtime": 20,
+  "max_playtime": 20,
+  "playingtime": "20분",
+  "genres": [
+   "카드",
+   "협력",
+   "추리"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 262,
+  "name": "쓰루디 에이지스",
+  "bgg_id": "182028",
+  "difficulty": 4.44,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 120,
+  "max_playtime": 120,
+  "playingtime": "120분",
+  "genres": [
+   "전략",
+   "자원관리",
+   "카드"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 263,
+  "name": "버건디의 성",
+  "bgg_id": "271320",
+  "difficulty": 2.91,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 70,
+  "max_playtime": 120,
+  "playingtime": "70~120분",
+  "genres": [
+   "타일놓기",
+   "일꾼배치",
+   "전략"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 264,
+  "name": "마르코 폴로 2 : 위대한 칸의 이름으로",
+  "bgg_id": "283948",
+  "difficulty": 3.38,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 120,
+  "playingtime": "60~120분",
+  "genres": [
+   "주사위",
+   "전략",
+   "일꾼배치"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 265,
+  "name": "그레이트 웨스턴 트레일",
+  "bgg_id": "193738",
+  "difficulty": 3.7,
+  "min_players": 2,
+  "max_players": 4,
+  "min_playtime": 75,
+  "max_playtime": 150,
+  "playingtime": "75~150분",
+  "genres": [
+   "전략",
+   "자원관리",
+   "덱빌딩"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ },
+ {
+  "id": 267,
+  "name": "에이언즈 엔드",
+  "bgg_id": "191189",
+  "difficulty": 2.8,
+  "min_players": 1,
+  "max_players": 4,
+  "min_playtime": 60,
+  "max_playtime": 60,
+  "playingtime": "60분",
+  "genres": [
+   "카드",
+   "덱빌딩",
+   "협력"
+  ],
+  "best_players": null,
+  "recommended_players": null,
+  "numplayers_votes": null
+ }
+]

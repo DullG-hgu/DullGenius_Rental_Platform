@@ -1,0 +1,9782 @@
+{
+ "fetched_at": "2026-10-11T14:06:45.476Z",
+ "games": [
+  {
+   "id": 1,
+   "name": "1%의 기적",
+   "bgg_id": "378040",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 4,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "2": {
+      "best": 0,
+      "rec": 1,
+      "not": 2
+     },
+     "3": {
+      "best": 1,
+      "rec": 1,
+      "not": 2
+     },
+     "4": {
+      "best": 1,
+      "rec": 2,
+      "not": 0
+     },
+     "5": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "6": {
+      "best": 2,
+      "rec": 0,
+      "not": 0
+     },
+     "6+": {
+      "best": 0,
+      "rec": 1,
+      "not": 1
+     }
+    },
+    "bestwith": "Best with 5–6 players",
+    "recwith": "Recommended with 4–6 players"
+   }
+  },
+  {
+   "id": 2,
+   "name": "12칩 트릭",
+   "bgg_id": "358669",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 57,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 30
+     },
+     "2": {
+      "best": 1,
+      "rec": 13,
+      "not": 22
+     },
+     "3": {
+      "best": 45,
+      "rec": 8,
+      "not": 0
+     },
+     "4": {
+      "best": 6,
+      "rec": 16,
+      "not": 15
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 28
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 3–4 players"
+   }
+  },
+  {
+   "id": 3,
+   "name": "감자의 꿈",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 5,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": null
+  },
+  {
+   "id": 4,
+   "name": "갬블러 X 갬블!",
+   "bgg_id": "197071",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 4,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "3": {
+      "best": 0,
+      "rec": 2,
+      "not": 1
+     },
+     "4": {
+      "best": 3,
+      "rec": 1,
+      "not": 0
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–4 players"
+   }
+  },
+  {
+   "id": 5,
+   "name": "갱 오브 다이스",
+   "bgg_id": "366129",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 29,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 18
+     },
+     "2": {
+      "best": 0,
+      "rec": 4,
+      "not": 19
+     },
+     "3": {
+      "best": 5,
+      "rec": 18,
+      "not": 3
+     },
+     "4": {
+      "best": 21,
+      "rec": 4,
+      "not": 0
+     },
+     "4+": {
+      "best": 1,
+      "rec": 1,
+      "not": 12
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–4 players"
+   }
+  },
+  {
+   "id": 6,
+   "name": "갱스터스 딜레마",
+   "bgg_id": "294231",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 7,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 3,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "3": {
+      "best": 0,
+      "rec": 1,
+      "not": 2
+     },
+     "4": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "5": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "6": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "7": {
+      "best": 1,
+      "rec": 1,
+      "not": 0
+     },
+     "7+": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     }
+    },
+    "bestwith": "Best with 5–6 players",
+    "recwith": "Recommended with 4–7 players"
+   }
+  },
+  {
+   "id": 7,
+   "name": "구두룡 저택의 살인",
+   "bgg_id": "336495",
+   "category": "머더미스터리",
+   "min_players": 7,
+   "max_players": 9,
+   "quantity": 1,
+   "rentals_since_0301": 3,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 3,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "5": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "6": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "7": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "8": {
+      "best": 1,
+      "rec": 1,
+      "not": 0
+     },
+     "9": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "9+": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     }
+    },
+    "bestwith": "Best with 9 players",
+    "recwith": "Recommended with 7–9 players"
+   }
+  },
+  {
+   "id": 8,
+   "name": "그러는 너는 어떤데?",
+   "bgg_id": "375146",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 0,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "5": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "6": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": null,
+    "recwith": "(no votes)"
+   }
+  },
+  {
+   "id": 9,
+   "name": "그러는 너는 어떤데? 리벤지",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 10,
+   "name": "그림자 찾기",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 6,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 12,
+   "name": "꼬치의 달인",
+   "bgg_id": "264797",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 11,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 5,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "2": {
+      "best": 0,
+      "rec": 2,
+      "not": 1
+     },
+     "3": {
+      "best": 1,
+      "rec": 2,
+      "not": 0
+     },
+     "4": {
+      "best": 5,
+      "rec": 0,
+      "not": 0
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 13,
+   "name": "너냐?!",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 14,
+   "name": "노 터치 크라켄",
+   "bgg_id": "253786",
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 7,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 15,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 11
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 11
+     },
+     "3": {
+      "best": 0,
+      "rec": 1,
+      "not": 9
+     },
+     "4": {
+      "best": 1,
+      "rec": 6,
+      "not": 6
+     },
+     "5": {
+      "best": 3,
+      "rec": 9,
+      "not": 1
+     },
+     "6": {
+      "best": 6,
+      "rec": 7,
+      "not": 0
+     },
+     "7": {
+      "best": 8,
+      "rec": 4,
+      "not": 1
+     },
+     "8": {
+      "best": 5,
+      "rec": 6,
+      "not": 2
+     },
+     "8+": {
+      "best": 0,
+      "rec": 1,
+      "not": 9
+     }
+    },
+    "bestwith": "Best with 7 players",
+    "recwith": "Recommended with 4–8 players"
+   }
+  },
+  {
+   "id": 15,
+   "name": "노닥노닥 TRPG",
+   "bgg_id": "267744",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 0,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "5": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "5+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": null,
+    "recwith": "(no votes)"
+   }
+  },
+  {
+   "id": 16,
+   "name": "노땡스",
+   "bgg_id": "12942",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 7,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 409,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 261
+     },
+     "2": {
+      "best": 2,
+      "rec": 12,
+      "not": 253
+     },
+     "3": {
+      "best": 49,
+      "rec": 225,
+      "not": 65
+     },
+     "4": {
+      "best": 221,
+      "rec": 146,
+      "not": 2
+     },
+     "5": {
+      "best": 254,
+      "rec": 94,
+      "not": 7
+     },
+     "6": {
+      "best": 63,
+      "rec": 133,
+      "not": 82
+     },
+     "7": {
+      "best": 19,
+      "rec": 90,
+      "not": 70
+     },
+     "7+": {
+      "best": 2,
+      "rec": 6,
+      "not": 129
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–7 players"
+   }
+  },
+  {
+   "id": 17,
+   "name": "노팅엄의 지방관",
+   "bgg_id": "298638",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 58,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 38
+     },
+     "2": {
+      "best": 0,
+      "rec": 1,
+      "not": 38
+     },
+     "3": {
+      "best": 1,
+      "rec": 16,
+      "not": 25
+     },
+     "4": {
+      "best": 15,
+      "rec": 33,
+      "not": 1
+     },
+     "5": {
+      "best": 38,
+      "rec": 9,
+      "not": 1
+     },
+     "6": {
+      "best": 11,
+      "rec": 20,
+      "not": 14
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 32
+     }
+    },
+    "bestwith": "Best with 5 players",
+    "recwith": "Recommended with 4–6 players"
+   }
+  },
+  {
+   "id": 18,
+   "name": "늑대인간 마을의 축제",
+   "bgg_id": "393283",
+   "category": "머더미스터리",
+   "min_players": 7,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 0,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "5": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "6": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "7": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "8": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "8+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": null,
+    "recwith": "(no votes)"
+   }
+  },
+  {
+   "id": 19,
+   "name": "다빈치 코드",
+   "bgg_id": "8946",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 2,
+   "rentals_since_0301": 5,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 32,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 16
+     },
+     "2": {
+      "best": 3,
+      "rec": 19,
+      "not": 5
+     },
+     "3": {
+      "best": 12,
+      "rec": 12,
+      "not": 1
+     },
+     "4": {
+      "best": 13,
+      "rec": 8,
+      "not": 0
+     },
+     "4+": {
+      "best": 0,
+      "rec": 2,
+      "not": 9
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 20,
+   "name": "다이얼렉트",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 21,
+   "name": "다이얼렉트 덱",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 22,
+   "name": "달무티",
+   "bgg_id": "929",
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 8,
+   "quantity": 2,
+   "rentals_since_0301": 39,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 97,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 76
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 75
+     },
+     "3": {
+      "best": 0,
+      "rec": 5,
+      "not": 71
+     },
+     "4": {
+      "best": 7,
+      "rec": 28,
+      "not": 43
+     },
+     "5": {
+      "best": 19,
+      "rec": 58,
+      "not": 11
+     },
+     "6": {
+      "best": 61,
+      "rec": 27,
+      "not": 3
+     },
+     "7": {
+      "best": 57,
+      "rec": 31,
+      "not": 2
+     },
+     "8": {
+      "best": 41,
+      "rec": 39,
+      "not": 7
+     },
+     "8+": {
+      "best": 8,
+      "rec": 11,
+      "not": 39
+     }
+    },
+    "bestwith": "Best with 6–7 players",
+    "recwith": "Recommended with 5–8 players"
+   }
+  },
+  {
+   "id": 23,
+   "name": "당신은 사건현장에 있습니다 2",
+   "bgg_id": "423717",
+   "category": "TRPG",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 0,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": null,
+    "recwith": "(no votes)"
+   }
+  },
+  {
+   "id": 24,
+   "name": "더 게임",
+   "bgg_id": "173090",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 194,
+    "results": {
+     "1": {
+      "best": 29,
+      "rec": 68,
+      "not": 55
+     },
+     "2": {
+      "best": 41,
+      "rec": 101,
+      "not": 20
+     },
+     "3": {
+      "best": 85,
+      "rec": 63,
+      "not": 5
+     },
+     "4": {
+      "best": 71,
+      "rec": 64,
+      "not": 10
+     },
+     "5": {
+      "best": 15,
+      "rec": 85,
+      "not": 30
+     },
+     "5+": {
+      "best": 0,
+      "rec": 6,
+      "not": 88
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 1–5 players"
+   }
+  },
+  {
+   "id": 25,
+   "name": "더 지니어스 : 호러 레이스",
+   "bgg_id": "180870",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 12,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "3": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "5": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "6": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "7": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "8": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "9": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "10": {
+      "best": 1,
+      "rec": 0,
+      "not": 0
+     },
+     "11": {
+      "best": 1,
+      "rec": 0,
+      "not": 0
+     },
+     "12": {
+      "best": 1,
+      "rec": 0,
+      "not": 0
+     },
+     "12+": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     }
+    },
+    "bestwith": "Best with 10–12 players",
+    "recwith": "Recommended with 3–12+ players"
+   }
+  },
+  {
+   "id": 26,
+   "name": "던전월드",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": null
+  },
+  {
+   "id": 27,
+   "name": "도적단의 월급날",
+   "bgg_id": "391761",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 2,
+   "rentals_since_0301": 5,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 5,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "2": {
+      "best": 4,
+      "rec": 1,
+      "not": 0
+     },
+     "3": {
+      "best": 2,
+      "rec": 2,
+      "not": 1
+     },
+     "4": {
+      "best": 3,
+      "rec": 2,
+      "not": 0
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     }
+    },
+    "bestwith": "Best with 2, 4 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 29,
+   "name": "두부 왕국",
+   "bgg_id": "186475",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 12,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 8
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 8
+     },
+     "3": {
+      "best": 1,
+      "rec": 0,
+      "not": 8
+     },
+     "4": {
+      "best": 1,
+      "rec": 2,
+      "not": 5
+     },
+     "5": {
+      "best": 1,
+      "rec": 3,
+      "not": 3
+     },
+     "6": {
+      "best": 1,
+      "rec": 6,
+      "not": 1
+     },
+     "7": {
+      "best": 8,
+      "rec": 1,
+      "not": 1
+     },
+     "8": {
+      "best": 5,
+      "rec": 5,
+      "not": 1
+     },
+     "8+": {
+      "best": 0,
+      "rec": 0,
+      "not": 4
+     }
+    },
+    "bestwith": "Best with 7 players",
+    "recwith": "Recommended with 5–8 players"
+   }
+  },
+  {
+   "id": 30,
+   "name": "디크립토",
+   "bgg_id": "225694",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 9,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 428,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 283
+     },
+     "2": {
+      "best": 0,
+      "rec": 2,
+      "not": 280
+     },
+     "3": {
+      "best": 1,
+      "rec": 26,
+      "not": 265
+     },
+     "4": {
+      "best": 227,
+      "rec": 152,
+      "not": 12
+     },
+     "5": {
+      "best": 11,
+      "rec": 228,
+      "not": 76
+     },
+     "6": {
+      "best": 318,
+      "rec": 64,
+      "not": 6
+     },
+     "7": {
+      "best": 20,
+      "rec": 193,
+      "not": 91
+     },
+     "8": {
+      "best": 104,
+      "rec": 162,
+      "not": 50
+     },
+     "8+": {
+      "best": 4,
+      "rec": 56,
+      "not": 181
+     }
+    },
+    "bestwith": "Best with 4, 6 players",
+    "recwith": "Recommended with 4–8 players"
+   }
+  },
+  {
+   "id": 31,
+   "name": "라멘! 라멘!",
+   "bgg_id": "314971",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 18,
+    "results": {
+     "1": {
+      "best": 3,
+      "rec": 6,
+      "not": 2
+     },
+     "2": {
+      "best": 8,
+      "rec": 4,
+      "not": 0
+     },
+     "3": {
+      "best": 6,
+      "rec": 2,
+      "not": 2
+     },
+     "4": {
+      "best": 2,
+      "rec": 3,
+      "not": 4
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 5
+     }
+    },
+    "bestwith": "Best with 2–3 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 32,
+   "name": "라스베가스",
+   "bgg_id": "117959",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 20,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 221,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 129
+     },
+     "2": {
+      "best": 7,
+      "rec": 63,
+      "not": 97
+     },
+     "3": {
+      "best": 33,
+      "rec": 130,
+      "not": 17
+     },
+     "4": {
+      "best": 147,
+      "rec": 52,
+      "not": 0
+     },
+     "5": {
+      "best": 79,
+      "rec": 85,
+      "not": 17
+     },
+     "5+": {
+      "best": 10,
+      "rec": 24,
+      "not": 79
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–5 players"
+   }
+  },
+  {
+   "id": 33,
+   "name": "러브레터",
+   "bgg_id": "129622",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1195,
+    "results": {
+     "1": {
+      "best": 2,
+      "rec": 1,
+      "not": 796
+     },
+     "2": {
+      "best": 47,
+      "rec": 334,
+      "not": 607
+     },
+     "3": {
+      "best": 266,
+      "rec": 730,
+      "not": 41
+     },
+     "4": {
+      "best": 914,
+      "rec": 176,
+      "not": 9
+     },
+     "4+": {
+      "best": 30,
+      "rec": 82,
+      "not": 506
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–4 players"
+   }
+  },
+  {
+   "id": 34,
+   "name": "레디 셋 벳",
+   "bgg_id": "351040",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 9,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 123,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 1,
+      "not": 76
+     },
+     "2": {
+      "best": 3,
+      "rec": 12,
+      "not": 79
+     },
+     "3": {
+      "best": 2,
+      "rec": 37,
+      "not": 55
+     },
+     "4": {
+      "best": 13,
+      "rec": 71,
+      "not": 13
+     },
+     "5": {
+      "best": 41,
+      "rec": 51,
+      "not": 3
+     },
+     "6": {
+      "best": 74,
+      "rec": 20,
+      "not": 2
+     },
+     "7": {
+      "best": 63,
+      "rec": 26,
+      "not": 4
+     },
+     "8": {
+      "best": 52,
+      "rec": 30,
+      "not": 5
+     },
+     "9": {
+      "best": 18,
+      "rec": 38,
+      "not": 23
+     },
+     "9+": {
+      "best": 2,
+      "rec": 3,
+      "not": 53
+     }
+    },
+    "bestwith": "Best with 6–8 players",
+    "recwith": "Recommended with 4–9 players"
+   }
+  },
+  {
+   "id": 35,
+   "name": "레지스탕스 아발론",
+   "bgg_id": "128882",
+   "category": "보드게임",
+   "min_players": 5,
+   "max_players": 10,
+   "quantity": 2,
+   "rentals_since_0301": 30,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 545,
+    "results": {
+     "1": {
+      "best": 2,
+      "rec": 0,
+      "not": 379
+     },
+     "2": {
+      "best": 1,
+      "rec": 0,
+      "not": 378
+     },
+     "3": {
+      "best": 1,
+      "rec": 0,
+      "not": 377
+     },
+     "4": {
+      "best": 2,
+      "rec": 0,
+      "not": 381
+     },
+     "5": {
+      "best": 35,
+      "rec": 254,
+      "not": 169
+     },
+     "6": {
+      "best": 93,
+      "rec": 320,
+      "not": 54
+     },
+     "7": {
+      "best": 346,
+      "rec": 130,
+      "not": 8
+     },
+     "8": {
+      "best": 320,
+      "rec": 139,
+      "not": 11
+     },
+     "9": {
+      "best": 135,
+      "rec": 252,
+      "not": 38
+     },
+     "10": {
+      "best": 130,
+      "rec": 240,
+      "not": 55
+     },
+     "10+": {
+      "best": 1,
+      "rec": 20,
+      "not": 262
+     }
+    },
+    "bestwith": "Best with 7–8 players",
+    "recwith": "Recommended with 5–10 players"
+   }
+  },
+  {
+   "id": 37,
+   "name": "렉시오",
+   "bgg_id": "19184",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 19,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 10
+     },
+     "2": {
+      "best": 0,
+      "rec": 4,
+      "not": 8
+     },
+     "3": {
+      "best": 2,
+      "rec": 13,
+      "not": 2
+     },
+     "4": {
+      "best": 6,
+      "rec": 8,
+      "not": 0
+     },
+     "5": {
+      "best": 8,
+      "rec": 5,
+      "not": 1
+     },
+     "5+": {
+      "best": 0,
+      "rec": 1,
+      "not": 4
+     }
+    },
+    "bestwith": "Best with 5 players",
+    "recwith": "Recommended with 3–5 players"
+   }
+  },
+  {
+   "id": 38,
+   "name": "로보 77",
+   "bgg_id": "3337",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 7,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 4
+     },
+     "2": {
+      "best": 2,
+      "rec": 1,
+      "not": 2
+     },
+     "3": {
+      "best": 0,
+      "rec": 7,
+      "not": 0
+     },
+     "4": {
+      "best": 2,
+      "rec": 5,
+      "not": 0
+     },
+     "5": {
+      "best": 4,
+      "rec": 2,
+      "not": 0
+     },
+     "6": {
+      "best": 2,
+      "rec": 3,
+      "not": 1
+     },
+     "7": {
+      "best": 0,
+      "rec": 5,
+      "not": 1
+     },
+     "8": {
+      "best": 0,
+      "rec": 5,
+      "not": 1
+     },
+     "8+": {
+      "best": 0,
+      "rec": 1,
+      "not": 4
+     }
+    },
+    "bestwith": "Best with 5 players",
+    "recwith": "Recommended with 2–8 players"
+   }
+  },
+  {
+   "id": 39,
+   "name": "로빈 후드의 모험",
+   "bgg_id": "326494",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 155,
+    "results": {
+     "1": {
+      "best": 17,
+      "rec": 64,
+      "not": 31
+     },
+     "2": {
+      "best": 62,
+      "rec": 68,
+      "not": 5
+     },
+     "3": {
+      "best": 29,
+      "rec": 84,
+      "not": 8
+     },
+     "4": {
+      "best": 45,
+      "rec": 60,
+      "not": 12
+     },
+     "4+": {
+      "best": 0,
+      "rec": 2,
+      "not": 82
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 40,
+   "name": "로스트 시티",
+   "bgg_id": "50",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 2,
+   "quantity": 1,
+   "rentals_since_0301": 7,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 482,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 6,
+      "not": 377
+     },
+     "2": {
+      "best": 454,
+      "rec": 26,
+      "not": 2
+     },
+     "2+": {
+      "best": 6,
+      "rec": 7,
+      "not": 348
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 2 players"
+   }
+  },
+  {
+   "id": 41,
+   "name": "로오-딩",
+   "bgg_id": "329293",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 7,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 5,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "2": {
+      "best": 0,
+      "rec": 2,
+      "not": 3
+     },
+     "3": {
+      "best": 2,
+      "rec": 2,
+      "not": 1
+     },
+     "4": {
+      "best": 3,
+      "rec": 2,
+      "not": 0
+     },
+     "5": {
+      "best": 2,
+      "rec": 3,
+      "not": 0
+     },
+     "6": {
+      "best": 2,
+      "rec": 3,
+      "not": 0
+     },
+     "7": {
+      "best": 2,
+      "rec": 2,
+      "not": 0
+     },
+     "7+": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–7 players"
+   }
+  },
+  {
+   "id": 42,
+   "name": "롱 샷",
+   "bgg_id": "295374",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 201,
+    "results": {
+     "1": {
+      "best": 5,
+      "rec": 67,
+      "not": 42
+     },
+     "2": {
+      "best": 10,
+      "rec": 93,
+      "not": 37
+     },
+     "3": {
+      "best": 29,
+      "rec": 89,
+      "not": 10
+     },
+     "4": {
+      "best": 96,
+      "rec": 36,
+      "not": 2
+     },
+     "5": {
+      "best": 78,
+      "rec": 37,
+      "not": 8
+     },
+     "6": {
+      "best": 48,
+      "rec": 44,
+      "not": 14
+     },
+     "7": {
+      "best": 13,
+      "rec": 47,
+      "not": 35
+     },
+     "8": {
+      "best": 11,
+      "rec": 44,
+      "not": 46
+     },
+     "8+": {
+      "best": 0,
+      "rec": 2,
+      "not": 66
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 1–8 players"
+   }
+  },
+  {
+   "id": 43,
+   "name": "루미큐브",
+   "bgg_id": "811",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 4,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 216,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 3,
+      "not": 149
+     },
+     "2": {
+      "best": 27,
+      "rec": 124,
+      "not": 41
+     },
+     "3": {
+      "best": 80,
+      "rec": 112,
+      "not": 2
+     },
+     "4": {
+      "best": 148,
+      "rec": 47,
+      "not": 3
+     },
+     "4+": {
+      "best": 3,
+      "rec": 15,
+      "not": 105
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 46,
+   "name": "마기카로기아 : 황혼선서",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 47,
+   "name": "마기카로기아 기본 룰 북",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 48,
+   "name": "마법사와 잠자는 숲",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 2,
+   "max_players": 2,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 49,
+   "name": "머핀타임",
+   "bgg_id": "286735",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 13,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 24,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 16
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 18
+     },
+     "3": {
+      "best": 2,
+      "rec": 13,
+      "not": 1
+     },
+     "4": {
+      "best": 12,
+      "rec": 9,
+      "not": 0
+     },
+     "5": {
+      "best": 13,
+      "rec": 6,
+      "not": 0
+     },
+     "6": {
+      "best": 7,
+      "rec": 10,
+      "not": 3
+     },
+     "7": {
+      "best": 3,
+      "rec": 7,
+      "not": 11
+     },
+     "8": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "8+": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 50,
+   "name": "먼치킨",
+   "bgg_id": "1927",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 503,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 3,
+      "not": 384
+     },
+     "2": {
+      "best": 3,
+      "rec": 52,
+      "not": 358
+     },
+     "3": {
+      "best": 74,
+      "rec": 283,
+      "not": 81
+     },
+     "4": {
+      "best": 319,
+      "rec": 126,
+      "not": 21
+     },
+     "5": {
+      "best": 162,
+      "rec": 210,
+      "not": 55
+     },
+     "6": {
+      "best": 56,
+      "rec": 205,
+      "not": 147
+     },
+     "6+": {
+      "best": 22,
+      "rec": 32,
+      "not": 281
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 51,
+   "name": "몇 번이고 푸른 달에 불을 붙였다",
+   "bgg_id": "393282",
+   "category": "머더미스터리",
+   "min_players": 6,
+   "max_players": 7,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 2,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "5": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "6": {
+      "best": 1,
+      "rec": 0,
+      "not": 0
+     },
+     "7": {
+      "best": 1,
+      "rec": 0,
+      "not": 0
+     },
+     "7+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": "Best with 6–7 players",
+    "recwith": "Recommended with 6–7 players"
+   }
+  },
+  {
+   "id": 52,
+   "name": "무녀마을 금기의 저주",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 6,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 53,
+   "name": "문스톤 저택 살인 사건",
+   "bgg_id": "415627",
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 0,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": null,
+    "recwith": "(no votes)"
+   }
+  },
+  {
+   "id": 54,
+   "name": "미스터리 포켓 : 막이 내리다",
+   "bgg_id": "366466",
+   "category": "머더미스터리",
+   "min_players": 1,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 5,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 3
+     },
+     "2": {
+      "best": 0,
+      "rec": 1,
+      "not": 3
+     },
+     "3": {
+      "best": 0,
+      "rec": 2,
+      "not": 2
+     },
+     "4": {
+      "best": 2,
+      "rec": 2,
+      "not": 0
+     },
+     "5": {
+      "best": 1,
+      "rec": 3,
+      "not": 1
+     },
+     "6": {
+      "best": 2,
+      "rec": 1,
+      "not": 1
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 4
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 4–6 players"
+   }
+  },
+  {
+   "id": 55,
+   "name": "미크로 마크로 : 크라임시티",
+   "bgg_id": "318977",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 390,
+    "results": {
+     "1": {
+      "best": 73,
+      "rec": 235,
+      "not": 32
+     },
+     "2": {
+      "best": 312,
+      "rec": 48,
+      "not": 14
+     },
+     "3": {
+      "best": 39,
+      "rec": 197,
+      "not": 91
+     },
+     "4": {
+      "best": 7,
+      "rec": 76,
+      "not": 237
+     },
+     "4+": {
+      "best": 1,
+      "rec": 14,
+      "not": 274
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–3 players"
+   }
+  },
+  {
+   "id": 56,
+   "name": "바보타임",
+   "bgg_id": "291008",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 14,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 5,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 5
+     },
+     "2": {
+      "best": 0,
+      "rec": 1,
+      "not": 4
+     },
+     "3": {
+      "best": 0,
+      "rec": 3,
+      "not": 1
+     },
+     "4": {
+      "best": 1,
+      "rec": 3,
+      "not": 0
+     },
+     "5": {
+      "best": 3,
+      "rec": 1,
+      "not": 0
+     },
+     "6": {
+      "best": 2,
+      "rec": 3,
+      "not": 0
+     },
+     "7": {
+      "best": 1,
+      "rec": 3,
+      "not": 0
+     },
+     "8": {
+      "best": 3,
+      "rec": 2,
+      "not": 0
+     },
+     "8+": {
+      "best": 0,
+      "rec": 1,
+      "not": 3
+     }
+    },
+    "bestwith": "Best with 5, 8 players",
+    "recwith": "Recommended with 3–8 players"
+   }
+  },
+  {
+   "id": 57,
+   "name": "바퀴벌레 샐러드",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 58,
+   "name": "바퀴벌레 포커 로얄",
+   "bgg_id": "129736",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 2,
+   "rentals_since_0301": 22,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 69,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 44
+     },
+     "2": {
+      "best": 2,
+      "rec": 4,
+      "not": 45
+     },
+     "3": {
+      "best": 2,
+      "rec": 36,
+      "not": 13
+     },
+     "4": {
+      "best": 40,
+      "rec": 20,
+      "not": 1
+     },
+     "5": {
+      "best": 44,
+      "rec": 13,
+      "not": 2
+     },
+     "6": {
+      "best": 20,
+      "rec": 31,
+      "not": 3
+     },
+     "6+": {
+      "best": 1,
+      "rec": 10,
+      "not": 26
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 60,
+   "name": "뱅!",
+   "bgg_id": "3955",
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 7,
+   "quantity": 2,
+   "rentals_since_0301": 29,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 621,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 2,
+      "not": 429
+     },
+     "2": {
+      "best": 1,
+      "rec": 8,
+      "not": 433
+     },
+     "3": {
+      "best": 3,
+      "rec": 22,
+      "not": 430
+     },
+     "4": {
+      "best": 14,
+      "rec": 179,
+      "not": 290
+     },
+     "5": {
+      "best": 170,
+      "rec": 339,
+      "not": 31
+     },
+     "6": {
+      "best": 216,
+      "rec": 307,
+      "not": 22
+     },
+     "7": {
+      "best": 378,
+      "rec": 153,
+      "not": 33
+     },
+     "7+": {
+      "best": 40,
+      "rec": 95,
+      "not": 222
+     }
+    },
+    "bestwith": "Best with 7 players",
+    "recwith": "Recommended with 5–7 players"
+   }
+  },
+  {
+   "id": 63,
+   "name": "별의 소원",
+   "bgg_id": "424567",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 7,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "2": {
+      "best": 0,
+      "rec": 1,
+      "not": 1
+     },
+     "3": {
+      "best": 2,
+      "rec": 3,
+      "not": 0
+     },
+     "4": {
+      "best": 4,
+      "rec": 1,
+      "not": 0
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–4 players"
+   }
+  },
+  {
+   "id": 64,
+   "name": "보난자",
+   "bgg_id": "11",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 7,
+   "quantity": 2,
+   "rentals_since_0301": 8,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 791,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 486
+     },
+     "2": {
+      "best": 22,
+      "rec": 111,
+      "not": 459
+     },
+     "3": {
+      "best": 71,
+      "rec": 413,
+      "not": 160
+     },
+     "4": {
+      "best": 362,
+      "rec": 318,
+      "not": 12
+     },
+     "5": {
+      "best": 469,
+      "rec": 176,
+      "not": 10
+     },
+     "6": {
+      "best": 197,
+      "rec": 307,
+      "not": 72
+     },
+     "7": {
+      "best": 73,
+      "rec": 293,
+      "not": 159
+     },
+     "7+": {
+      "best": 3,
+      "rec": 25,
+      "not": 337
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–7 players"
+   }
+  },
+  {
+   "id": 65,
+   "name": "보통의 머더미스터리",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 5,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 66,
+   "name": "브레인 스톰",
+   "bgg_id": "206082",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 2,
+   "rentals_since_0301": 4,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 2,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "5": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "6": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "7": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "8": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "9": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "10": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "10+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–5 players"
+   }
+  },
+  {
+   "id": 68,
+   "name": "브릿지카드",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 69,
+   "name": "블랙 스토리즈 : 운수 나쁜 날",
+   "bgg_id": "147681",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 15,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 3,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "2": {
+      "best": 0,
+      "rec": 1,
+      "not": 2
+     },
+     "3": {
+      "best": 0,
+      "rec": 3,
+      "not": 0
+     },
+     "4": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "5": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "6": {
+      "best": 3,
+      "rec": 0,
+      "not": 0
+     },
+     "7": {
+      "best": 1,
+      "rec": 2,
+      "not": 0
+     },
+     "8": {
+      "best": 1,
+      "rec": 2,
+      "not": 0
+     },
+     "9": {
+      "best": 0,
+      "rec": 3,
+      "not": 0
+     },
+     "10": {
+      "best": 0,
+      "rec": 2,
+      "not": 1
+     },
+     "11": {
+      "best": 0,
+      "rec": 1,
+      "not": 2
+     },
+     "12": {
+      "best": 0,
+      "rec": 1,
+      "not": 2
+     },
+     "13": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "14": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "15": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "15+": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     }
+    },
+    "bestwith": "Best with 4–6 players",
+    "recwith": "Recommended with 3–10 players"
+   }
+  },
+  {
+   "id": 70,
+   "name": "블랙 스토리즈 : 황당한 죽음",
+   "bgg_id": "96345",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 15,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 8,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 8
+     },
+     "2": {
+      "best": 0,
+      "rec": 4,
+      "not": 4
+     },
+     "3": {
+      "best": 4,
+      "rec": 3,
+      "not": 1
+     },
+     "4": {
+      "best": 6,
+      "rec": 2,
+      "not": 0
+     },
+     "5": {
+      "best": 6,
+      "rec": 2,
+      "not": 0
+     },
+     "6": {
+      "best": 5,
+      "rec": 3,
+      "not": 0
+     },
+     "7": {
+      "best": 2,
+      "rec": 6,
+      "not": 0
+     },
+     "8": {
+      "best": 2,
+      "rec": 5,
+      "not": 1
+     },
+     "9": {
+      "best": 2,
+      "rec": 3,
+      "not": 3
+     },
+     "10": {
+      "best": 1,
+      "rec": 4,
+      "not": 3
+     },
+     "11": {
+      "best": 0,
+      "rec": 2,
+      "not": 6
+     },
+     "12": {
+      "best": 0,
+      "rec": 2,
+      "not": 6
+     },
+     "13": {
+      "best": 0,
+      "rec": 2,
+      "not": 6
+     },
+     "14": {
+      "best": 0,
+      "rec": 2,
+      "not": 6
+     },
+     "15": {
+      "best": 0,
+      "rec": 2,
+      "not": 6
+     },
+     "15+": {
+      "best": 0,
+      "rec": 1,
+      "not": 7
+     }
+    },
+    "bestwith": "Best with 4–6 players",
+    "recwith": "Recommended with 3–10 players"
+   }
+  },
+  {
+   "id": 71,
+   "name": "블리츠!",
+   "bgg_id": "67877",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 67,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 46
+     },
+     "2": {
+      "best": 0,
+      "rec": 5,
+      "not": 43
+     },
+     "3": {
+      "best": 5,
+      "rec": 27,
+      "not": 24
+     },
+     "4": {
+      "best": 17,
+      "rec": 41,
+      "not": 2
+     },
+     "5": {
+      "best": 40,
+      "rec": 16,
+      "not": 0
+     },
+     "6": {
+      "best": 26,
+      "rec": 22,
+      "not": 4
+     },
+     "6+": {
+      "best": 8,
+      "rec": 18,
+      "not": 17
+     }
+    },
+    "bestwith": "Best with 5 players",
+    "recwith": "Recommended with 3–6+ players"
+   }
+  },
+  {
+   "id": 72,
+   "name": "사건의 재구성",
+   "bgg_id": "239188",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 398,
+    "results": {
+     "1": {
+      "best": 80,
+      "rec": 215,
+      "not": 42
+     },
+     "2": {
+      "best": 269,
+      "rec": 94,
+      "not": 10
+     },
+     "3": {
+      "best": 69,
+      "rec": 194,
+      "not": 55
+     },
+     "4": {
+      "best": 24,
+      "rec": 103,
+      "not": 181
+     },
+     "4+": {
+      "best": 6,
+      "rec": 33,
+      "not": 234
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–3 players"
+   }
+  },
+  {
+   "id": 73,
+   "name": "사무라이 소드",
+   "bgg_id": "128667",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 7,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 75,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 49
+     },
+     "2": {
+      "best": 0,
+      "rec": 1,
+      "not": 49
+     },
+     "3": {
+      "best": 0,
+      "rec": 6,
+      "not": 51
+     },
+     "4": {
+      "best": 1,
+      "rec": 25,
+      "not": 28
+     },
+     "5": {
+      "best": 25,
+      "rec": 37,
+      "not": 1
+     },
+     "6": {
+      "best": 23,
+      "rec": 35,
+      "not": 1
+     },
+     "7": {
+      "best": 42,
+      "rec": 16,
+      "not": 2
+     },
+     "7+": {
+      "best": 3,
+      "rec": 4,
+      "not": 25
+     }
+    },
+    "bestwith": "Best with 7 players",
+    "recwith": "Recommended with 5–7 players"
+   }
+  },
+  {
+   "id": 74,
+   "name": "사보타지",
+   "bgg_id": "9220",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 10,
+   "quantity": 2,
+   "rentals_since_0301": 14,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 427,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 300
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 303
+     },
+     "3": {
+      "best": 5,
+      "rec": 58,
+      "not": 274
+     },
+     "4": {
+      "best": 18,
+      "rec": 139,
+      "not": 188
+     },
+     "5": {
+      "best": 84,
+      "rec": 235,
+      "not": 25
+     },
+     "6": {
+      "best": 160,
+      "rec": 174,
+      "not": 13
+     },
+     "7": {
+      "best": 240,
+      "rec": 98,
+      "not": 5
+     },
+     "8": {
+      "best": 194,
+      "rec": 112,
+      "not": 13
+     },
+     "9": {
+      "best": 82,
+      "rec": 162,
+      "not": 49
+     },
+     "10": {
+      "best": 64,
+      "rec": 161,
+      "not": 67
+     },
+     "10+": {
+      "best": 6,
+      "rec": 12,
+      "not": 184
+     }
+    },
+    "bestwith": "Best with 7–8 players",
+    "recwith": "Recommended with 5–10 players"
+   }
+  },
+  {
+   "id": 75,
+   "name": "사이쓰 Scythe",
+   "bgg_id": "169786",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1691,
+    "results": {
+     "1": {
+      "best": 66,
+      "rec": 601,
+      "not": 429
+     },
+     "2": {
+      "best": 64,
+      "rec": 795,
+      "not": 488
+     },
+     "3": {
+      "best": 362,
+      "rec": 897,
+      "not": 108
+     },
+     "4": {
+      "best": 1047,
+      "rec": 363,
+      "not": 31
+     },
+     "5": {
+      "best": 455,
+      "rec": 666,
+      "not": 150
+     },
+     "5+": {
+      "best": 63,
+      "rec": 270,
+      "not": 573
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 1–5 players"
+   }
+  },
+  {
+   "id": 76,
+   "name": "섀도우 레이더스",
+   "bgg_id": "288098",
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 10,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 5
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 5
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 6
+     },
+     "4": {
+      "best": 0,
+      "rec": 2,
+      "not": 5
+     },
+     "5": {
+      "best": 2,
+      "rec": 4,
+      "not": 2
+     },
+     "6": {
+      "best": 6,
+      "rec": 3,
+      "not": 1
+     },
+     "7": {
+      "best": 3,
+      "rec": 3,
+      "not": 0
+     },
+     "8": {
+      "best": 2,
+      "rec": 4,
+      "not": 0
+     },
+     "8+": {
+      "best": 1,
+      "rec": 1,
+      "not": 3
+     }
+    },
+    "bestwith": "Best with 6 players",
+    "recwith": "Recommended with 5–8 players"
+   }
+  },
+  {
+   "id": 77,
+   "name": "서스펙트 게임",
+   "bgg_id": "346623",
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 5,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 5
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 5
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 5
+     },
+     "4": {
+      "best": 5,
+      "rec": 0,
+      "not": 0
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 5
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 4 players"
+   }
+  },
+  {
+   "id": 78,
+   "name": "서스펙트 게임 : 리로드",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 3,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 79,
+   "name": "세 자매",
+   "bgg_id": "291845",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 81,
+    "results": {
+     "1": {
+      "best": 18,
+      "rec": 36,
+      "not": 7
+     },
+     "2": {
+      "best": 44,
+      "rec": 16,
+      "not": 2
+     },
+     "3": {
+      "best": 27,
+      "rec": 18,
+      "not": 2
+     },
+     "4": {
+      "best": 11,
+      "rec": 23,
+      "not": 9
+     },
+     "4+": {
+      "best": 0,
+      "rec": 2,
+      "not": 27
+     }
+    },
+    "bestwith": "Best with 2–3 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 80,
+   "name": "세븐 원더스 : 듀얼",
+   "bgg_id": "173346",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 2,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1546,
+    "results": {
+     "1": {
+      "best": 14,
+      "rec": 108,
+      "not": 1112
+     },
+     "2": {
+      "best": 1495,
+      "rec": 32,
+      "not": 6
+     },
+     "2+": {
+      "best": 7,
+      "rec": 5,
+      "not": 1185
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 2 players"
+   }
+  },
+  {
+   "id": 81,
+   "name": "세트",
+   "bgg_id": "1198",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 20,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 135,
+    "results": {
+     "1": {
+      "best": 17,
+      "rec": 43,
+      "not": 49
+     },
+     "2": {
+      "best": 37,
+      "rec": 76,
+      "not": 9
+     },
+     "3": {
+      "best": 71,
+      "rec": 42,
+      "not": 5
+     },
+     "4": {
+      "best": 79,
+      "rec": 30,
+      "not": 5
+     },
+     "5": {
+      "best": 44,
+      "rec": 53,
+      "not": 10
+     },
+     "6": {
+      "best": 28,
+      "rec": 58,
+      "not": 13
+     },
+     "7": {
+      "best": 10,
+      "rec": 38,
+      "not": 44
+     },
+     "8": {
+      "best": 10,
+      "rec": 36,
+      "not": 46
+     },
+     "9": {
+      "best": 6,
+      "rec": 19,
+      "not": 64
+     },
+     "10": {
+      "best": 3,
+      "rec": 8,
+      "not": 52
+     },
+     "11": {
+      "best": 1,
+      "rec": 5,
+      "not": 55
+     },
+     "12": {
+      "best": 1,
+      "rec": 5,
+      "not": 55
+     },
+     "13": {
+      "best": 1,
+      "rec": 2,
+      "not": 59
+     },
+     "14": {
+      "best": 0,
+      "rec": 2,
+      "not": 60
+     },
+     "15": {
+      "best": 0,
+      "rec": 2,
+      "not": 60
+     },
+     "16": {
+      "best": 0,
+      "rec": 1,
+      "not": 61
+     },
+     "17": {
+      "best": 0,
+      "rec": 1,
+      "not": 61
+     },
+     "18": {
+      "best": 0,
+      "rec": 1,
+      "not": 61
+     },
+     "19": {
+      "best": 0,
+      "rec": 1,
+      "not": 60
+     },
+     "20": {
+      "best": 0,
+      "rec": 1,
+      "not": 60
+     },
+     "20+": {
+      "best": 1,
+      "rec": 1,
+      "not": 59
+     }
+    },
+    "bestwith": "Best with 3–4 players",
+    "recwith": "Recommended with 1–7 players"
+   }
+  },
+  {
+   "id": 82,
+   "name": "셀레스티아",
+   "bgg_id": "175117",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 169,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 118
+     },
+     "2": {
+      "best": 0,
+      "rec": 17,
+      "not": 119
+     },
+     "3": {
+      "best": 6,
+      "rec": 75,
+      "not": 52
+     },
+     "4": {
+      "best": 51,
+      "rec": 88,
+      "not": 4
+     },
+     "5": {
+      "best": 111,
+      "rec": 33,
+      "not": 0
+     },
+     "6": {
+      "best": 101,
+      "rec": 39,
+      "not": 2
+     },
+     "6+": {
+      "best": 3,
+      "rec": 9,
+      "not": 67
+     }
+    },
+    "bestwith": "Best with 5–6 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 83,
+   "name": "솔라리움 2",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 84,
+   "name": "스몰 월드 오브 워크래프트",
+   "bgg_id": "309630",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 58,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 3,
+      "not": 38
+     },
+     "2": {
+      "best": 4,
+      "rec": 25,
+      "not": 17
+     },
+     "3": {
+      "best": 17,
+      "rec": 26,
+      "not": 2
+     },
+     "4": {
+      "best": 33,
+      "rec": 12,
+      "not": 3
+     },
+     "5": {
+      "best": 7,
+      "rec": 27,
+      "not": 11
+     },
+     "5+": {
+      "best": 0,
+      "rec": 1,
+      "not": 31
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–5 players"
+   }
+  },
+  {
+   "id": 85,
+   "name": "스토리의 신",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": null
+  },
+  {
+   "id": 86,
+   "name": "스파이시",
+   "bgg_id": "299169",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 153,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 97
+     },
+     "2": {
+      "best": 4,
+      "rec": 49,
+      "not": 65
+     },
+     "3": {
+      "best": 23,
+      "rec": 91,
+      "not": 9
+     },
+     "4": {
+      "best": 84,
+      "rec": 35,
+      "not": 4
+     },
+     "5": {
+      "best": 66,
+      "rec": 43,
+      "not": 8
+     },
+     "6": {
+      "best": 24,
+      "rec": 67,
+      "not": 14
+     },
+     "6+": {
+      "best": 3,
+      "rec": 11,
+      "not": 62
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 87,
+   "name": "스플렌더",
+   "bgg_id": "148228",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 2,
+   "rentals_since_0301": 6,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1272,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 15,
+      "not": 778
+     },
+     "2": {
+      "best": 384,
+      "rec": 674,
+      "not": 92
+     },
+     "3": {
+      "best": 676,
+      "rec": 446,
+      "not": 19
+     },
+     "4": {
+      "best": 396,
+      "rec": 625,
+      "not": 91
+     },
+     "4+": {
+      "best": 4,
+      "rec": 30,
+      "not": 644
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 88,
+   "name": "슬기로운 생존생활 : 빙하기편",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 89,
+   "name": "시체와 온천",
+   "bgg_id": "370748",
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 5,
+   "quantity": 2,
+   "rentals_since_0301": 4,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 0,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "5": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "5+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": null,
+    "recwith": "(no votes)"
+   }
+  },
+  {
+   "id": 90,
+   "name": "시크릿 히틀러",
+   "bgg_id": "188834",
+   "category": "보드게임",
+   "min_players": 5,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 5,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 516,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 382
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 383
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 384
+     },
+     "4": {
+      "best": 0,
+      "rec": 3,
+      "not": 382
+     },
+     "5": {
+      "best": 9,
+      "rec": 172,
+      "not": 243
+     },
+     "6": {
+      "best": 49,
+      "rec": 278,
+      "not": 97
+     },
+     "7": {
+      "best": 203,
+      "rec": 234,
+      "not": 20
+     },
+     "8": {
+      "best": 313,
+      "rec": 138,
+      "not": 9
+     },
+     "9": {
+      "best": 191,
+      "rec": 225,
+      "not": 25
+     },
+     "10": {
+      "best": 256,
+      "rec": 158,
+      "not": 31
+     },
+     "10+": {
+      "best": 10,
+      "rec": 20,
+      "not": 274
+     }
+    },
+    "bestwith": "Best with 8, 10 players",
+    "recwith": "Recommended with 6–10 players"
+   }
+  },
+  {
+   "id": 91,
+   "name": "시타델",
+   "bgg_id": "478",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 2,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1279,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 4,
+      "not": 720
+     },
+     "2": {
+      "best": 204,
+      "rec": 351,
+      "not": 495
+     },
+     "3": {
+      "best": 221,
+      "rec": 473,
+      "not": 317
+     },
+     "4": {
+      "best": 346,
+      "rec": 606,
+      "not": 83
+     },
+     "5": {
+      "best": 568,
+      "rec": 402,
+      "not": 75
+     },
+     "6": {
+      "best": 327,
+      "rec": 446,
+      "not": 202
+     },
+     "7": {
+      "best": 155,
+      "rec": 400,
+      "not": 361
+     },
+     "8": {
+      "best": 41,
+      "rec": 178,
+      "not": 517
+     },
+     "8+": {
+      "best": 2,
+      "rec": 13,
+      "not": 386
+     }
+    },
+    "bestwith": "Best with 5 players",
+    "recwith": "Recommended with 2–7 players"
+   }
+  },
+  {
+   "id": 92,
+   "name": "신비로운 요괴 : 저녁노을어스름",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 93,
+   "name": "아임 더 보스!",
+   "bgg_id": "115",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 15,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 90,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 49
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 52
+     },
+     "3": {
+      "best": 2,
+      "rec": 16,
+      "not": 42
+     },
+     "4": {
+      "best": 10,
+      "rec": 40,
+      "not": 18
+     },
+     "5": {
+      "best": 36,
+      "rec": 39,
+      "not": 4
+     },
+     "6": {
+      "best": 62,
+      "rec": 13,
+      "not": 2
+     },
+     "6+": {
+      "best": 0,
+      "rec": 2,
+      "not": 29
+     }
+    },
+    "bestwith": "Best with 6 players",
+    "recwith": "Recommended with 4–6 players"
+   }
+  },
+  {
+   "id": 94,
+   "name": "아컴 미스터리 : 광기로 물든 사건집",
+   "bgg_id": "126100",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 44,
+    "results": {
+     "1": {
+      "best": 8,
+      "rec": 25,
+      "not": 7
+     },
+     "2": {
+      "best": 19,
+      "rec": 16,
+      "not": 3
+     },
+     "3": {
+      "best": 21,
+      "rec": 13,
+      "not": 1
+     },
+     "4": {
+      "best": 14,
+      "rec": 19,
+      "not": 2
+     },
+     "5": {
+      "best": 4,
+      "rec": 15,
+      "not": 15
+     },
+     "6": {
+      "best": 2,
+      "rec": 5,
+      "not": 27
+     },
+     "7": {
+      "best": 0,
+      "rec": 3,
+      "not": 31
+     },
+     "8": {
+      "best": 0,
+      "rec": 2,
+      "not": 31
+     },
+     "9": {
+      "best": 0,
+      "rec": 0,
+      "not": 33
+     },
+     "10": {
+      "best": 0,
+      "rec": 0,
+      "not": 33
+     },
+     "10+": {
+      "best": 0,
+      "rec": 0,
+      "not": 33
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 1–5 players"
+   }
+  },
+  {
+   "id": 95,
+   "name": "아컴 호러",
+   "bgg_id": "15987",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1138,
+    "results": {
+     "1": {
+      "best": 104,
+      "rec": 421,
+      "not": 292
+     },
+     "2": {
+      "best": 137,
+      "rec": 556,
+      "not": 163
+     },
+     "3": {
+      "best": 295,
+      "rec": 558,
+      "not": 40
+     },
+     "4": {
+      "best": 688,
+      "rec": 289,
+      "not": 23
+     },
+     "5": {
+      "best": 231,
+      "rec": 453,
+      "not": 153
+     },
+     "6": {
+      "best": 85,
+      "rec": 391,
+      "not": 300
+     },
+     "7": {
+      "best": 15,
+      "rec": 158,
+      "not": 535
+     },
+     "8": {
+      "best": 15,
+      "rec": 130,
+      "not": 594
+     },
+     "8+": {
+      "best": 3,
+      "rec": 15,
+      "not": 595
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 1–6 players"
+   }
+  },
+  {
+   "id": 96,
+   "name": "아컴 호러 카드게임",
+   "bgg_id": "205637",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 2,
+   "quantity": 2,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1126,
+    "results": {
+     "1": {
+      "best": 290,
+      "rec": 614,
+      "not": 100
+     },
+     "2": {
+      "best": 786,
+      "rec": 238,
+      "not": 8
+     },
+     "2+": {
+      "best": 183,
+      "rec": 382,
+      "not": 239
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–2+ players"
+   }
+  },
+  {
+   "id": 97,
+   "name": "안방극장대모험",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 98,
+   "name": "액트 맥베스",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 1,
+   "max_players": 2,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 99,
+   "name": "언락 1",
+   "bgg_id": "213460",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 99,
+    "results": {
+     "1": {
+      "best": 8,
+      "rec": 32,
+      "not": 36
+     },
+     "2": {
+      "best": 49,
+      "rec": 30,
+      "not": 7
+     },
+     "3": {
+      "best": 35,
+      "rec": 46,
+      "not": 6
+     },
+     "4": {
+      "best": 30,
+      "rec": 39,
+      "not": 16
+     },
+     "5": {
+      "best": 3,
+      "rec": 17,
+      "not": 51
+     },
+     "6": {
+      "best": 1,
+      "rec": 10,
+      "not": 61
+     },
+     "6+": {
+      "best": 0,
+      "rec": 1,
+      "not": 64
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 100,
+   "name": "언락 6",
+   "bgg_id": "279613",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 29,
+    "results": {
+     "1": {
+      "best": 2,
+      "rec": 19,
+      "not": 2
+     },
+     "2": {
+      "best": 26,
+      "rec": 2,
+      "not": 0
+     },
+     "3": {
+      "best": 2,
+      "rec": 20,
+      "not": 3
+     },
+     "4": {
+      "best": 1,
+      "rec": 8,
+      "not": 17
+     },
+     "5": {
+      "best": 0,
+      "rec": 1,
+      "not": 23
+     },
+     "6": {
+      "best": 0,
+      "rec": 1,
+      "not": 23
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 24
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–3 players"
+   }
+  },
+  {
+   "id": 101,
+   "name": "에버델",
+   "bgg_id": "199792",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1141,
+    "results": {
+     "1": {
+      "best": 20,
+      "rec": 405,
+      "not": 236
+     },
+     "2": {
+      "best": 339,
+      "rec": 606,
+      "not": 55
+     },
+     "3": {
+      "best": 605,
+      "rec": 326,
+      "not": 14
+     },
+     "4": {
+      "best": 199,
+      "rec": 507,
+      "not": 169
+     },
+     "4+": {
+      "best": 1,
+      "rec": 18,
+      "not": 529
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 102,
+   "name": "에이다",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 5,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 3,
+   "bgg": null
+  },
+  {
+   "id": 103,
+   "name": "엘 그란데 빅 박스",
+   "bgg_id": "171908",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 82,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 2,
+      "not": 46
+     },
+     "2": {
+      "best": 1,
+      "rec": 13,
+      "not": 48
+     },
+     "3": {
+      "best": 5,
+      "rec": 35,
+      "not": 20
+     },
+     "4": {
+      "best": 36,
+      "rec": 33,
+      "not": 2
+     },
+     "5": {
+      "best": 52,
+      "rec": 21,
+      "not": 2
+     },
+     "5+": {
+      "best": 0,
+      "rec": 0,
+      "not": 40
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–5 players"
+   }
+  },
+  {
+   "id": 104,
+   "name": "옛날 옛적에",
+   "bgg_id": "1234",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 80,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 5,
+      "not": 56
+     },
+     "2": {
+      "best": 3,
+      "rec": 23,
+      "not": 39
+     },
+     "3": {
+      "best": 13,
+      "rec": 40,
+      "not": 14
+     },
+     "4": {
+      "best": 29,
+      "rec": 35,
+      "not": 4
+     },
+     "5": {
+      "best": 42,
+      "rec": 21,
+      "not": 3
+     },
+     "6": {
+      "best": 35,
+      "rec": 23,
+      "not": 6
+     },
+     "6+": {
+      "best": 8,
+      "rec": 15,
+      "not": 33
+     }
+    },
+    "bestwith": "Best with 5–6 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 105,
+   "name": "오토배틀 챌린저스!",
+   "bgg_id": "359970",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 220,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 35,
+      "not": 112
+     },
+     "2": {
+      "best": 22,
+      "rec": 81,
+      "not": 66
+     },
+     "3": {
+      "best": 0,
+      "rec": 41,
+      "not": 117
+     },
+     "4": {
+      "best": 101,
+      "rec": 77,
+      "not": 7
+     },
+     "5": {
+      "best": 4,
+      "rec": 71,
+      "not": 84
+     },
+     "6": {
+      "best": 136,
+      "rec": 45,
+      "not": 5
+     },
+     "7": {
+      "best": 8,
+      "rec": 63,
+      "not": 87
+     },
+     "8": {
+      "best": 140,
+      "rec": 42,
+      "not": 5
+     },
+     "8+": {
+      "best": 0,
+      "rec": 6,
+      "not": 109
+     }
+    },
+    "bestwith": "Best with 4, 6, 8 players",
+    "recwith": "Recommended with 2, 4, 6, 8 players"
+   }
+  },
+  {
+   "id": 106,
+   "name": "왕좌의 게임 보드게임",
+   "bgg_id": "103343",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1072,
+    "results": {
+     "1": {
+      "best": 3,
+      "rec": 1,
+      "not": 679
+     },
+     "2": {
+      "best": 1,
+      "rec": 8,
+      "not": 692
+     },
+     "3": {
+      "best": 34,
+      "rec": 221,
+      "not": 583
+     },
+     "4": {
+      "best": 49,
+      "rec": 417,
+      "not": 391
+     },
+     "5": {
+      "best": 100,
+      "rec": 577,
+      "not": 190
+     },
+     "6": {
+      "best": 920,
+      "rec": 83,
+      "not": 14
+     },
+     "6+": {
+      "best": 29,
+      "rec": 27,
+      "not": 394
+     }
+    },
+    "bestwith": "Best with 6 players",
+    "recwith": "Recommended with 4–6 players"
+   }
+  },
+  {
+   "id": 107,
+   "name": "요트다이스",
+   "bgg_id": "2243",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 4,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 191,
+    "results": {
+     "1": {
+      "best": 16,
+      "rec": 46,
+      "not": 84
+     },
+     "2": {
+      "best": 69,
+      "rec": 90,
+      "not": 14
+     },
+     "3": {
+      "best": 87,
+      "rec": 65,
+      "not": 9
+     },
+     "4": {
+      "best": 86,
+      "rec": 67,
+      "not": 10
+     },
+     "5": {
+      "best": 22,
+      "rec": 85,
+      "not": 40
+     },
+     "6": {
+      "best": 8,
+      "rec": 79,
+      "not": 55
+     },
+     "7": {
+      "best": 3,
+      "rec": 20,
+      "not": 102
+     },
+     "8": {
+      "best": 2,
+      "rec": 17,
+      "not": 105
+     },
+     "9": {
+      "best": 2,
+      "rec": 10,
+      "not": 110
+     },
+     "10": {
+      "best": 3,
+      "rec": 10,
+      "not": 110
+     },
+     "10+": {
+      "best": 3,
+      "rec": 6,
+      "not": 108
+     }
+    },
+    "bestwith": "Best with 3–4 players",
+    "recwith": "Recommended with 2–6 players"
+   }
+  },
+  {
+   "id": 108,
+   "name": "용사가 죽었다",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 6,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": null
+  },
+  {
+   "id": 109,
+   "name": "워드 캡처: 티키타카",
+   "bgg_id": "322204",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 4,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "3": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "4": {
+      "best": 2,
+      "rec": 2,
+      "not": 0
+     },
+     "5": {
+      "best": 3,
+      "rec": 1,
+      "not": 0
+     },
+     "6": {
+      "best": 1,
+      "rec": 2,
+      "not": 0
+     },
+     "6+": {
+      "best": 0,
+      "rec": 1,
+      "not": 1
+     }
+    },
+    "bestwith": "Best with 5 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 110,
+   "name": "월드 오브 워크래프트 : 리치 왕의 분노 - 팬데믹 보드게임",
+   "bgg_id": "342848",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 60,
+    "results": {
+     "1": {
+      "best": 12,
+      "rec": 27,
+      "not": 8
+     },
+     "2": {
+      "best": 11,
+      "rec": 29,
+      "not": 3
+     },
+     "3": {
+      "best": 30,
+      "rec": 15,
+      "not": 0
+     },
+     "4": {
+      "best": 9,
+      "rec": 28,
+      "not": 2
+     },
+     "5": {
+      "best": 0,
+      "rec": 20,
+      "not": 16
+     },
+     "5+": {
+      "best": 0,
+      "rec": 1,
+      "not": 20
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 1–5 players"
+   }
+  },
+  {
+   "id": 111,
+   "name": "월면탐험",
+   "bgg_id": "330403",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 14,
+    "results": {
+     "1": {
+      "best": 2,
+      "rec": 6,
+      "not": 3
+     },
+     "2": {
+      "best": 2,
+      "rec": 12,
+      "not": 0
+     },
+     "3": {
+      "best": 6,
+      "rec": 6,
+      "not": 0
+     },
+     "4": {
+      "best": 4,
+      "rec": 5,
+      "not": 1
+     },
+     "5": {
+      "best": 0,
+      "rec": 5,
+      "not": 3
+     },
+     "5+": {
+      "best": 0,
+      "rec": 0,
+      "not": 6
+     }
+    },
+    "bestwith": "Best with 2–3 players",
+    "recwith": "Recommended with 1–5 players"
+   }
+  },
+  {
+   "id": 112,
+   "name": "웬디, 어른이 되렴",
+   "bgg_id": "370749",
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 7,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 5,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 0,
+      "not": 1
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "3": {
+      "best": 0,
+      "rec": 1,
+      "not": 2
+     },
+     "4": {
+      "best": 1,
+      "rec": 2,
+      "not": 1
+     },
+     "5": {
+      "best": 3,
+      "rec": 0,
+      "not": 2
+     },
+     "5+": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     }
+    },
+    "bestwith": "Best with 5 players",
+    "recwith": "Recommended with 4–5+ players"
+   }
+  },
+  {
+   "id": 113,
+   "name": "위쳐 올드 월드",
+   "bgg_id": "331106",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 472,
+    "results": {
+     "1": {
+      "best": 40,
+      "rec": 215,
+      "not": 64
+     },
+     "2": {
+      "best": 245,
+      "rec": 154,
+      "not": 15
+     },
+     "3": {
+      "best": 245,
+      "rec": 143,
+      "not": 26
+     },
+     "4": {
+      "best": 35,
+      "rec": 125,
+      "not": 228
+     },
+     "5": {
+      "best": 7,
+      "rec": 39,
+      "not": 341
+     },
+     "5+": {
+      "best": 2,
+      "rec": 2,
+      "not": 302
+     }
+    },
+    "bestwith": "Best with 2–3 players",
+    "recwith": "Recommended with 1–3 players"
+   }
+  },
+  {
+   "id": 115,
+   "name": "이세계를구할완벽한파티입니다만...?",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 116,
+   "name": "이스케이프 룸",
+   "bgg_id": "204836",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 71,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 29,
+      "not": 22
+     },
+     "2": {
+      "best": 29,
+      "rec": 28,
+      "not": 6
+     },
+     "3": {
+      "best": 37,
+      "rec": 24,
+      "not": 0
+     },
+     "4": {
+      "best": 27,
+      "rec": 24,
+      "not": 10
+     },
+     "5": {
+      "best": 2,
+      "rec": 18,
+      "not": 33
+     },
+     "5+": {
+      "best": 0,
+      "rec": 3,
+      "not": 41
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 117,
+   "name": "익스플로딩 키튼",
+   "bgg_id": "172225",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 447,
+    "results": {
+     "1": {
+      "best": 2,
+      "rec": 2,
+      "not": 350
+     },
+     "2": {
+      "best": 11,
+      "rec": 105,
+      "not": 270
+     },
+     "3": {
+      "best": 55,
+      "rec": 307,
+      "not": 36
+     },
+     "4": {
+      "best": 302,
+      "rec": 99,
+      "not": 9
+     },
+     "5": {
+      "best": 258,
+      "rec": 110,
+      "not": 17
+     },
+     "5+": {
+      "best": 30,
+      "rec": 53,
+      "not": 195
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–5 players"
+   }
+  },
+  {
+   "id": 118,
+   "name": "인디언포커",
+   "bgg_id": null,
+   "category": "플레잉카드",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 119,
+   "name": "인사이더",
+   "bgg_id": "206051",
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 5,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 60,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 40
+     },
+     "2": {
+      "best": 0,
+      "rec": 1,
+      "not": 39
+     },
+     "3": {
+      "best": 0,
+      "rec": 1,
+      "not": 42
+     },
+     "4": {
+      "best": 4,
+      "rec": 23,
+      "not": 20
+     },
+     "5": {
+      "best": 27,
+      "rec": 24,
+      "not": 1
+     },
+     "6": {
+      "best": 33,
+      "rec": 16,
+      "not": 1
+     },
+     "7": {
+      "best": 15,
+      "rec": 22,
+      "not": 8
+     },
+     "8": {
+      "best": 4,
+      "rec": 28,
+      "not": 9
+     },
+     "8+": {
+      "best": 0,
+      "rec": 1,
+      "not": 30
+     }
+    },
+    "bestwith": "Best with 5–6 players",
+    "recwith": "Recommended with 4–8 players"
+   }
+  },
+  {
+   "id": 120,
+   "name": "인세인 1",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 121,
+   "name": "인세인 2",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 122,
+   "name": "인코그니토",
+   "bgg_id": "466",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 78,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 58
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 60
+     },
+     "3": {
+      "best": 0,
+      "rec": 24,
+      "not": 36
+     },
+     "4": {
+      "best": 73,
+      "rec": 2,
+      "not": 1
+     },
+     "5": {
+      "best": 0,
+      "rec": 8,
+      "not": 48
+     },
+     "5+": {
+      "best": 0,
+      "rec": 0,
+      "not": 22
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 4 players"
+   }
+  },
+  {
+   "id": 123,
+   "name": "자두야 종치기하자",
+   "bgg_id": "2944",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 47,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 32
+     },
+     "2": {
+      "best": 2,
+      "rec": 10,
+      "not": 27
+     },
+     "3": {
+      "best": 5,
+      "rec": 28,
+      "not": 6
+     },
+     "4": {
+      "best": 34,
+      "rec": 8,
+      "not": 1
+     },
+     "5": {
+      "best": 27,
+      "rec": 13,
+      "not": 1
+     },
+     "6": {
+      "best": 8,
+      "rec": 21,
+      "not": 6
+     },
+     "6+": {
+      "best": 0,
+      "rec": 1,
+      "not": 22
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 124,
+   "name": "정령섬",
+   "bgg_id": "162886",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 2216,
+    "results": {
+     "1": {
+      "best": 607,
+      "rec": 1147,
+      "not": 131
+     },
+     "2": {
+      "best": 1453,
+      "rec": 579,
+      "not": 15
+     },
+     "3": {
+      "best": 668,
+      "rec": 1042,
+      "not": 120
+     },
+     "4": {
+      "best": 193,
+      "rec": 846,
+      "not": 682
+     },
+     "4+": {
+      "best": 32,
+      "rec": 160,
+      "not": 1121
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 126,
+   "name": "젝스 님트!",
+   "bgg_id": "432",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 6,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 664,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 2,
+      "not": 456
+     },
+     "2": {
+      "best": 9,
+      "rec": 93,
+      "not": 416
+     },
+     "3": {
+      "best": 32,
+      "rec": 238,
+      "not": 263
+     },
+     "4": {
+      "best": 177,
+      "rec": 335,
+      "not": 56
+     },
+     "5": {
+      "best": 384,
+      "rec": 188,
+      "not": 19
+     },
+     "6": {
+      "best": 355,
+      "rec": 193,
+      "not": 20
+     },
+     "7": {
+      "best": 167,
+      "rec": 303,
+      "not": 47
+     },
+     "8": {
+      "best": 109,
+      "rec": 292,
+      "not": 93
+     },
+     "9": {
+      "best": 51,
+      "rec": 242,
+      "not": 165
+     },
+     "10": {
+      "best": 61,
+      "rec": 221,
+      "not": 186
+     },
+     "10+": {
+      "best": 5,
+      "rec": 17,
+      "not": 321
+     }
+    },
+    "bestwith": "Best with 5–6 players",
+    "recwith": "Recommended with 3–10 players"
+   }
+  },
+  {
+   "id": 127,
+   "name": "지도 제작자들",
+   "bgg_id": "263918",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 100,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 495,
+    "results": {
+     "1": {
+      "best": 89,
+      "rec": 204,
+      "not": 82
+     },
+     "2": {
+      "best": 157,
+      "rec": 233,
+      "not": 23
+     },
+     "3": {
+      "best": 228,
+      "rec": 133,
+      "not": 10
+     },
+     "4": {
+      "best": 253,
+      "rec": 101,
+      "not": 11
+     },
+     "5": {
+      "best": 110,
+      "rec": 159,
+      "not": 25
+     },
+     "6": {
+      "best": 75,
+      "rec": 153,
+      "not": 41
+     },
+     "7": {
+      "best": 36,
+      "rec": 115,
+      "not": 75
+     },
+     "8": {
+      "best": 30,
+      "rec": 110,
+      "not": 79
+     },
+     "9": {
+      "best": 17,
+      "rec": 78,
+      "not": 105
+     },
+     "10": {
+      "best": 16,
+      "rec": 70,
+      "not": 114
+     },
+     "11": {
+      "best": 7,
+      "rec": 46,
+      "not": 126
+     },
+     "12": {
+      "best": 8,
+      "rec": 45,
+      "not": 123
+     },
+     "13": {
+      "best": 5,
+      "rec": 40,
+      "not": 125
+     },
+     "14": {
+      "best": 5,
+      "rec": 38,
+      "not": 123
+     },
+     "15": {
+      "best": 5,
+      "rec": 38,
+      "not": 120
+     },
+     "16": {
+      "best": 5,
+      "rec": 35,
+      "not": 119
+     },
+     "17": {
+      "best": 5,
+      "rec": 35,
+      "not": 119
+     },
+     "18": {
+      "best": 5,
+      "rec": 34,
+      "not": 118
+     },
+     "19": {
+      "best": 4,
+      "rec": 34,
+      "not": 119
+     },
+     "20": {
+      "best": 4,
+      "rec": 34,
+      "not": 119
+     },
+     "21": {
+      "best": 5,
+      "rec": 30,
+      "not": 121
+     },
+     "22": {
+      "best": 4,
+      "rec": 29,
+      "not": 121
+     },
+     "23": {
+      "best": 4,
+      "rec": 29,
+      "not": 121
+     },
+     "24": {
+      "best": 4,
+      "rec": 29,
+      "not": 121
+     },
+     "25": {
+      "best": 5,
+      "rec": 29,
+      "not": 121
+     },
+     "26": {
+      "best": 4,
+      "rec": 29,
+      "not": 122
+     },
+     "27": {
+      "best": 4,
+      "rec": 29,
+      "not": 122
+     },
+     "28": {
+      "best": 4,
+      "rec": 29,
+      "not": 122
+     },
+     "29": {
+      "best": 4,
+      "rec": 29,
+      "not": 122
+     },
+     "30": {
+      "best": 4,
+      "rec": 30,
+      "not": 121
+     },
+     "30+": {
+      "best": 5,
+      "rec": 29,
+      "not": 130
+     }
+    },
+    "bestwith": "Best with 3–4 players",
+    "recwith": "Recommended with 1–8 players"
+   }
+  },
+  {
+   "id": 128,
+   "name": "진실카드게임",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": null
+  },
+  {
+   "id": 129,
+   "name": "천안대학교 민속학연구동아리 활동보고서",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 130,
+   "name": "체스",
+   "bgg_id": "171",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 2,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 543,
+    "results": {
+     "1": {
+      "best": 11,
+      "rec": 55,
+      "not": 399
+     },
+     "2": {
+      "best": 511,
+      "rec": 18,
+      "not": 9
+     },
+     "2+": {
+      "best": 10,
+      "rec": 20,
+      "not": 437
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 2 players"
+   }
+  },
+  {
+   "id": 131,
+   "name": "최종변론",
+   "bgg_id": "267401",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 2,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 25,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 8,
+      "not": 10
+     },
+     "2": {
+      "best": 22,
+      "rec": 0,
+      "not": 0
+     },
+     "2+": {
+      "best": 1,
+      "rec": 0,
+      "not": 17
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 2 players"
+   }
+  },
+  {
+   "id": 132,
+   "name": "칭찬 베이커리",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 133,
+   "name": "카나리아는 지저귀지 않는다",
+   "bgg_id": "415623",
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 0,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": null,
+    "recwith": "(no votes)"
+   }
+  },
+  {
+   "id": 134,
+   "name": "카르네이데스의 음영",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 135,
+   "name": "카르카손",
+   "bgg_id": "822",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 2811,
+    "results": {
+     "1": {
+      "best": 8,
+      "rec": 83,
+      "not": 1759
+     },
+     "2": {
+      "best": 1495,
+      "rec": 1002,
+      "not": 133
+     },
+     "3": {
+      "best": 1252,
+      "rec": 1205,
+      "not": 50
+     },
+     "4": {
+      "best": 778,
+      "rec": 1435,
+      "not": 205
+     },
+     "5": {
+      "best": 211,
+      "rec": 1144,
+      "not": 812
+     },
+     "5+": {
+      "best": 36,
+      "rec": 255,
+      "not": 1460
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 2–5 players"
+   }
+  },
+  {
+   "id": 136,
+   "name": "카르타벤추라 : 라싸",
+   "bgg_id": "327076",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 60,
+    "results": {
+     "1": {
+      "best": 47,
+      "rec": 12,
+      "not": 1
+     },
+     "2": {
+      "best": 16,
+      "rec": 26,
+      "not": 8
+     },
+     "3": {
+      "best": 3,
+      "rec": 15,
+      "not": 31
+     },
+     "4": {
+      "best": 0,
+      "rec": 10,
+      "not": 39
+     },
+     "5": {
+      "best": 0,
+      "rec": 2,
+      "not": 47
+     },
+     "6": {
+      "best": 0,
+      "rec": 2,
+      "not": 47
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 45
+     }
+    },
+    "bestwith": "Best with 1 players",
+    "recwith": "Recommended with 1–2 players"
+   }
+  },
+  {
+   "id": 137,
+   "name": "카르타벤추라 : 빈란드",
+   "bgg_id": "327077",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 45,
+    "results": {
+     "1": {
+      "best": 36,
+      "rec": 5,
+      "not": 1
+     },
+     "2": {
+      "best": 8,
+      "rec": 21,
+      "not": 8
+     },
+     "3": {
+      "best": 1,
+      "rec": 8,
+      "not": 27
+     },
+     "4": {
+      "best": 1,
+      "rec": 5,
+      "not": 30
+     },
+     "5": {
+      "best": 0,
+      "rec": 2,
+      "not": 34
+     },
+     "6": {
+      "best": 0,
+      "rec": 2,
+      "not": 34
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 34
+     }
+    },
+    "bestwith": "Best with 1 players",
+    "recwith": "Recommended with 1–2 players"
+   }
+  },
+  {
+   "id": 138,
+   "name": "카르타벤추라 : 오클라호마",
+   "bgg_id": "344405",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 24,
+    "results": {
+     "1": {
+      "best": 21,
+      "rec": 3,
+      "not": 0
+     },
+     "2": {
+      "best": 6,
+      "rec": 16,
+      "not": 2
+     },
+     "3": {
+      "best": 1,
+      "rec": 10,
+      "not": 11
+     },
+     "4": {
+      "best": 0,
+      "rec": 2,
+      "not": 21
+     },
+     "5": {
+      "best": 0,
+      "rec": 2,
+      "not": 21
+     },
+     "6": {
+      "best": 0,
+      "rec": 2,
+      "not": 21
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 21
+     }
+    },
+    "bestwith": "Best with 1 players",
+    "recwith": "Recommended with 1–2 players"
+   }
+  },
+  {
+   "id": 139,
+   "name": "카리바",
+   "bgg_id": "84732",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 78,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 49
+     },
+     "2": {
+      "best": 35,
+      "rec": 26,
+      "not": 8
+     },
+     "3": {
+      "best": 27,
+      "rec": 40,
+      "not": 2
+     },
+     "4": {
+      "best": 14,
+      "rec": 34,
+      "not": 10
+     },
+     "4+": {
+      "best": 1,
+      "rec": 9,
+      "not": 33
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 140,
+   "name": "카멜 업",
+   "bgg_id": "153938",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 6,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 417,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 257
+     },
+     "2": {
+      "best": 9,
+      "rec": 102,
+      "not": 189
+     },
+     "3": {
+      "best": 38,
+      "rec": 213,
+      "not": 58
+     },
+     "4": {
+      "best": 215,
+      "rec": 135,
+      "not": 6
+     },
+     "5": {
+      "best": 228,
+      "rec": 107,
+      "not": 8
+     },
+     "6": {
+      "best": 111,
+      "rec": 161,
+      "not": 36
+     },
+     "7": {
+      "best": 39,
+      "rec": 150,
+      "not": 95
+     },
+     "8": {
+      "best": 26,
+      "rec": 110,
+      "not": 138
+     },
+     "8+": {
+      "best": 2,
+      "rec": 6,
+      "not": 177
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–7 players"
+   }
+  },
+  {
+   "id": 141,
+   "name": "카탄",
+   "bgg_id": "13",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 6,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 2198,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 4,
+      "not": 1564
+     },
+     "2": {
+      "best": 17,
+      "rec": 269,
+      "not": 1392
+     },
+     "3": {
+      "best": 734,
+      "rec": 1175,
+      "not": 114
+     },
+     "4": {
+      "best": 1566,
+      "rec": 473,
+      "not": 48
+     },
+     "4+": {
+      "best": 63,
+      "rec": 210,
+      "not": 998
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–4 players"
+   }
+  },
+  {
+   "id": 143,
+   "name": "캐스캐디아",
+   "bgg_id": "295947",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1031,
+    "results": {
+     "1": {
+      "best": 132,
+      "rec": 431,
+      "not": 144
+     },
+     "2": {
+      "best": 578,
+      "rec": 332,
+      "not": 17
+     },
+     "3": {
+      "best": 544,
+      "rec": 321,
+      "not": 17
+     },
+     "4": {
+      "best": 185,
+      "rec": 546,
+      "not": 81
+     },
+     "4+": {
+      "best": 2,
+      "rec": 37,
+      "not": 448
+     }
+    },
+    "bestwith": "Best with 2–3 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 144,
+   "name": "캠프 파이어 퀘스천 카드",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 145,
+   "name": "커피 러시",
+   "bgg_id": "377061",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 130,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 4,
+      "not": 78
+     },
+     "2": {
+      "best": 21,
+      "rec": 58,
+      "not": 27
+     },
+     "3": {
+      "best": 79,
+      "rec": 29,
+      "not": 1
+     },
+     "4": {
+      "best": 27,
+      "rec": 71,
+      "not": 8
+     },
+     "4+": {
+      "best": 0,
+      "rec": 1,
+      "not": 70
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 146,
+   "name": "코드네임",
+   "bgg_id": "178900",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1462,
+    "results": {
+     "1": {
+      "best": 1,
+      "rec": 2,
+      "not": 1092
+     },
+     "2": {
+      "best": 12,
+      "rec": 165,
+      "not": 995
+     },
+     "3": {
+      "best": 9,
+      "rec": 160,
+      "not": 983
+     },
+     "4": {
+      "best": 440,
+      "rec": 758,
+      "not": 151
+     },
+     "5": {
+      "best": 41,
+      "rec": 806,
+      "not": 326
+     },
+     "6": {
+      "best": 1120,
+      "rec": 229,
+      "not": 15
+     },
+     "7": {
+      "best": 145,
+      "rec": 776,
+      "not": 229
+     },
+     "8": {
+      "best": 776,
+      "rec": 409,
+      "not": 80
+     },
+     "8+": {
+      "best": 157,
+      "rec": 492,
+      "not": 352
+     }
+    },
+    "bestwith": "Best with 6, 8 players",
+    "recwith": "Recommended with 4–8+ players"
+   }
+  },
+  {
+   "id": 147,
+   "name": "코로나가 잦아든 땅에서 / 서양식 갑옷이 우는 저택",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 148,
+   "name": "쿠",
+   "bgg_id": "158408",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 7,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 18,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 14
+     },
+     "2": {
+      "best": 0,
+      "rec": 2,
+      "not": 14
+     },
+     "3": {
+      "best": 2,
+      "rec": 7,
+      "not": 9
+     },
+     "4": {
+      "best": 10,
+      "rec": 7,
+      "not": 1
+     },
+     "5": {
+      "best": 11,
+      "rec": 7,
+      "not": 0
+     },
+     "6": {
+      "best": 13,
+      "rec": 4,
+      "not": 0
+     },
+     "7": {
+      "best": 4,
+      "rec": 8,
+      "not": 3
+     },
+     "8": {
+      "best": 2,
+      "rec": 9,
+      "not": 5
+     },
+     "8+": {
+      "best": 1,
+      "rec": 1,
+      "not": 9
+     }
+    },
+    "bestwith": "Best with 4–6 players",
+    "recwith": "Recommended with 4–8 players"
+   }
+  },
+  {
+   "id": 149,
+   "name": "쿼스천 카드 클래식",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": null
+  },
+  {
+   "id": 150,
+   "name": "크베들린부르크의 돌팔이 약장수",
+   "bgg_id": "244521",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 2,
+   "rentals_since_0301": 5,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 821,
+    "results": {
+     "1": {
+      "best": 2,
+      "rec": 34,
+      "not": 489
+     },
+     "2": {
+      "best": 129,
+      "rec": 530,
+      "not": 72
+     },
+     "3": {
+      "best": 312,
+      "rec": 392,
+      "not": 7
+     },
+     "4": {
+      "best": 579,
+      "rec": 137,
+      "not": 14
+     },
+     "4+": {
+      "best": 51,
+      "rec": 89,
+      "not": 309
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 151,
+   "name": "크툴루의 부름 : 수호자 룰북",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 4,
+   "bgg": null
+  },
+  {
+   "id": 152,
+   "name": "클루",
+   "bgg_id": "1294",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 4,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 223,
+    "results": {
+     "1": {
+      "best": 2,
+      "rec": 0,
+      "not": 177
+     },
+     "2": {
+      "best": 5,
+      "rec": 25,
+      "not": 160
+     },
+     "3": {
+      "best": 23,
+      "rec": 142,
+      "not": 37
+     },
+     "4": {
+      "best": 134,
+      "rec": 70,
+      "not": 3
+     },
+     "5": {
+      "best": 113,
+      "rec": 72,
+      "not": 5
+     },
+     "6": {
+      "best": 69,
+      "rec": 97,
+      "not": 17
+     },
+     "6+": {
+      "best": 2,
+      "rec": 5,
+      "not": 130
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 153,
+   "name": "킹 솔로몬",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 154,
+   "name": "타불라의 늑대",
+   "bgg_id": "63539",
+   "category": "보드게임",
+   "min_players": 8,
+   "max_players": 24,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 15,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 12
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 12
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 12
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 12
+     },
+     "5": {
+      "best": 0,
+      "rec": 1,
+      "not": 11
+     },
+     "6": {
+      "best": 0,
+      "rec": 2,
+      "not": 10
+     },
+     "7": {
+      "best": 1,
+      "rec": 1,
+      "not": 10
+     },
+     "8": {
+      "best": 2,
+      "rec": 8,
+      "not": 3
+     },
+     "9": {
+      "best": 3,
+      "rec": 8,
+      "not": 2
+     },
+     "10": {
+      "best": 8,
+      "rec": 5,
+      "not": 0
+     },
+     "11": {
+      "best": 7,
+      "rec": 6,
+      "not": 0
+     },
+     "12": {
+      "best": 8,
+      "rec": 5,
+      "not": 0
+     },
+     "13": {
+      "best": 8,
+      "rec": 4,
+      "not": 1
+     },
+     "14": {
+      "best": 6,
+      "rec": 6,
+      "not": 1
+     },
+     "15": {
+      "best": 8,
+      "rec": 6,
+      "not": 1
+     },
+     "16": {
+      "best": 5,
+      "rec": 8,
+      "not": 1
+     },
+     "17": {
+      "best": 3,
+      "rec": 9,
+      "not": 2
+     },
+     "18": {
+      "best": 3,
+      "rec": 8,
+      "not": 2
+     },
+     "19": {
+      "best": 3,
+      "rec": 8,
+      "not": 2
+     },
+     "20": {
+      "best": 3,
+      "rec": 8,
+      "not": 2
+     },
+     "21": {
+      "best": 1,
+      "rec": 10,
+      "not": 3
+     },
+     "22": {
+      "best": 1,
+      "rec": 10,
+      "not": 3
+     },
+     "23": {
+      "best": 1,
+      "rec": 10,
+      "not": 3
+     },
+     "24": {
+      "best": 2,
+      "rec": 8,
+      "not": 3
+     },
+     "24+": {
+      "best": 1,
+      "rec": 1,
+      "not": 10
+     }
+    },
+    "bestwith": "Best with 10–13, 15 players",
+    "recwith": "Recommended with 8–24 players"
+   }
+  },
+  {
+   "id": 155,
+   "name": "타임 스토리즈",
+   "bgg_id": "146508",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 396,
+    "results": {
+     "1": {
+      "best": 5,
+      "rec": 48,
+      "not": 218
+     },
+     "2": {
+      "best": 37,
+      "rec": 140,
+      "not": 136
+     },
+     "3": {
+      "best": 51,
+      "rec": 219,
+      "not": 20
+     },
+     "4": {
+      "best": 293,
+      "rec": 56,
+      "not": 7
+     },
+     "4+": {
+      "best": 4,
+      "rec": 15,
+      "not": 185
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 159,
+   "name": "타코 캣 고트 치즈 피자",
+   "bgg_id": "253664",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 2,
+   "rentals_since_0301": 14,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 89,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 64
+     },
+     "2": {
+      "best": 0,
+      "rec": 24,
+      "not": 46
+     },
+     "3": {
+      "best": 7,
+      "rec": 55,
+      "not": 10
+     },
+     "4": {
+      "best": 54,
+      "rec": 23,
+      "not": 0
+     },
+     "5": {
+      "best": 48,
+      "rec": 20,
+      "not": 2
+     },
+     "6": {
+      "best": 43,
+      "rec": 22,
+      "not": 1
+     },
+     "7": {
+      "best": 8,
+      "rec": 44,
+      "not": 8
+     },
+     "8": {
+      "best": 5,
+      "rec": 36,
+      "not": 17
+     },
+     "8+": {
+      "best": 0,
+      "rec": 5,
+      "not": 41
+     }
+    },
+    "bestwith": "Best with 4–6 players",
+    "recwith": "Recommended with 3–8 players"
+   }
+  },
+  {
+   "id": 160,
+   "name": "탁상탐정단 : 얼굴없는 앨리스",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": null
+  },
+  {
+   "id": 161,
+   "name": "탑텐 TV",
+   "bgg_id": "300905",
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 9,
+   "quantity": 1,
+   "rentals_since_0301": 8,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 95,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 73
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 72
+     },
+     "3": {
+      "best": 0,
+      "rec": 5,
+      "not": 68
+     },
+     "4": {
+      "best": 6,
+      "rec": 45,
+      "not": 32
+     },
+     "5": {
+      "best": 34,
+      "rec": 45,
+      "not": 6
+     },
+     "6": {
+      "best": 65,
+      "rec": 16,
+      "not": 0
+     },
+     "7": {
+      "best": 51,
+      "rec": 30,
+      "not": 2
+     },
+     "8": {
+      "best": 38,
+      "rec": 26,
+      "not": 12
+     },
+     "9": {
+      "best": 20,
+      "rec": 31,
+      "not": 21
+     },
+     "9+": {
+      "best": 5,
+      "rec": 14,
+      "not": 43
+     }
+    },
+    "bestwith": "Best with 6–7 players",
+    "recwith": "Recommended with 4–9 players"
+   }
+  },
+  {
+   "id": 162,
+   "name": "테라포밍 마스",
+   "bgg_id": "167791",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 5,
+   "quantity": 2,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 2924,
+    "results": {
+     "1": {
+      "best": 223,
+      "rec": 1255,
+      "not": 578
+     },
+     "2": {
+      "best": 629,
+      "rec": 1591,
+      "not": 268
+     },
+     "3": {
+      "best": 1757,
+      "rec": 726,
+      "not": 41
+     },
+     "4": {
+      "best": 927,
+      "rec": 1232,
+      "not": 224
+     },
+     "5": {
+      "best": 112,
+      "rec": 732,
+      "not": 1218
+     },
+     "5+": {
+      "best": 9,
+      "rec": 9,
+      "not": 1398
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 163,
+   "name": "트래지디 루퍼",
+   "bgg_id": "148319",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 110,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 77
+     },
+     "2": {
+      "best": 13,
+      "rec": 45,
+      "not": 31
+     },
+     "3": {
+      "best": 6,
+      "rec": 67,
+      "not": 17
+     },
+     "4": {
+      "best": 99,
+      "rec": 5,
+      "not": 0
+     },
+     "4+": {
+      "best": 1,
+      "rec": 4,
+      "not": 64
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 164,
+   "name": "트랙스 : 사이렌 베이",
+   "bgg_id": "370984",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 7,
+    "results": {
+     "1": {
+      "best": 4,
+      "rec": 2,
+      "not": 0
+     },
+     "2": {
+      "best": 7,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 3,
+      "rec": 2,
+      "not": 1
+     },
+     "4": {
+      "best": 0,
+      "rec": 3,
+      "not": 3
+     },
+     "5": {
+      "best": 0,
+      "rec": 1,
+      "not": 4
+     },
+     "6": {
+      "best": 0,
+      "rec": 0,
+      "not": 5
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 5
+     }
+    },
+    "bestwith": "Best with 1–2 players",
+    "recwith": "Recommended with 1–3 players"
+   }
+  },
+  {
+   "id": 165,
+   "name": "티츄",
+   "bgg_id": "215",
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 320,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 233
+     },
+     "2": {
+      "best": 0,
+      "rec": 2,
+      "not": 231
+     },
+     "3": {
+      "best": 1,
+      "rec": 10,
+      "not": 227
+     },
+     "4": {
+      "best": 301,
+      "rec": 18,
+      "not": 1
+     },
+     "5": {
+      "best": 1,
+      "rec": 6,
+      "not": 217
+     },
+     "6": {
+      "best": 4,
+      "rec": 15,
+      "not": 158
+     },
+     "7": {
+      "best": 0,
+      "rec": 2,
+      "not": 161
+     },
+     "8": {
+      "best": 0,
+      "rec": 1,
+      "not": 22
+     },
+     "9": {
+      "best": 0,
+      "rec": 0,
+      "not": 23
+     },
+     "10": {
+      "best": 0,
+      "rec": 0,
+      "not": 23
+     },
+     "10+": {
+      "best": 0,
+      "rec": 0,
+      "not": 22
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 4 players"
+   }
+  },
+  {
+   "id": 166,
+   "name": "티켓 투 라이드 : 유럽",
+   "bgg_id": "14996",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1205,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 8,
+      "not": 781
+     },
+     "2": {
+      "best": 50,
+      "rec": 650,
+      "not": 343
+     },
+     "3": {
+      "best": 320,
+      "rec": 714,
+      "not": 35
+     },
+     "4": {
+      "best": 850,
+      "rec": 242,
+      "not": 9
+     },
+     "5": {
+      "best": 334,
+      "rec": 572,
+      "not": 84
+     },
+     "5+": {
+      "best": 2,
+      "rec": 16,
+      "not": 605
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–5 players"
+   }
+  },
+  {
+   "id": 167,
+   "name": "파랑새",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 168,
+   "name": "판타지 왕국",
+   "bgg_id": "223040",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 394,
+    "results": {
+     "1": {
+      "best": 3,
+      "rec": 26,
+      "not": 198
+     },
+     "2": {
+      "best": 200,
+      "rec": 121,
+      "not": 34
+     },
+     "3": {
+      "best": 191,
+      "rec": 136,
+      "not": 4
+     },
+     "4": {
+      "best": 116,
+      "rec": 153,
+      "not": 28
+     },
+     "5": {
+      "best": 37,
+      "rec": 126,
+      "not": 89
+     },
+     "6": {
+      "best": 8,
+      "rec": 82,
+      "not": 140
+     },
+     "6+": {
+      "best": 1,
+      "rec": 9,
+      "not": 162
+     }
+    },
+    "bestwith": "Best with 2–3 players",
+    "recwith": "Recommended with 2–5 players"
+   }
+  },
+  {
+   "id": 169,
+   "name": "패치워크",
+   "bgg_id": "163412",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 2,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 660,
+    "results": {
+     "1": {
+      "best": 5,
+      "rec": 41,
+      "not": 502
+     },
+     "2": {
+      "best": 639,
+      "rec": 16,
+      "not": 2
+     },
+     "2+": {
+      "best": 2,
+      "rec": 4,
+      "not": 522
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 2 players"
+   }
+  },
+  {
+   "id": 170,
+   "name": "팬데믹",
+   "bgg_id": "30549",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 2200,
+    "results": {
+     "1": {
+      "best": 177,
+      "rec": 794,
+      "not": 693
+     },
+     "2": {
+      "best": 429,
+      "rec": 1310,
+      "not": 180
+     },
+     "3": {
+      "best": 674,
+      "rec": 1148,
+      "not": 52
+     },
+     "4": {
+      "best": 1349,
+      "rec": 534,
+      "not": 67
+     },
+     "4+": {
+      "best": 23,
+      "rec": 169,
+      "not": 1020
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 171,
+   "name": "페이퍼 던전",
+   "bgg_id": "291962",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 62,
+    "results": {
+     "1": {
+      "best": 17,
+      "rec": 26,
+      "not": 7
+     },
+     "2": {
+      "best": 16,
+      "rec": 21,
+      "not": 1
+     },
+     "3": {
+      "best": 20,
+      "rec": 12,
+      "not": 1
+     },
+     "4": {
+      "best": 14,
+      "rec": 19,
+      "not": 0
+     },
+     "5": {
+      "best": 4,
+      "rec": 14,
+      "not": 6
+     },
+     "6": {
+      "best": 4,
+      "rec": 12,
+      "not": 9
+     },
+     "7": {
+      "best": 3,
+      "rec": 5,
+      "not": 18
+     },
+     "8": {
+      "best": 4,
+      "rec": 5,
+      "not": 18
+     },
+     "8+": {
+      "best": 1,
+      "rec": 1,
+      "not": 18
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 1–6 players"
+   }
+  },
+  {
+   "id": 172,
+   "name": "페이퍼 사파리",
+   "bgg_id": "39534",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 16,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 7
+     },
+     "2": {
+      "best": 2,
+      "rec": 5,
+      "not": 6
+     },
+     "3": {
+      "best": 2,
+      "rec": 10,
+      "not": 1
+     },
+     "4": {
+      "best": 11,
+      "rec": 0,
+      "not": 1
+     },
+     "5": {
+      "best": 1,
+      "rec": 8,
+      "not": 2
+     },
+     "5+": {
+      "best": 0,
+      "rec": 1,
+      "not": 5
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–5 players"
+   }
+  },
+  {
+   "id": 173,
+   "name": "펭귄파티",
+   "bgg_id": "56933",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 55,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 25
+     },
+     "2": {
+      "best": 8,
+      "rec": 17,
+      "not": 13
+     },
+     "3": {
+      "best": 19,
+      "rec": 20,
+      "not": 2
+     },
+     "4": {
+      "best": 23,
+      "rec": 17,
+      "not": 1
+     },
+     "5": {
+      "best": 11,
+      "rec": 17,
+      "not": 6
+     },
+     "6": {
+      "best": 3,
+      "rec": 20,
+      "not": 11
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 18
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–6 players"
+   }
+  },
+  {
+   "id": 174,
+   "name": "포 더 윈",
+   "bgg_id": "390094",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 21,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 7
+     },
+     "2": {
+      "best": 0,
+      "rec": 6,
+      "not": 5
+     },
+     "3": {
+      "best": 2,
+      "rec": 8,
+      "not": 1
+     },
+     "4": {
+      "best": 11,
+      "rec": 2,
+      "not": 0
+     },
+     "5": {
+      "best": 6,
+      "rec": 5,
+      "not": 1
+     },
+     "6": {
+      "best": 2,
+      "rec": 5,
+      "not": 2
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–6 players"
+   }
+  },
+  {
+   "id": 175,
+   "name": "푸에르토 리코",
+   "bgg_id": "3076",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1632,
+    "results": {
+     "1": {
+      "best": 7,
+      "rec": 13,
+      "not": 885
+     },
+     "2": {
+      "best": 86,
+      "rec": 507,
+      "not": 570
+     },
+     "3": {
+      "best": 379,
+      "rec": 954,
+      "not": 67
+     },
+     "4": {
+      "best": 1077,
+      "rec": 387,
+      "not": 8
+     },
+     "5": {
+      "best": 394,
+      "rec": 755,
+      "not": 165
+     },
+     "5+": {
+      "best": 6,
+      "rec": 23,
+      "not": 702
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–5 players"
+   }
+  },
+  {
+   "id": 176,
+   "name": "플레이어님! 어느 성좌가 좋아?",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 177,
+   "name": "피아스코",
+   "bgg_id": null,
+   "category": "TRPG",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 178,
+   "name": "할리갈리",
+   "bgg_id": "2944",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 2,
+   "rentals_since_0301": 12,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 47,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 32
+     },
+     "2": {
+      "best": 2,
+      "rec": 10,
+      "not": 27
+     },
+     "3": {
+      "best": 5,
+      "rec": 28,
+      "not": 6
+     },
+     "4": {
+      "best": 34,
+      "rec": 8,
+      "not": 1
+     },
+     "5": {
+      "best": 27,
+      "rec": 13,
+      "not": 1
+     },
+     "6": {
+      "best": 8,
+      "rec": 21,
+      "not": 6
+     },
+     "6+": {
+      "best": 0,
+      "rec": 1,
+      "not": 22
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 179,
+   "name": "해저탐험",
+   "bgg_id": "169654",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 297,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 3,
+      "not": 211
+     },
+     "2": {
+      "best": 2,
+      "rec": 114,
+      "not": 124
+     },
+     "3": {
+      "best": 59,
+      "rec": 169,
+      "not": 22
+     },
+     "4": {
+      "best": 184,
+      "rec": 79,
+      "not": 3
+     },
+     "5": {
+      "best": 107,
+      "rec": 112,
+      "not": 15
+     },
+     "6": {
+      "best": 50,
+      "rec": 112,
+      "not": 59
+     },
+     "6+": {
+      "best": 4,
+      "rec": 3,
+      "not": 162
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 180,
+   "name": "ARCH ENEMY.",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 2,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 181,
+   "name": "BCG PLAYING CARDS",
+   "bgg_id": null,
+   "category": "플레잉카드",
+   "min_players": 1,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 182,
+   "name": "COSMIC CLASH",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 2,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 183,
+   "name": "EXIT : 수수께끼의 집",
+   "bgg_id": "226519",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 34,
+    "results": {
+     "1": {
+      "best": 3,
+      "rec": 19,
+      "not": 9
+     },
+     "2": {
+      "best": 20,
+      "rec": 11,
+      "not": 0
+     },
+     "3": {
+      "best": 13,
+      "rec": 14,
+      "not": 2
+     },
+     "4": {
+      "best": 5,
+      "rec": 13,
+      "not": 10
+     },
+     "4+": {
+      "best": 0,
+      "rec": 3,
+      "not": 22
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 184,
+   "name": "KOREA CAT PLAYING CARDS",
+   "bgg_id": null,
+   "category": "플레잉카드",
+   "min_players": 1,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 185,
+   "name": "LOTTY'S PLAYING CARDS",
+   "bgg_id": null,
+   "category": "플레잉카드",
+   "min_players": 1,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 186,
+   "name": "MAGIC MAZE",
+   "bgg_id": "209778",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 379,
+    "results": {
+     "1": {
+      "best": 4,
+      "rec": 46,
+      "not": 198
+     },
+     "2": {
+      "best": 29,
+      "rec": 142,
+      "not": 102
+     },
+     "3": {
+      "best": 53,
+      "rec": 209,
+      "not": 28
+     },
+     "4": {
+      "best": 284,
+      "rec": 43,
+      "not": 4
+     },
+     "5": {
+      "best": 58,
+      "rec": 151,
+      "not": 51
+     },
+     "6": {
+      "best": 35,
+      "rec": 118,
+      "not": 83
+     },
+     "7": {
+      "best": 7,
+      "rec": 75,
+      "not": 144
+     },
+     "8": {
+      "best": 9,
+      "rec": 63,
+      "not": 159
+     },
+     "8+": {
+      "best": 0,
+      "rec": 4,
+      "not": 185
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 2–6 players"
+   }
+  },
+  {
+   "id": 187,
+   "name": "MINECRAFT EXPLORERS",
+   "bgg_id": "413403",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 15,
+    "results": {
+     "1": {
+      "best": 7,
+      "rec": 6,
+      "not": 1
+     },
+     "2": {
+      "best": 8,
+      "rec": 4,
+      "not": 0
+     },
+     "3": {
+      "best": 4,
+      "rec": 5,
+      "not": 2
+     },
+     "4": {
+      "best": 0,
+      "rec": 9,
+      "not": 3
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 13
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 188,
+   "name": "OX 카운팅 퀘스천카드",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 189,
+   "name": "QE",
+   "bgg_id": "266830",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 125,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 90
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 88
+     },
+     "3": {
+      "best": 5,
+      "rec": 50,
+      "not": 42
+     },
+     "4": {
+      "best": 51,
+      "rec": 57,
+      "not": 2
+     },
+     "5": {
+      "best": 77,
+      "rec": 27,
+      "not": 5
+     },
+     "5+": {
+      "best": 1,
+      "rec": 1,
+      "not": 64
+     }
+    },
+    "bestwith": "Best with 5 players",
+    "recwith": "Recommended with 3–5 players"
+   }
+  },
+  {
+   "id": 190,
+   "name": "RED ROOM",
+   "bgg_id": "442306",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 0,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "5": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "6": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": null,
+    "recwith": "(no votes)"
+   }
+  },
+  {
+   "id": 191,
+   "name": "Spot it!",
+   "bgg_id": "63268",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 195,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 6,
+      "not": 133
+     },
+     "2": {
+      "best": 17,
+      "rec": 106,
+      "not": 46
+     },
+     "3": {
+      "best": 52,
+      "rec": 113,
+      "not": 4
+     },
+     "4": {
+      "best": 121,
+      "rec": 45,
+      "not": 1
+     },
+     "5": {
+      "best": 92,
+      "rec": 60,
+      "not": 3
+     },
+     "6": {
+      "best": 48,
+      "rec": 82,
+      "not": 18
+     },
+     "7": {
+      "best": 14,
+      "rec": 65,
+      "not": 59
+     },
+     "8": {
+      "best": 14,
+      "rec": 50,
+      "not": 74
+     },
+     "8+": {
+      "best": 1,
+      "rec": 8,
+      "not": 109
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 2–7 players"
+   }
+  },
+  {
+   "id": 192,
+   "name": "SURVIVE",
+   "bgg_id": "2653",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 461,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 274
+     },
+     "2": {
+      "best": 7,
+      "rec": 170,
+      "not": 181
+     },
+     "3": {
+      "best": 52,
+      "rec": 308,
+      "not": 28
+     },
+     "4": {
+      "best": 393,
+      "rec": 39,
+      "not": 2
+     },
+     "4+": {
+      "best": 36,
+      "rec": 41,
+      "not": 149
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–4 players"
+   }
+  },
+  {
+   "id": 193,
+   "name": "TEXAS HOLD'EM POKER SET",
+   "bgg_id": null,
+   "category": "플레잉카드",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 3,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 197,
+   "name": "무경고등학교",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 5,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 198,
+   "name": "뱀이 죽은 축제",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 6,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 3,
+   "bgg": null
+  },
+  {
+   "id": 200,
+   "name": "이스터 에그 Ver.2: 플레이어 살해 사건",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 5,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": null
+  },
+  {
+   "id": 201,
+   "name": "이스터 에그 Ver.3 : 몬스터 브레이크",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 5,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": null
+  },
+  {
+   "id": 203,
+   "name": "이스터 에그 Ver.1 : NPC로 숨어든 플레이어 ",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 5,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": null
+  },
+  {
+   "id": 204,
+   "name": "윙스팬",
+   "bgg_id": "266192",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 5,
+   "quantity": 2,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 2174,
+    "results": {
+     "1": {
+      "best": 116,
+      "rec": 852,
+      "not": 398
+     },
+     "2": {
+      "best": 639,
+      "rec": 1169,
+      "not": 103
+     },
+     "3": {
+      "best": 1254,
+      "rec": 609,
+      "not": 26
+     },
+     "4": {
+      "best": 557,
+      "rec": 952,
+      "not": 243
+     },
+     "5": {
+      "best": 54,
+      "rec": 566,
+      "not": 883
+     },
+     "5+": {
+      "best": 3,
+      "rec": 32,
+      "not": 1053
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 205,
+   "name": "젝스님트",
+   "bgg_id": "432",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 664,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 2,
+      "not": 456
+     },
+     "2": {
+      "best": 9,
+      "rec": 93,
+      "not": 416
+     },
+     "3": {
+      "best": 32,
+      "rec": 238,
+      "not": 263
+     },
+     "4": {
+      "best": 177,
+      "rec": 335,
+      "not": 56
+     },
+     "5": {
+      "best": 384,
+      "rec": 188,
+      "not": 19
+     },
+     "6": {
+      "best": 355,
+      "rec": 193,
+      "not": 20
+     },
+     "7": {
+      "best": 167,
+      "rec": 303,
+      "not": 47
+     },
+     "8": {
+      "best": 109,
+      "rec": 292,
+      "not": 93
+     },
+     "9": {
+      "best": 51,
+      "rec": 242,
+      "not": 165
+     },
+     "10": {
+      "best": 61,
+      "rec": 221,
+      "not": 186
+     },
+     "10+": {
+      "best": 5,
+      "rec": 17,
+      "not": 321
+     }
+    },
+    "bestwith": "Best with 5–6 players",
+    "recwith": "Recommended with 3–10 players"
+   }
+  },
+  {
+   "id": 207,
+   "name": "텔레스트레이션",
+   "bgg_id": "46213",
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 5,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 244,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 180
+     },
+     "2": {
+      "best": 0,
+      "rec": 3,
+      "not": 180
+     },
+     "3": {
+      "best": 1,
+      "rec": 8,
+      "not": 174
+     },
+     "4": {
+      "best": 3,
+      "rec": 70,
+      "not": 120
+     },
+     "5": {
+      "best": 14,
+      "rec": 126,
+      "not": 63
+     },
+     "6": {
+      "best": 66,
+      "rec": 148,
+      "not": 8
+     },
+     "7": {
+      "best": 75,
+      "rec": 118,
+      "not": 16
+     },
+     "8": {
+      "best": 192,
+      "rec": 33,
+      "not": 1
+     },
+     "8+": {
+      "best": 42,
+      "rec": 36,
+      "not": 69
+     }
+    },
+    "bestwith": "Best with 8 players",
+    "recwith": "Recommended with 5–8+ players"
+   }
+  },
+  {
+   "id": 210,
+   "name": "클랭크!: 덱 빌딩 어드벤처",
+   "bgg_id": "201808",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 748,
+    "results": {
+     "1": {
+      "best": 7,
+      "rec": 139,
+      "not": 321
+     },
+     "2": {
+      "best": 69,
+      "rec": 482,
+      "not": 77
+     },
+     "3": {
+      "best": 472,
+      "rec": 196,
+      "not": 4
+     },
+     "4": {
+      "best": 300,
+      "rec": 284,
+      "not": 43
+     },
+     "4+": {
+      "best": 2,
+      "rec": 17,
+      "not": 340
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 211,
+   "name": "두 도시 사이에서",
+   "bgg_id": "168435",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 7,
+   "quantity": 1,
+   "rentals_since_0301": 4,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 162,
+    "results": {
+     "1": {
+      "best": 6,
+      "rec": 33,
+      "not": 64
+     },
+     "2": {
+      "best": 8,
+      "rec": 33,
+      "not": 68
+     },
+     "3": {
+      "best": 21,
+      "rec": 74,
+      "not": 30
+     },
+     "4": {
+      "best": 47,
+      "rec": 72,
+      "not": 8
+     },
+     "5": {
+      "best": 85,
+      "rec": 38,
+      "not": 1
+     },
+     "6": {
+      "best": 79,
+      "rec": 47,
+      "not": 2
+     },
+     "7": {
+      "best": 52,
+      "rec": 57,
+      "not": 10
+     },
+     "7+": {
+      "best": 2,
+      "rec": 7,
+      "not": 57
+     }
+    },
+    "bestwith": "Best with 5–6 players",
+    "recwith": "Recommended with 3–7 players"
+   }
+  },
+  {
+   "id": 212,
+   "name": "우봉고 3D",
+   "bgg_id": "269971",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 5,
+    "results": {
+     "1": {
+      "best": 2,
+      "rec": 3,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 4,
+      "not": 1
+     },
+     "3": {
+      "best": 2,
+      "rec": 2,
+      "not": 1
+     },
+     "4": {
+      "best": 2,
+      "rec": 2,
+      "not": 1
+     },
+     "4+": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     }
+    },
+    "bestwith": "Best with 1 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 213,
+   "name": "기상천외 암네시아",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 7,
+   "max_players": 7,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": null
+  },
+  {
+   "id": 214,
+   "name": "흰 까마귀 붉게 물들다",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 5,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": null
+  },
+  {
+   "id": 215,
+   "name": "강변 밤의 꿈",
+   "bgg_id": "393285",
+   "category": "머더미스터리",
+   "min_players": 6,
+   "max_players": 7,
+   "quantity": 1,
+   "rentals_since_0301": 5,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 0,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "4": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "5": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "6": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "7": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     },
+     "7+": {
+      "best": 0,
+      "rec": 0,
+      "not": 0
+     }
+    },
+    "bestwith": null,
+    "recwith": "(no votes)"
+   }
+  },
+  {
+   "id": 216,
+   "name": "크세르크세스의 그림자",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 217,
+   "name": "마작패",
+   "bgg_id": "108018",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 32,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 22
+     },
+     "2": {
+      "best": 0,
+      "rec": 3,
+      "not": 21
+     },
+     "3": {
+      "best": 3,
+      "rec": 11,
+      "not": 10
+     },
+     "4": {
+      "best": 30,
+      "rec": 2,
+      "not": 0
+     },
+     "4+": {
+      "best": 0,
+      "rec": 1,
+      "not": 19
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–4 players"
+   }
+  },
+  {
+   "id": 219,
+   "name": "영리한 여우",
+   "bgg_id": "244522",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 461,
+    "results": {
+     "1": {
+      "best": 100,
+      "rec": 229,
+      "not": 38
+     },
+     "2": {
+      "best": 290,
+      "rec": 120,
+      "not": 4
+     },
+     "3": {
+      "best": 113,
+      "rec": 226,
+      "not": 26
+     },
+     "4": {
+      "best": 48,
+      "rec": 198,
+      "not": 95
+     },
+     "4+": {
+      "best": 1,
+      "rec": 13,
+      "not": 216
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 220,
+   "name": "트럼프 카드 카지노 칩 세트",
+   "bgg_id": "1115",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 176,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 1,
+      "not": 137
+     },
+     "2": {
+      "best": 8,
+      "rec": 44,
+      "not": 103
+     },
+     "3": {
+      "best": 10,
+      "rec": 92,
+      "not": 52
+     },
+     "4": {
+      "best": 54,
+      "rec": 90,
+      "not": 13
+     },
+     "5": {
+      "best": 101,
+      "rec": 59,
+      "not": 3
+     },
+     "6": {
+      "best": 121,
+      "rec": 40,
+      "not": 2
+     },
+     "7": {
+      "best": 47,
+      "rec": 99,
+      "not": 10
+     },
+     "8": {
+      "best": 33,
+      "rec": 97,
+      "not": 23
+     },
+     "9": {
+      "best": 18,
+      "rec": 65,
+      "not": 69
+     },
+     "10": {
+      "best": 12,
+      "rec": 50,
+      "not": 83
+     },
+     "10+": {
+      "best": 7,
+      "rec": 17,
+      "not": 106
+     }
+    },
+    "bestwith": "Best with 5–6 players",
+    "recwith": "Recommended with 3–9 players"
+   }
+  },
+  {
+   "id": 221,
+   "name": "지구에서 사랑을 담아",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 7,
+   "max_players": 7,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": null
+  },
+  {
+   "id": 225,
+   "name": "딕싯",
+   "bgg_id": "39856",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 4,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 947,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 2,
+      "not": 687
+     },
+     "2": {
+      "best": 2,
+      "rec": 11,
+      "not": 693
+     },
+     "3": {
+      "best": 10,
+      "rec": 180,
+      "not": 580
+     },
+     "4": {
+      "best": 145,
+      "rec": 609,
+      "not": 79
+     },
+     "5": {
+      "best": 574,
+      "rec": 288,
+      "not": 1
+     },
+     "6": {
+      "best": 702,
+      "rec": 159,
+      "not": 4
+     },
+     "6+": {
+      "best": 125,
+      "rec": 211,
+      "not": 236
+     }
+    },
+    "bestwith": "Best with 5–6 players",
+    "recwith": "Recommended with 4–6+ players"
+   }
+  },
+  {
+   "id": 226,
+   "name": "다다다",
+   "bgg_id": "420091",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 99,
+   "quantity": 1,
+   "rentals_since_0301": 4,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 6,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "2": {
+      "best": 0,
+      "rec": 1,
+      "not": 2
+     },
+     "3": {
+      "best": 1,
+      "rec": 4,
+      "not": 0
+     },
+     "4": {
+      "best": 4,
+      "rec": 1,
+      "not": 0
+     },
+     "5": {
+      "best": 4,
+      "rec": 1,
+      "not": 0
+     },
+     "6": {
+      "best": 4,
+      "rec": 1,
+      "not": 0
+     },
+     "7": {
+      "best": 2,
+      "rec": 3,
+      "not": 0
+     },
+     "8": {
+      "best": 1,
+      "rec": 1,
+      "not": 1
+     },
+     "9": {
+      "best": 0,
+      "rec": 2,
+      "not": 1
+     },
+     "10": {
+      "best": 0,
+      "rec": 2,
+      "not": 1
+     },
+     "11": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "12": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "13": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "14": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "15": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "16": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "17": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "18": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "19": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "20": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "21": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "22": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "23": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "24": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "25": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "26": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "27": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "28": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "29": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "30": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "30+": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     }
+    },
+    "bestwith": "Best with 4–6 players",
+    "recwith": "Recommended with 3–10 players"
+   }
+  },
+  {
+   "id": 231,
+   "name": "블러드 레이지",
+   "bgg_id": "170216",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1081,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 3,
+      "not": 690
+     },
+     "2": {
+      "best": 12,
+      "rec": 225,
+      "not": 604
+     },
+     "3": {
+      "best": 144,
+      "rec": 706,
+      "not": 74
+     },
+     "4": {
+      "best": 872,
+      "rec": 121,
+      "not": 13
+     },
+     "4+": {
+      "best": 146,
+      "rec": 276,
+      "not": 225
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–4+ players"
+   }
+  },
+  {
+   "id": 232,
+   "name": "사그라다",
+   "bgg_id": "199561",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 629,
+    "results": {
+     "1": {
+      "best": 24,
+      "rec": 201,
+      "not": 182
+     },
+     "2": {
+      "best": 304,
+      "rec": 230,
+      "not": 20
+     },
+     "3": {
+      "best": 207,
+      "rec": 292,
+      "not": 11
+     },
+     "4": {
+      "best": 152,
+      "rec": 310,
+      "not": 49
+     },
+     "4+": {
+      "best": 10,
+      "rec": 38,
+      "not": 251
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 233,
+   "name": "네트워크: 시청률 전쟁",
+   "bgg_id": "72321",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 74,
+    "results": {
+     "1": {
+      "best": 5,
+      "rec": 29,
+      "not": 11
+     },
+     "2": {
+      "best": 4,
+      "rec": 33,
+      "not": 10
+     },
+     "3": {
+      "best": 14,
+      "rec": 32,
+      "not": 0
+     },
+     "4": {
+      "best": 34,
+      "rec": 13,
+      "not": 0
+     },
+     "5": {
+      "best": 3,
+      "rec": 34,
+      "not": 6
+     },
+     "5+": {
+      "best": 0,
+      "rec": 0,
+      "not": 28
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 1–5 players"
+   }
+  },
+  {
+   "id": 234,
+   "name": "도미니언",
+   "bgg_id": "36218",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 1955,
+    "results": {
+     "1": {
+      "best": 5,
+      "rec": 36,
+      "not": 1191
+     },
+     "2": {
+      "best": 736,
+      "rec": 945,
+      "not": 101
+     },
+     "3": {
+      "best": 1011,
+      "rec": 748,
+      "not": 25
+     },
+     "4": {
+      "best": 597,
+      "rec": 953,
+      "not": 182
+     },
+     "4+": {
+      "best": 25,
+      "rec": 209,
+      "not": 941
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 235,
+   "name": "너도나도 파티",
+   "bgg_id": "261614",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 12,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 6,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 2
+     },
+     "4": {
+      "best": 1,
+      "rec": 2,
+      "not": 1
+     },
+     "5": {
+      "best": 1,
+      "rec": 2,
+      "not": 0
+     },
+     "6": {
+      "best": 3,
+      "rec": 1,
+      "not": 0
+     },
+     "7": {
+      "best": 2,
+      "rec": 0,
+      "not": 0
+     },
+     "8": {
+      "best": 1,
+      "rec": 1,
+      "not": 0
+     },
+     "9": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "10": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "11": {
+      "best": 0,
+      "rec": 1,
+      "not": 1
+     },
+     "12": {
+      "best": 0,
+      "rec": 1,
+      "not": 0
+     },
+     "12+": {
+      "best": 0,
+      "rec": 0,
+      "not": 1
+     }
+    },
+    "bestwith": "Best with 6–7 players",
+    "recwith": "Recommended with 4–10, 12 players"
+   }
+  },
+  {
+   "id": 237,
+   "name": "샤크",
+   "bgg_id": "433",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 26,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 11
+     },
+     "2": {
+      "best": 0,
+      "rec": 3,
+      "not": 13
+     },
+     "3": {
+      "best": 3,
+      "rec": 6,
+      "not": 5
+     },
+     "4": {
+      "best": 15,
+      "rec": 9,
+      "not": 0
+     },
+     "5": {
+      "best": 10,
+      "rec": 10,
+      "not": 2
+     },
+     "6": {
+      "best": 1,
+      "rec": 6,
+      "not": 7
+     },
+     "6+": {
+      "best": 0,
+      "rec": 0,
+      "not": 8
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–5 players"
+   }
+  },
+  {
+   "id": 238,
+   "name": "5분 마블",
+   "bgg_id": "253618",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 43,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 27
+     },
+     "2": {
+      "best": 3,
+      "rec": 18,
+      "not": 11
+     },
+     "3": {
+      "best": 24,
+      "rec": 11,
+      "not": 0
+     },
+     "4": {
+      "best": 21,
+      "rec": 14,
+      "not": 1
+     },
+     "5": {
+      "best": 6,
+      "rec": 20,
+      "not": 5
+     },
+     "5+": {
+      "best": 0,
+      "rec": 0,
+      "not": 18
+     }
+    },
+    "bestwith": "Best with 3–4 players",
+    "recwith": "Recommended with 2–5 players"
+   }
+  },
+  {
+   "id": 239,
+   "name": "꼬마각시를 기다리는 밤",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 5,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": null
+  },
+  {
+   "id": 253,
+   "name": "블러핏!",
+   "bgg_id": "450039",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 6,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "2": {
+      "best": 0,
+      "rec": 3,
+      "not": 1
+     },
+     "3": {
+      "best": 1,
+      "rec": 0,
+      "not": 1
+     },
+     "4": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "5": {
+      "best": 4,
+      "rec": 0,
+      "not": 0
+     },
+     "6": {
+      "best": 1,
+      "rec": 2,
+      "not": 0
+     },
+     "6+": {
+      "best": 0,
+      "rec": 1,
+      "not": 2
+     }
+    },
+    "bestwith": "Best with 4–5 players",
+    "recwith": "Recommended with 2, 4–6 players"
+   }
+  },
+  {
+   "id": 254,
+   "name": "탑텐TV 시트콤",
+   "bgg_id": "437938",
+   "category": "보드게임",
+   "min_players": 4,
+   "max_players": 9,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 4,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 4
+     },
+     "2": {
+      "best": 0,
+      "rec": 0,
+      "not": 4
+     },
+     "3": {
+      "best": 0,
+      "rec": 0,
+      "not": 3
+     },
+     "4": {
+      "best": 0,
+      "rec": 3,
+      "not": 0
+     },
+     "5": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "6": {
+      "best": 1,
+      "rec": 2,
+      "not": 0
+     },
+     "7": {
+      "best": 1,
+      "rec": 1,
+      "not": 1
+     },
+     "8": {
+      "best": 0,
+      "rec": 1,
+      "not": 2
+     },
+     "9": {
+      "best": 0,
+      "rec": 0,
+      "not": 4
+     },
+     "9+": {
+      "best": 0,
+      "rec": 0,
+      "not": 4
+     }
+    },
+    "bestwith": "Best with 5 players",
+    "recwith": "Recommended with 4–7 players"
+   }
+  },
+  {
+   "id": 255,
+   "name": "색감과 직감",
+   "bgg_id": "302520",
+   "category": "보드게임",
+   "min_players": 3,
+   "max_players": 10,
+   "quantity": 1,
+   "rentals_since_0301": 5,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 64,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 50
+     },
+     "2": {
+      "best": 0,
+      "rec": 2,
+      "not": 49
+     },
+     "3": {
+      "best": 3,
+      "rec": 26,
+      "not": 26
+     },
+     "4": {
+      "best": 15,
+      "rec": 35,
+      "not": 7
+     },
+     "5": {
+      "best": 24,
+      "rec": 28,
+      "not": 3
+     },
+     "6": {
+      "best": 37,
+      "rec": 15,
+      "not": 0
+     },
+     "7": {
+      "best": 26,
+      "rec": 24,
+      "not": 2
+     },
+     "8": {
+      "best": 26,
+      "rec": 21,
+      "not": 2
+     },
+     "9": {
+      "best": 10,
+      "rec": 24,
+      "not": 13
+     },
+     "10": {
+      "best": 7,
+      "rec": 27,
+      "not": 14
+     },
+     "10+": {
+      "best": 0,
+      "rec": 4,
+      "not": 34
+     }
+    },
+    "bestwith": "Best with 6, 8 players",
+    "recwith": "Recommended with 3–10 players"
+   }
+  },
+  {
+   "id": 256,
+   "name": "스트림스 메트로",
+   "bgg_id": "455631",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 99,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 3,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 2,
+      "not": 1
+     },
+     "2": {
+      "best": 0,
+      "rec": 3,
+      "not": 0
+     },
+     "3": {
+      "best": 0,
+      "rec": 3,
+      "not": 0
+     },
+     "4": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "5": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "6": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "7": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "8": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "9": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "10": {
+      "best": 2,
+      "rec": 1,
+      "not": 0
+     },
+     "11": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "12": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "13": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "14": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "15": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "16": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "17": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "18": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "19": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "20": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "21": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "22": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "23": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "24": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "25": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "26": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "27": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "28": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "29": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "30": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     },
+     "30+": {
+      "best": 0,
+      "rec": 2,
+      "not": 0
+     }
+    },
+    "bestwith": "Best with 4–10 players",
+    "recwith": "Recommended with 1–31 players"
+   }
+  },
+  {
+   "id": 257,
+   "name": "마음의 실타래",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 258,
+   "name": "만칼라",
+   "bgg_id": null,
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 2,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 260,
+   "name": "스컬킹",
+   "bgg_id": "150145",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 8,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 279,
+    "results": {
+     "1": {
+      "best": 0,
+      "rec": 0,
+      "not": 167
+     },
+     "2": {
+      "best": 1,
+      "rec": 40,
+      "not": 156
+     },
+     "3": {
+      "best": 24,
+      "rec": 150,
+      "not": 33
+     },
+     "4": {
+      "best": 139,
+      "rec": 93,
+      "not": 3
+     },
+     "5": {
+      "best": 162,
+      "rec": 60,
+      "not": 4
+     },
+     "6": {
+      "best": 104,
+      "rec": 89,
+      "not": 14
+     },
+     "7": {
+      "best": 12,
+      "rec": 50,
+      "not": 86
+     },
+     "8": {
+      "best": 6,
+      "rec": 38,
+      "not": 66
+     },
+     "8+": {
+      "best": 1,
+      "rec": 3,
+      "not": 84
+     }
+    },
+    "bestwith": "Best with 4–6 players",
+    "recwith": "Recommended with 3–6 players"
+   }
+  },
+  {
+   "id": 261,
+   "name": "스페이스 크루",
+   "bgg_id": "284083",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 830,
+    "results": {
+     "1": {
+      "best": 3,
+      "rec": 6,
+      "not": 534
+     },
+     "2": {
+      "best": 27,
+      "rec": 245,
+      "not": 357
+     },
+     "3": {
+      "best": 190,
+      "rec": 445,
+      "not": 57
+     },
+     "4": {
+      "best": 583,
+      "rec": 130,
+      "not": 7
+     },
+     "5": {
+      "best": 60,
+      "rec": 368,
+      "not": 134
+     },
+     "5+": {
+      "best": 0,
+      "rec": 6,
+      "not": 399
+     }
+    },
+    "bestwith": "Best with 4 players",
+    "recwith": "Recommended with 3–5 players"
+   }
+  },
+  {
+   "id": 262,
+   "name": "쓰루디 에이지스",
+   "bgg_id": "182028",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 799,
+    "results": {
+     "1": {
+      "best": 6,
+      "rec": 20,
+      "not": 460
+     },
+     "2": {
+      "best": 210,
+      "rec": 453,
+      "not": 55
+     },
+     "3": {
+      "best": 507,
+      "rec": 194,
+      "not": 22
+     },
+     "4": {
+      "best": 131,
+      "rec": 333,
+      "not": 200
+     },
+     "4+": {
+      "best": 0,
+      "rec": 2,
+      "not": 422
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 263,
+   "name": "버건디의 성",
+   "bgg_id": "271320",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 1,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 412,
+    "results": {
+     "1": {
+      "best": 13,
+      "rec": 146,
+      "not": 111
+     },
+     "2": {
+      "best": 275,
+      "rec": 97,
+      "not": 8
+     },
+     "3": {
+      "best": 120,
+      "rec": 198,
+      "not": 11
+     },
+     "4": {
+      "best": 57,
+      "rec": 185,
+      "not": 68
+     },
+     "4+": {
+      "best": 1,
+      "rec": 0,
+      "not": 200
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 264,
+   "name": "마르코 폴로 2 : 위대한 칸의 이름으로",
+   "bgg_id": "283948",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 158,
+    "results": {
+     "1": {
+      "best": 2,
+      "rec": 7,
+      "not": 70
+     },
+     "2": {
+      "best": 23,
+      "rec": 96,
+      "not": 9
+     },
+     "3": {
+      "best": 89,
+      "rec": 32,
+      "not": 0
+     },
+     "4": {
+      "best": 36,
+      "rec": 68,
+      "not": 10
+     },
+     "4+": {
+      "best": 0,
+      "rec": 1,
+      "not": 64
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 265,
+   "name": "그레이트 웨스턴 트레일",
+   "bgg_id": "193738",
+   "category": "보드게임",
+   "min_players": 2,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 911,
+    "results": {
+     "1": {
+      "best": 3,
+      "rec": 69,
+      "not": 454
+     },
+     "2": {
+      "best": 146,
+      "rec": 560,
+      "not": 73
+     },
+     "3": {
+      "best": 572,
+      "rec": 199,
+      "not": 8
+     },
+     "4": {
+      "best": 208,
+      "rec": 420,
+      "not": 102
+     },
+     "4+": {
+      "best": 0,
+      "rec": 1,
+      "not": 418
+     }
+    },
+    "bestwith": "Best with 3 players",
+    "recwith": "Recommended with 2–4 players"
+   }
+  },
+  {
+   "id": 266,
+   "name": "의사가 너무 많아!",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 6,
+   "max_players": 6,
+   "quantity": 1,
+   "rentals_since_0301": 2,
+   "bgg": null
+  },
+  {
+   "id": 267,
+   "name": "에이언즈 엔드",
+   "bgg_id": "191189",
+   "category": "보드게임",
+   "min_players": 1,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": {
+    "type": "boardgame",
+    "totalvotes": 709,
+    "results": {
+     "1": {
+      "best": 151,
+      "rec": 344,
+      "not": 64
+     },
+     "2": {
+      "best": 508,
+      "rec": 126,
+      "not": 3
+     },
+     "3": {
+      "best": 83,
+      "rec": 338,
+      "not": 80
+     },
+     "4": {
+      "best": 52,
+      "rec": 290,
+      "not": 157
+     },
+     "4+": {
+      "best": 0,
+      "rec": 5,
+      "not": 320
+     }
+    },
+    "bestwith": "Best with 2 players",
+    "recwith": "Recommended with 1–4 players"
+   }
+  },
+  {
+   "id": 268,
+   "name": "미식의 대가",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 269,
+   "name": "레드가 죽은 연구소",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 4,
+   "max_players": 4,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 270,
+   "name": "눈이 멈추기 전에",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 5,
+   "max_players": 5,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  },
+  {
+   "id": 271,
+   "name": "끝나지 않는 한여름",
+   "bgg_id": null,
+   "category": "머더미스터리",
+   "min_players": 8,
+   "max_players": 9,
+   "quantity": 1,
+   "rentals_since_0301": 0,
+   "bgg": null
+  }
+ ]
+}
