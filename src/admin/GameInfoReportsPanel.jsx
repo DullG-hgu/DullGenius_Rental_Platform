@@ -35,7 +35,7 @@ const BTN = {
     background: 'var(--admin-card-bg)', color: 'var(--admin-text-main)', cursor: 'pointer',
 };
 
-export default function GameInfoReportsPanel({ onPendingCount, games = [], onReloadGames }) {
+export default function GameInfoReportsPanel({ onPendingCount, games = [], gamesLoading = false, onReloadGames }) {
     const { showToast } = useToast();
     const [status, setStatus] = useState('pending');
     const [items, setItems] = useState(null);
@@ -184,6 +184,8 @@ export default function GameInfoReportsPanel({ onPendingCount, games = [], onRel
                 onClose={() => setEditingGame(null)}
                 initialData={editingGame}
                 onSubmit={(formData) => setPendingSave(formData)}
+                games={games} // 본판 연결 후보
+                gamesLoading={gamesLoading}
                 title="✏️ 게임 정보 수정"
                 busy={saving}
             />

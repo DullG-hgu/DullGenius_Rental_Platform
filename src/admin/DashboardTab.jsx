@@ -1,6 +1,6 @@
 // src/admin/DashboardTab.js
 import { useState, useEffect } from 'react';
-import { adminUpdateGame, deleteGame, approveDibsByRenter, returnGamesByRenter, extendRentalsByRenter, fetchGameLogs, fetchAllLogs, fetchUsers, adminCancelDibs, markGameLost } from '../api';
+import { adminUpdateGame, deleteGame, approveDibsByRenter, returnGamesByRenter, extendRentalsByRenter, fetchGameLogs, fetchAllLogs, fetchUsers, adminCancelDibs, markGameLost, returnRentalRequest } from '../api';
 import GameFormModal from './GameFormModal';
 import { saveGameEdit } from './saveGameEdit';
 import UserSelectModal from './UserSelectModal'; // [NEW]
@@ -11,8 +11,11 @@ import { TEXTS, getStatusColor } from '../constants';
 import { useToast } from '../contexts/ToastContext';
 import { useGameFilter } from '../hooks/useGameFilter';
 import RentalInstanceList from './components/RentalInstanceList'; // [QUALITY] Component Extracted
+import { RenterWorkListModal } from './components/RenterWorkList';
+import { rentalDueDays } from '../lib/rentalDue';
 
-function DashboardTab({ games, loading, onReload, users }) {
+// workListOpen/onCloseWorkList: 「오늘의 할 일」에서 여는 대여자별 처리 모달 (열림 상태는 Admin 이 가진다)
+function DashboardTab({ games, loading, onReload, users, workListOpen = false, onCloseWorkList }) {
   const { showToast } = useToast();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -95,6 +98,11 @@ function DashboardTab({ games, loading, onReload, users }) {
   const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [onlyOverdue, setOnlyOverdue] = useState(false); // [NEW] 연체만 보기
   const [openContactId, setOpenContactId] = useState(null); // 📞 팝오버가 열린 game.id
+  // 상태 칩의 대여중·찜 구분. 대여가능·연체 칩은 기존 onlyAvailable·onlyOverdue 를 그대로 써서
+  // PC 필터의 「대여 가능만」 체크박스와 칩이 같은 값을 본다
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'rented' | 'dibs'
+  // 폰 폭에서 상태 칩·카테고리를 접어 두는 토글 (PC는 토글 없이 항상 노출 — Admin.css)
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
 
   // ⭐ 페이지 로드 시 유저 목록 가져오기
@@ -153,7 +161,7 @@ function DashboardTab({ games, loading, onReload, users }) {
     )
   ) : games;
 
-  const filteredGames = useGameFilter(renterGames, {
+  const baseFilteredGames = useGameFilter(renterGames, {
     searchTerm,
     ownerFilter, // [NEW] Admin 전용 - 소유자 필터
     selectedCategory,
@@ -165,23 +173,52 @@ function DashboardTab({ games, loading, onReload, users }) {
     isAdmin: true // [NEW] Admin 모드 활성화 - TRPG 필터링 해제
   });
 
+  const isGameRentedOut = (game) => game.adminStatus === '대여중' || game.adminStatus === '일부대여중';
+  const hasDibs = (game) => game.adminStatus === '예약됨' || (game.rentals || []).some(r => r.type === 'DIBS' && !r.returned_at);
+  const filteredGames = statusFilter === "rented" ? baseFilteredGames.filter(isGameRentedOut)
+    : statusFilter === "dibs" ? baseFilteredGames.filter(hasDibs)
+    : baseFilteredGames;
+
   // 연체 여부 계산 (목록의 dueDate는 가장 이른 반납 예정일)
+  // 판정은 rentalDue.js 한 곳 — 마감 시각을 넘기는 순간 연체 1일 (KST 달력 기준, 오늘의 할 일 카드와 같다)
   const getOverdueDays = (game) => {
     if (!game.dueDate) return 0;
     const isRentedOut = game.adminStatus === '대여중' || game.adminStatus === '일부대여중';
     if (!isRentedOut) return 0;
-    const diffMs = Date.now() - new Date(game.dueDate).getTime();
-    if (diffMs <= 0) return 0;
-    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const due = rentalDueDays(game.dueDate);
+    return due?.overdue ? Math.max(1, -due.days) : 0;
   };
 
   const overdueCount = games.reduce((acc, g) => acc + (getOverdueDays(g) > 0 ? 1 : 0), 0);
+
+  // 상태 칩 — 한 번에 하나. 현재 칩은 상태 값에서 계산한다 (PC 체크박스로 바꿔도 칩이 따라온다)
+  const activeStatus = onlyOverdue ? "overdue" : onlyAvailable ? "available" : statusFilter;
+  const selectStatus = (key) => {
+    setOnlyOverdue(key === "overdue");
+    setOnlyAvailable(key === "available");
+    setStatusFilter(key === "rented" || key === "dibs" ? key : "all");
+  };
+  // 폰에서 숨기는 PC 상세 필터가 걸려 있으면(창을 줄인 경우 등) 안 보이는 채 목록을 거르지 않게 해제 칩을 띄운다
+  const hiddenFilterActive = !!ownerFilter || difficultyFilter !== "전체" || playerFilter !== "all";
+  const clearHiddenFilters = () => {
+    setOwnerFilter(""); setDifficultyFilter("전체"); setPlayerFilter("all");
+  };
+  // 접힌 「필터」 토글에 보이는 적용 수 — 상태 칩(전체 외)·카테고리·숨긴 상세 필터
+  const activeFilterCount = (activeStatus !== "all" ? 1 : 0) + (selectedCategory !== "전체" ? 1 : 0)
+    + [renterFilter, ownerFilter, difficultyFilter !== "전체", playerFilter !== "all"].filter(Boolean).length;
+  const statusChips = [
+    { key: "all", label: "전체" },
+    { key: "rented", label: "대여중" },
+    { key: "dibs", label: "찜" },
+    { key: "overdue", label: `연체 ${overdueCount}`, danger: overdueCount > 0 },
+    { key: "available", label: "대여가능" },
+  ];
 
   // 필터 초기화 함수
   const resetFilters = () => {
     setInputValue(""); setSearchTerm(""); setRenterFilter(""); setOwnerFilter("");
     setSelectedCategory("전체"); setDifficultyFilter("전체");
-    setPlayerFilter("all"); setOnlyAvailable(false); setOnlyOverdue(false);
+    setPlayerFilter("all"); setOnlyAvailable(false); setOnlyOverdue(false); setStatusFilter("all");
   };
 
   // 여기까지 필터바 
@@ -718,6 +755,37 @@ function DashboardTab({ games, loading, onReload, users }) {
     }
   };
 
+  // 단체(외부) 대여 반납 — 신청 단위로 한 번에 (부분 반납 없음). HOLD 행의 request_id(관리자에게만 옴)로 부른다
+  const handleReturnHold = (game, rental) => {
+    if (!rental?.request_id) {
+      showToast("신청 정보가 없어 반납할 수 없습니다. 외부 대여 신청 탭에서 처리해 주세요.", { type: "warning" });
+      return;
+    }
+    const sameRequest = games.flatMap(g => (g.rentals || [])
+      .filter(r => r.type === 'HOLD' && !r.returned_at && r.request_id === rental.request_id)
+      .map(() => g.name));
+    showConfirmModal(
+      "단체 대여 반납",
+      `[${rental.renter_name || '단체'}] 신청의 게임 ${sameRequest.length}개를 한 번에 반납 처리합니다.\n${sameRequest.join(', ')}`,
+      async () => {
+        try {
+          const { data, error } = await returnRentalRequest(rental.request_id);
+          if (error) throw error;
+          if (data && data.success === false) {
+            showToast(data.message || "반납 실패", { type: "error" });
+            return;
+          }
+          showToast(data?.overdue_days > 0 ? `반납 완료 — 단체 연체 ${data.overdue_days}일` : "반납 완료", { type: "success" });
+          onReload();
+        } catch (e) {
+          console.error('[DashboardTab] 단체 반납 실패:', e);
+          showToast(`반납 실패: ${e.message || String(e)}`, { type: "error" });
+        }
+      },
+      "info"
+    );
+  };
+
   const handleDelete = async (game) => {
     showConfirmModal(
       "게임 삭제",
@@ -813,41 +881,100 @@ function DashboardTab({ games, loading, onReload, users }) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", flexWrap: "wrap", gap: "10px" }}>
-        <h3 style={{ margin: 0 }}>🚨 게임 관리 (총 {games.length}개)</h3>
-        <div className="admin-dashboard-actions">
-          {/* 연체만 보기 토글 — 연체가 있을 때 강조 */}
-          <button
-            onClick={() => setOnlyOverdue(prev => !prev)}
-            aria-pressed={onlyOverdue}
-            title={overdueCount > 0 ? `연체 ${overdueCount}건` : "연체된 게임이 없습니다"}
-            style={{
-              padding: "8px 16px",
-              fontSize: "1.05em",
-              fontWeight: "bold",
-              cursor: overdueCount > 0 ? "pointer" : "default",
-              background: onlyOverdue ? "#e74c3c" : "var(--admin-card-bg)",
-              color: onlyOverdue ? "white" : (overdueCount > 0 ? "#e74c3c" : "var(--admin-text-sub)"),
-              border: `1px solid ${overdueCount > 0 ? "#e74c3c" : "var(--admin-border)"}`,
-              borderRadius: "5px",
-              opacity: overdueCount > 0 ? 1 : 0.6,
-            }}
-            disabled={overdueCount === 0 && !onlyOverdue}
-          >
-            ⚠️ 연체 {overdueCount}건 {onlyOverdue ? "(해제)" : "보기"}
-          </button>
-          {/* [NEW] 전체 이력 조회 버튼 - 크게 변경 */}
-          <button onClick={handleShowAllLogs} style={{ padding: "8px 16px", fontSize: "1.05em", fontWeight: "bold", cursor: "pointer", background: "var(--admin-primary)", color: "white", border: "none", borderRadius: "5px" }}>전체 이력 조회 📜</button>
-          <button onClick={onReload} style={{ padding: "8px 16px", fontSize: "1.05em", fontWeight: "bold", cursor: "pointer", background: "var(--admin-card-bg)", color: "var(--admin-text-main)", border: "1px solid var(--admin-border)", borderRadius: "5px" }}>🔄 새로고침</button>
-        </div>
+      {/* 대여자별 처리 모달 — 열려 있는 동안 재조회(loading)가 있어도 언마운트하지 않아 검색어·펼침이 유지된다 */}
+      <RenterWorkListModal
+        isOpen={workListOpen}
+        onClose={onCloseWorkList}
+        initialView="overdue"
+        games={games}
+        users={allUsers}
+        onReceive={handleReceive}
+        onCancelDibs={handleCancelDibs}
+        onReturn={handleReturn}
+        onExtend={handleExtend}
+        onMarkLost={handleMarkLost}
+        onReturnHold={handleReturnHold}
+      />
+
+      {/* 게임 관리 제목 줄 — 오른쪽 작은 「이력」 (전체 이력 조회) */}
+      <div className="admin-games-head">
+        <h3 style={{ margin: 0 }}>게임 관리 ({games.length})</h3>
+        <button type="button" className="admin-text-btn" onClick={handleShowAllLogs}>이력</button>
       </div>
 
+      {/* 검색 + (폰) 필터 토글 + 새로고침 — 폰 접힘 상태는 이 한 줄뿐.
+          FilterBar 는 사용자 검색 화면과 공용이라 검색만 여기로 빼고(hideSearch) 컴포넌트는 그대로 둔다 */}
+      <div className="admin-games-search">
+        <input
+          type="text"
+          className="admin-input"
+          placeholder="🔍 검색 (태그는 #)"
+          aria-label="게임 이름 또는 태그 검색"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+        />
+        <button
+          type="button"
+          className={`admin-filter-toggle ${activeFilterCount > 0 ? "has-active" : ""}`}
+          aria-expanded={filtersOpen}
+          aria-controls="admin-games-filters"
+          aria-label={`필터 ${filtersOpen ? "접기" : "펼치기"}${activeFilterCount > 0 ? ` (적용 ${activeFilterCount}개)` : ""}`}
+          onClick={() => setFiltersOpen(prev => !prev)}
+        >
+          필터{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""} {filtersOpen ? "▲" : "▼"}
+        </button>
+        <button type="button" className="admin-icon-btn" onClick={onReload} aria-label="새로고침" title="새로고침">↻</button>
+      </div>
+
+      {/* 상태 칩 (+ 폰에서는 카테고리) — 한 줄, 넘치면 가로 스크롤. 폰에서는 「필터」로 펼쳤을 때만 */}
+      <div id="admin-games-filters" className={`admin-status-chips ${filtersOpen ? "is-open" : ""}`} role="group" aria-label="상태 필터">
+        {statusChips.map(c => (
+          <button
+            key={c.key}
+            type="button"
+            className={`admin-chip ${activeStatus === c.key ? "active" : ""} ${c.danger ? "is-danger" : ""}`}
+            aria-pressed={activeStatus === c.key}
+            onClick={() => selectStatus(c.key)}
+          >
+            {c.label}
+          </button>
+        ))}
+        <select
+          className="admin-select admin-only-mobile"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          aria-label="카테고리 선택"
+        >
+          {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+        </select>
+        <select
+          className="admin-select admin-only-mobile"
+          value={renterFilter}
+          onChange={(e) => setRenterFilter(e.target.value)}
+          aria-label="대여·예약자 선택"
+        >
+          <option value="">대여·예약자 전체</option>
+          {renterFilter && !renterOptions.includes(renterFilter) && (
+            <option value={renterFilter}>{renterFilter} (현재 내역 없음)</option>
+          )}
+          {renterOptions.map(name => <option key={name} value={name}>{name}</option>)}
+        </select>
+        {hiddenFilterActive && (
+          <button type="button" className="admin-chip is-danger admin-only-mobile" onClick={clearHiddenFilters}>
+            상세 필터 해제
+          </button>
+        )}
+      </div>
+
+      {/* PC 상세 필터 — 폰에서는 숨긴다 (대여가능은 칩, 대여자는 「대여자별 처리」 모달이 대신한다) */}
+      <div className="admin-desktop-filters">
       <FilterBar
         inputValue={inputValue} setInputValue={setInputValue}
+        hideSearch
         selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
         difficultyFilter={difficultyFilter} setDifficultyFilter={setDifficultyFilter}
         playerFilter={playerFilter} setPlayerFilter={setPlayerFilter}
-        onlyAvailable={onlyAvailable} setOnlyAvailable={setOnlyAvailable}
+        onlyAvailable={onlyAvailable} setOnlyAvailable={(v) => { setOnlyAvailable(v); if (v) { setOnlyOverdue(false); setStatusFilter("all"); } }}
         categories={categories}
         onReset={resetFilters}
         isAdmin={true}                   // 관리자 모드 켜기
@@ -857,6 +984,7 @@ function DashboardTab({ games, loading, onReload, users }) {
         ownerFilter={ownerFilter}        // [NEW] 소유자 검색 state
         setOwnerFilter={setOwnerFilter}
       />
+      </div>
 
       {loading ? (
         <div style={{ textAlign: "center", padding: "40px", color: "var(--admin-text-sub)" }}>데이터를 불러오는 중... ⏳</div>
@@ -1012,16 +1140,14 @@ function DashboardTab({ games, loading, onReload, users }) {
                     onExtend={handleExtend}
                     onCancelDibs={handleCancelDibs}
                     onMarkLost={handleMarkLost}
+                    onReturnHold={handleReturnHold}
                   />
                 )}
               </div>
 
               {/* 상태별 버튼 로직 [IMPROVED] */}
+              {/* 현장 처리 버튼을 앞에 둔다 — 폰에서 줄이 넘어가도 첫 줄에 보이게. 삭제는 맨 끝으로 떼어 둔다 */}
               <div className="admin-btn-row">
-                <button onClick={() => handleShowLogs(game)} style={{ ...actionBtnStyle("#2c3e50"), color: "#eee", border: "1px solid #555", padding: "6px 12px", fontSize: "1.1em" }} title="이력 조회" aria-label="이력 조회">📜</button>
-                <button onClick={() => openEditModal(game)} style={actionBtnStyle("#8e44ad")}>✏️ 수정</button>
-                <button onClick={() => handleDelete(game)} style={{ ...actionBtnStyle("transparent"), color: "#e74c3c", border: "1px solid #e74c3c", padding: "6px 10px", marginLeft: "8px" }} title="게임 삭제" aria-label="게임 삭제">🗑️</button>
-
                 {/* 1. 수령/취소 (예약이 있는 경우) */}
                 {((game.rentals && game.rentals.some(r => r.type === 'DIBS')) || game.status === '예약됨') && (
                   <>
@@ -1050,6 +1176,10 @@ function DashboardTab({ games, loading, onReload, users }) {
                 {game.available_count > 0 && (
                   <button onClick={() => handleDirectRent(game)} style={actionBtnStyle("var(--admin-card-bg)")}>✋ 현장대여</button>
                 )}
+
+                <button onClick={() => handleShowLogs(game)} style={{ ...actionBtnStyle("#2c3e50"), color: "#eee", border: "1px solid #555", padding: "6px 12px", fontSize: "1.1em" }} title="이력 조회" aria-label="이력 조회">📜</button>
+                <button onClick={() => openEditModal(game)} style={actionBtnStyle("#8e44ad")}>✏️ 수정</button>
+                <button onClick={() => handleDelete(game)} style={{ ...actionBtnStyle("transparent"), color: "#e74c3c", border: "1px solid #e74c3c", padding: "6px 10px", marginLeft: "auto" }} title="게임 삭제" aria-label="게임 삭제">🗑️</button>
               </div>
             </div>
             );
@@ -1063,6 +1193,8 @@ function DashboardTab({ games, loading, onReload, users }) {
         onClose={() => setIsEditModalOpen(false)}
         initialData={targetGame}
         onSubmit={handleEditSubmit}
+        games={games} // 본판 연결 후보
+        gamesLoading={loading}
         title="✏️ 게임 정보 수정"
       />
 
@@ -1345,6 +1477,18 @@ function DashboardTab({ games, loading, onReload, users }) {
           }
         }}
       />
+
+      {/* 처음 쓰는 운영진 안내 — 예전엔 「오늘의 할 일」 안에 있었다 (10/12 공간 절약으로 탭 맨 아래로) */}
+      <details className="admin-first-tips">
+        <summary>📘 처음 사용하시나요? (클릭해서 펼치기)</summary>
+        <ul>
+          <li><b>대여/반납:</b> 게임 카드의 버튼으로 처리합니다. 연체는 맨 위 알림의 「대여자별 처리」에서 사람별로 묶어 볼 수 있습니다.</li>
+          <li><b>회원 문의:</b> 📢 신고/신청 관리 탭에서 먼저 확인하세요.</li>
+          <li><b>1주차 무료 대여:</b> 🕒 오피스아워 탭에서 출근·퇴근, 전체 회원 대여 허용과 운영 안내를 관리합니다.</li>
+          <li><b>위험한 작업</b> (학기 초기화, 권한 변경 등)은 ⚙️ 시스템 설정 · 👥 회원 관리에 있습니다. 두 번 확인하고 실행하세요.</li>
+          <li><b>문제가 생기면:</b> 브라우저에서 <kbd>F12</kbd> → Console 탭을 열어 빨간 에러 메시지를 캡처해 개발자에게 전달해주세요.</li>
+        </ul>
+      </details>
     </div>
   );
 }

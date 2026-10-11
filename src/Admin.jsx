@@ -65,6 +65,24 @@ function Admin() {
 
   // 오피스아워 진행 중 이동/로그아웃 시 확인용 모달
   const [exitConfirm, setExitConfirm] = useState({ isOpen: false, action: null, target: null });
+  // 대여자별 처리 모달 — 「오늘의 할 일」 연체 카드에서 열고, 처리 핸들러가 있는 DashboardTab 이 그린다
+  const [workListOpen, setWorkListOpen] = useState(false);
+  const closeWorkList = useCallback(() => setWorkListOpen(false), []);
+
+  // 탭 전환: 폰에서는 탭 바가 화면 위에 붙어 있어 본문 깊은 곳에서도 탭을 바꿀 수 있다.
+  // 그때 새 탭이 이전 스크롤 위치(중간)에서 열리지 않게 탭 바 원래 자리로 올린다.
+  // 기준은 탭 바 바로 앞의 빈 앵커 — sticky 로 붙은 탭 바 자신의 rect.top 은 0 이라 문서 위치가 안 나온다.
+  const tabsRef = useRef(null);
+  const tabsAnchorRef = useRef(null);
+  const changeTab = useCallback((id) => {
+    setActiveTab(id);
+    requestAnimationFrame(() => {
+      const anchor = tabsAnchorRef.current;
+      if (!anchor) return;
+      const top = anchor.getBoundingClientRect().top + window.scrollY;
+      if (window.scrollY > top) window.scrollTo({ top });
+    });
+  }, []);
 
   // Keep privileged rental/member data in memory and discard superseded responses.
   const loadData = useCallback(async () => {
@@ -222,27 +240,28 @@ function Admin() {
         </div>
       </div>
 
-      {/* 탭 버튼 영역 */}
-      <div className="admin-tabs">
-        <TabButton label="📋 대여 현황 / 태그" id="dashboard" activeTab={activeTab} onClick={setActiveTab}
+      {/* 탭 버튼 영역 — 폰에서는 화면 위에 붙는다 (Admin.css). 앵커는 탭 전환 시 스크롤 기준점 */}
+      <div ref={tabsAnchorRef} aria-hidden="true" />
+      <div className="admin-tabs" ref={tabsRef} aria-label="관리자 메뉴">
+        <TabButton label="📋 대여 현황 / 태그" id="dashboard" activeTab={activeTab} onClick={changeTab}
           hint="게임 대여/반납 처리, 게임 정보 수정, 대여 이력 확인" />
-        <TabButton label="📢 신고/신청 관리" id="reports" activeTab={activeTab} onClick={setActiveTab}
+        <TabButton label="📢 신고/신청 관리" id="reports" activeTab={activeTab} onClick={changeTab}
           hint="회원이 올린 파손 신고와 게임 신청을 확인·처리" />
-        <TabButton label="📝 외부 대여 신청" id="rental_requests" activeTab={activeTab} onClick={setActiveTab}
+        <TabButton label="📝 외부 대여 신청" id="rental_requests" activeTab={activeTab} onClick={changeTab}
           hint="Google Form으로 들어온 외부 단체 대여 신청 검토·승인" />
-        <TabButton label="➕ 게임 추가" id="add" activeTab={activeTab} onClick={setActiveTab}
+        <TabButton label="➕ 게임 추가" id="add" activeTab={activeTab} onClick={changeTab}
           hint="BGG에서 새 게임을 검색해 목록에 등록" />
-        <TabButton label="⚙️ 시스템 설정" id="system" activeTab={activeTab} onClick={setActiveTab}
+        <TabButton label="⚙️ 시스템 설정" id="system" activeTab={activeTab} onClick={changeTab}
           hint="회원 회비 통계, 학기 초기화" />
-        <TabButton label="🕒 오피스아워" id="office" activeTab={activeTab} onClick={setActiveTab}
+        <TabButton label="🕒 오피스아워" id="office" activeTab={activeTab} onClick={changeTab}
           hint="1주차 무료 대여: 출근·퇴근, 전체 회원 대여 허용, 운영 안내 설정" />
-        <TabButton label="👥 회원 관리" id="members" activeTab={activeTab} onClick={setActiveTab}
+        <TabButton label="👥 회원 관리" id="members" activeTab={activeTab} onClick={changeTab}
           hint="회원 목록, 회비 납부 상태, 비밀번호 초기화, 권한 변경" />
-        <TabButton label="💰 포인트 시스템" id="points" activeTab={activeTab} onClick={setActiveTab}
+        <TabButton label="💰 포인트 시스템" id="points" activeTab={activeTab} onClick={changeTab}
           hint="회원별 포인트 잔액과 적립/차감 이력 관리" />
-        <TabButton label="🎨 홈페이지 설정" id="config" activeTab={activeTab} onClick={setActiveTab}
+        <TabButton label="🎨 홈페이지 설정" id="config" activeTab={activeTab} onClick={changeTab}
           hint="홈 화면에 노출되는 배너/문구/색상 등을 수정" />
-        <TabButton label="📊 통계" id="stats" activeTab={activeTab} onClick={setActiveTab}
+        <TabButton label="📊 통계" id="stats" activeTab={activeTab} onClick={changeTab}
           hint="기간·회원·게임·행동별 대여, 찜, 로그 분석" />
       </div>
 
@@ -253,21 +272,25 @@ function Admin() {
             <AdminOverviewCard
               games={games}
               isOfficeOpen={isOfficeOpen}
-              onGoOffice={() => setActiveTab('office')}
-              onGoReports={() => setActiveTab('reports')}
-              onGoRentalRequests={() => setActiveTab('rental_requests')}
+              onGoOffice={() => changeTab('office')}
+              onGoReports={() => changeTab('reports')}
+              onGoRentalRequests={() => changeTab('rental_requests')}
+              onOpenWorkList={() => setWorkListOpen(true)}
+              gamesLoading={loading && games.length === 0}
             />
             <DashboardTab
               games={games}
               loading={loading}
               onReload={loadData}
               users={adminUsers}
+              workListOpen={workListOpen}
+              onCloseWorkList={closeWorkList}
             />
           </>
         )}
 
         {activeTab === "reports" && (
-          <ReportsTab games={games} onReloadGames={loadData} />
+          <ReportsTab games={games} gamesLoading={loading} onReloadGames={loadData} />
         )}
 
         {activeTab === "rental_requests" && (
@@ -277,6 +300,8 @@ function Admin() {
         {activeTab === "add" && (
           <AddGameTab
             onGameAdded={loadData} // 게임 추가 후 목록 갱신을 위해 전달
+            games={games} // 게임 폼 「본판 연결」 후보
+            gamesLoading={loading} // 로딩 중과 실제 0건 구분
           />
         )}
 
@@ -335,15 +360,32 @@ function Admin() {
 
 // 탭 버튼 컴포넌트 (CSS 클래스 사용)
 // hint: 마우스 호버 시 표시되는 한 줄 설명 (첫 방문자용 가이드)
-const TabButton = ({ label, id, activeTab, onClick, hint }) => (
-  <button
-    onClick={() => onClick(id)}
-    className={`admin-tab-btn ${activeTab === id ? 'active' : ''}`}
-    title={hint}
-    aria-label={hint ? `${label} — ${hint}` : label}
-  >
-    {label}
-  </button>
-);
+// 활성 탭은 가로 스크롤 안에서 보이는 자리로 끌어온다 — 폰에서는 10개 탭이 한 화면에 안 들어간다
+const TabButton = ({ label, id, activeTab, onClick, hint }) => {
+  const ref = useRef(null);
+  const isActive = activeTab === id;
+  useEffect(() => {
+    if (!isActive) return;
+    const el = ref.current;
+    const bar = el?.parentElement;
+    if (!el || !bar || bar.scrollWidth <= bar.clientWidth) return;
+    // scrollIntoView 는 페이지 세로 스크롤까지 건드릴 수 있어 탭 바만 가로로 옮긴다.
+    // 즉시 이동: smooth 는 창이 가려진 환경 등에서 애니메이션이 멈춰 scrollLeft 가 0 그대로였다 (10/11 실측)
+    const target = el.offsetLeft - (bar.clientWidth - el.offsetWidth) / 2;
+    bar.scrollLeft = Math.max(0, target);
+  }, [isActive]);
+  return (
+    <button
+      ref={ref}
+      aria-current={isActive ? "true" : undefined}
+      onClick={() => onClick(id)}
+      className={`admin-tab-btn ${isActive ? 'active' : ''}`}
+      title={hint}
+      aria-label={hint ? `${label} — ${hint}` : label}
+    >
+      {label}
+    </button>
+  );
+};
 
 export default Admin;

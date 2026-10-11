@@ -412,7 +412,7 @@ function MembersTab({ users, onUsersReload }) {
                 </div>
             ) : (
                 <div className="admin-table-wrap">
-                    <table className="admin-table">
+                    <table className="admin-table admin-table-cards">
                         <thead>
                             <tr>
                                 <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
@@ -443,7 +443,7 @@ function MembersTab({ users, onUsersReload }) {
 
                                     return (
                                         <tr key={member.id}>
-                                            <td className="wrap" style={{ fontWeight: 'bold', color: member.status === 'withdrawn' ? '#999' : 'inherit' }}>
+                                            <td className="wrap is-card-title" style={{ fontWeight: 'bold', color: member.status === 'withdrawn' ? '#999' : 'inherit' }}>
                                                 {member.name || '-'}
                                                 {member.joined_semester === currentSemester && (
                                                     <span
@@ -469,12 +469,12 @@ function MembersTab({ users, onUsersReload }) {
                                                 )}
                                                 {member.status === 'withdrawn' && <span style={{ fontSize: '0.8em', color: '#e74c3c', marginLeft: '5px' }}>(탈퇴)</span>}
                                             </td>
-                                            <td>{member.student_id || '-'}</td>
-                                            <td className="wrap" style={{ fontSize: '0.9em' }}>
+                                            <td data-label="학번">{member.student_id || '-'}</td>
+                                            <td className="wrap" data-label="활동 기간" style={{ fontSize: '0.9em' }}>
                                                 <div style={{ fontWeight: 'bold', color: 'var(--admin-text-main)' }}>{calculateDuration(member.joined_semester)}</div>
                                                 <div style={{ fontSize: '0.8em', color: '#7f8c8d' }}>{member.joined_semester || '-'}</div>
                                             </td>
-                                            <td className="wrap">
+                                            <td className="wrap" data-label="역할">
                                                 <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
                                                     {roles.length === 0 ? (
                                                         <span style={{ color: 'var(--admin-text-sub)', fontSize: '0.85em' }}>일반 회원</span>
@@ -487,7 +487,7 @@ function MembersTab({ users, onUsersReload }) {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td>
+                                            <td data-label="회비">
                                                 {hasExemption ? (
                                                     <span
                                                         style={{
@@ -523,7 +523,7 @@ function MembersTab({ users, onUsersReload }) {
                                                     </>
                                                 )}
                                             </td>
-                                            <td>
+                                            <td className="is-card-actions" data-label="">
                                                 <div className="admin-btn-row">
                                                     <button
                                                         onClick={() => handleOpenRoleEdit(member)}

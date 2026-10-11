@@ -5,7 +5,7 @@ import GameFormModal from './GameFormModal';
 import ConfirmModal from '../components/ConfirmModal'; // [NEW]
 import { useToast } from '../contexts/ToastContext';
 
-function AddGameTab({ onGameAdded }) {
+function AddGameTab({ onGameAdded, games, gamesLoading }) {
   const { showToast } = useToast();
   const [keyword, setKeyword] = useState("");
 
@@ -183,6 +183,8 @@ function AddGameTab({ onGameAdded }) {
         onDuplicateGame={handleDuplicateGame}
         busy={addingCopy || confirmModal.isOpen}
         title="📝 새 게임 추가"
+        games={games} // 본판 연결 후보
+        gamesLoading={gamesLoading}
       />
 
       {/* Confirm 모달 */}

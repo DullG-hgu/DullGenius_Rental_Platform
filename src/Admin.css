@@ -276,17 +276,6 @@
 
 .admin-filter-reset:hover { border-color: var(--admin-primary); }
 
-.admin-dashboard-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.admin-container .admin-dashboard-actions > button {
-  min-height: 48px;
-  padding: 12px 20px !important;
-}
-
 @media (max-width: 1100px) {
   .admin-container .admin-filter-bar {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -303,8 +292,6 @@
   }
   .admin-filter-bar > .search-input { grid-column: 1 / -1; }
   .admin-filter-bar .admin-available-filter { grid-column: auto; }
-  .admin-dashboard-actions { width: 100%; }
-  .admin-dashboard-actions > button { flex: 1 1 140px; }
 }
 
 @media (max-width: 420px) {
@@ -516,13 +503,13 @@
   }
 
   .admin-container .game-form-modal {
-    order: 1;
     padding: 16px !important;
   }
 
-  /* BGG 검색 패널은 폼 아래로 — 첫 화면에 이름 입력칸이 보이도록 */
+  /* BGG 검색 패널은 DOM 순서대로 폼 위 — 「BGG에서 찾기 → 자동 채움 → 아래 폼 확인」 (2026-10-12)
+     이름은 게임 추가 탭 검색어·기존 게임 이름으로 미리 채워져 열리자마자 후보가 뜬다.
+     CSS order 로 뒤집지 않는다 — 화면 순서와 탭 순서가 어긋난다 */
   .admin-container .game-bgg-side-modal {
-    order: 2;
     margin-bottom: 0;
   }
 
@@ -916,5 +903,590 @@
 
   .admin-table tr:hover {
     background: transparent;
+  }
+}
+
+/* ============================================================
+ * 대여자별 처리 모달 (RenterWorkList / RenterWorkListModal)
+ * 사람 기준으로 찜·대여를 모아 폰에서 수령·반납·연장을 끝낸다. 사람별 묶음은 기본 접힘
+ * ============================================================ */
+.admin-worklist-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000; /* 확인·입력 모달(10000)이 위에 뜬다 */
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.admin-worklist-modal {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 820px;
+  background: var(--admin-card-bg);
+  color: var(--admin-text-main);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.admin-worklist-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-worklist-close {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--admin-border);
+  background: transparent;
+  color: var(--admin-text-main);
+  font-size: 1.1em;
+  cursor: pointer;
+}
+
+.admin-worklist {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-worklist-search {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+
+/* 토글형 칩 — 목록 범위·상태 필터 */
+.admin-chip {
+  min-height: 40px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-bg);
+  color: var(--admin-text-sub);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-chip.active {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: #121212;
+}
+
+.admin-worklist-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--admin-text-sub);
+}
+
+.admin-worklist-people {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-worklist-person {
+  background: var(--admin-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  min-width: 0;
+}
+
+/* 접힌 머리줄 — 이름·대여·연체·찜 건수. 줄 전체가 펼치기 버튼 */
+.admin-worklist-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--admin-text-main);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-worklist-toggle-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-worklist-toggle-counts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-worklist-chevron {
+  margin-left: 4px;
+  color: var(--admin-text-sub);
+  font-size: 0.75em;
+}
+
+.admin-worklist-panel {
+  padding: 0 12px 12px;
+}
+
+.admin-worklist-person-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-bottom: 6px;
+}
+
+.admin-worklist-sub {
+  color: var(--admin-text-sub);
+  font-size: 0.85em;
+}
+
+.admin-worklist-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.78em;
+  font-weight: 700;
+  background: rgba(52, 152, 219, 0.18);
+  color: #5dade2;
+}
+
+.admin-worklist-badge.is-dibs { background: rgba(243, 156, 18, 0.18); color: #f5b041; }
+.admin-worklist-badge.is-overdue { background: rgba(231, 76, 60, 0.2); color: #ec7063; }
+
+.admin-worklist-tel {
+  font-size: 0.85em;
+}
+
+/* 전화 링크 — 버튼 전역 36px 규칙 대상이 아니라 터치 높이를 따로 준다 */
+.admin-tel-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 4px;
+  color: #5dade2;
+  text-decoration: none;
+}
+
+.admin-worklist-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-worklist-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--admin-card-bg);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-worklist-row.is-overdue { border-color: #e74c3c; }
+
+.admin-worklist-row-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 160px;
+}
+
+.admin-worklist-game {
+  font-weight: 700;
+  color: var(--admin-text-main);
+  overflow-wrap: anywhere;
+}
+
+.admin-worklist-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-worklist-btn.is-primary { background: #2980b9; }
+.admin-worklist-btn.is-success { background: #27ae60; }
+.admin-worklist-btn.is-purple { background: #8e44ad; }
+.admin-worklist-btn.is-ghost {
+  background: transparent;
+  border-color: var(--admin-border);
+  color: var(--admin-text-sub);
+}
+.admin-worklist-btn.is-ghost-danger {
+  background: transparent;
+  border-color: #c0392b;
+  color: #e74c3c;
+}
+
+/* 폰: 모달을 전체 화면에 가깝게, 행 버튼은 행 아래 한 줄로 꽉 채워 누르기 쉽게 */
+@media (max-width: 600px) {
+  .admin-worklist-overlay {
+    padding: 8px;
+    align-items: stretch;
+  }
+
+  .admin-worklist-modal {
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    padding: 12px;
+  }
+
+  .admin-worklist-actions {
+    width: 100%;
+  }
+
+  .admin-worklist-actions > .admin-worklist-btn {
+    flex: 1 1 0;
+  }
+
+  .admin-worklist-actions > .admin-worklist-btn.is-ghost {
+    flex: 0 0 auto;
+  }
+}
+
+/* ============================================================
+ * .admin-table-cards — 폰 폭에서 표를 카드로 펼친다 (PC는 표 그대로)
+ * 사용: <table className="admin-table admin-table-cards">, 각 td 에 data-label="열 이름".
+ *   제목 칸: td.is-card-title (라벨 없음, 카드 맨 위)
+ *   버튼 칸: td.is-card-actions (라벨 없음, 오른쪽 정렬)
+ * 가로 스크롤 끝에 숨던 행 버튼이 카드 안에 보이게 하는 게 목적이다.
+ * ============================================================ */
+@media (max-width: 600px) {
+  .admin-table.admin-table-cards {
+    background: transparent;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .admin-table-cards thead {
+    display: none;
+  }
+
+  .admin-table-cards,
+  .admin-table-cards tbody,
+  .admin-table-cards tr {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-table-cards tr {
+    box-sizing: border-box;
+    background: var(--admin-card-bg);
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    padding: 6px 0;
+  }
+
+  .admin-table-wrap .admin-table-cards td,
+  .admin-table-cards td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 6px 12px;
+    border-bottom: none;
+    white-space: normal;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-table-cards td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    margin-right: auto;
+    color: var(--admin-text-sub);
+    font-size: 0.8em;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .admin-table-cards td[data-label=""]::before {
+    content: none;
+  }
+
+  .admin-table-cards td.is-card-title {
+    display: block;
+    text-align: left;
+    font-size: 1.05em;
+  }
+
+  .admin-table-cards td.is-card-actions {
+    justify-content: flex-end;
+    border-top: 1px dashed var(--admin-border);
+    margin-top: 4px;
+    padding-top: 10px;
+  }
+
+  .admin-table-cards tr:hover {
+    background: var(--admin-card-bg);
+  }
+}
+
+/* 탭 바 — 활성 탭을 가로 스크롤 안에서 가운데로 끌어오는 계산(offsetLeft)의 기준점 */
+.admin-tabs {
+  position: relative;
+}
+
+/* 폰·태블릿: 탭 바를 화면 위에 붙여 본문 깊은 곳에서도 탭을 바꿀 수 있게 */
+@media (max-width: 800px) {
+  .admin-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--admin-bg);
+    margin-left: -12px;
+    margin-right: -12px;
+    padding: 8px 12px;
+    scrollbar-width: none;
+  }
+
+  .admin-tabs::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ============================================================
+ * 대여 현황 상단 공간 절약 (10/12 사용자 확정)
+ * - 할 일 알림: 한 줄 항목(44px 안팎) — AdminOverviewCard
+ * - 게임 관리 제목 줄 + 작은 「이력」, 검색 + ↻, 상태 칩 한 줄(넘치면 가로 스크롤)
+ * - 상세 필터(FilterBar)는 PC만. 폰에서는 숨기고 카테고리만 칩 줄에 둔다
+ * FilterBar 는 사용자 검색 화면과 공용이라 컴포넌트는 그대로 두고 여기 래퍼 클래스로만 분기한다
+ * ============================================================ */
+.admin-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.admin-alert-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 4px 6px 4px 12px;
+  background: var(--admin-card-bg);
+  border: 1px solid var(--admin-border);
+  border-left: 4px solid #3498db;
+  border-radius: 8px;
+}
+
+.admin-alert-row.is-danger { border-left-color: #e74c3c; }
+.admin-alert-row.is-warn { border-left-color: #f39c12; }
+.admin-alert-row.is-ok { border-left-color: #27ae60; }
+
+.admin-alert-icon {
+  flex-shrink: 0;
+}
+
+.admin-alert-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--admin-text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-alert-row.is-danger .admin-alert-count { color: #ec7063; }
+
+.admin-alert-row.is-wrap .admin-alert-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.admin-alert-btn {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-bg);
+  color: var(--admin-text-main);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-games-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* 작은 텍스트 버튼 — 제목 줄 보조 동작 */
+.admin-text-btn {
+  min-height: 36px;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: var(--admin-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-games-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.admin-games-search > input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+/* 아이콘 버튼 — 정사각 44px (36px 규칙 이상) */
+.admin-icon-btn {
+  flex-shrink: 0;
+  width: 44px;
+  min-height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-card-bg);
+  color: var(--admin-text-main);
+  font-size: 1.2em;
+  cursor: pointer;
+}
+
+.admin-status-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.admin-status-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-status-chips > * {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.admin-chip.is-danger:not(.active) {
+  border-color: #e74c3c;
+  color: #ec7063;
+}
+
+.admin-status-chips > select {
+  min-height: 40px;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.admin-only-mobile {
+  display: none;
+}
+
+/* 필터 토글 — 폰 전용 (PC는 칩·상세 필터를 항상 노출) */
+.admin-filter-toggle {
+  display: none;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-card-bg);
+  color: var(--admin-text-main);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-filter-toggle.has-active {
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+}
+
+.admin-first-tips {
+  margin-top: 24px;
+  background: var(--admin-card-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--admin-text-sub);
+}
+
+.admin-first-tips summary {
+  cursor: pointer;
+  color: var(--admin-text-main);
+  font-weight: 600;
+}
+
+.admin-first-tips ul {
+  margin: 10px 0 4px;
+  padding-left: 20px;
+  line-height: 1.7;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+  .admin-desktop-filters {
+    display: none;
+  }
+
+  /* 접힘 = [검색][필터 N ▼][↻] 한 줄. 펼치면 상태 칩·카테고리 */
+  .admin-filter-toggle {
+    display: inline-block;
+  }
+
+  .admin-status-chips:not(.is-open) {
+    display: none;
+  }
+
+  /* 펼침 = 1줄 상태 칩, 2줄 카테고리·대여자 선택 (대여자 선택이 가로 스크롤 끝에 숨지 않게) */
+  .admin-status-chips.is-open {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .admin-status-chips > select.admin-only-mobile {
+    flex: 1 1 140px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .admin-status-chips > .admin-only-mobile {
+    display: inline-block;
+  }
+
+  .admin-alert-row {
+    padding-left: 10px;
   }
 }

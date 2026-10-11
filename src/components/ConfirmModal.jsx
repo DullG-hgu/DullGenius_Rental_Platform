@@ -18,7 +18,8 @@ function ConfirmModal({
     confirmText = "확인",
     cancelText = "취소",
     type = "info", // "info" | "warning" | "danger"
-    subContent = null // 메시지 아래 추가 렌더링 (약관 동의 문구 등)
+    subContent = null, // 메시지 아래 추가 렌더링 (약관 동의 문구 등)
+    initialFocus = 'first', // subContent 에 입력칸이 있으면 'firstInput' — 열자마자 입력하게
 }) {
     const titleId = useId();
     const messageId = useId();
@@ -34,7 +35,7 @@ function ConfirmModal({
     const containerRef = useFocusTrap({
         active: isOpen,
         onEscape: onClose,
-        initialFocus: 'first',
+        initialFocus,
     });
 
     if (!isOpen) return null;

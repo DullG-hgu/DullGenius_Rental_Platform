@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   fetchRentalRequests,
   confirmRentalRequest,
   rejectRentalRequest,
+  cancelRentalRequest,
+  returnRentalRequest,
 } from '../api';
 import { useGameData } from '../contexts/GameDataContext';
 import { useToast } from '../contexts/ToastContext';
-import PromptModal from '../components/PromptModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 const STATUS_LABEL = {
   pending: { text: '대기', bg: '#7f8c8d' },
@@ -15,10 +17,16 @@ const STATUS_LABEL = {
   manual_confirmed: { text: '수동 확정', bg: '#2ecc71' },
   rejected: { text: '반려', bg: '#c0392b' },
   cancelled: { text: '취소', bg: '#95a5a6' },
+  returned: { text: '반납 완료', bg: '#34495e' }, // 신청 단위 반납 (return_rental_request). 기본 필터에는 넣지 않는다
 };
 
 const ALL_STATUSES = Object.keys(STATUS_LABEL);
-const DEFAULT_FILTER = ['needs_review', 'auto_confirmed', 'pending'];
+// 확정 건(auto/manual)은 관리자가 반납해야 끝나므로 기본 화면에 둔다
+const DEFAULT_FILTER = ['needs_review', 'auto_confirmed', 'manual_confirmed', 'pending'];
+// 「검토·수정」을 여는 상태. 확정 건(auto/manual_confirmed)도 다시 열어 게임·수령일·기간을 고치거나 반려한다
+// (confirm_rental_request 가 재확정을 받고, 열린 HOLD 가 없으면 '이미 종료된 대여입니다'를 돌려준다)
+const REVIEWABLE = ['pending', 'needs_review', 'auto_confirmed', 'manual_confirmed'];
+const CONFIRMED = ['auto_confirmed', 'manual_confirmed'];
 
 const formatDateTime = (iso) => {
   if (!iso) return '-';
@@ -49,7 +57,8 @@ function StatusBadge({ status }) {
   );
 }
 
-function RequestRow({ req, games, gamesById, onReview }) {
+// onReturn/onCancel: 확정 건 카드의 「반납」·「취소」 (확인은 부모의 ConfirmModal)
+function RequestRow({ req, games, gamesById, onReview, onReturn, onCancel }) {
   const matchedNames = useMemo(
     () => (req.matched_game_ids || []).map((id) => gamesById.get(id)?.name).filter(Boolean),
     [req.matched_game_ids, gamesById]
@@ -120,8 +129,15 @@ function RequestRow({ req, games, gamesById, onReview }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
-        {['pending', 'needs_review', 'auto_confirmed'].includes(req.status) && (
+      <div className="admin-btn-row" style={{ gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
+        {CONFIRMED.includes(req.status) && (
+          <>
+            {/* 상태 칩 「취소」(cancelled)·반려와 헷갈리지 않게 「신청 취소」 */}
+            <button style={styles.btnGhost} onClick={() => onCancel(req)}>신청 취소</button>
+            <button style={styles.btnReturn} onClick={() => onReturn(req)}>반납</button>
+          </>
+        )}
+        {REVIEWABLE.includes(req.status) && (
           <button style={styles.btnPrimary} onClick={() => onReview(req)}>
             검토·수정
           </button>
@@ -160,6 +176,11 @@ function ReviewModal({ req, games, gamesById, onClose, onRefresh }) {
     );
   };
 
+  const isConfirmed = CONFIRMED.includes(req.status);
+  // 수령 후 확정 건은 게임 목록·수령일을 못 바꾸고 기간만 조정한다
+  // (DB 도 '수령 후 게임·수령일 변경 불가 — 기간만 조정'으로 막는다. 수령일은 원래 값을 그대로 보내 분 단위 비교를 통과)
+  const pickedUp = isConfirmed && !!req.pickup_at && new Date(req.pickup_at).getTime() <= Date.now();
+
   const handleConfirm = async () => {
     if (selectedIds.length === 0) {
       showToast('게임을 하나 이상 선택하세요.', { type: 'error' });
@@ -179,27 +200,46 @@ function ReviewModal({ req, games, gamesById, onClose, onRefresh }) {
       const { data, error } = await confirmRentalRequest(req.id, selectedIds, pickupIso, duration);
       if (error) throw error;
       if (data && data.success === false) {
-        showToast(data.message || '승인 실패', { type: 'error' });
+        showToast(data.message || (isConfirmed ? '변경 저장 실패' : '승인 실패'), { type: 'error' });
         return;
       }
-      showToast('승인 완료 — HOLD 생성됨', { type: 'success' });
+      showToast(isConfirmed ? '변경 저장 완료' : '승인 완료 — HOLD 생성됨', { type: 'success' });
       onRefresh();
       onClose();
     } catch (e) {
       console.error('[RentalRequests] confirm failed', e);
-      showToast('승인 실패: ' + e.message, { type: 'error' });
+      showToast((isConfirmed ? '변경 저장 실패: ' : '승인 실패: ') + e.message, { type: 'error' });
     } finally {
       setSubmitting(false);
     }
   };
 
-  // window.prompt 는 모바일에서 차단되면 조용히 null 을 돌려줘 반려가 무시된다 → PromptModal 사용
+  // 반려 사유는 이 모달 안에서 바로 받는다.
+  // 예전엔 PromptModal 을 이 오버레이(onClick=닫기) 안에 그려서, 사유 입력칸을 누르는 클릭이 오버레이까지
+  // 올라가 검토 모달째 닫혔다 — 반려를 끝낼 수 없었다. window.prompt 는 모바일 대화상자 차단에 걸린다.
   const [rejectOpen, setRejectOpen] = useState(false);
-  const handleReject = () => setRejectOpen(true);
+  const [rejectReason, setRejectReason] = useState('');
+  const rejectInputRef = useRef(null);
 
-  const submitReject = async (reason) => {
-    if (!reason || !reason.trim()) {
+  useEffect(() => {
+    if (rejectOpen) rejectInputRef.current?.focus();
+  }, [rejectOpen]);
+
+  // 오버레이 닫기: 누르기 시작과 끝이 모두 오버레이 자체일 때만 (모달 안에서 시작한 드래그·선택이 밖에서 끝나도 안 닫힘).
+  // 작성 중인 반려 사유가 있으면 닫지 않는다.
+  const overlayPressRef = useRef(false);
+  const handleOverlayPointerUp = (e) => {
+    const onOverlay = overlayPressRef.current && e.target === e.currentTarget;
+    overlayPressRef.current = false;
+    if (!onOverlay || submitting || rejectReason.trim()) return;
+    onClose();
+  };
+
+  const submitReject = async () => {
+    const reason = rejectReason;
+    if (!reason.trim()) {
       showToast('반려 사유를 입력해야 합니다.', { type: 'warning' });
+      rejectInputRef.current?.focus();
       return;
     }
     setSubmitting(true);
@@ -222,34 +262,45 @@ function ReviewModal({ req, games, gamesById, onClose, onRefresh }) {
   };
 
   return (
-    <div style={styles.modalOverlay} onClick={onClose}>
-      <div className="admin-modal-scroll" style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ marginTop: 0, color: 'var(--admin-text-main)' }}>대여 신청 검토</h3>
+    <div
+      style={styles.modalOverlay}
+      onPointerDown={(e) => { overlayPressRef.current = e.target === e.currentTarget; }}
+      onPointerUp={handleOverlayPointerUp}
+      onPointerCancel={() => { overlayPressRef.current = false; }}
+    >
+      <div className="admin-modal-scroll" style={styles.modalContent} role="dialog" aria-modal="true" aria-label="대여 신청 검토">
+        <h3 style={{ marginTop: 0, color: 'var(--admin-text-main)' }}>{isConfirmed ? '확정 건 수정' : '대여 신청 검토'}</h3>
         <div style={{ fontSize: '0.85rem', color: 'var(--admin-text-sub)', marginBottom: 12 }}>
           {req.requester_name} · {req.requester_phone} · 제출 {formatDateTime(req.submitted_at)}
         </div>
 
         <div style={{ marginBottom: 12 }}>
           <div style={styles.fieldLabel}>원문: {req.requested_games_raw}</div>
-          <input
-            type="text"
-            placeholder="게임 검색"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            style={styles.input}
-          />
-          <div style={styles.gameList}>
-            {filteredGames.map((g) => (
-              <label key={g.id} style={styles.gameItem}>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(g.id)}
-                  onChange={() => toggleGame(g.id)}
-                />
-                <span>{g.name}</span>
-              </label>
-            ))}
-          </div>
+          {pickedUp ? (
+            <div style={styles.lockNote}>수령 후 — 게임·수령일 변경 불가, 기간만 조정</div>
+          ) : (
+            <>
+              <input
+                type="text"
+                placeholder="게임 검색"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                style={styles.input}
+              />
+              <div style={styles.gameList}>
+                {filteredGames.map((g) => (
+                  <label key={g.id} style={styles.gameItem}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(g.id)}
+                      onChange={() => toggleGame(g.id)}
+                    />
+                    <span>{g.name}</span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
           <div style={{ ...styles.fieldLabel, marginTop: 8 }}>
             선택됨: {selectedIds.map((id) => gamesById.get(id)?.name).filter(Boolean).join(', ') || '없음'}
           </div>
@@ -262,6 +313,8 @@ function ReviewModal({ req, games, gamesById, onClose, onRefresh }) {
               type="datetime-local"
               value={pickupLocal}
               onChange={(e) => setPickupLocal(e.target.value)}
+              disabled={pickedUp}
+              aria-label="수령일시"
               style={styles.input}
             />
           </div>
@@ -278,24 +331,37 @@ function ReviewModal({ req, games, gamesById, onClose, onRefresh }) {
           </div>
         </div>
 
-        <div className="admin-btn-row" style={{ justifyContent: 'flex-end', gap: 8 }}>
-          <button style={styles.btnGhost} onClick={onClose} disabled={submitting}>취소</button>
-          <button style={styles.btnDanger} onClick={handleReject} disabled={submitting}>반려</button>
-          <button style={styles.btnPrimary} onClick={handleConfirm} disabled={submitting}>
-            {submitting ? '처리 중…' : '승인 (HOLD 생성)'}
-          </button>
-        </div>
+        {rejectOpen ? (
+          <div style={styles.rejectBox}>
+            <label htmlFor={`reject-reason-${req.id}`} style={styles.fieldLabel}>반려 사유 (필수 · 신청자에게 전달)</label>
+            <textarea
+              id={`reject-reason-${req.id}`}
+              ref={rejectInputRef}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="예: 요청 기간에 이미 예약된 게임"
+              rows={3}
+              style={{ ...styles.input, resize: 'vertical' }}
+            />
+            <div className="admin-btn-row" style={{ justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+              <button style={styles.btnGhost} onClick={() => { setRejectOpen(false); setRejectReason(''); }} disabled={submitting}>
+                반려 취소
+              </button>
+              <button style={styles.btnDanger} onClick={submitReject} disabled={submitting}>
+                {submitting ? '처리 중…' : '반려 확정'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="admin-btn-row" style={{ justifyContent: 'flex-end', gap: 8 }}>
+            <button style={styles.btnGhost} onClick={onClose} disabled={submitting}>닫기</button>
+            <button style={styles.btnDanger} onClick={() => setRejectOpen(true)} disabled={submitting}>반려</button>
+            <button style={styles.btnPrimary} onClick={handleConfirm} disabled={submitting}>
+              {submitting ? '처리 중…' : isConfirmed ? '변경 저장' : '승인 (HOLD 생성)'}
+            </button>
+          </div>
+        )}
       </div>
-
-      <PromptModal
-        isOpen={rejectOpen}
-        onClose={() => setRejectOpen(false)}
-        onConfirm={submitReject}
-        title="대여 신청 반려"
-        message="반려 사유를 입력하세요 (필수)"
-        placeholder="예: 요청 기간에 이미 예약된 게임입니다"
-        confirmText="반려"
-      />
     </div>
   );
 }
@@ -307,6 +373,9 @@ function RentalRequestsTab() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [reviewing, setReviewing] = useState(null);
+  // 확정 건 반납·취소 확인 — { kind: 'return'|'cancel', req }
+  const [lifecycle, setLifecycle] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const gamesById = useMemo(() => {
     const m = new Map();
@@ -328,6 +397,31 @@ function RentalRequestsTab() {
   }, [statusFilter, showToast]);
 
   useEffect(() => { load(); }, [load]);
+
+  // 실패는 DB 메시지를 그대로 보여 준다 ('수령 전 — 취소로 처리', '열린 대여 없음' 등)
+  const runLifecycle = async () => {
+    const { kind, req } = lifecycle || {};
+    if (!req) return;
+    try {
+      const { data, error } = kind === 'return'
+        ? await returnRentalRequest(req.id)
+        : await cancelRentalRequest(req.id, cancelReason.trim() || null);
+      if (error) throw error;
+      if (data && data.success === false) {
+        showToast(data.message || (kind === 'return' ? '반납 실패' : '취소 실패'), { type: 'error' });
+        return;
+      }
+      if (kind === 'return') {
+        showToast(data?.overdue_days > 0 ? `반납 완료 — 단체 연체 ${data.overdue_days}일` : '반납 완료', { type: 'success' });
+      } else {
+        showToast('신청 취소 완료', { type: 'success' });
+      }
+      load();
+    } catch (e) {
+      console.error('[RentalRequests] lifecycle failed', e);
+      showToast((kind === 'return' ? '반납 실패: ' : '취소 실패: ') + (e?.message || String(e)), { type: 'error' });
+    }
+  };
 
   const toggleStatus = (status) => {
     setStatusFilter((prev) =>
@@ -375,9 +469,37 @@ function RentalRequestsTab() {
             games={games || []}
             gamesById={gamesById}
             onReview={setReviewing}
+            onReturn={(r) => setLifecycle({ kind: 'return', req: r })}
+            onCancel={(r) => { setCancelReason(''); setLifecycle({ kind: 'cancel', req: r }); }}
           />
         ))
       )}
+
+      <ConfirmModal
+        isOpen={!!lifecycle}
+        onClose={() => setLifecycle(null)}
+        onConfirm={runLifecycle}
+        title={lifecycle?.kind === 'return' ? '단체 대여 반납' : '단체 대여 신청 취소'}
+        message={lifecycle?.kind === 'return'
+          ? `[${lifecycle?.req?.requester_name}] 신청의 게임 전부를 반납 처리합니다. (부분 반납 없음)`
+          : `[${lifecycle?.req?.requester_name}] 신청을 취소하고 잡혀 있는 게임을 모두 풉니다. 반려와 별개.`}
+        confirmText={lifecycle?.kind === 'return' ? '반납' : '신청 취소'}
+        cancelText="닫기"
+        type={lifecycle?.kind === 'return' ? 'info' : 'warning'}
+        initialFocus={lifecycle?.kind === 'cancel' ? 'firstInput' : 'first'}
+        subContent={lifecycle?.kind === 'cancel' ? (
+          <label style={{ display: 'block', marginTop: 8 }}>
+            <span style={styles.fieldLabel}>취소 사유 (선택)</span>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              rows={2}
+              placeholder="예: 행사 취소"
+              style={{ ...styles.input, resize: 'vertical' }}
+            />
+          </label>
+        ) : null}
+      />
 
       {reviewing && (
         <ReviewModal
@@ -427,6 +549,18 @@ const styles = {
     background: 'var(--admin-bg)', border: '1px solid var(--admin-border)',
     borderRadius: 6, padding: 10, fontSize: '0.85rem', marginTop: 6,
     display: 'flex', flexDirection: 'column', gap: 4,
+  },
+  btnReturn: {
+    background: '#2980b9', color: '#fff', border: 'none',
+    padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer',
+  },
+  lockNote: {
+    padding: '10px 12px', borderRadius: 6, fontSize: '0.85rem',
+    background: 'var(--admin-bg)', border: '1px dashed var(--admin-border)', color: 'var(--admin-text-sub)',
+  },
+  rejectBox: {
+    border: '1px solid #c0392b', borderRadius: 8, padding: 12,
+    background: 'rgba(192, 57, 43, 0.08)',
   },
   reviewNote: {
     background: 'rgba(231, 126, 34, 0.1)', borderLeft: '3px solid #e67e22',

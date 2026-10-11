@@ -1,4 +1,6 @@
 import React from 'react';
+import { rentalDDayLabel } from '../../lib/rentalDue';
+import HoldOverdueBadge from './HoldOverdueBadge';
 
 /**
  * RentalInstanceList Component
@@ -14,7 +16,8 @@ import React from 'react';
  * @param {Function} props.onCancelDibs - 개별 찜 취소 핸들러 (game, rentalId) => void
  * @param {Function} props.onMarkLost - 개별 분실 처리 핸들러 (game, rentalId) => void
  */
-const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs, onMarkLost }) => {
+// onReturnHold(game, rental): 단체 대여 반납(신청 단위). 넘기지 않으면 HOLD 행은 안내만 둔다 (반납 RPC 연결 전)
+const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs, onMarkLost, onReturnHold }) => {
     if (!game.rentals || game.rentals.length <= 1) return null;
 
     return (
@@ -62,13 +65,28 @@ const RentalInstanceList = ({ game, onReturn, onReceive, onExtend, onCancelDibs,
                                     {name}
                                 </div>
                                 <div style={{ fontSize: "0.7em", color: "var(--admin-text-sub)" }}>
-                                    {diffDays >= 0 ? `${diffDays}일 남음` : `${Math.abs(diffDays)}일 연체`}
+                                    {/* 대여 건은 rentalDue.js 판정(대여 현황 배지·오늘의 할 일과 같다). 찜·외부 예약은 예전 표시 유지 */}
+                                    {r.type === 'RENT' && r.due_date
+                                        ? rentalDDayLabel(r.due_date)
+                                        : diffDays >= 0 ? `${diffDays}일 남음` : `${Math.abs(diffDays)}일 연체`}
                                 </div>
                             </div>
 
                             {isHold ? (
-                                <div style={{ fontSize: "0.7em", color: "var(--admin-text-sub)" }}>
-                                    단체대여 신청 탭에서 관리
+                                <div className="admin-btn-row">
+                                    <HoldOverdueBadge dueDate={r.due_date} />
+                                    {onReturnHold ? (
+                                        <button
+                                            onClick={() => onReturnHold(game, r)}
+                                            style={btnStyle("#27ae60")}
+                                        >
+                                            단체 반납
+                                        </button>
+                                    ) : (
+                                        <span style={{ fontSize: "0.7em", color: "var(--admin-text-sub)" }}>
+                                            외부 대여 신청 탭에서 관리
+                                        </span>
+                                    )}
                                 </div>
                             ) : isDibs ? (
                                 <div className="admin-btn-row">

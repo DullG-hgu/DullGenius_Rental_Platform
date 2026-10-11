@@ -100,7 +100,7 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
             <div className="admin-card">
                 <div style={styles.toggleContainer}>
                     <div>
-                        <h4 style={{ margin: '0 0 8px' }}>{!statusKnown ? (officeError ? '상태 확인 실패' : '상태 확인 중…') : isOfficeOpen ? '🟢 오피스아워 운영 중' : '⭕ 오피스아워 종료'}</h4>
+                        <h4 style={{ margin: '0 0 8px' }} aria-live="polite">{!statusKnown ? (officeError ? '상태 확인 실패' : '상태 확인 중…') : isOfficeOpen ? '🟢 오피스아워 운영 중' : '⭕ 오피스아워 종료'}</h4>
                         <span style={{ color: 'var(--admin-text-sub)' }}>출근·퇴근으로 홈페이지 운영 상태를 전환합니다.</span>
                     </div>
                     <button type="button" disabled={officeBusy} onClick={statusKnown ? handleOfficeToggle : onReloadStatus}

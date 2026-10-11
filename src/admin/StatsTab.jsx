@@ -11,6 +11,7 @@ import AdminAnalytics from './AdminAnalytics.jsx';
 import WorldcupStatsPanel from './WorldcupStatsPanel.jsx';
 import QuizStatsPanel from './QuizStatsPanel.jsx';
 import TierStatsPanel from './TierStatsPanel.jsx';
+import ExternalRentalStatsPanel from './ExternalRentalStatsPanel.jsx';
 
 const CARD_STYLE = {
   background: 'var(--admin-card-bg)',
@@ -427,6 +428,11 @@ export default function StatsTab() {
           )}
         </div>
       </div>
+      </div>
+
+      {/* 외부 대여(행사·단체) — 회원 통계와 섞지 않고 따로. 기간은 위 기간 버튼과 같다 */}
+      <div style={{ marginTop: '20px' }}>
+        <ExternalRentalStatsPanel period={period} />
       </div>
     </div>
   );

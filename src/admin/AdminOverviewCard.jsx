@@ -1,256 +1,115 @@
 // src/admin/AdminOverviewCard.jsx
-// 관리자 대시보드 상단에 표시되는 "오늘의 할 일" 안내 카드.
-// 처음 관리자 페이지에 들어온 사람이 지금 무엇을 해야 하는지 한눈에 파악할 수 있도록 돕는다.
+// 관리자 대시보드 맨 위 할 일 알림 — 한 줄짜리 항목만, 할 일이 있는 것만 보이고 하나도 없으면 섹션째 숨긴다.
+// (10/12 사용자 피드백: 상태 안내까지 늘 깔려 있어 게임 관리가 밀렸다 → 할 일 있을 때만, 다시 한 줄 목록으로 축소.
+//  예전 「처음 사용하시나요?」 안내는 대여 현황 탭 맨 아래로 옮겼다)
+//   - 오피스아워: 켜져 있을 때만. 목적은 끄는 걸 잊지 않게 (켜는 건 오피스아워 탭)
+//   - 외부 대여 신청: 처리할 신청(대기·검토 필요)이 있을 때만
+//   - 미처리 신고·신청: 1건 이상일 때만
+//   - 반납 기한 지난 게임: 1건 이상일 때만 — 「대여자별 처리」 모달 진입점 (나중에 단체 연체도 여기에 합류)
+// 카운트를 불러오는 동안은 섹션을 숨긴 채 둔다 (카드가 하나씩 튀어나오는 깜빡임 방지).
 
 import { useEffect, useState } from 'react';
 import { fetchDamageReports, fetchGameRequests, fetchRentalRequests } from '../api';
+import { holdOverdueDays, rentalDueDays } from '../lib/rentalDue';
 
-function AdminOverviewCard({ games = [], isOfficeOpen, onGoReports, onGoRentalRequests, onGoOffice }) {
+// 「처리할」 외부 대여 신청 — 확정 건(auto/manual_confirmed)은 반납 관리 대상이라 여기서 세지 않는다
+const ACTIONABLE_RENTAL_STATUSES = ['pending', 'needs_review'];
+
+function AdminOverviewCard({ games = [], gamesLoading = false, isOfficeOpen, onGoReports, onGoRentalRequests, onGoOffice, onOpenWorkList }) {
     const [pendingReports, setPendingReports] = useState(null); // null = 로딩 중
     const [pendingRequests, setPendingRequests] = useState(null);
     const [pendingRentals, setPendingRentals] = useState(null);
+    const [failedCounts, setFailedCounts] = useState([]); // 불러오지 못한 카운트 이름 — 0건으로 조용히 숨기지 않고 알린다
 
     useEffect(() => {
         let cancelled = false;
+        // 세 카운트는 서로 독립 — 하나가 실패해도 나머지 카드는 보인다. 실패한 쪽은 「확인 실패」 카드로 알린다
         const load = async () => {
-            try {
-                // 외부 대여 신청은 status 인자 없이 호출하면 기본 활성 상태(needs_review·auto_confirmed·pending)만 옴
-                const [reports, requests, rentals] = await Promise.all([
-                    fetchDamageReports(),
-                    fetchGameRequests(),
-                    fetchRentalRequests().catch((e) => {
-                        // 외부 대여 신청은 권한/RLS 이슈 시 실패할 수 있으므로 fail-soft
-                        console.warn('[AdminOverviewCard] 외부 대여 신청 카운트 실패:', e);
-                        return [];
-                    }),
-                ]);
-                if (cancelled) return;
-                setPendingReports((reports || []).filter(r => r.status === 'pending').length);
-                setPendingRequests((requests || []).filter(r => r.status === 'pending').length);
-                // 자동 확정(auto_confirmed)도 운영진이 한 번 눈으로 확인해야 하므로 카운트에 포함
-                setPendingRentals((rentals || []).length);
-            } catch (e) {
-                console.error('[AdminOverviewCard] 신고/신청 카운트 로드 실패:', e);
-                if (cancelled) return;
-                setPendingReports(0);
-                setPendingRequests(0);
-                setPendingRentals(0);
-            }
+            const [reports, requests, rentals] = await Promise.allSettled([
+                fetchDamageReports(),
+                fetchGameRequests(),
+                fetchRentalRequests(ACTIONABLE_RENTAL_STATUSES),
+            ]);
+            if (cancelled) return;
+            const failed = [];
+            const countOf = (result, label, pick) => {
+                if (result.status === 'fulfilled') return (result.value || []).filter(pick).length;
+                console.warn(`[AdminOverviewCard] ${label} 카운트 실패:`, result.reason);
+                failed.push(label);
+                return 0;
+            };
+            setPendingReports(countOf(reports, '파손 신고', r => r.status === 'pending'));
+            setPendingRequests(countOf(requests, '게임 신청', r => r.status === 'pending'));
+            setPendingRentals(countOf(rentals, '외부 대여 신청', r => ACTIONABLE_RENTAL_STATUSES.includes(r.status)));
+            setFailedCounts(failed);
         };
         load();
         return () => { cancelled = true; };
     }, []);
 
-    // 연체 건수: adminStatus가 대여중/일부대여중이고 dueDate가 과거인 게임 수
-    const now = Date.now();
+    if (pendingReports === null || gamesLoading) return null;
+
+    // 연체 건수: adminStatus가 대여중/일부대여중이고 마감을 넘긴 게임 수 (판정은 rentalDue.js — 대여 현황 목록과 같다)
+    const now = new Date();
     const overdueCount = games.filter(g => {
         if (!g.dueDate) return false;
         const isRentedOut = g.adminStatus === '대여중' || g.adminStatus === '일부대여중';
-        return isRentedOut && new Date(g.dueDate).getTime() < now;
+        return isRentedOut && !!rentalDueDays(g.dueDate, now)?.overdue;
     }).length;
+    // 단체(외부) 대여 연체 — 자동 종료가 없어 반납 처리 전까지 HOLD 가 열려 있다. 신청 단위로 센다(기한 다음 날부터)
+    const holdOverdueRequests = new Set();
+    for (const g of games) {
+        for (const r of g.rentals || []) {
+            if (r.type !== 'HOLD' || r.returned_at || !r.due_date) continue;
+            if (holdOverdueDays(r.due_date, now) > 0) holdOverdueRequests.add(r.request_id || r.rental_id);
+        }
+    }
+    const holdOverdueCount = holdOverdueRequests.size;
+    const totalOverdue = overdueCount + holdOverdueCount;
 
-    const totalPending = (pendingReports ?? 0) + (pendingRequests ?? 0);
     const rentalCount = pendingRentals ?? 0;
 
-    return (
-        <div style={styles.wrap}>
-            <div style={styles.header}>
-                <h3 style={styles.title}>👋 오늘의 할 일</h3>
-                <span style={styles.subtitle}>관리자 페이지에 오신 걸 환영합니다</span>
-            </div>
+    // 한 줄 알림: 아이콘·항목·건수 + 오른쪽 버튼 1개 (10/12 사용자 확정 — 제목·설명 줄 없이)
+    const rows = [];
+    if (totalOverdue > 0) {
+        const count = holdOverdueCount > 0 ? `${totalOverdue}건 (단체 ${holdOverdueCount})` : `${totalOverdue}건`;
+        rows.push({ key: 'overdue', icon: '⏰', label: '반납 기한 지남', count, tone: 'danger', action: '대여자별 처리', onAction: onOpenWorkList });
+    }
+    if (isOfficeOpen) {
+        rows.push({ key: 'office', icon: '🟢', label: '오피스아워 켜짐', count: null, tone: 'ok', action: '끄기', onAction: onGoOffice, hint: '운영이 끝나면 퇴근 처리' });
+    }
+    if (rentalCount > 0) {
+        rows.push({ key: 'rental', icon: '📝', label: '외부 대여 신청', count: `${rentalCount}건`, tone: 'warn', action: '보기', onAction: onGoRentalRequests });
+    }
+    if (pendingReports > 0) {
+        rows.push({ key: 'reports', icon: '📢', label: '미처리 신고', count: `${pendingReports}건`, tone: 'warn', action: '보기', onAction: onGoReports });
+    }
+    if (pendingRequests > 0) {
+        rows.push({ key: 'requests', icon: '🎲', label: '미처리 게임 신청', count: `${pendingRequests}건`, tone: 'warn', action: '보기', onAction: onGoReports });
+    }
+    if (failedCounts.length > 0) {
+        // 실패한 서비스 이름이 잘리면 어느 탭을 봐야 할지 모른다 — 이 줄만 줄바꿈 허용(is-wrap), title 에도 이름
+        rows.push({ key: 'failed', icon: '⚠️', label: '건수 확인 실패', count: failedCounts.join(' · '), tone: 'info', wrap: true, hint: `${failedCounts.join(' · ')} — 해당 탭에서 직접 확인` });
+    }
 
-            <div style={styles.grid}>
-                <StatusCell
-                    icon={isOfficeOpen ? '🟢' : '⭕'}
-                    label="오피스아워"
-                    value={isOfficeOpen ? '운영 중' : '오프라인'}
-                    hint={isOfficeOpen
-                        ? '1주차 무료 대여 운영 상태와 설정을 확인하세요.'
-                        : '1주차 무료 대여 운영은 오피스아워 탭에서 시작합니다.'}
-                    tone={isOfficeOpen ? 'ok' : 'info'}
-                    actionLabel="오피스아워 관리"
-                    onAction={onGoOffice}
-                />
-
-                <StatusCell
-                    icon="📢"
-                    label="미처리 신고/신청"
-                    value={
-                        pendingReports === null
-                            ? '불러오는 중…'
-                            : `${totalPending}건 (신고 ${pendingReports} · 신청 ${pendingRequests})`
-                    }
-                    hint={
-                        totalPending > 0
-                            ? '상단의 "📢 신고/신청 관리" 탭에서 확인해주세요.'
-                            : '쌓인 신고/신청이 없습니다. 👍'
-                    }
-                    tone={totalPending > 0 ? 'warn' : 'ok'}
-                    actionLabel={totalPending > 0 ? '처리하러 가기' : null}
-                    onAction={onGoReports}
-                />
-
-                <StatusCell
-                    icon="📝"
-                    label="외부 대여 신청"
-                    value={
-                        pendingRentals === null
-                            ? '불러오는 중…'
-                            : `${rentalCount}건 검토 대기`
-                    }
-                    hint={
-                        rentalCount > 0
-                            ? '"📝 외부 대여 신청" 탭에서 픽업일과 게임 매칭을 확인해주세요.'
-                            : '검토할 외부 대여 신청이 없습니다.'
-                    }
-                    tone={rentalCount > 0 ? 'warn' : 'ok'}
-                    actionLabel={rentalCount > 0 && onGoRentalRequests ? '검토하러 가기' : null}
-                    onAction={onGoRentalRequests}
-                />
-
-                <StatusCell
-                    icon="⏰"
-                    label="반납 기한 지난 게임"
-                    value={`${overdueCount}건`}
-                    hint={
-                        overdueCount > 0
-                            ? '아래 목록에서 "대여중" 상태를 확인하고, 해당 회원에게 연락해주세요.'
-                            : '연체된 게임이 없어요.'
-                    }
-                    tone={overdueCount > 0 ? 'danger' : 'ok'}
-                />
-            </div>
-
-            <details style={styles.details}>
-                <summary style={styles.summary}>📘 처음 사용하시나요? (클릭해서 펼치기)</summary>
-                <ul style={styles.tips}>
-                    <li><b>대여/반납:</b> 아래 게임 카드의 버튼으로 처리합니다. 이름 검색으로 회원을 찾아 연결하세요.</li>
-                    <li><b>회원 문의:</b> 📢 신고/신청 관리 탭에서 먼저 확인하세요.</li>
-                    <li><b>1주차 무료 대여:</b> 🕒 오피스아워 탭에서 출근·퇴근, 전체 회원 대여 허용과 운영 안내를 관리합니다.</li>
-                    <li><b>위험한 작업</b> (학기 초기화, 권한 변경 등)은 ⚙️ 시스템 설정 · 👥 회원 관리에 있습니다. 두 번 확인하고 실행하세요.</li>
-                    <li><b>문제가 생기면:</b> 브라우저에서 <kbd>F12</kbd> → Console 탭을 열어 빨간 에러 메시지를 캡처해 개발자에게 전달해주세요.</li>
-                </ul>
-            </details>
-        </div>
-    );
-}
-
-function StatusCell({ icon, label, value, hint, tone = 'info', actionLabel, onAction }) {
-    const accent = {
-        ok: '#27ae60',
-        warn: '#f39c12',
-        danger: '#e74c3c',
-        info: '#3498db',
-    }[tone];
+    if (rows.length === 0) return null;
 
     return (
-        <div style={{ ...styles.cell, borderLeft: `4px solid ${accent}` }}>
-            <div style={styles.cellTop}>
-                <span style={styles.cellIcon}>{icon}</span>
-                <span style={styles.cellLabel}>{label}</span>
-            </div>
-            <div style={{ ...styles.cellValue, color: accent }}>{value}</div>
-            <div style={styles.cellHint}>{hint}</div>
-            {actionLabel && onAction && (
-                <button
-                    type="button"
-                    onClick={onAction}
-                    style={{ ...styles.cellAction, background: accent }}
-                >
-                    {actionLabel} →
-                </button>
-            )}
-        </div>
+        <section className="admin-alerts" aria-label="처리할 일">
+            {rows.map((r) => (
+                <div key={r.key} className={`admin-alert-row is-${r.tone}${r.wrap ? ' is-wrap' : ''}`} title={r.hint}>
+                    <span className="admin-alert-icon" aria-hidden="true">{r.icon}</span>
+                    <span className="admin-alert-text">
+                        {r.label}
+                        {r.count && <strong className="admin-alert-count"> {r.count}</strong>}
+                    </span>
+                    {r.action && r.onAction && (
+                        <button type="button" className="admin-alert-btn" onClick={r.onAction}>{r.action}</button>
+                    )}
+                </div>
+            ))}
+        </section>
     );
 }
-
-const styles = {
-    wrap: {
-        background: 'var(--admin-card-bg)',
-        border: '1px solid var(--admin-border)',
-        borderRadius: '12px',
-        padding: '20px',
-        marginBottom: '20px',
-    },
-    header: {
-        display: 'flex',
-        alignItems: 'baseline',
-        gap: '12px',
-        marginBottom: '16px',
-        flexWrap: 'wrap',
-    },
-    title: {
-        margin: 0,
-        color: 'var(--admin-text-main)',
-        fontSize: '1.2rem',
-    },
-    subtitle: {
-        color: 'var(--admin-text-sub)',
-        fontSize: '0.9rem',
-    },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '12px',
-    },
-    cell: {
-        background: 'var(--admin-bg)',
-        padding: '14px 16px',
-        borderRadius: '8px',
-    },
-    cellTop: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        marginBottom: '6px',
-    },
-    cellIcon: {
-        fontSize: '1.1rem',
-    },
-    cellLabel: {
-        color: 'var(--admin-text-sub)',
-        fontSize: '0.85rem',
-        fontWeight: 600,
-    },
-    cellValue: {
-        fontSize: '1.1rem',
-        fontWeight: 'bold',
-        marginBottom: '6px',
-    },
-    cellHint: {
-        color: 'var(--admin-text-sub)',
-        fontSize: '0.85rem',
-        lineHeight: 1.4,
-    },
-    cellAction: {
-        marginTop: '10px',
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        color: 'white',
-        fontSize: '0.85rem',
-        fontWeight: 600,
-        cursor: 'pointer',
-    },
-    details: {
-        marginTop: '16px',
-        background: 'var(--admin-bg)',
-        borderRadius: '8px',
-        padding: '10px 14px',
-    },
-    summary: {
-        cursor: 'pointer',
-        color: 'var(--admin-text-main)',
-        fontWeight: 600,
-        userSelect: 'none',
-    },
-    tips: {
-        margin: '10px 0 4px 0',
-        paddingLeft: '20px',
-        color: 'var(--admin-text-sub)',
-        fontSize: '0.9rem',
-        lineHeight: 1.7,
-    },
-};
 
 export default AdminOverviewCard;

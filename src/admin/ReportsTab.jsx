@@ -4,7 +4,7 @@ import { fetchGameInfoReports } from '../api_fun';
 import { useToast } from '../contexts/ToastContext';
 import GameInfoReportsPanel from './GameInfoReportsPanel';
 
-function ReportsTab({ games, onReloadGames }) {
+function ReportsTab({ games, gamesLoading, onReloadGames }) {
     const [activeSubTab, setActiveSubTab] = useState('damage'); // 'damage' or 'request'
     const [reports, setReports] = useState([]);
     const [requests, setRequests] = useState([]);
@@ -13,6 +13,16 @@ function ReportsTab({ games, onReloadGames }) {
     const { showToast } = useToast();
 
     const [selectedReport, setSelectedReport] = useState(null); // [NEW] Modal state
+    const [searchTerm, setSearchTerm] = useState(''); // 작성자·학번·게임명 검색 (파손·신청 공용)
+
+    const matchesSearch = (row) => {
+        const q = searchTerm.replace(/\s+/g, '').toLowerCase();
+        if (!q) return true;
+        return [row.profiles?.name, row.profiles?.student_id, row.game_name, row.game_title]
+            .some((v) => String(v || '').replace(/\s+/g, '').toLowerCase().includes(q));
+    };
+    const visibleReports = reports.filter(matchesSearch);
+    const visibleRequests = requests.filter(matchesSearch);
 
     useEffect(() => {
         loadData();
@@ -112,12 +122,22 @@ function ReportsTab({ games, onReloadGames }) {
             </div>
 
             {activeSubTab === 'info' ? (
-                <GameInfoReportsPanel onPendingCount={setInfoPending} games={games} onReloadGames={onReloadGames} />
+                <GameInfoReportsPanel onPendingCount={setInfoPending} games={games} gamesLoading={gamesLoading} onReloadGames={onReloadGames} />
             ) : loading ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#bbb' }}>로딩 중...</div>
             ) : (
+                <>
+                <input
+                    type="search"
+                    className="admin-input"
+                    placeholder="작성자·학번·게임명"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    aria-label="신고·신청 검색"
+                    style={{ width: '100%', maxWidth: '400px', boxSizing: 'border-box', marginBottom: '12px' }}
+                />
                 <div className="admin-table-wrap" style={styles.tableContainer}>
-                    <table className="admin-table">
+                    <table className="admin-table admin-table-cards">
                         <thead>
                             <tr>
                                 <th>날짜</th>
@@ -140,16 +160,16 @@ function ReportsTab({ games, onReloadGames }) {
                         </thead>
                         <tbody>
                             {activeSubTab === 'damage' ? (
-                                reports.length === 0 ? (
-                                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>데이터가 없습니다.</td></tr>
+                                visibleReports.length === 0 ? (
+                                    <tr><td colSpan="7" data-label="" style={{ textAlign: 'center', padding: '20px' }}>데이터가 없습니다.</td></tr>
                                 ) : (
-                                    reports.map(report => (
+                                    visibleReports.map(report => (
                                         <tr key={report.id}>
-                                            <td>{formatDate(report.created_at)}</td>
-                                            <td>{report.profiles?.name || '알수없음'} <span style={{ fontSize: '0.8em', color: '#888' }}>({report.profiles?.student_id})</span></td>
-                                            <td>{report.profiles?.phone || '-'}</td>
-                                            <td className="wrap">{report.game_name}</td>
-                                            <td>
+                                            <td data-label="날짜">{formatDate(report.created_at)}</td>
+                                            <td data-label="작성자">{report.profiles?.name || '알수없음'} <span style={{ fontSize: '0.8em', color: '#888' }}>({report.profiles?.student_id})</span></td>
+                                            <td data-label="연락처">{report.profiles?.phone ? <a href={`tel:${report.profiles.phone}`} className="admin-tel-link">{report.profiles.phone}</a> : '-'}</td>
+                                            <td className="wrap" data-label="게임명">{report.game_name}</td>
+                                            <td data-label="내용">
                                                 <button
                                                     style={styles.viewBtn}
                                                     onClick={() => setSelectedReport(report)}
@@ -157,12 +177,12 @@ function ReportsTab({ games, onReloadGames }) {
                                                     내용 보기
                                                 </button>
                                             </td>
-                                            <td>
+                                            <td data-label="상태">
                                                 <span className={`status-badge status-${report.status}`}>
                                                     {report.status === 'pending' ? '대기중' : (report.status === 'resolved' ? '처리완료' : '무시됨')}
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td className="is-card-actions" data-label="처리">
                                                 <select
                                                     value={report.status}
                                                     onChange={(e) => handleStatusChange(report.id, e.target.value, 'damage')}
@@ -178,16 +198,16 @@ function ReportsTab({ games, onReloadGames }) {
                                     ))
                                 )
                             ) : (
-                                requests.length === 0 ? (
-                                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>데이터가 없습니다.</td></tr>
+                                visibleRequests.length === 0 ? (
+                                    <tr><td colSpan="7" data-label="" style={{ textAlign: 'center', padding: '20px' }}>데이터가 없습니다.</td></tr>
                                 ) : (
-                                    requests.map(request => (
+                                    visibleRequests.map(request => (
                                         <tr key={request.id}>
-                                            <td>{formatDate(request.created_at)}</td>
-                                            <td>{request.profiles?.name || '알수없음'} <span style={{ fontSize: '0.8em', color: '#888' }}>({request.profiles?.student_id})</span></td>
-                                            <td>{request.profiles?.phone || '-'}</td>
-                                            <td className="wrap">{request.game_title}</td>
-                                            <td>
+                                            <td data-label="날짜">{formatDate(request.created_at)}</td>
+                                            <td data-label="작성자">{request.profiles?.name || '알수없음'} <span style={{ fontSize: '0.8em', color: '#888' }}>({request.profiles?.student_id})</span></td>
+                                            <td data-label="연락처">{request.profiles?.phone ? <a href={`tel:${request.profiles.phone}`} className="admin-tel-link">{request.profiles.phone}</a> : '-'}</td>
+                                            <td className="wrap" data-label="희망 게임">{request.game_title}</td>
+                                            <td data-label="사유">
                                                 <button
                                                     style={styles.viewBtn}
                                                     onClick={() => setSelectedReport(request)}
@@ -195,12 +215,12 @@ function ReportsTab({ games, onReloadGames }) {
                                                     내용 보기
                                                 </button>
                                             </td>
-                                            <td>
+                                            <td data-label="상태">
                                                 <span className={`status-badge status-${request.status}`}>
                                                     {request.status === 'pending' ? '대기중' : (request.status === 'approved' ? '승인됨' : (request.status === 'purchased' ? '구매완료' : '거절됨'))}
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td className="is-card-actions" data-label="처리">
                                                 <select
                                                     value={request.status}
                                                     onChange={(e) => handleStatusChange(request.id, e.target.value, 'request')}
@@ -220,6 +240,7 @@ function ReportsTab({ games, onReloadGames }) {
                         </tbody>
                     </table>
                 </div>
+                </>
             )}
             {/* Modal Rendering */}
             {selectedReport && renderModalContent()}

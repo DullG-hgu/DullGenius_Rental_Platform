@@ -705,6 +705,7 @@ export const addGame = async (gameData) => {
       owner: gameData.owner,
       is_rentable: gameData.is_rentable !== false,
       bgg_id: gameData.bgg_id || null,
+      ...(gameData.base_game_id !== undefined ? { base_game_id: gameData.base_game_id || null } : {}),
       genres: gameData.genres || null,
       total_views: 0,
       quantity: 1,
@@ -845,6 +846,7 @@ export const editGame = async (gameData) => {
     .from('games')
     .update({
       ...(gameData.bgg_id !== undefined ? { bgg_id: gameData.bgg_id || null } : {}),
+      ...(gameData.base_game_id !== undefined ? { base_game_id: gameData.base_game_id || null } : {}),
       name: gameData.name,
       category: gameData.category,
       min_players: gameData.min_players,
@@ -1725,3 +1727,59 @@ export const rejectRentalRequest = (requestId, reason) =>
 // 관리자만 호출 가능 — GAS 공유 시크릿 초기 설정/교체용
 export const setPrivateConfig = (key, value) =>
   supabase.rpc('set_private_config', { p_key: key, p_value: value });
+
+/**
+ * 게임 몇 개만 최신 상태로 다시 읽는다 (Realtime 변경 신호용, 2026-10-11).
+ * 게임 한 건이 바뀔 때마다 접속자 전원이 get_games_with_rentals(전 게임 × 활성 대여 집계)를
+ * 다시 부르던 것을, 바뀐 게임의 get_game_with_rentals 만 부르도록 줄인다.
+ * 반환 형태는 fetchGames 의 원소와 같다 (db_available_count 포함). 하나라도 실패·없음이면 throw —
+ * 호출부는 전체 목록 조회로 되돌아간다.
+ *
+ * @param {Array<number>} ids - 게임 ID 목록
+ * @returns {Promise<Array>} 게임 객체 배열 (ids 순서)
+ */
+export const fetchGamesByIds = async (ids) => {
+  const rows = await Promise.all(ids.map(async (id) => {
+    const { data, error } = await supabase.rpc('get_game_with_rentals', { p_game_id: id });
+    if (error) throw error;
+    if (!data) throw new Error(`게임 ${id} 없음`);
+    return data;
+  }));
+  return rows.map(game => {
+    const gameRentals = Array.isArray(game.rentals) ? game.rentals : [];
+    return { ...game, ...calculateGameStatus(game, gameRentals), db_available_count: game.available_count };
+  });
+};
+
+/**
+ * [Admin] DB 안 자동 작업(pg_cron) 상태 — 시스템 탭 「자동화 상태」 (읽기 전용)
+ * GitHub Actions·Netlify 예약 함수는 DB에 기록이 없어 여기 안 나온다.
+ * @returns {Promise<{available: boolean, window: number, jobs: Array, recent: Array}>}
+ */
+export const fetchCronStatus = async (limit = 20) => {
+  const { data, error } = await supabase.rpc('admin_cron_status', { p_limit: limit });
+  if (error) throw error;
+  return data;
+};
+
+// 단체대여(HOLD) 수명주기 — 2026-10-11. 관리자 전용 RPC (database/20261011_rental_policy_hold_lifecycle.sql)
+/** 신청 취소(반려와 구분). 열린 HOLD 전부 종료. 사유는 선택. → { success, closed_holds } | { success:false, message } */
+export const cancelRentalRequest = (requestId, reason = null) =>
+  supabase.rpc('cancel_rental_request', {
+    p_request_id: requestId,
+    p_reason: reason,
+  });
+
+/** 반납 처리 — 신청 단위로 한 번에 (부분 반납 없음). → { success, closed_holds, overdue_days } */
+export const returnRentalRequest = (requestId) =>
+  supabase.rpc('return_rental_request', { p_request_id: requestId });
+
+/** 외부(단체) 대여 통계. 날짜는 'YYYY-MM-DD' (KST, 양끝 포함) */
+export const fetchExternalRentalStats = async (startDate, endDate) => {
+  const { data, error } = await supabase.rpc('get_external_rental_stats', {
+    p_start_date: startDate,
+    p_end_date: endDate,
+  });
+  if (error) throw error;
+  return data;
+};

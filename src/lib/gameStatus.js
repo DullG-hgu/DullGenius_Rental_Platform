@@ -7,10 +7,11 @@
  * ⚠️ [SSOT] 점유 판정 공식은 서버의 count_active_occupancy() 와 반드시 같아야 합니다.
  *   RENT : 활성 전부
  *   DIBS : due_date > now  (30분 만료)
- *   HOLD : borrowed_at <= now + 7일  AND  due_date > now  (단체대여 lookahead 창)
+ *   HOLD : borrowed_at <= now + 7일  (단체대여 lookahead 창, 기한이 지나도 관리자가 반납 처리할 때까지 점유)
  * 이 중 HOLD 는 예전에 클라이언트에서 누락돼 있었습니다. 단체대여가 잡힌 게임이
  * "대여가능" 으로 표시되고, 실제로 찜하면 서버가 '재고가 없습니다' 로 거절하는
  * 불일치의 원인이었습니다. 공식을 바꿀 일이 있으면 서버 함수와 함께 고치세요.
+ * (2026-10-11: HOLD 자동 종료 폐지 — due 조건 제거. 수령일(KST)부터는 「대여중」, 그 전은 「예약됨」)
  *
  * ⚠️ [PERFORMANCE] Race Condition 주의:
  * - 데이터 조회(fetchGameById)와 상태 계산(이 함수) 사이의 시간 차이로 인해
@@ -22,8 +23,16 @@
  * 함부로 수정하지 마세요. (Do not modify without review)
  */
 
+import { kstDayNumber } from './rentalDue';
+
 // 단체대여(HOLD) 가 재고를 점유하기 시작하는 선행 기간 — 서버와 동일하게 7일
 const HOLD_LOOKAHEAD_MS = 1000 * 60 * 60 * 24 * 7;
+// HOLD 의 borrowed_at 은 수령 24시간 전으로 저장된다 (confirm_rental_request·ingest_rental_request)
+const HOLD_PICKUP_OFFSET_MS = 1000 * 60 * 60 * 24;
+
+// 단체가 이미 가져갔다고 보는지: 수령일(KST 달력) 00:00 부터
+const isHoldPickedUp = (hold, now) =>
+    kstDayNumber(now.getTime()) >= kstDayNumber(new Date(hold.borrowed_at).getTime() + HOLD_PICKUP_OFFSET_MS);
 
 export const calculateGameStatus = (game, gameRentals) => {
     // 1. 유효한 예약(찜) / 대여 / 단체대여 기록 필터링
@@ -36,18 +45,22 @@ export const calculateGameStatus = (game, gameRentals) => {
     const activeRents = openRentals.filter(r => r.type === 'RENT');
     const activeHolds = openRentals.filter(r => {
         if (r.type !== 'HOLD') return false;
-        if (!r.due_date || !r.borrowed_at) return false;
+        if (!r.borrowed_at) return false;
         const windowStart = new Date(now.getTime() + HOLD_LOOKAHEAD_MS);
-        return new Date(r.borrowed_at) <= windowStart && new Date(r.due_date) > now;
+        return new Date(r.borrowed_at) <= windowStart;
     });
+    const pickedUpHolds = activeHolds.filter(r => isHoldPickedUp(r, now));
+    const upcomingHolds = activeHolds.filter(r => !isHoldPickedUp(r, now));
 
     // 2. 동적 재고 계산 (서버 공식과 동일)
     const occupiedCount = activeDibs.length + activeRents.length + activeHolds.length;
     const totalQuantity = game.quantity ?? 1;
     const realAvailableCount = Math.max(0, totalQuantity - occupiedCount);
 
-    // 예약성 점유(찜 + 단체대여) — 상태 문구 판정에 함께 쓴다
-    const reservedCount = activeDibs.length + activeHolds.length;
+    // 예약성 점유(찜 + 수령 전 단체대여) — 상태 문구 판정에 함께 쓴다
+    const reservedCount = activeDibs.length + upcomingHolds.length;
+    // 실물이 나가 있는 점유(회원 대여 + 수령한 단체대여)
+    const outCount = activeRents.length + pickedUpHolds.length;
 
     // 3. 초기값
     let status = '대여가능';
@@ -70,14 +83,14 @@ export const calculateGameStatus = (game, gameRentals) => {
     const representative = activeDibs[0] || activeRents[0];
     renterId = representative?.user_id;
 
-    // 반납 예정일 추출 (가장 빠른 날짜)
-    const allDueDates = [...activeDibs, ...activeRents, ...activeHolds]
+    // 반납 예정일 추출 (가장 빠른 날짜) — 회원 찜·대여만. 단체대여는 연체 기준이 달라
+    // (기한 다음 날부터 「단체 연체」) holdDueDate 로 따로 준다.
+    const earliestDue = (rows) => rows
         .filter(r => r.due_date)
-        .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+        .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))[0]?.due_date ?? null;
 
-    if (allDueDates.length > 0) {
-        dueDate = allDueDates[0].due_date;
-    }
+    dueDate = earliestDue([...activeDibs, ...activeRents]);
+    const holdDueDate = earliestDue(activeHolds);
 
     // [Step B] 최종 상태(Status) 결정
     // 0. 대여 불가(열람 전용 등) 우선 처리
@@ -89,6 +102,7 @@ export const calculateGameStatus = (game, gameRentals) => {
             renter: null,
             renterId: null,
             dueDate: null,
+            holdDueDate: null,
             active_rental_count: 0,
             rentals: []
         };
@@ -97,7 +111,7 @@ export const calculateGameStatus = (game, gameRentals) => {
     // 1. 이용자(User)용 상태: 재고 우선
     if (realAvailableCount > 0) {
         status = '대여가능';
-    } else if (reservedCount > 0 && activeRents.length === 0) {
+    } else if (reservedCount > 0 && outCount === 0) {
         status = '예약됨';
     } else {
         status = '대여중';
@@ -108,7 +122,7 @@ export const calculateGameStatus = (game, gameRentals) => {
 
     // [MOD] 재고가 0인 경우 품절(대여중) 처리
     if (realAvailableCount === 0) {
-        if (reservedCount > 0 && activeRents.length === 0) {
+        if (reservedCount > 0 && outCount === 0) {
             adminStatus = '예약됨';
         } else {
             adminStatus = '대여중';
@@ -129,6 +143,7 @@ export const calculateGameStatus = (game, gameRentals) => {
         renter,
         renterId,
         dueDate,
+        holdDueDate,
         active_rental_count: activeRents.length,
         // 유효한 찜/대여/단체대여만 반환 (관리자 화면이 점유 사유를 볼 수 있어야 한다)
         rentals: [...activeDibs, ...activeRents, ...activeHolds]

@@ -1,11 +1,12 @@
 // src/admin/SystemTab.jsx
-// 시스템 설정 탭 - 회비 관리, 학기 초기화 등
+// 시스템 설정 탭 - 회비 관리, 학기 초기화, 자동화 상태 등
 
 import { useState, useEffect, useRef } from 'react';
 import { fetchUsers } from '../api';
 import { resetSemesterPayments } from '../api_members';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
+import AutomationStatusPanel from './AutomationStatusPanel';
 
 function SystemTab({ users, onUsersReload }) {
     const { showToast } = useToast();
@@ -135,6 +136,8 @@ function SystemTab({ users, onUsersReload }) {
                     {resetting ? '초기화 처리 중…' : '🔄 학기 종료 - 회비 일괄 초기화'}
                 </button>
             </div>
+
+            <AutomationStatusPanel />
 
             {/* 안내 메시지 */}
             <div style={styles.infoBox}>

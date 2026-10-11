@@ -4,9 +4,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '../contexts/ToastContext'; // [NEW]
 import { searchBGG, fetchBGGGame, searchKoreanImages, checkGameExists, suggestGenresAI } from '../api';
+import BaseGamePicker from './BaseGamePicker';
 import PoweredByBGG from '../components/PoweredByBGG';
 
 const BGG_ALLOWED_TYPES = new Set(['boardgame', 'boardgameexpansion']);
+// BGG 후보는 처음에 이만큼만 — 폰에서 패널이 폼 위에 있어 후보가 길면 이름·폼이 한참 아래로 밀린다
+const BGG_PREVIEW_COUNT = 6;
 
 // AI 장르 제안을 못 쓸 때 사유 (함수 jev-genre-suggest의 reason 값)
 const AI_UNAVAILABLE_LABEL = {
@@ -32,7 +35,7 @@ export function formatPlayingTime(minPlaytime, maxPlaytime) {
   return `${min}~${max}분`;
 }
 
-function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplicateGame, busy = false }) {
+function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplicateGame, busy = false, games, gamesLoading = false }) {
   const bggRequestRef = useRef(0);
   const bggBusyRef = useRef(false);
   const manualBggInputRef = useRef(null);
@@ -74,6 +77,8 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
   const [bggMechanics, setBggMechanics] = useState(null); // BGG 메커니즘 참고용
   const [genresInput, setGenresInput] = useState('');
   const [bggCategories, setBggCategories] = useState(null); // BGG 영문 카테고리 — 참고용, 장르에 자동으로 넣지 않는다
+  const [bggIsExpansion, setBggIsExpansion] = useState(false); // 고른 BGG 항목이 확장판 — 본판 연결 권장 표시용
+  const [bggExpandedFor, setBggExpandedFor] = useState(null); // 「더 보기」를 누른 후보 목록 — 새 검색이면 다시 접힌다
   const [aiGenres, setAiGenres] = useState({ status: 'idle', suggestions: [], reason: '' });
   const [imageSearchQuery, setImageSearchQuery] = useState('');
   const [imageSearchResults, setImageSearchResults] = useState([]);
@@ -91,6 +96,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
       setManualBggId('');
       setBggMechanics(null);
       setBggCategories(null);
+      setBggIsExpansion(false);
       setAiGenres({ status: 'idle', suggestions: [], reason: '' });
       setGenresInput(Array.isArray(initialData?.genres) ? initialData.genres.join(', ') : '');
       setImageSearchQuery('');
@@ -289,6 +295,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
       }));
       // 장르는 운영자가 한글로 손질하는 값이라 BGG 영문 카테고리로 덮어쓰지 않는다 (2026-09 장르 오염 원인).
       setBggCategories(detail.genres?.length ? detail.genres : null);
+      setBggIsExpansion(detail.type === 'boardgameexpansion');
       setAiGenres({ status: 'idle', suggestions: [], reason: '' });
 
       // 메커니즘 참고용 저장
@@ -365,6 +372,11 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
       <div style={{ fontSize: '0.82em', color: 'var(--admin-text-sub)' }}>
         등록할 게임과 일치하는 항목을 선택하면 상세정보를 가져옵니다.
       </div>
+      {!formData.name?.trim() && (
+        <div style={{ fontSize: '0.82em', color: '#f39c12' }}>
+          「이름」 칸에 게임 이름 입력 시 자동 검색
+        </div>
+      )}
 
       <button
         type="button"
@@ -381,7 +393,7 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
 
       {showBggPanel && bggSearchResults.length > 0 && (
         <div className="game-bgg-results">
-          {bggSearchResults.map(item => (
+          {(bggExpandedFor === bggSearchResults ? bggSearchResults : bggSearchResults.slice(0, BGG_PREVIEW_COUNT)).map(item => (
             <button
               type="button"
               key={item.id}
@@ -399,6 +411,11 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
             </button>
           ))}
         </div>
+      )}
+      {showBggPanel && bggSearchResults.length > BGG_PREVIEW_COUNT && bggExpandedFor !== bggSearchResults && (
+        <button type="button" className="admin-btn" onClick={() => setBggExpandedFor(bggSearchResults)}>
+          후보 {bggSearchResults.length - BGG_PREVIEW_COUNT}개 더 보기
+        </button>
       )}
 
       {bggSelectionPending && !bggFetching && !busy && (
@@ -531,6 +548,18 @@ function GameFormModal({ isOpen, onClose, initialData, onSubmit, title, onDuplic
             )}
           </div>
         </div>
+
+        <BaseGamePicker
+          games={games}
+          gamesLoading={gamesLoading}
+          gameId={initialData?.id}
+          name={formData.name}
+          category={formData.category}
+          baseGameId={formData.base_game_id ?? null}
+          bggIsExpansion={bggIsExpansion}
+          onChange={(id) => setFormData(prev => ({ ...prev, base_game_id: id }))}
+          disabled={busy}
+        />
 
         <div className="admin-form-group">
           <label className="admin-label">장르</label>
