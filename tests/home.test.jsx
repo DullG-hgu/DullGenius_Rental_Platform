@@ -169,3 +169,67 @@ it('explains an empty successful ranking', async () => {
     await mount();
     expect(screen.getByText('최근 7일간 집계된 인기 게임이 없습니다.')).toBeTruthy();
 });
+
+// ── 메인 구성 A안 (2026-10-12) ─────────────────────────────────────────
+const NOW = new Date('2026-09-08T08:59:50Z'); // beforeEach 의 시스템 시각
+const at = (ms) => new Date(NOW.getTime() + ms).toISOString();
+const paid = () => Object.assign(auth, { user: { id: 'me' }, profile: { name: '부원', is_paid: true }, roles: [] });
+
+it('orders the page: my rentals → search → situation picks → trending → playground', async () => {
+    paid();
+    data.config = [{ key: 'a', label: '가볍게', value: '#가볍게' }];
+    data.games = [{ id: 1, name: '보난자', category: '전략', tags: '#가볍게', rentals: [] }];
+    data.trending = [{ id: 1, name: '보난자', category: '전략' }];
+    const { container } = await mount();
+    const html = container.innerHTML;
+    const pos = (needle) => html.indexOf(needle);
+    expect(pos('대여 기록·찜 목록')).toBeGreaterThan(-1);
+    expect(pos('대여 기록·찜 목록')).toBeLessThan(pos('어떤 게임을 찾으세요'));
+    expect(pos('어떤 게임을 찾으세요')).toBeLessThan(pos('#가볍게'));
+    expect(pos('#가볍게')).toBeLessThan(pos('요즘 뜨는 게임'));
+    expect(pos('요즘 뜨는 게임')).toBeLessThan(pos('home-play-toggle'));
+});
+
+it('my rentals card counts only my own rows, shows the nearest due day and the pickup deadline, and links to my page', async () => {
+    paid();
+    data.games = [
+        { id: 1, name: 'A', rentals: [{ rental_id: 'r1', type: 'RENT', user_id: 'me', due_date: at(3 * 86400000) }] },
+        { id: 2, name: 'B', rentals: [{ rental_id: 'r2', type: 'DIBS', user_id: 'me', due_date: at(80 * 60000) }] },
+        // 관리자 화면에선 남의 행에도 user_id 가 채워진다 — 세면 안 된다
+        { id: 3, name: 'C', rentals: [{ rental_id: 'r3', type: 'RENT', user_id: 'other', due_date: at(-86400000) }] },
+    ];
+    await mount();
+    const card = screen.getByRole('link', { name: /내 대여/ });
+    expect(card.getAttribute('href')).toBe('/mypage');
+    expect(card.textContent).toMatch(/대여 중 1/);
+    expect(card.textContent).toMatch(/반납까지 D-3/);
+    expect(card.textContent).toMatch(/찜 1/);
+    expect(card.textContent).toMatch(/수령 마감 1시간 20분 전/);
+    expect(card.className).not.toMatch(/is-overdue/);
+});
+
+it('my rentals card highlights an overdue rental', async () => {
+    paid();
+    data.games = [{ id: 1, name: 'A', rentals: [{ rental_id: 'r1', type: 'RENT', user_id: 'me', due_date: at(-2 * 86400000) }] }];
+    await mount();
+    const card = screen.getByRole('link', { name: /내 대여/ });
+    expect(card.className).toMatch(/is-overdue/);
+    expect(card.textContent).toMatch(/연체 \d+일/);
+});
+
+it('with nothing rented or reserved, a single line remains as the way into my page', async () => {
+    paid();
+    data.games = [{ id: 1, name: 'A', rentals: [] }];
+    await mount();
+    expect(screen.queryByRole('link', { name: /내 대여/ })).toBeNull();
+    expect(screen.getByRole('link', { name: '대여 기록·찜 목록 →' }).getAttribute('href')).toBe('/mypage');
+});
+
+it('a signed-in member who has not paid dues still sees the event rental / join pair instead', async () => {
+    Object.assign(auth, { user: { id: 'me' }, profile: { name: '신입', is_paid: false }, roles: [] });
+    data.games = [{ id: 1, name: 'A', rentals: [{ rental_id: 'r1', type: 'RENT', user_id: 'me', due_date: at(86400000) }] }];
+    await mount();
+    expect(screen.getByRole('link', { name: /행사·단체 대여/ })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /내 대여/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /대여 기록·찜 목록/ })).toBeNull();
+});

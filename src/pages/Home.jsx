@@ -1,6 +1,7 @@
 // src/pages/Home.jsx
 // 최종 수정일: 2026.10.04 (💡 대여 튜토리얼 + 가입 직후 안내)
-// 설명: 메인 — 오피스아워(운영 중일 때만) · 검색 · 인기 게임 · 놀이터 · 상황별 추천 · 하단 정보
+// 설명: 메인 — 오피스아워(운영 중일 때만) · 내 대여(부원)/비부원 카드 · 검색 · 상황별 추천 · 인기 게임 · 놀이터 · 하단 정보
+//   (2026-10-12 A안: 상황별 추천을 위로, 마이페이지 입구로 「내 대여」 카드)
 //   색은 강조색 하나(보라) + 무채색. 상황별 추천은 관리자 설정(app_config.recommendations) 그대로.
 
 import React, { useEffect, useCallback, useMemo, useState } from 'react';
@@ -17,6 +18,7 @@ import { LINKS } from '../infoData';
 import { FUN_ITEMS } from '../fun/funItems';
 import { isPaidMember } from '../lib/membership';
 import { HomeGameCard, RecommendationDeck } from './home/HomeSections';
+import MyRentalsCard from './home/MyRentalsCard';
 import './Home.css';
 
 const DEFAULT_OPEN_COLOR = 'linear-gradient(135deg, #1a5c2a, #27ae60)';
@@ -167,6 +169,29 @@ const Home = () => {
                 </section>
             )}
 
+            {/* 로그인 부원: 「내 대여」(없으면 마이페이지 입구 한 줄) · 비부원(비로그인·회비 미납): 행사·단체 대여 / 부원 가입 */}
+            {!authLoading && isPaidUser && (
+                <MyRentalsCard games={games} userId={user?.id} now={now} onClick={saveScroll} />
+            )}
+            {!authLoading && !isPaidUser && (
+                <div className="home-entry-pair">
+                    <Link to="/org-rental" className="home-org-card">
+                        <span>
+                            <strong>행사·단체 대여</strong>
+                            <span>동아리·단체 행사에 보드게임이 필요하다면</span>
+                        </span>
+                        <span aria-hidden="true">→</span>
+                    </Link>
+                    <a href={LINKS.recruit} target="_blank" rel="noopener noreferrer" className="home-org-card is-join">
+                        <span>
+                            <strong>덜지니어스 가입</strong>
+                            <span>부원은 보드게임 무제한 대여</span>
+                        </span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+            )}
+
             <section className="home-search">
                 <div className="home-search-row">
                     <Link to="/search" onClick={saveScroll} className="home-search-box">
@@ -199,24 +224,9 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* 비부원(비로그인·회비 미납): 왼쪽 행사·단체 대여 · 오른쪽 부원 가입 신청 */}
-            {!authLoading && !isPaidUser && (
-                <div className="home-entry-pair">
-                    <Link to="/org-rental" className="home-org-card">
-                        <span>
-                            <strong>행사·단체 대여</strong>
-                            <span>동아리·단체 행사에 보드게임이 필요하다면</span>
-                        </span>
-                        <span aria-hidden="true">→</span>
-                    </Link>
-                    <a href={LINKS.recruit} target="_blank" rel="noopener noreferrer" className="home-org-card is-join">
-                        <span>
-                            <strong>덜지니어스 가입</strong>
-                            <span>부원은 보드게임 무제한 대여</span>
-                        </span>
-                        <span aria-hidden="true">→</span>
-                    </a>
-                </div>
+            {/* 상황별 추천은 검색 바로 아래 — 390×780 첫 화면에서 카드까지 보이게 (2026-10-12 A안) */}
+            {!error && config?.length > 0 && (
+                <RecommendationDeck games={games} recs={config} onGameClick={saveScroll} />
             )}
 
             <section className="home-section">
@@ -274,10 +284,6 @@ const Home = () => {
                     </ul>
                 )}
             </section>
-
-            {!error && config?.length > 0 && (
-                <RecommendationDeck games={games} recs={config} onGameClick={saveScroll} />
-            )}
 
             <footer className="home-footer">
                 <button type="button" className="home-guide" onClick={openTutorial}>
