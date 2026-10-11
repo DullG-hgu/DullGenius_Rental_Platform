@@ -13,7 +13,8 @@ import { supabase } from './supabaseClient.jsx';
  * 실패해도 앱은 그대로 돌아간다. 구독이 안 되면 기존 수동 갱신 경로만 남을 뿐이다.
  *
  * @param {Object}   opts
- * @param {Function} opts.onChange     - 변경 감지 시 디바운스 후 호출
+ * @param {Function} opts.onChange     - 변경 감지 시 디바운스 후 호출. 인자로 그동안 바뀐 게임 id 배열을 준다
+ *   (id 를 모르는 이벤트가 섞였으면 null — 받는 쪽은 전체를 다시 읽는다). 인자를 안 쓰는 호출부는 그대로 동작한다.
  * @param {Function} [opts.onReconnect]- 끊겼다 다시 붙었을 때 1회 호출 (최초 연결은 제외)
  * @param {string}   [opts.channelName]- 채널 이름. 화면마다 다르게 준다
  * @param {number}   [opts.debounceMs] - 이벤트 폭주(전체 재계산) 대비 디바운스
@@ -29,6 +30,8 @@ export const subscribeToGameChanges = ({
     isRelevant = null
 }) => {
     let timer = null;
+    // 디바운스 동안 바뀐 게임 id. null 이면 id 를 모르는 이벤트가 섞였다는 뜻
+    let changedIds = new Set();
     let channel = null;
     let disposed = false;
     // 최초 SUBSCRIBED 는 재연결이 아니다. 그때는 이미 화면이 방금 데이터를 읽은 직후다.
@@ -43,12 +46,19 @@ export const subscribeToGameChanges = ({
                 // 판단 실패 시에는 안전하게 갱신한다
             }
         }
+        const id = payload?.new?.id;
+        if (changedIds) {
+            if (id == null) changedIds = null;
+            else changedIds.add(id);
+        }
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
             timer = null;
+            const ids = changedIds ? [...changedIds] : null;
+            changedIds = new Set();
             if (disposed) return;
             try {
-                onChange();
+                onChange(ids);
             } catch (e) {
                 console.warn('[realtime] 변경 반영 실패:', e);
             }

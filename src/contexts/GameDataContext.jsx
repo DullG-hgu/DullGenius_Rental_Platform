@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { fetchGames, fetchTrending, fetchConfig } from '../api';
+import { fetchGames, fetchGamesByIds, fetchTrending, fetchConfig } from '../api';
 import { useAuth } from './AuthContext';
 import { subscribeToGameChanges } from '../lib/gamesRealtime';
+import { canPatchGames, mergePatchedGames } from '../lib/patchGames';
 
 const GameDataContext = createContext(null);
 const REFRESH_INTERVAL = 5 * 60 * 1000;
@@ -49,6 +50,40 @@ export const GameProvider = ({ children }) => {
     const inFlight = useRef(false);
     const [suspended, setSuspended] = useState(isKioskPath);
 
+    // 바뀐 게임 몇 개만 다시 읽어 끼워 넣는다 (Realtime 신호). 접속자 전원이 전체 목록 RPC 를 다시 부르던 것을
+    // 게임 단건 RPC 로 줄인다 (2026-10-11). 실패하면 예전처럼 목록만 전체 갱신한다.
+    // requestId 는 올리지 않는다 — 다른 게임의 단건 갱신끼리 서로 버리지 않게. 그 사이 전체 갱신이 시작됐으면 그쪽이 더 새것이라 버린다.
+    // 같은 게임을 겹쳐 읽으면 마지막에 시작한 요청 것만 쓴다 (늦게 도착한 옛 응답이 덮지 않게)
+    const patchSeq = useRef(0);
+    const latestPatchById = useRef(new Map());
+    const patchGames = useCallback(async (ids) => {
+        if (scope === undefined || suspended) return;
+        const fullRequest = requestId.current;
+        const seq = ++patchSeq.current;
+        ids.forEach(id => latestPatchById.current.set(String(id), seq));
+        let patched;
+        try {
+            patched = await fetchGamesByIds(ids);
+        } catch {
+            if (requestId.current === fullRequest && scopeRef.current === scope) refreshGamesRef.current({ gamesOnly: true });
+            return;
+        }
+        if (requestId.current !== fullRequest || scopeRef.current !== scope) return;
+        // 이름이 바뀌면 이름순 자리가 달라진다 — 끼워 넣지 말고 목록을 다시 받는다
+        if (patched.some(p => { const g = gamesRef.current.find(x => String(x.id) === String(p.id)); return g && g.name !== p.name; })) {
+            refreshGamesRef.current({ gamesOnly: true });
+            return;
+        }
+        const fresh = patched.filter(game => latestPatchById.current.get(String(game.id)) === seq && game.name?.trim());
+        if (fresh.length === 0) return;
+        setData(previous => {
+            if (previous.scope !== scope) return previous;
+            const games = mergePatchedGames(previous.games, fresh);
+            const findGame = (id) => games.find(game => String(game.id) === String(id));
+            return { ...previous, games, trending: previous.trending.map(item => findGame(item.id)).filter(Boolean) };
+        });
+    }, [scope, suspended]);
+
     // gamesOnly: 재고·대여 상태만 바뀐 경우(Realtime 신호, 찜·취소 직후). 인기·추천 설정은 대여로 바뀌지 않으므로
     // 다시 받지 않고, 들고 있던 인기 목록을 새 게임 객체로 바꿔 끼운다. 전체 갱신(최초·앱 전환·5분 주기·재연결)은 그대로 3건
     const refreshGames = useCallback(async ({ gamesOnly = false } = {}) => {
@@ -89,6 +124,8 @@ export const GameProvider = ({ children }) => {
             };
         });
     }, [scope, suspended]);
+    const refreshGamesRef = useRef(refreshGames);
+    refreshGamesRef.current = refreshGames;
 
     useEffect(() => {
         // Old persistent caches may contain a previous account's rental information.
@@ -112,7 +149,11 @@ export const GameProvider = ({ children }) => {
         let reconnectTimer = null;
         const unsubscribe = subscribeToGameChanges({
             channelName: 'games-sync-app',
-            onChange: () => refreshGames({ gamesOnly: true }),
+            onChange: (ids) => {
+                // 전체 갱신이 진행 중이면 그 응답이 이 변경 전 상태일 수 있다 — 단건으로 끼우지 않고 새 전체 갱신으로 덮는다
+                if (canPatchGames(ids, gamesRef.current) && dataScopeRef.current === scope && !inFlight.current) patchGames(ids);
+                else refreshGames({ gamesOnly: true });
+            },
             isRelevant: (payload) => isRelevantGameChange(payload, gamesRef.current),
             onReconnect: () => {
                 clearTimeout(reconnectTimer);
@@ -130,7 +171,7 @@ export const GameProvider = ({ children }) => {
             window.removeEventListener('focus', onVisible);
             document.removeEventListener('visibilitychange', onVisible);
         };
-    }, [scope, suspended, refreshGames]);
+    }, [scope, suspended, refreshGames, patchGames]);
 
     const visible = scope !== undefined && data.scope === scope ? data : emptyData;
     return <GameDataContext.Provider value={{ ...visible, refreshGames, setSuspended }}>{children}</GameDataContext.Provider>;

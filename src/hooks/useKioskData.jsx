@@ -1,7 +1,8 @@
 // src/hooks/useKioskData.js
-import { useState, useEffect, useCallback } from 'react';
-import { fetchGames, kioskListUsers } from '../api';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { fetchGames, fetchGamesByIds, kioskListUsers } from '../api';
 import { subscribeToGameChanges } from '../lib/gamesRealtime';
+import { canPatchGames, mergePatchedGames } from '../lib/patchGames';
 
 // 회원 캐시 키 버전.
 //
@@ -31,26 +32,66 @@ const writeCache = (key, value) => {
 // 룰렛처럼 게임만 쓰는 화면이 전 회원 이름·학번을 태블릿에 내려받을 이유가 없다.
 const useKioskData = ({ includeUsers = true } = {}) => {
     const [games, setGames] = useState([]);
+    const gamesRef = useRef(games);
+    gamesRef.current = games;
+    // 응답 순서 보호: 전체 목록은 마지막에 시작한 것만, 단건은 그 게임을 마지막에 요청한 것만 쓴다.
+    // 단건 응답은 그 사이 전체 목록 요청이 시작됐으면 버린다 (전체 쪽이 더 새것)
+    const fullSeq = useRef(0);
+    const fullInFlight = useRef(0);
+    const patchSeq = useRef(0);
+    const latestPatchById = useRef(new Map());
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     // 게임 목록만 다시 읽는다. 화면 깜빡임이 없도록 loading 은 건드리지 않는다.
     // (Realtime 신호로 수시로 불리는 경로라 조용해야 한다)
-    const syncGames = useCallback(async () => {
+    // ids 를 받으면(Realtime 신호) 바뀐 게임만 단건 RPC 로 다시 읽어 끼워 넣는다 (2026-10-11).
+    // 대여 모달이 열린 채 다른 기기에서 대여·반납이 이어질 때마다 전체 목록을 받던 것을 줄인다. 실패하면 전체 목록
+    const syncGames = useCallback(async (ids) => {
+        if (canPatchGames(ids, gamesRef.current) && fullInFlight.current === 0) {
+            const startedFull = fullSeq.current;
+            const seq = ++patchSeq.current;
+            ids.forEach(id => latestPatchById.current.set(String(id), seq));
+            try {
+                const patched = (await fetchGamesByIds(ids)).filter(g => !g.error);
+                if (fullSeq.current !== startedFull) return;
+                const renamed = patched.some(p => { const g = gamesRef.current.find(x => String(x.id) === String(p.id)); return g && g.name !== p.name; });
+                if (!renamed) {
+                    const fresh = patched.filter(g => latestPatchById.current.get(String(g.id)) === seq);
+                    if (fresh.length === 0) return;
+                    setGames(previous => {
+                        const merged = mergePatchedGames(previous, fresh);
+                        writeCache(GAMES_CACHE_KEY, merged);
+                        return merged;
+                    });
+                    return;
+                }
+                // 이름이 바뀌면 정렬(티츄 우선·이름순)이 달라진다 — 아래 전체 목록으로
+            } catch (e) {
+                console.warn("키오스크 게임 단건 동기화 실패, 전체 목록으로:", e);
+            }
+        }
+        const mySeq = ++fullSeq.current;
+        fullInFlight.current += 1;
         try {
             const gamesData = await fetchGames();
+            if (mySeq !== fullSeq.current) return;
             const validGames = sortGames((gamesData || []).filter(g => !g.error));
             setGames(validGames);
             writeCache(GAMES_CACHE_KEY, validGames);
         } catch (e) {
             // 조용히 실패한다. 화면에는 직전 목록이 남는다.
             console.warn("키오스크 게임 목록 동기화 실패:", e);
+        } finally {
+            fullInFlight.current -= 1;
         }
     }, []);
 
     // 게임 + 회원 전체 동기화. 최초 로드와 네트워크 복구 시에 쓴다.
     const syncAll = useCallback(async () => {
+        const mySeq = ++fullSeq.current;
+        fullInFlight.current += 1;
         try {
             const [gamesData, usersData] = await Promise.all([
                 fetchGames(),
@@ -58,9 +99,12 @@ const useKioskData = ({ includeUsers = true } = {}) => {
             ]);
             const validGames = sortGames((gamesData || []).filter(g => !g.error));
 
-            setGames(validGames);
+            // 더 나중에 시작한 전체 목록 요청이 있으면 게임 목록은 그쪽 것을 쓴다
+            if (mySeq === fullSeq.current) {
+                setGames(validGames);
+                writeCache(GAMES_CACHE_KEY, validGames);
+            }
             setError(null);
-            writeCache(GAMES_CACHE_KEY, validGames);
 
             if (includeUsers) {
                 const validUsers = usersData || [];
@@ -71,6 +115,7 @@ const useKioskData = ({ includeUsers = true } = {}) => {
             console.error("Kiosk Data Sync Failed:", e);
             setError(e);
         } finally {
+            fullInFlight.current -= 1;
             setLoading(false);
         }
     }, [includeUsers]);

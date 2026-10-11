@@ -2,11 +2,11 @@ import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GameProvider, isRelevantGameChange, useGameData, useSuspendGameData } from '../src/contexts/GameDataContext';
-import { fetchGames, fetchTrending, fetchConfig } from '../src/api';
+import { fetchGames, fetchGamesByIds, fetchTrending, fetchConfig } from '../src/api';
 const auth = vi.hoisted(() => ({ user: null, loading: false }));
 const realtime = vi.hoisted(() => ({ opts: null }));
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => auth }));
-vi.mock('../src/api', () => ({ fetchGames: vi.fn(), fetchTrending: vi.fn(), fetchConfig: vi.fn() }));
+vi.mock('../src/api', () => ({ fetchGames: vi.fn(), fetchGamesByIds: vi.fn(), fetchTrending: vi.fn(), fetchConfig: vi.fn() }));
 vi.mock('../src/lib/gamesRealtime', () => ({ subscribeToGameChanges: (opts) => { realtime.opts = opts; return () => {}; } }));
 function Probe() {
   const data = useGameData();
@@ -137,3 +137,85 @@ describe('realtime game changes', () => {
     expect(isRelevantGameChange({ new: { id: 1, name: 'Game', available_count: 1, total_views: 4 } }, shown)).toBe(true);
   });
 });
+
+describe('realtime single-game patch (2026-10-11)', () => {
+  const two = [{ id: 1, name: 'A', available_count: 1 }, { id: 2, name: 'B', available_count: 1 }];
+  beforeEach(() => { fetchGames.mockResolvedValue(two); fetchTrending.mockResolvedValue([{ id: 2 }]); });
+  it('a change to known games re-reads only those games, keeps order, and re-points trending', async () => {
+    render(<GameProvider><Probe /></GameProvider>);
+    await waitFor(() => expect(screen.getByTestId('trending').textContent).toBe('B:1'));
+    fetchGamesByIds.mockResolvedValue([{ id: 2, name: 'B', available_count: 0 }]);
+    await act(async () => { await realtime.opts.onChange([2]); });
+    expect(fetchGamesByIds).toHaveBeenCalledWith([2]);
+    expect(fetchGames).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('A,B')).toBeTruthy();
+    expect(screen.getByTestId('trending').textContent).toBe('B:0');
+  });
+  it('falls back to the full list when the single read fails', async () => {
+    render(<GameProvider><Probe /></GameProvider>);
+    await screen.findByText('A,B');
+    fetchGamesByIds.mockRejectedValue(new Error('offline'));
+    await act(async () => { await realtime.opts.onChange([1]); });
+    await waitFor(() => expect(fetchGames).toHaveBeenCalledTimes(2));
+    expect(fetchTrending).toHaveBeenCalledTimes(1);
+  });
+  it('reads the full list for unknown ids, an unknown game, or a bulk change', async () => {
+    render(<GameProvider><Probe /></GameProvider>);
+    await screen.findByText('A,B');
+    await act(async () => { await realtime.opts.onChange(null); });
+    await act(async () => { await realtime.opts.onChange([3]); });
+    expect(fetchGamesByIds).not.toHaveBeenCalled();
+    expect(fetchGames).toHaveBeenCalledTimes(3);
+  });
+  it('drops a single-game result if a full refresh started meanwhile', async () => {
+    render(<GameProvider><Probe /></GameProvider>);
+    await screen.findByText('A,B');
+    const slow = deferred();
+    fetchGamesByIds.mockReturnValueOnce(slow.promise);
+    let patch;
+    act(() => { patch = realtime.opts.onChange([1]); });
+    fetchGames.mockResolvedValue([{ id: 1, name: 'A', available_count: 7 }, { id: 2, name: 'B', available_count: 1 }]);
+    fireEvent.click(screen.getByText('refresh'));
+    await waitFor(() => expect(fetchGames).toHaveBeenCalledTimes(2));
+    await act(async () => { slow.resolve([{ id: 1, name: 'Stale', available_count: 0 }]); await patch; });
+    expect(screen.queryByText(/Stale/)).toBeNull();
+  });
+});
+
+describe('single-game patch ordering (2026-10-11 verification)', () => {
+  const two = [{ id: 1, name: 'A', available_count: 1 }, { id: 2, name: 'B', available_count: 1 }];
+  beforeEach(() => { fetchGames.mockResolvedValue(two); fetchTrending.mockResolvedValue([]); });
+  it('an older read of the same game arriving last does not overwrite the newer one', async () => {
+    fetchTrending.mockResolvedValue([{ id: 1 }]);
+    render(<GameProvider><Probe /></GameProvider>);
+    await waitFor(() => expect(screen.getByTestId('trending').textContent).toBe('A:1'));
+    const older = deferred(); const newer = deferred();
+    fetchGamesByIds.mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise);
+    let p1, p2;
+    act(() => { p1 = realtime.opts.onChange([1]); });
+    act(() => { p2 = realtime.opts.onChange([1]); });
+    await act(async () => { newer.resolve([{ id: 1, name: 'A', available_count: 0 }]); await p2; });
+    await act(async () => { older.resolve([{ id: 1, name: 'A', available_count: 5 }]); await p1; });
+    expect(screen.getByTestId('trending').textContent).toBe('A:0');
+    expect(fetchGames).toHaveBeenCalledTimes(1);
+  });
+  it('a renamed game reloads the list instead of patching in place', async () => {
+    render(<GameProvider><Probe /></GameProvider>);
+    await screen.findByText('A,B');
+    fetchGamesByIds.mockResolvedValue([{ id: 1, name: 'Z', available_count: 1 }]);
+    fetchGames.mockResolvedValue([two[1], { id: 1, name: 'Z', available_count: 1 }]);
+    await act(async () => { await realtime.opts.onChange([1]); });
+    await screen.findByText('B,Z');
+  });
+  it('a change during a full refresh triggers a newer full refresh, not a patch', async () => {
+    render(<GameProvider><Probe /></GameProvider>);
+    await screen.findByText('A,B');
+    const slow = deferred();
+    fetchGames.mockReturnValueOnce(slow.promise);
+    fireEvent.click(screen.getByText('refresh'));
+    await act(async () => { await realtime.opts.onChange([1]); });
+    expect(fetchGamesByIds).not.toHaveBeenCalled();
+    await act(async () => slow.resolve(two));
+  });
+});
+
