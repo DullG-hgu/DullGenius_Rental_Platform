@@ -9,6 +9,7 @@
 //   2) 받을 게 없거나(이미 받아 둠·확인 실패) 기다려도 안 넘어오면 바로
 //      서비스워커 등록 해제 + Cache Storage 전부 삭제 후 새로고침.
 //   (2026-10-08: 예전에는 무조건 15초를 기다려 「업데이트 중」이 한참 멈춰 보였다)
+// 사람이 누른 갱신(홈 「업데이트」)은 1)을 건너뛰고 바로 2)로 간다 — 기다림 없이 강력 새로고침 (2026-10-12).
 // 사람이 누른 갱신은 누르기 전 빌드를 sessionStorage 에 적어 두고, 새로고침 뒤 checkUpdateResult() 로 성공 여부를 알린다.
 // (기대 빌드와 비교하면 버튼이 떠 있는 사이 배포가 한 번 더 있을 때 더 새것을 받고도 「옛 버전」이라 알린다)
 //
@@ -101,7 +102,7 @@ const waitForControllerChange = (ms) => new Promise((resolve) => {
 
 /**
  * 최신 빌드로 갱신한다. 호출하는 쪽이 "지금 새로고침해도 되는 때"인지 판단해야 한다.
- * force: 사람이 직접 누른 경우. 반복 방지 기록 없이 바로 진행한다 (누를 때마다 한 번이라 루프가 없다).
+ * force: 사람이 직접 누른 경우. 반복 방지 기록 없이, 서비스워커 넘겨받기도 기다리지 않고 바로 캐시를 지우고 새로고침한다.
  * @returns {Promise<'skipped'|'sw-updated'|'hard-reloaded'>}
  */
 export const applyUpdate = async (latest, { storage = getStorage(), now = Date.now(), force = false, current = APP_VERSION } = {}) => {
@@ -119,7 +120,9 @@ export const applyUpdate = async (latest, { storage = getStorage(), now = Date.n
     }
 
     const sw = navigator.serviceWorker;
-    const reg = await sw?.getRegistration().catch(() => null);
+    // 사람이 누른 갱신은 기다리지 않고 바로 강력 새로고침 (서비스워커 해제 + 캐시 삭제). 2026-10-12
+    // 자동 갱신(키오스크 화면보호기)만 새 서비스워커 넘겨받기를 먼저 시도한다.
+    const reg = force ? null : await sw?.getRegistration().catch(() => null);
     if (reg) {
         let switched = false;
         const changed = waitForControllerChange(SW_UPDATE_WAIT_MS).then((v) => { switched = v; return v; });

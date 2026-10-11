@@ -190,11 +190,14 @@ describe('applyUpdate', () => {
         expect(reload).not.toHaveBeenCalled();
     });
 
-    it('사람이 직접 누른 갱신은 10분 제한 없이 진행한다', async () => {
+    it('사람이 직접 누른 갱신은 10분 제한 없이, 서비스워커를 기다리지 않고 바로 강력 새로고침한다', async () => {
         localStorage.setItem(UPDATE_ATTEMPT_KEY, JSON.stringify({ build: 'b2', at: 0 }));
         reg.update.mockImplementation(async () => { swListeners.controllerchange(); });
-        await expect(applyUpdate(latest, { storage: localStorage, now: 60_000, force: true })).resolves.toBe('sw-updated');
-        await expect(applyUpdate(latest, { storage: null, now: 60_000, force: true })).resolves.toBe('sw-updated');
+        await expect(applyUpdate(latest, { storage: localStorage, now: 60_000, force: true })).resolves.toBe('hard-reloaded');
+        await expect(applyUpdate(latest, { storage: null, now: 60_000, force: true })).resolves.toBe('hard-reloaded');
+        expect(reg.update).not.toHaveBeenCalled(); // 넘겨받기 시도 없음
+        expect(reload).toHaveBeenCalledTimes(2);
+        sessionStorage.clear();
     });
 
     it('시도 기록을 남길 수 없으면 강제 갱신하지 않는다', async () => {
