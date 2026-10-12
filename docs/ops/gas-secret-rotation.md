@@ -42,6 +42,15 @@
 | `서버 시크릿 미설정` | DB에 `gas_shared_secret` 행이 없음 | 2번에서 행 추가 |
 | HTTP 401 | 시크릿이 아니라 **Supabase 키** 문제 | 스크립트 속성 `SUPABASE_PUBLISHABLE_KEY` 가 `sb_publishable_` 로 시작하는 현재 키인지 확인 |
 
+## 폼 질문을 고칠 때
+
+GAS는 질문 **제목**에 든 낱말(예: 「단체명」, 「대여기간」, 「수령」)로 답을 찾는다.
+제목을 크게 바꾸면 그 칸이 빈 값으로 들어간다. 바꾼 뒤에는 테스트 신청을 하나 넣고
+Apps Script 실행 로그에 `[extractAnswers] 매칭 실패` 가 없는지 본다. 있으면 `.gs` 의
+`FORM_FIELD_PATTERNS` 에 새 제목의 낱말을 넣고 콘솔에 다시 붙여 넣는다.
+선택지 문구(개수·기간)를 바꾸면 GAS가 아니라 DB의 `_parse_*` 함수 쪽이다.
+답변 원문은 제목이 바뀌어도 `raw_payload.answers` 에 전부 남는다.
+
 ## 하지 말 것
 
 - 새 값을 단톡방·노션·git·이 문서에 적지 않는다

@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 12. AM 1:37:48
+-- 생성 시각: 2026. 10. 12. PM 12:17:17
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 145개 함수
+-- 총 146개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -478,46 +478,90 @@ CREATE OR REPLACE FUNCTION public._fuzzy_match_games(raw text)
  SET search_path TO 'public'
 AS $function$
 DECLARE
-    v_tokens text[];
-    v_token  text;
-    v_trim   text;
+    v_names  jsonb;          -- 정규화 이름 → id (같은 이름이 둘이면 작은 id)
+    v_chunk  text;
+    v_words  text[];
+    v_n      int;
+    i        int;
+    j        int;
+    v_key    text;
     v_id     int;
+    v_cnt    int;
+    v_found  boolean;
     v_result int[] := '{}';
+    c_max_words constant int := 12;   -- 가장 긴 게임 이름의 단어 수보다 넉넉히
+    c_stopwords constant text[] := ARRAY[
+        '보드게임','게임','확장','확장판','본판','기본판','추천','아무거나','정도','희망',
+        '그리고','또는','혹은','등등','부탁드립니다','부탁드려요','원합니다','있으면','가능하면'
+    ];
 BEGIN
     IF raw IS NULL OR btrim(raw) = '' THEN
         RETURN '{}';
     END IF;
 
-    v_tokens := string_to_array(raw, ',');
-
-    FOREACH v_token IN ARRAY v_tokens LOOP
-        v_trim := btrim(v_token);
-        IF v_trim = '' THEN CONTINUE; END IF;
-
-        -- exact match 먼저
-        SELECT id INTO v_id
+    SELECT jsonb_object_agg(n, id) INTO v_names
+    FROM (
+        SELECT DISTINCT ON (n) public._normalize_game_name(name) AS n, id
         FROM public.games
-        WHERE name = v_trim
-        ORDER BY id
-        LIMIT 1;
+        ORDER BY n, id
+    ) t
+    WHERE n <> '';
 
-        IF v_id IS NULL THEN
-            -- ILIKE fallback (case-insensitive 부분 일치)
-            SELECT id INTO v_id
-            FROM public.games
-            WHERE name ILIKE '%' || v_trim || '%'
-            ORDER BY length(name), id
-            LIMIT 1;
-        END IF;
+    FOREACH v_chunk IN ARRAY regexp_split_to_array(raw, '[,，\n\r/;、+&]|\s(및|그리고|하고|또는|혹은)\s') LOOP
+        v_words := array_remove(regexp_split_to_array(btrim(v_chunk), '\s+'), '');
+        v_n := COALESCE(array_length(v_words, 1), 0);
+        i := 1;
 
-        IF v_id IS NOT NULL THEN
-            v_result := array_append(v_result, v_id);
-            v_id := NULL;
-        END IF;
+        WHILE i <= v_n LOOP
+            v_found := false;
+
+            -- (1) 가장 긴 단어 묶음부터 이름 정확 일치
+            FOR j IN REVERSE LEAST(v_n, i + c_max_words - 1) .. i LOOP
+                v_key := public._normalize_game_name(array_to_string(v_words[i:j], ''));
+                CONTINUE WHEN v_key = '';
+                v_id := (v_names ->> v_key)::int;
+                IF v_id IS NOT NULL THEN
+                    v_result := array_append(v_result, v_id);
+                    i := j + 1;
+                    v_found := true;
+                    EXIT;
+                END IF;
+            END LOOP;
+
+            -- (2) 3글자 이상 단어: 그 단어를 품은 가장 짧은 이름
+            IF NOT v_found THEN
+                v_key := public._normalize_game_name(v_words[i]);
+                IF char_length(v_key) >= 3
+                   AND v_key <> ALL (c_stopwords)
+                   AND v_key !~ '^[0-9]+(개|인|명|일|박|세트|set)?$' THEN
+                    -- 본판 중 후보가 딱 하나일 때만 (「카르타벤추라」처럼 여럿이면 골라 주지 않고 검토로)
+                    SELECT min(id), count(*) INTO v_id, v_cnt
+                    FROM public.games
+                    WHERE position(v_key IN public._normalize_game_name(name)) > 0
+                      AND base_game_id IS NULL;
+                    IF v_cnt = 1 THEN
+                        v_result := array_append(v_result, v_id);
+                    END IF;
+                END IF;
+                i := i + 1;
+            END IF;
+        END LOOP;
     END LOOP;
 
     RETURN v_result;
 END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _normalize_game_name
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._normalize_game_name(s text)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+    SELECT regexp_replace(lower(COALESCE(s, '')), '[[:space:][:punct:]·、～‘’“”]', '', 'g');
 $function$
 
 -- ----------------------------------------------------------------
@@ -529,12 +573,10 @@ CREATE OR REPLACE FUNCTION public._parse_duration(raw text)
  IMMUTABLE
  SET search_path TO 'public', 'pg_temp'
 AS $function$
-DECLARE v_match text[];
 BEGIN
     IF raw IS NULL OR btrim(raw) = '' THEN RETURN NULL; END IF;
-    v_match := regexp_match(raw, '(\d+)\s*일');
-    IF v_match IS NULL THEN RETURN NULL; END IF;
-    RETURN v_match[1]::int;
+    -- 'N일' 이 여럿이면(범위) 가장 큰 값
+    RETURN (SELECT max(m[1]::int) FROM regexp_matches(raw, '(\d+)\s*일', 'g') AS m);
 END;
 $function$
 
@@ -5002,12 +5044,8 @@ BEGIN
     END IF;
 
     -- 4) 파싱
-    v_is_free := (
-        COALESCE(btrim(p_payload->>'org_name'), '') <> ''
-        AND COALESCE(btrim(p_payload->>'event_overview'), '') <> ''
-        AND COALESCE(btrim(p_payload->>'event_schedule'), '') <> ''
-        AND COALESCE(btrim(p_payload->>'audience_notes'), '') <> ''
-    );
+    -- 단체 성격 「학교 공식 행사단체 (비용 면제 가능)」 (2026-10-12, 일정계획 질문 삭제로 교체)
+    v_is_free := COALESCE(p_payload->>'org_type', '') LIKE '%학교 공식%';
     v_matched_ids   := public._fuzzy_match_games(v_games_raw);
     v_pickup_at     := public._parse_pickup(v_pickup_raw);
     v_duration_days := public._parse_duration(v_duration_raw);

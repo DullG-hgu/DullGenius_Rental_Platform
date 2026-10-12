@@ -7,6 +7,10 @@
 // Script Properties 필요 (Project Settings > Script Properties):
 //   SUPABASE_GAS_SECRET = (private_config.gas_shared_secret 와 동일한 값)
 //   SUPABASE_PUBLISHABLE_KEY = Supabase의 활성 sb_publishable_ 키
+//
+// 폼 질문 제목을 바꾸면 아래 FORM_FIELD_PATTERNS 가 못 찾을 수 있다.
+// 그래도 모든 질문·답변을 payload.answers 로 같이 보내므로 DB raw_payload 에는 남는다.
+// 실행 로그에 '[extractAnswers] 매칭 실패' 가 보이면 패턴을 고친다.
 // ============================================================
 
 
@@ -95,15 +99,20 @@ const FORM_FIELD_PATTERNS = {
   org_type:            ['단체의성격', '단체성격'],
   org_name:            ['단체명'],
   event_overview:      ['행사의개요', '행사개요'],
-  event_schedule:      ['일정계획'],
+  event_schedule:      ['일정계획'],          // 2026-10 폼에서 질문 삭제됨. 비어서 가도 된다
   audience_notes:      ['연령층', '특이사항'],
   requested_games_raw: ['원하는보드게임'],
   game_count_raw:      ['게임의개수', '게임개수'],
   rental_duration_raw: ['대여기간'],
   requester_name:      ['작성자의이름', '작성자이름'],
   requester_phone:     ['작성자의연락처', '연락처'],
-  pickup_raw:          ['수령일정', '수령일'],
+  // 2026-10-12 제목 변경: '보드게임을 언제 수령하기 원하는지 그 일정을 알려주세요' (날짜+시간 타입)
+  pickup_raw:          ['수령일정', '수령일', '언제수령', '수령'],
 };
+
+// 매칭이 안 되면 문제가 되는 키 — 앞의 셋은 DB가 '필수 필드 누락'으로 거부,
+// pickup_raw 는 접수는 되지만 자동 확정(HOLD)이 안 되고 관리자 검토로 간다
+const REQUIRED_FIELDS = ['requester_name', 'requester_phone', 'requested_games_raw', 'pickup_raw'];
 
 function _normalizeTitle(s) {
   return String(s || '').toLowerCase().replace(/[\s\.\,\?\!\(\)\[\]\/]+/g, '');
@@ -118,10 +127,17 @@ function extractAnswers(e) {
 
   const items = e.response.getItemResponses();
   const titleAnswerPairs = items.map(function (it) {
+    const rawTitle = it.getItem().getTitle();
     return {
-      title: _normalizeTitle(it.getItem().getTitle()),
+      rawTitle: rawTitle,
+      title: _normalizeTitle(rawTitle),
       answer: String(it.getResponse() == null ? '' : it.getResponse()),
     };
+  });
+
+  // 폼 원문 그대로 (제목이 바뀌어도 DB raw_payload 에 남도록)
+  out.answers = titleAnswerPairs.map(function (x) {
+    return { q: x.rawTitle, a: x.answer };
   });
 
   Object.keys(FORM_FIELD_PATTERNS).forEach(function (key) {
@@ -136,6 +152,11 @@ function extractAnswers(e) {
     }
     out[key] = '';
   });
+
+  const missing = REQUIRED_FIELDS.filter(function (k) { return !out[k]; });
+  if (missing.length > 0) {
+    Logger.log('[extractAnswers] 매칭 실패: %s — 폼 질문 제목이 바뀌었으면 FORM_FIELD_PATTERNS 수정', missing.join(', '));
+  }
 
   return out;
 }
@@ -174,6 +195,7 @@ function postRentalRequestToSupabase(e) {
     requester_name:      a.requester_name      || '',
     requester_phone:     a.requester_phone     || '',
     pickup_raw:          a.pickup_raw          || '',
+    answers:             a.answers             || [],
   };
 
   const url = SUPABASE_URL.replace(/\/$/, '') + '/rest/v1/rpc/ingest_rental_request';
