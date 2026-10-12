@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 12. PM 12:17:17
+-- 생성 시각: 2026. 10. 12. PM 12:22:25
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 146개 함수
+-- 총 147개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -473,30 +473,46 @@ $function$
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public._fuzzy_match_games(raw text)
  RETURNS integer[]
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+    SELECT COALESCE(array_agg(x::int), '{}')
+    FROM jsonb_array_elements_text(public._match_requested_games(raw) -> 'ids') AS x;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _match_requested_games
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._match_requested_games(raw text)
+ RETURNS jsonb
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
 DECLARE
-    v_names  jsonb;          -- 정규화 이름 → id (같은 이름이 둘이면 작은 id)
-    v_chunk  text;
-    v_words  text[];
-    v_n      int;
-    i        int;
-    j        int;
-    v_key    text;
-    v_id     int;
-    v_cnt    int;
-    v_found  boolean;
-    v_result int[] := '{}';
+    v_names     jsonb;          -- 정규화 이름 → id (같은 이름이 둘이면 작은 id)
+    v_chunk     text;
+    v_words     text[];
+    v_n         int;
+    i           int;
+    j           int;
+    v_key       text;
+    v_id        int;
+    v_cnt       int;
+    v_found     boolean;
+    v_result    int[]  := '{}';
+    v_unmatched text[] := '{}';
     c_max_words constant int := 12;   -- 가장 긴 게임 이름의 단어 수보다 넉넉히
+    -- 게임 이름이 아닌 군말. 못 찾은 단어로 치지 않는다
     c_stopwords constant text[] := ARRAY[
         '보드게임','게임','확장','확장판','본판','기본판','추천','아무거나','정도','희망',
-        '그리고','또는','혹은','등등','부탁드립니다','부탁드려요','원합니다','있으면','가능하면'
+        '그리고','또는','혹은','등등','부탁드립니다','부탁드려요','원합니다','있으면','가능하면',
+        '등','및','외','중','하고','랑','이랑','와','과','개','세트','set'
     ];
 BEGIN
     IF raw IS NULL OR btrim(raw) = '' THEN
-        RETURN '{}';
+        RETURN jsonb_build_object('ids', '[]'::jsonb, 'unmatched', '[]'::jsonb);
     END IF;
 
     SELECT jsonb_object_agg(n, id) INTO v_names
@@ -515,7 +531,7 @@ BEGIN
         WHILE i <= v_n LOOP
             v_found := false;
 
-            -- (1) 가장 긴 단어 묶음부터 이름 정확 일치
+            -- (1) 가장 긴 단어 묶음부터 이름 정확 일치 (띄어쓰기·구두점·대소문자 무시)
             FOR j IN REVERSE LEAST(v_n, i + c_max_words - 1) .. i LOOP
                 v_key := public._normalize_game_name(array_to_string(v_words[i:j], ''));
                 CONTINUE WHEN v_key = '';
@@ -528,27 +544,32 @@ BEGIN
                 END IF;
             END LOOP;
 
-            -- (2) 3글자 이상 단어: 그 단어를 품은 가장 짧은 이름
             IF NOT v_found THEN
                 v_key := public._normalize_game_name(v_words[i]);
-                IF char_length(v_key) >= 3
-                   AND v_key <> ALL (c_stopwords)
-                   AND v_key !~ '^[0-9]+(개|인|명|일|박|세트|set)?$' THEN
-                    -- 본판 중 후보가 딱 하나일 때만 (「카르타벤추라」처럼 여럿이면 골라 주지 않고 검토로)
+                -- 군말·수량(「2개」「4인」)·빈 칸은 건너뛴다
+                IF v_key = '' OR v_key = ANY (c_stopwords)
+                   OR v_key ~ '^[0-9~]+(개|인|명|일|박|세트|set)?$' THEN
+                    NULL;
+                -- (2) 3글자 이상: 그 단어를 품은 본판이 딱 하나일 때만 (「카르타벤추라」처럼 여럿이면 못 찾음)
+                ELSIF char_length(v_key) >= 3 THEN
                     SELECT min(id), count(*) INTO v_id, v_cnt
                     FROM public.games
                     WHERE position(v_key IN public._normalize_game_name(name)) > 0
                       AND base_game_id IS NULL;
                     IF v_cnt = 1 THEN
                         v_result := array_append(v_result, v_id);
+                    ELSE
+                        v_unmatched := array_append(v_unmatched, v_words[i]);
                     END IF;
+                ELSE
+                    v_unmatched := array_append(v_unmatched, v_words[i]);
                 END IF;
                 i := i + 1;
             END IF;
         END LOOP;
     END LOOP;
 
-    RETURN v_result;
+    RETURN jsonb_build_object('ids', to_jsonb(v_result), 'unmatched', to_jsonb(v_unmatched));
 END;
 $function$
 
@@ -4994,6 +5015,11 @@ DECLARE
     v_any_conflict    boolean := false;
     v_conflict_names  text[] := '{}';
     v_game_name       text;
+    v_match           jsonb;
+    v_unmatched       text[];
+    v_count_min       int;
+    v_count_match     int;
+    v_reasons         text[] := '{}';
     v_status          text;
     v_dup_id          uuid;
 BEGIN
@@ -5046,16 +5072,25 @@ BEGIN
     -- 4) 파싱
     -- 단체 성격 「학교 공식 행사단체 (비용 면제 가능)」 (2026-10-12, 일정계획 질문 삭제로 교체)
     v_is_free := COALESCE(p_payload->>'org_type', '') LIKE '%학교 공식%';
-    v_matched_ids   := public._fuzzy_match_games(v_games_raw);
+    v_match         := public._match_requested_games(v_games_raw);
+    SELECT COALESCE(array_agg(x::int), '{}') INTO v_matched_ids
+      FROM jsonb_array_elements_text(v_match -> 'ids') AS x;
+    SELECT COALESCE(array_agg(x), '{}') INTO v_unmatched
+      FROM jsonb_array_elements_text(v_match -> 'unmatched') AS x;
+    v_count_match   := COALESCE(array_length(v_matched_ids, 1), 0);
     v_pickup_at     := public._parse_pickup(v_pickup_raw);
     v_duration_days := public._parse_duration(v_duration_raw);
     v_fee           := public._parse_fee(v_game_count_raw);
     v_game_count    := public._parse_game_count(v_game_count_raw);
 
+    v_count_min := COALESCE(
+        (regexp_match(v_game_count_raw, '(\d+)\s*~\s*\d+\s*개'))[1]::int,
+        v_game_count
+    );
+
     IF v_game_count IS NULL THEN
-        SELECT COUNT(*) INTO v_game_count
-        FROM unnest(string_to_array(v_games_raw, ',')) t
-        WHERE btrim(t) <> '';
+        -- 「직접 협의」: 표시용으로 매칭 수를 넣고, 자동 확정은 하지 않는다
+        v_game_count := v_count_match;
     END IF;
 
     -- 5) rental_requests INSERT
@@ -5091,14 +5126,27 @@ BEGIN
     END;
 
     -- 6) 자동 확정 판정
-    v_auto_ok := (
-        v_matched_ids IS NOT NULL
-        AND array_length(v_matched_ids, 1) = v_game_count
-        AND v_game_count > 0
-        AND v_pickup_at IS NOT NULL
-        AND v_duration_days IS NOT NULL
-        AND v_pickup_at > now()
-    );
+    -- 2026-10-12: 개수 범위(「1~2개」면 1~2개) + 못 찾은 게임 없음
+    IF cardinality(v_unmatched) > 0 THEN
+        v_reasons := v_reasons || ('못 찾은 게임: ' || array_to_string(v_unmatched, ', '));
+    END IF;
+    IF v_count_match = 0 THEN
+        v_reasons := v_reasons || '확인된 게임 없음'::text;
+    ELSIF v_count_min IS NULL THEN
+        v_reasons := v_reasons || '개수 직접 협의'::text;
+    ELSIF v_count_match < v_count_min OR v_count_match > v_game_count THEN
+        v_reasons := v_reasons || format('게임 %s개 확인 / 선택 「%s」', v_count_match, v_game_count_raw);
+    END IF;
+    IF v_pickup_at IS NULL THEN
+        v_reasons := v_reasons || '수령 일정 해석 불가'::text;
+    ELSIF v_pickup_at <= now() THEN
+        v_reasons := v_reasons || '수령 일정이 이미 지남'::text;
+    END IF;
+    IF v_duration_days IS NULL THEN
+        v_reasons := v_reasons || '대여 기간 직접 협의'::text;
+    END IF;
+
+    v_auto_ok := cardinality(v_reasons) = 0;
 
     IF v_auto_ok THEN
         v_borrowed_at := v_pickup_at - interval '24 hours';
@@ -5172,7 +5220,8 @@ BEGIN
     ELSE
         v_status := 'needs_review';
         UPDATE public.rental_requests
-        SET status = v_status
+        SET status = v_status,
+            review_note = '자동 확정 안 됨 — ' || array_to_string(v_reasons, ' / ')
         WHERE id = v_request_id;
     END IF;
 
