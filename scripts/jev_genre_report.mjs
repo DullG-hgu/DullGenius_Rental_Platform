@@ -9,7 +9,7 @@
  *   node scripts/jev_genre_report.mjs            # 전체
  *   node scripts/jev_genre_report.mjs --limit=10 # 앞 10개만 (시험)
  *
- * 필요 키: .env.local 의 VITE_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, BGG_API_TOKEN, JEV_AI_API_KEY
+ * 필요 키: .env.local 의 VITE_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, BGG_API_TOKEN, JEV_AI_API_KEY 또는 JEV_API_KEY
  * 전송 데이터: 게임 한글명과 BGG 공개 정보뿐. 회원 정보는 보내지 않는다.
  */
 import fs from 'node:fs';
@@ -17,13 +17,14 @@ import { createRequire } from 'node:module';
 import { createClient } from '@supabase/supabase-js';
 
 const require = createRequire(import.meta.url);
-const { GENRE_KEYS, fetchBggThings, scoreGenres, pickSuggestions } = require('../netlify/functions/_shared/jevGenres.js');
+const { GENRE_KEYS, fetchBggThings, jevKeys, scoreGenres, pickSuggestions } = require('../netlify/functions/_shared/jevGenres.js');
 
 const env = Object.fromEntries(fs.readFileSync('.env.local', 'utf8').split('\n').filter(l => l.includes('=') && !l.startsWith('#')).map(l => { const i = l.indexOf('='); return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^["']|["']$/g, '')]; }));
 if (!/^sb_secret_[A-Za-z0-9_-]+$/.test(env.SUPABASE_SERVICE_ROLE_KEY || '')) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY must use sb_secret_ format');
 }
-if (!env.JEV_AI_API_KEY) throw new Error('JEV_AI_API_KEY missing in .env.local — no request sent');
+const keys = jevKeys(env);
+if (!Object.values(keys).some(Boolean)) throw new Error('JEV_AI_API_KEY / JEV_API_KEY missing in .env.local — no request sent');
 if (!env.BGG_API_TOKEN) throw new Error('BGG_API_TOKEN missing in .env.local');
 
 const limit = Number(process.argv.find(a => a.startsWith('--limit='))?.split('=')[1]) || Infinity;
@@ -48,7 +49,7 @@ const worker = async () => {
         const game = queue.shift();
         const info = bgg[game.bgg_id];
         if (!info) { rows.push({ game, missing: true }); continue; }
-        const result = await scoreGenres({ koreanName: game.name, bgg: info }, { apiKey: env.JEV_AI_API_KEY, timeoutMs: 15000 });
+        const result = await scoreGenres({ koreanName: game.name, bgg: info }, { keys, timeoutMs: 15000 });
         if (!result.available) {
             // 잔액·키·한도 문제는 계속 보내봐야 같으므로 멈춘다 (재시도 없음).
             if (['unconfigured', 'quota', 'rate_limited'].includes(result.reason)) stopped = result.reason;
@@ -56,7 +57,7 @@ const worker = async () => {
             continue;
         }
         inputTokens += result.inputTokens || 0;
-        rows.push({ game, bggCategories: info.categories, suggestions: pickSuggestions(result.scores), model: result.model });
+        rows.push({ game, bggCategories: info.categories, suggestions: pickSuggestions(result.scores), model: result.model, provider: result.provider });
         process.stdout.write('.');
     }
 };

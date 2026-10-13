@@ -41,8 +41,9 @@ describe('jev-genre-suggest 함수', () => {
         expect(fetch).not.toHaveBeenCalled();
     });
 
-    it('키가 없으면(구독 해지) 200 + available:false, 외부 호출 없음', async () => {
+    it('키가 둘 다 없으면 200 + available:false, 외부 호출 없음', async () => {
         vi.stubEnv('JEV_AI_API_KEY', '');
+        vi.stubEnv('JEV_API_KEY', '');
         const fetch = vi.fn();
         vi.stubGlobal('fetch', fetch);
         const res = await handler(event());
@@ -53,6 +54,7 @@ describe('jev-genre-suggest 함수', () => {
 
     it('크레딧 소진(402)도 오류가 아니라 제안 없음으로 돌려준다', async () => {
         vi.stubEnv('JEV_AI_API_KEY', 'test-key');
+        vi.stubEnv('JEV_API_KEY', '');
         vi.stubEnv('BGG_API_TOKEN', 'bgg');
         vi.spyOn(console, 'error').mockImplementation(() => {});
         vi.stubGlobal('fetch', vi.fn()
@@ -66,6 +68,7 @@ describe('jev-genre-suggest 함수', () => {
 
     it('정상 응답은 0.5 이상 후보만 확률순으로', async () => {
         vi.stubEnv('JEV_AI_API_KEY', 'test-key');
+        vi.stubEnv('JEV_API_KEY', '');
         vi.stubEnv('BGG_API_TOKEN', 'bgg');
         const fetch = vi.fn()
             .mockResolvedValueOnce({ ok: true, status: 200, text: async () => bggXml })
@@ -73,6 +76,8 @@ describe('jev-genre-suggest 함수', () => {
         vi.stubGlobal('fetch', fetch);
         const body = JSON.parse((await handler(event())).body);
         expect(body.available).toBe(true);
+        expect(body.provider).toBe('jev-ai.pro');
+        expect(fetch.mock.calls[1][0]).toBe('https://jev-ai.pro/api/v1/systemone');
         expect(body.suggestions.map(s => s.genre)).toEqual(['협상', '주사위']);
         expect(body.categories).toEqual(['Negotiation']);
         // Jev에는 게임 공개 정보만 간다
@@ -83,13 +88,41 @@ describe('jev-genre-suggest 함수', () => {
 });
 
 describe('jevGenres 모듈', () => {
+    const okJev = model => ({ ok: true, status: 200, json: async () => ({ model, answers: jevAnswers, usage: { input_tokens: 900 } }) });
+
+    it('jev-ai.pro가 402면 OpenRouter로 한 번 더 보낸다', async () => {
+        const fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 402 }).mockResolvedValueOnce(okJev('typesafe/jev-1.13-20260917'));
+        vi.stubGlobal('fetch', fetch);
+        const result = await scoreGenres({ koreanName: 'x', bgg: {} }, { keys: { 'jev-ai.pro': 'a', openrouter: 'b' } });
+        expect(result).toMatchObject({ available: true, provider: 'openrouter' });
+        expect(fetch.mock.calls.map(c => c[0])).toEqual(['https://jev-ai.pro/api/v1/systemone', 'https://openrouter.ai/api/alpha/decisions']);
+        expect(JSON.parse(fetch.mock.calls[1][1].body).model).toBe('typesafe/jev-1.13');
+        expect(fetch.mock.calls[1][1].headers.Authorization).toBe('Bearer b');
+    });
+
+    it('429·장애는 이중 과금을 피하려고 OpenRouter로 재전송하지 않는다', async () => {
+        const fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 429 });
+        vi.stubGlobal('fetch', fetch);
+        const result = await scoreGenres({ koreanName: 'x', bgg: {} }, { keys: { 'jev-ai.pro': 'a', openrouter: 'b' } });
+        expect(result).toMatchObject({ available: false, reason: 'rate_limited', provider: 'jev-ai.pro' });
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('jev-ai.pro 키가 없으면 바로 OpenRouter', async () => {
+        const fetch = vi.fn().mockResolvedValueOnce(okJev('typesafe/jev-1.13-20260917'));
+        vi.stubGlobal('fetch', fetch);
+        const result = await scoreGenres({ koreanName: 'x', bgg: {} }, { keys: { 'jev-ai.pro': '', openrouter: 'b' } });
+        expect(result.provider).toBe('openrouter');
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
     it('BGG XML에서 카테고리·메커니즘·인원·난이도를 뽑는다', () => {
         expect(parseBggThings(bggXml)['13']).toMatchObject({ type: 'boardgame', primary: 'CATAN', players: '3-4', minutes: '60-120', weight: '2.28' });
     });
 
     it('시간초과는 timeout으로 분류하고 throw하지 않는다', async () => {
         vi.stubGlobal('fetch', vi.fn().mockRejectedValue(Object.assign(new Error('t'), { name: 'TimeoutError' })));
-        expect(await scoreGenres({ koreanName: 'x', bgg: {} }, { apiKey: 'k' })).toEqual({ available: false, reason: 'timeout' });
+        expect(await scoreGenres({ koreanName: 'x', bgg: {} }, { keys: { 'jev-ai.pro': 'k' } })).toEqual({ available: false, reason: 'timeout', provider: 'jev-ai.pro' });
     });
 
     it('후보는 최대 4개', () => {

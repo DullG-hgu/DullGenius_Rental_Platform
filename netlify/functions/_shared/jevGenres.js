@@ -7,8 +7,14 @@
 // 결과는 제안일 뿐이다. 2026-09-27 실측(20게임)에서 운영자 장르 recall@3 32/37이었고,
 // 테마를 장르로 착각하는 고확신 오답이 있었다 → 자동 적용 금지, 운영자가 고른다.
 
-const JEV_URL = 'https://jev-ai.pro/api/v1/systemone';
-const JEV_MODEL = 'jev-1.13.0';
+// 공급자 순서: jev-ai.pro 먼저(구독 소진) → 키 없음·401·402면 OpenRouter(Jev 전용 키로 비용 추적).
+// 그 외 실패는 이중 과금을 피하려고 다음 공급자로 재전송하지 않는다.
+// OpenRouter의 typesafe/jev-router는 Jev가 아닌 모델로 라우팅되므로 쓰지 않는다.
+const PROVIDERS = [
+    { name: 'jev-ai.pro', url: 'https://jev-ai.pro/api/v1/systemone', model: 'jev-1.13.0', env: 'JEV_AI_API_KEY' },
+    { name: 'openrouter', url: 'https://openrouter.ai/api/alpha/decisions', model: 'typesafe/jev-1.13', env: 'JEV_API_KEY' },
+];
+const FALLBACK_STATUS = [401, 402];
 const USER_AGENT = 'dullgrental/1.0 (+https://dullgrental.netlify.app)';
 
 // 정규 장르 목록 — 운영자가 손질하는 값이므로 여기만 고치면 함수·리포트 스크립트가 함께 바뀐다.
@@ -85,15 +91,16 @@ const fetchBggThings = async (ids, { token, timeoutMs = 5000 } = {}) => {
 
 const REASON_BY_STATUS = { 401: 'unconfigured', 402: 'quota', 422: 'invalid_request', 429: 'rate_limited' };
 
-// 한 게임의 장르 확률. 실패는 throw하지 않고 { available: false, reason }.
-const scoreGenres = async ({ koreanName, bgg }, { apiKey, timeoutMs = 6000 } = {}) => {
-    if (!apiKey) return { available: false, reason: 'unconfigured' };
+// env 객체(process.env 또는 .env.local 파싱 결과)에서 공급자별 키를 뽑는다.
+const jevKeys = (env) => Object.fromEntries(PROVIDERS.map(p => [p.name, env[p.env] || '']));
+
+const callProvider = async (provider, apiKey, state, timeoutMs) => {
     let response;
     try {
-        response = await fetch(JEV_URL, {
+        response = await fetch(provider.url, {
             method: 'POST',
             headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'User-Agent': USER_AGENT },
-            body: JSON.stringify({ model: JEV_MODEL, state: { game: { korean_name: koreanName || '', bgg } }, questions: QUESTIONS }),
+            body: JSON.stringify({ model: provider.model, state, questions: QUESTIONS }),
             signal: AbortSignal.timeout(timeoutMs),
         });
     } catch (error) {
@@ -107,7 +114,18 @@ const scoreGenres = async ({ koreanName, bgg }, { apiKey, timeoutMs = 6000 } = {
         .map((genre, index) => ({ genre, p: Number(answers[`g${index}`]?.noul) }))
         .filter(s => Number.isFinite(s.p))
         .sort((a, b) => b.p - a.p);
-    return { available: true, model: data.model, scores, inputTokens: data.usage?.input_tokens ?? null };
+    return { available: true, model: data.model, scores, inputTokens: data.usage?.input_tokens ?? null, costUsd: data.usage?.cost ?? null };
+};
+
+// 한 게임의 장르 확률. keys = jevKeys(env). 실패는 throw하지 않고 { available: false, reason }.
+const scoreGenres = async ({ koreanName, bgg }, { keys = {}, timeoutMs = 6000 } = {}) => {
+    const state = { game: { korean_name: koreanName || '', bgg } };
+    let result = { available: false, reason: 'unconfigured' };
+    for (const provider of PROVIDERS.filter(p => keys[p.name])) {
+        result = { ...(await callProvider(provider, keys[provider.name], state, timeoutMs)), provider: provider.name };
+        if (result.available || !FALLBACK_STATUS.includes(result.status)) break;
+    }
+    return result;
 };
 
 // 화면에 보일 후보: 0.5 이상, 최대 4개.
@@ -116,5 +134,5 @@ const pickSuggestions = (scores, { threshold = 0.5, limit = 4 } = {}) =>
 
 module.exports = {
     CANONICAL_GENRES, GENRE_KEYS, USER_AGENT,
-    parseBggThings, fetchBggThings, scoreGenres, pickSuggestions,
+    parseBggThings, fetchBggThings, jevKeys, scoreGenres, pickSuggestions,
 };
