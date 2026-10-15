@@ -1,4 +1,4 @@
-// 놀이터 「소거법으로 할 보드게임 정하기」(구 골라 지우기) (/play/pick, 2026-10-12)
+// 놀이터 「게임소거선택론」(구 골라 지우기) (/play/pick, 2026-10-12)
 // 인원을 고르면 지금 대여 가능한 게임 중 그 인원의 베스트·추천 게임 8장 → ✕로 하나씩 지워 1장(4/4 는 2장)으로 결정.
 // 동방에서 폰 하나로 같이 고르는 용도. 로그인 불필요, 새 조회 없음(전역 게임 목록), 진행 상태는 저장하지 않는다.
 // 추첨 규칙은 키오스크와 같은 roulette.js. 키오스크 화면은 src/kiosk/PickEliminateModal.jsx
@@ -10,7 +10,7 @@ import { PICK_COUNT, PICK_PLAYER_OPTIONS, SPLIT_MODE, formatPlayers } from '../.
 import '../fun.css';
 import './pick.css';
 
-const modeLabel = (mode) => (mode === SPLIT_MODE ? '8명 · 4/4' : `${mode}명`);
+const modeLabel = (mode) => (mode === SPLIT_MODE ? '8명 · 4/4로 나누기' : `${mode}명`);
 
 const Meta = ({ game }) => {
     const best = formatPlayers(game.best_players);
@@ -65,7 +65,7 @@ export default function PickPlay() {
             <div className="fun-header">
                 <button type="button" onClick={() => (mode == null ? navigate('/play') : pick.backToChoose())}
                     className="fun-back-btn" aria-label={mode == null ? '놀이터로' : '인원 다시 고르기'}>←</button>
-                <h2 className="fun-title">소거법으로 할 보드게임 정하기{mode != null && <span className="pk-title-mode"> · {modeLabel(mode)}</span>}</h2>
+                <h2 className="fun-title">게임소거선택론{mode != null && <span className="pk-title-mode"> · {modeLabel(mode)}</span>}</h2>
             </div>
 
             {loading && games.length === 0 ? (
@@ -102,7 +102,7 @@ export default function PickPlay() {
                                 <Result game={remaining[0]} label="테이블 A" gone={pick.isGone(remaining[0])} />
                                 <Result game={remaining[1]} label="테이블 B" gone={pick.isGone(remaining[1])} />
                             </>
-                        ) : remaining.map((g) => <Result key={g.id} game={g} label="결정" gone={pick.isGone(g)} />)}
+                        ) : remaining.map((g) => <Result key={g.id} game={g} label="결론" gone={pick.isGone(g)} />)}
                     </div>
                     <div className="pk-actions">
                         {!tooFew && <button type="button" className="fun-secondary-btn" onClick={pick.undo}>되돌리기 (한 장)</button>}

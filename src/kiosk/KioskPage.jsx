@@ -46,7 +46,7 @@ function KioskPage() {
     // [Modals State]
     const [showReturnModal, setShowReturnModal] = useState(false);
     const [showRouletteModal, setShowRouletteModal] = useState(false);
-    const [showPickModal, setShowPickModal] = useState(false); // 소거법으로 할 보드게임 정하기
+    const [showPickModal, setShowPickModal] = useState(false); // 게임소거선택론
     const [showReservationModal, setShowReservationModal] = useState(false); // [NEW]
     const [showMurderMysteryTimer, setShowMurderMysteryTimer] = useState(false); // [NEW] 머더 미스터리
 
@@ -522,7 +522,7 @@ function KioskPage() {
                     <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>대여중인 게임 반납</span>
                 </button>
 
-                {/* 왼쪽 아래 칸: 룰렛과 소거법 게임 정하기를 나란히 */}
+                {/* 왼쪽 아래 칸: 룰렛과 게임소거선택론을 나란히 */}
                 <div className="kiosk-pick-cell">
                     <button className="kiosk-btn btn-roulette" onClick={() => setShowRouletteModal(true)}>
                         <div className="btn-icon">🎰</div>
@@ -531,7 +531,7 @@ function KioskPage() {
                     </button>
                     <button className="kiosk-btn btn-pick" onClick={() => setShowPickModal(true)}>
                         <div className="btn-icon">✕</div>
-                        소거법으로 게임 정하기
+                        게임소거선택론
                         <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>8개 중 하나씩 지워 결정</span>
                     </button>
                 </div>
@@ -564,7 +564,7 @@ function KioskPage() {
             {/* 룰렛 모달 */}
             {showRouletteModal && <RouletteModal onClose={() => setShowRouletteModal(false)} />}
 
-            {/* 소거법으로 할 보드게임 정하기 */}
+            {/* 게임소거선택론 */}
             {showPickModal && <PickEliminateModal onClose={() => setShowPickModal(false)} />}
 
             {/* 반납 모달 */}

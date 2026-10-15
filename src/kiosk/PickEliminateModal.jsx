@@ -1,4 +1,4 @@
-// 소거법으로 할 보드게임 정하기 (2026-10-11, 구 골라 지우기)
+// 게임소거선택론 (2026-10-11, 구 골라 지우기)
 // 인원을 고르면 그 인원의 베스트·추천 게임 8장을 한 화면에 깔고, ✕로 한 장씩 지워 1장(4/4 는 2장)이 남으면 결정.
 // 공용 기기라 진행 상태는 저장하지 않는다 — 화면보호기에 들어가면 KioskPage 가 이 화면을 닫는다.
 import React, { useMemo, useState } from 'react';
@@ -10,7 +10,7 @@ import './PickEliminate.css';
 const modeLabel = (mode) => (mode === SPLIT_MODE ? '8명 · 4/4로 나누기' : `${mode}명`);
 
 // 판을 깐 뒤 다른 기기에서 빌려 가면 카드는 그대로 두고 표시만 한다 (판이 갑자기 바뀌지 않게)
-const GoneBadge = () => <div className="pe-gone">방금 대여됨</div>;
+const GoneBadge = () => <div className="pe-gone">지금 대여 불가</div>;
 
 const Difficulty = ({ value }) => {
     const n = Number(value);
@@ -95,7 +95,7 @@ function PickEliminateModal({ onClose }) {
             {/* 바깥을 눌러도 닫지 않는다 — 실수로 진행 중인 판을 잃지 않게. 닫기는 ✕ 로만 */}
             <div className="pe-panel">
                 <div className="pe-header">
-                    <h2>소거법으로 할 보드게임 정하기{mode != null && <span className="pe-header-mode"> · {modeLabel(mode)}</span>}</h2>
+                    <h2>게임소거선택론{mode != null && <span className="pe-header-mode"> · {modeLabel(mode)}</span>}</h2>
                     <button type="button" className="pe-close" onClick={onClose} aria-label="닫기">✕</button>
                 </div>
 
@@ -113,7 +113,7 @@ function PickEliminateModal({ onClose }) {
                                 <span>4/4로 나누기</span>
                             </button>
                         </div>
-                        <p className="pe-note">그 인원에 잘 맞는 게임 {PICK_COUNT}개 중 하나씩 지워 마지막 하나로 결정</p>
+                        <p className="pe-note">지금 빌릴 수 있는 게임 중 그 인원에 잘 맞는 {PICK_COUNT}개 → 하나씩 지워 마지막 하나로 결정</p>
                     </div>
                 ) : cards.length === 0 ? (
                     <div className="pe-choose">
@@ -129,11 +129,12 @@ function PickEliminateModal({ onClose }) {
                                     <ResultCard game={remaining[0]} label="테이블 A" gone={isGone(remaining[0])} />
                                     <ResultCard game={remaining[1]} label="테이블 B" gone={isGone(remaining[1])} />
                                 </>
-                            ) : remaining.map((g) => <ResultCard key={g.id} game={g} label="결정" gone={isGone(g)} />)}
+                            ) : remaining.map((g) => <ResultCard key={g.id} game={g} label="결론" gone={isGone(g)} />)}
                         </div>
                         <div className="pe-actions">
                             {!tooFew && <button type="button" className="pe-action" onClick={undo}>되돌리기 (한 장)</button>}
                             {!tooFew && <button type="button" className="pe-action" onClick={reset}>↻ 처음 {cards.length}개로</button>}
+                            <button type="button" className="pe-action" onClick={redraw}>다른 {PICK_COUNT}개 뽑기</button>
                             <button type="button" className="pe-action" onClick={() => setMode(null)}>인원 다시 고르기</button>
                             <button type="button" className="pe-action pe-action-main" onClick={onClose}>이걸로 결정</button>
                         </div>
@@ -152,7 +153,7 @@ function PickEliminateModal({ onClose }) {
                         <div className="pe-actions">
                             <button type="button" className="pe-action" onClick={undo} disabled={removed.length === 0}>되돌리기 (한 장)</button>
                             <button type="button" className="pe-action" onClick={reset} disabled={removed.length === 0}>↻ 처음 {cards.length}개로</button>
-                            <button type="button" className="pe-action" onClick={redraw}>다른 8개 뽑기</button>
+                            <button type="button" className="pe-action" onClick={redraw}>다른 {PICK_COUNT}개 뽑기</button>
                         </div>
                     </>
                 )}
