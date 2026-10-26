@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 12. PM 12:22:25
+-- 생성 시각: 2026. 10. 26. AM 10:02:46
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -448,6 +448,18 @@ AS $function$
       jsonb_typeof(p_filter->'genres_any') IS DISTINCT FROM 'array'
       OR jsonb_array_length(p_filter->'genres_any') = 0
       OR g.genres && ARRAY(SELECT jsonb_array_elements_text(p_filter->'genres_any'))
+    )
+    AND (p_filter->>'weight_min' IS NULL OR g.difficulty >= (p_filter->>'weight_min')::numeric)
+    AND (p_filter->>'weight_max' IS NULL OR g.difficulty <  (p_filter->>'weight_max')::numeric)
+    AND (
+      jsonb_typeof(p_filter->'tags_any') IS DISTINCT FROM 'array'
+      OR jsonb_array_length(p_filter->'tags_any') = 0
+      OR EXISTS (
+        SELECT 1 FROM public.game_tags gt JOIN public.tags t ON t.id = gt.tag_id
+        WHERE gt.game_id = g.id
+          AND (gt.confirmed OR gt.source <> 'jev')
+          AND t.name IN (SELECT jsonb_array_elements_text(p_filter->'tags_any'))
+      )
     )
 $function$
 
