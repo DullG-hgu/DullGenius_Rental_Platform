@@ -1,7 +1,7 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 26. AM 10:34:16
+-- 생성 시각: 2026. 10. 26. AM 11:00:52
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -257,7 +257,8 @@ CREATE TABLE public.fun_worldcup_runs (
   started_at timestamptz NOT NULL DEFAULT now(),
   finished_at timestamptz,
   players int4,
-  last_seq int8
+  last_seq int8,
+  weights _text
 );
 
 -- ----------------------------------------------------------------

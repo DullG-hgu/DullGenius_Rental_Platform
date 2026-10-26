@@ -7,7 +7,7 @@ import { fetchWorldcupPrefill, finishWorldcup, recordWorldcupPicks, reportGameIn
 import { useToast } from '../../contexts/ToastContext';
 import { useGameData } from '../../contexts/GameDataContext';
 import { translateGenre } from '../../constants/genreMap';
-import { getMatchState, getUpcomingCandidates, ROUND_LABEL } from './worldcupLogic';
+import { getMatchState, getUpcomingCandidates, parseWeights, ROUND_LABEL } from './worldcupLogic';
 import { clearProgress, GUEST_TTL_MS, loadProgress, MEMBER_TTL_MS, saveProgress } from './worldcupProgress';
 import { useAuth } from '../../contexts/AuthContext';
 import '../fun.css';
@@ -245,7 +245,8 @@ const WorldcupPlay = () => {
 
         const size = Number(searchParams.get('size'));
         const players = Number(searchParams.get('players')) || null;
-        startWorldcup(slug, size, players)
+        const weights = parseWeights(searchParams.get('weights'));
+        startWorldcup(slug, size, players, weights)
             .then((data) => {
                 setRun(data);
                 persist(data, [], []);

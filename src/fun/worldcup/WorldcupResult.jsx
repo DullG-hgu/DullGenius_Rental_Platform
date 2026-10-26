@@ -5,7 +5,7 @@ import { fetchWorldcupRun } from '../../api_fun';
 import { useGameData } from '../../contexts/GameDataContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { ROUND_LABEL } from './worldcupLogic';
+import { ROUND_LABEL, weightLabel } from './worldcupLogic';
 import '../fun.css';
 
 const percent = (n, d) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0);
@@ -90,7 +90,7 @@ const WorldcupResult = () => {
 
             <div className="wc-result-card">
                 <div className="wc-result-badge">
-                    🏆 {result.players ? `${result.players}명 · ` : ''}{ROUND_LABEL(result.size)} 최종 우승
+                    🏆 {result.players ? `${result.players}명 · ` : ''}{weightLabel(result.weights) ? `${weightLabel(result.weights)} · ` : ''}{ROUND_LABEL(result.size)} 최종 우승
                     {result.entrants < result.size && <span className="wc-result-entrants"> · {result.entrants}개 참가</span>}
                 </div>
                 {champion.image
@@ -146,7 +146,7 @@ const WorldcupResult = () => {
                 {fresh ? (
                     <div className="wc-result-actions-row">
                         <button type="button" className="fun-secondary-btn" onClick={share}>결과 공유하기</button>
-                        <Link to={`/play/worldcup/${result.slug}/play?size=${result.size}${result.players ? `&players=${result.players}` : ''}`} className="fun-secondary-btn wc-link-btn">다시 하기</Link>
+                        <Link to={`/play/worldcup/${result.slug}/play?size=${result.size}${result.players ? `&players=${result.players}` : ''}${result.weights?.length ? `&weights=${result.weights.join(',')}` : ''}`} className="fun-secondary-btn wc-link-btn">다시 하기</Link>
                     </div>
                 ) : (
                     <Link to="/play/worldcup" className="fun-secondary-btn wc-link-btn">나도 해보기</Link>

@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 26. AM 10:34:30
+-- 생성 시각: 2026. 10. 26. AM 11:01:06
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -12,7 +12,7 @@
 --   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.
 
 -- ----------------------------------------------------------------
--- 함수 EXECUTE  (147개)
+-- 함수 EXECUTE  (150개)
 -- ----------------------------------------------------------------
 -- anon  auth  security  function
 --  -     -    INVOKER   _active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
@@ -27,8 +27,11 @@
 --  -     -    INVOKER   _fun_wc_apply_picks(p_run fun_worldcup_runs, p_picks jsonb)
 --  -     -    INVOKER   _fun_wc_eligible_runs(p_theme_id uuid, p_scope text)
 --  -     -    INVOKER   _fun_wc_game_stats(p_theme_id uuid, p_scope text)
+--  -     -    INVOKER   _fun_wc_norm_weights(p_weights text[])
 --  -     -    INVOKER   _fun_wc_pool(p_filter jsonb)
 --  -     -    INVOKER   _fun_wc_pool_for(p_filter jsonb, p_players integer)
+--  -     -    INVOKER   _fun_wc_pool_for(p_filter jsonb, p_players integer, p_weights text[])
+--  -     -    INVOKER   _fun_wc_weight_key(p_difficulty numeric)
 --  -     -    DEFINER   _fuzzy_match_games(raw text)
 --  -     -    DEFINER   _match_requested_games(raw text)
 --  -     -    INVOKER   _normalize_game_name(s text)
@@ -108,7 +111,7 @@
 --  -     Y    DEFINER   fun_wc_my_profile()
 --  Y     Y    DEFINER   fun_wc_ranking(p_slug text, p_scope text)
 --  Y     Y    DEFINER   fun_wc_record(p_run_id uuid, p_picks jsonb, p_anon_id uuid, p_seq bigint)
---  Y     Y    DEFINER   fun_wc_start(p_slug text, p_size integer, p_anon_id uuid, p_players integer)
+--  Y     Y    DEFINER   fun_wc_start(p_slug text, p_size integer, p_anon_id uuid, p_players integer, p_weights text[])
 --  -     Y    DEFINER   get_admin_analytics_activity(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)
 --  -     Y    DEFINER   get_admin_analytics_rankings(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[], p_limit integer)
 --  -     Y    DEFINER   get_admin_analytics_summary(p_start_date date, p_end_date date, p_user_id uuid, p_game_id integer, p_action_types text[])

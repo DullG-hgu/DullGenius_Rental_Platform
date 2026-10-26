@@ -30,7 +30,8 @@ const callRpc = async (fn, params) => {
     return data;
 };
 
-// [Public] 활성 월드컵 테마 목록 — [{ slug, title, description, allowed_sizes, pool_count, total_pool_count, play_count }]
+// [Public] 활성 월드컵 테마 목록 — [{ slug, title, description, allowed_sizes, all_sizes, weight_counts, pool_count, total_pool_count, play_count }]
+// weight_counts: 인원 조건까지 적용한 웨이트 구간별 후보 수 { w1..w5, none } — 웨이트 범위 체크는 이걸로 화면에서 계산한다
 // players 를 주면 그 인원으로 할 수 있는 게임 기준으로 pool_count·allowed_sizes 가 계산된다
 export const fetchWorldcupThemes = (players = null) =>
     callRpc('fun_wc_list_themes', players ? { p_players: players } : {});
@@ -38,9 +39,12 @@ export const fetchWorldcupThemes = (players = null) =>
 // [Public] 판 시작 — { run_id, slug, title, size, top_first[], candidates[] }
 // candidates 는 대진 순서. top_first[i] 가 true 면 i번째 대결에서 대진상 앞 후보를 위에 둔다.
 // players: 고르면 그 인원으로 할 수 있는 게임만 후보 (없으면 전체)
-export const startWorldcup = (slug, size, players = null) =>
+// weights: 웨이트 범위 ['w1'..'w5'] 중 고른 것 (없으면 전체 — 웨이트 없는 게임 포함)
+export const startWorldcup = (slug, size, players = null, weights = null) =>
     callRpc('fun_wc_start', {
-        p_slug: slug, p_size: size, p_anon_id: getFunAnonId(), ...(players ? { p_players: players } : {}),
+        p_slug: slug, p_size: size, p_anon_id: getFunAnonId(),
+        ...(players ? { p_players: players } : {}),
+        ...(weights?.length ? { p_weights: weights } : {}),
     });
 
 // [Public] 진행 중 기록 — 고를 때(되돌릴 때)마다 지금까지의 선택 전체를 보낸다. 끝까지 안 하고 끈 판의 대결도 모으기 위함.

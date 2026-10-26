@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 26. AM 10:34:13
+-- 생성 시각: 2026. 10. 26. AM 11:00:49
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 147개 함수
+-- 총 150개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -430,6 +430,28 @@ AS $function$
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: _fun_wc_norm_weights
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._fun_wc_norm_weights(p_weights text[])
+ RETURNS text[]
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v text[];
+BEGIN
+  IF p_weights IS NULL OR cardinality(p_weights) = 0 THEN RETURN NULL; END IF;
+  IF EXISTS (SELECT 1 FROM unnest(p_weights) x WHERE x IS NULL OR x NOT IN ('w1','w2','w3','w4','w5')) THEN
+    RAISE EXCEPTION '웨이트 범위가 올바르지 않습니다.';
+  END IF;
+  SELECT array_agg(DISTINCT x ORDER BY x) INTO v FROM unnest(p_weights) x;
+  IF cardinality(v) = 5 THEN RETURN NULL; END IF;
+  RETURN v;
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: _fun_wc_pool
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public._fun_wc_pool(p_filter jsonb)
@@ -487,6 +509,40 @@ AS $function$
   WHERE p_players IS NULL
      OR (g.min_players IS NOT NULL AND g.max_players IS NOT NULL
          AND g.min_players <= p_players AND g.max_players >= p_players)
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _fun_wc_pool_for
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._fun_wc_pool_for(p_filter jsonb, p_players integer, p_weights text[])
+ RETURNS SETOF integer
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT p.id
+  FROM public._fun_wc_pool_for(p_filter, p_players) AS p(id)
+  JOIN public.games g ON g.id = p.id
+  WHERE p_weights IS NULL OR public._fun_wc_weight_key(g.difficulty) = ANY (p_weights)
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _fun_wc_weight_key
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._fun_wc_weight_key(p_difficulty numeric)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT CASE
+    WHEN p_difficulty IS NULL THEN 'none'
+    WHEN p_difficulty < 1.5 THEN 'w1'
+    WHEN p_difficulty < 2.0 THEN 'w2'
+    WHEN p_difficulty < 2.5 THEN 'w3'
+    WHEN p_difficulty < 3.0 THEN 'w4'
+    ELSE 'w5'
+  END
 $function$
 
 -- ----------------------------------------------------------------
@@ -3567,6 +3623,7 @@ BEGIN
     'title', v_theme.title,
     'size', v_run.size,
     'players', v_run.players,
+    'weights', to_jsonb(v_run.weights),
     'entrants', (SELECT count(*) FROM unnest(v_run.bracket) x WHERE x IS NOT NULL),
     'finished_at', v_run.finished_at,
     'champion', (
@@ -3696,12 +3753,19 @@ AS $function$
              'players', p_players,
              'allowed_sizes', (SELECT COALESCE(jsonb_agg(n ORDER BY n), '[]'::jsonb)
                                FROM unnest(x.allowed_sizes) n WHERE x.pool_count * 2 > n),
+             'all_sizes', to_jsonb(x.allowed_sizes),
+             'weight_counts', x.weight_counts,
              'pool_count', x.pool_count, 'total_pool_count', x.total_pool_count, 'play_count', x.play_count
            ) ORDER BY x.sort_order, x.created_at), '[]'::jsonb)
   FROM (
     SELECT t.*,
       (SELECT count(*) FROM public._fun_wc_pool_for(t.filter, p_players)) AS pool_count,
       (SELECT count(*) FROM public._fun_wc_pool(t.filter)) AS total_pool_count,
+      -- 웨이트 범위 체크용: 인원 조건까지 적용한 구간별 후보 수 (none = 웨이트 없음, 전부 체크일 때만 후보)
+      (SELECT COALESCE(jsonb_object_agg(k, n), '{}'::jsonb) FROM (
+         SELECT public._fun_wc_weight_key(g.difficulty) k, count(*) n
+         FROM public._fun_wc_pool_for(t.filter, p_players) AS p(id) JOIN public.games g ON g.id = p.id
+         GROUP BY 1) w) AS weight_counts,
       (SELECT count(*) FROM public.fun_worldcup_runs r
         WHERE r.theme_id = t.id AND r.status = 'finished') AS play_count
     FROM public.fun_worldcup_themes t
@@ -4031,7 +4095,7 @@ $function$
 -- ----------------------------------------------------------------
 -- 함수: fun_wc_start
 -- ----------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.fun_wc_start(p_slug text, p_size integer, p_anon_id uuid DEFAULT NULL::uuid, p_players integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.fun_wc_start(p_slug text, p_size integer, p_anon_id uuid DEFAULT NULL::uuid, p_players integer DEFAULT NULL::integer, p_weights text[] DEFAULT NULL::text[])
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -4050,6 +4114,7 @@ DECLARE
   v_k         integer := 1;
   v_top       boolean[];
   v_run_id    uuid;
+  v_weights   text[] := public._fun_wc_norm_weights(p_weights);
 BEGIN
   IF v_uid IS NULL AND p_anon_id IS NULL THEN
     RAISE EXCEPTION '기기 식별자가 필요합니다.';
@@ -4074,7 +4139,7 @@ BEGIN
     RAISE EXCEPTION '너무 많이 시작했어요. 잠시 후 다시 해 주세요.';
   END IF;
 
-  SELECT count(*) INTO v_pool FROM public._fun_wc_pool_for(v_theme.filter, p_players);
+  SELECT count(*) INTO v_pool FROM public._fun_wc_pool_for(v_theme.filter, p_players, v_weights);
   IF v_pool * 2 <= p_size THEN
     RAISE EXCEPTION '후보가 부족합니다.';
   END IF;
@@ -4084,7 +4149,7 @@ BEGIN
 
   SELECT array_agg(p.id) INTO v_ids
   FROM (
-    SELECT id FROM public._fun_wc_pool_for(v_theme.filter, p_players) AS pool(id)
+    SELECT id FROM public._fun_wc_pool_for(v_theme.filter, p_players, v_weights) AS pool(id)
     ORDER BY random()
     LIMIT v_n
   ) p;
@@ -4104,8 +4169,8 @@ BEGIN
 
   SELECT array_agg(random() < 0.5) INTO v_top FROM generate_series(1, p_size - 1);
 
-  INSERT INTO public.fun_worldcup_runs (theme_id, size, bracket, top_first, user_id, anon_id, is_member, players)
-  VALUES (v_theme.id, p_size, v_bracket, v_top, v_uid, p_anon_id, v_uid IS NOT NULL, p_players)
+  INSERT INTO public.fun_worldcup_runs (theme_id, size, bracket, top_first, user_id, anon_id, is_member, players, weights)
+  VALUES (v_theme.id, p_size, v_bracket, v_top, v_uid, p_anon_id, v_uid IS NOT NULL, p_players, v_weights)
   RETURNING id INTO v_run_id;
 
   RETURN jsonb_build_object(
@@ -4114,6 +4179,7 @@ BEGIN
     'title', v_theme.title,
     'size', p_size,
     'players', p_players,
+    'weights', to_jsonb(v_weights),
     'entrants', v_n,
     'top_first', to_jsonb(v_top),
     'candidates', (

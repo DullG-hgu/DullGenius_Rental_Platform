@@ -237,6 +237,43 @@
     color: #fff;
 }
 
+/* 웨이트 범위 설정: 여러 개 체크 — 인원 줄과 달리 줄바꿈해서 다섯 칸이 한눈에 보이게 */
+.wc-weight-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-bottom: 14px;
+}
+
+.wc-weight-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 12px;
+}
+
+.wc-weight-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid #bbb;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.wc-weight-btn[aria-pressed="true"] .wc-weight-check {
+    border-color: #fff;
+}
+
+.wc-weight-count {
+    font-weight: 500;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
 .wc-sheet-note {
     margin: 0 0 14px;
     color: #666;

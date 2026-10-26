@@ -6,12 +6,22 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchMyOpenWorldcupRun, fetchWorldcupThemes } from '../../api_fun';
 import { useAuth } from '../../contexts/AuthContext';
 import { clearProgress, loadProgress, MEMBER_TTL_MS, saveProgress } from './worldcupProgress';
-import { getMatchState, ROUND_LABEL } from './worldcupLogic';
+import { ALL_WEIGHTS, getMatchState, ROUND_LABEL, WEIGHT_OPTIONS } from './worldcupLogic';
 import '../fun.css';
 
 const DEFAULT_SIZE = 16;
 // 인원 선택: null = 상관없음. "n명이서 뭐 하지?" 용 — 그 인원으로 할 수 있는 게임만 후보로
 const PLAYER_OPTIONS = [null, 2, 3, 4, 5, 6, 7, 8, 10];
+
+// 서버가 준 구간별 후보 수로 웨이트 범위를 적용한 후보 수·강수를 계산한다 (체크마다 서버에 묻지 않는다)
+// 전부 체크면 조건 없음 — 웨이트 없는 게임도 들어간다. 강수 규칙은 서버와 같다: 후보 × 2 > 강수
+const applyWeights = (theme, weights) => {
+    const all = weights.length === ALL_WEIGHTS.length;
+    const counts = theme.weight_counts;
+    if (all || !counts) return { pool: theme.pool_count, sizes: theme.allowed_sizes };
+    const pool = weights.reduce((sum, k) => sum + (counts[k] ?? 0), 0);
+    return { pool, sizes: (theme.all_sizes ?? theme.allowed_sizes).filter((n) => pool * 2 > n) };
+};
 
 const pickSize = (sizes, current) => {
     if (sizes.includes(current)) return current;
@@ -42,8 +52,12 @@ const WorldcupThemes = () => {
     const [searchParams] = useSearchParams();
     const autoOpened = useRef(false);
     const [players, setPlayers] = useState(null);
-    // 시트에 보여줄 후보 수·가능 강수 (인원을 고르면 서버에 다시 물어본다)
-    const [sheetStats, setSheetStats] = useState(null);
+    const [weights, setWeights] = useState(ALL_WEIGHTS);
+    // 시트 기준 테마 정보 — 인원을 고르면 그 인원 기준으로 서버에 다시 물어본다 (구간별 후보 수 포함)
+    const [sheetBase, setSheetBase] = useState(null);
+    const [sheetLoad, setSheetLoad] = useState({ loading: false, error: false });
+    const sheetStats = sheetBase ? { ...applyWeights(sheetBase, weights), ...sheetLoad } : null;
+    const weightsPartial = weights.length < ALL_WEIGHTS.length;
 
     const load = useCallback(() => {
         setError(null);
@@ -79,32 +93,42 @@ const WorldcupThemes = () => {
         return () => { active = false; };
     }, [authLoading, user]);
 
-    // 서버가 부전승 규칙(후보 > 강수/2)에 맞는 강수만 내려준다
-    const sizesFor = (theme) => theme.allowed_sizes;
-
     const openSheet = (theme) => {
         setPlayers(null);
-        setSheetStats({ pool: theme.pool_count, sizes: sizesFor(theme) });
-        setSize(pickSize(sizesFor(theme), DEFAULT_SIZE));
+        setWeights(ALL_WEIGHTS);
+        setSheetBase(theme);
+        setSheetLoad({ loading: false, error: false });
+        setSize(pickSize(theme.allowed_sizes, DEFAULT_SIZE));
         setSheetTheme(theme);
     };
 
     const choosePlayers = (n) => {
         setPlayers(n);
         if (n === null) {
-            setSheetStats({ pool: sheetTheme.pool_count, sizes: sizesFor(sheetTheme) });
-            setSize((cur) => pickSize(sizesFor(sheetTheme), cur));
+            setSheetBase(sheetTheme);
+            setSheetLoad({ loading: false, error: false });
+            setSize((cur) => pickSize(applyWeights(sheetTheme, weights).sizes, cur));
             return;
         }
-        setSheetStats((prev) => ({ ...prev, loading: true }));
+        setSheetLoad({ loading: true, error: false });
         fetchWorldcupThemes(n)
             .then((list) => {
-                const t = list?.find((x) => x.slug === sheetTheme.slug);
-                const next = { pool: t?.pool_count ?? 0, sizes: t?.allowed_sizes ?? [] };
-                setSheetStats(next);
-                setSize((cur) => pickSize(next.sizes, cur));
+                const t = list?.find((x) => x.slug === sheetTheme.slug)
+                    ?? { ...sheetTheme, pool_count: 0, allowed_sizes: [], all_sizes: [], weight_counts: {} };
+                setSheetBase(t);
+                setSheetLoad({ loading: false, error: false });
+                setSize((cur) => pickSize(applyWeights(t, weights).sizes, cur));
             })
-            .catch(() => setSheetStats((prev) => ({ ...prev, loading: false, error: true })));
+            .catch(() => setSheetLoad({ loading: false, error: true }));
+    };
+
+    // 마지막 남은 하나는 끌 수 없다 (후보 0개 방지)
+    const toggleWeight = (key) => {
+        const next = weights.includes(key)
+            ? (weights.length === 1 ? weights : weights.filter((k) => k !== key))
+            : ALL_WEIGHTS.filter((k) => k === key || weights.includes(k));
+        setWeights(next);
+        if (sheetBase) setSize((cur) => pickSize(applyWeights(sheetBase, next).sizes, cur));
     };
 
     const single = themes?.length === 1;
@@ -126,7 +150,7 @@ const WorldcupThemes = () => {
     const start = () => {
         clearProgress();
         setSaved(null);
-        navigate(`/play/worldcup/${sheetTheme.slug}/play?size=${size}${players ? `&players=${players}` : ''}`);
+        navigate(`/play/worldcup/${sheetTheme.slug}/play?size=${size}${players ? `&players=${players}` : ''}${weightsPartial ? `&weights=${weights.join(',')}` : ''}`);
     };
 
     const resume = () => navigate(`/play/worldcup/${sheetTheme.slug}/play?resume=1`);
@@ -206,6 +230,30 @@ const WorldcupThemes = () => {
                             ))}
                         </div>
 
+                        {sheetBase?.weight_counts && (
+                            <>
+                                <h3 className="wc-sheet-label">웨이트 범위 설정</h3>
+                                <div className="wc-weight-row" role="group" aria-label="웨이트 범위">
+                                    {WEIGHT_OPTIONS.map((o) => {
+                                        const on = weights.includes(o.key);
+                                        return (
+                                            <button
+                                                key={o.key}
+                                                type="button"
+                                                className="wc-players-btn wc-weight-btn"
+                                                aria-pressed={on}
+                                                onClick={() => toggleWeight(o.key)}
+                                            >
+                                                <span className="wc-weight-check" aria-hidden="true">{on ? '✓' : ''}</span>
+                                                {o.label}
+                                                <span className="wc-weight-count">{sheetLoad.loading ? '…' : `${sheetBase.weight_counts[o.key] ?? 0}개`}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+
                         <h3 id="wc-sheet-title" className="wc-sheet-label">몇 강으로 할까요?</h3>
                         {sheetStats?.error ? (
                             <p className="wc-sheet-note" role="alert">후보 수를 불러오지 못했어요. 인원을 다시 골라 주세요.</p>
@@ -213,11 +261,12 @@ const WorldcupThemes = () => {
                             <p className="wc-sheet-note">후보를 세는 중…</p>
                         ) : sheetStats?.sizes.length === 0 ? (
                             <p className="wc-sheet-note" role="alert">
-                                {players}명이서 할 수 있는 게임이 {sheetStats.pool}개뿐이라 월드컵을 열 수 없어요.
+                                {players ? `${players}명이서 할 수 있는 ` : ''}{weightsPartial ? '고른 웨이트 범위의 ' : ''}게임이 {sheetStats.pool}개뿐이라 월드컵을 열 수 없어요.
                             </p>
                         ) : (
                             <p className="wc-sheet-note">
                                 {players && <>{players}명이서 할 수 있는 게임만 나와요. </>}
+                                {weightsPartial && <>고른 웨이트 범위의 게임만 나와요(웨이트 정보 없는 게임 제외). </>}
                                 {size <= sheetStats.pool ? (
                                     <>후보 {sheetStats.pool}개 중 <strong>{size}개</strong>가 무작위로 뽑혀요.</>
                                 ) : (
