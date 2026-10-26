@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 26. AM 10:02:46
+-- 생성 시각: 2026. 10. 26. AM 10:34:13
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -459,6 +459,15 @@ AS $function$
         WHERE gt.game_id = g.id
           AND (gt.confirmed OR gt.source <> 'jev')
           AND t.name IN (SELECT jsonb_array_elements_text(p_filter->'tags_any'))
+      )
+    )
+    AND (
+      jsonb_typeof(p_filter->'tags_none') IS DISTINCT FROM 'array'
+      OR NOT EXISTS (
+        SELECT 1 FROM public.game_tags gt JOIN public.tags t ON t.id = gt.tag_id
+        WHERE gt.game_id = g.id
+          AND (gt.confirmed OR gt.source <> 'jev')
+          AND t.name IN (SELECT jsonb_array_elements_text(p_filter->'tags_none'))
       )
     )
 $function$
@@ -3976,6 +3985,7 @@ BEGIN
       FROM public._fun_wc_game_stats(v_theme.id, p_scope) s
       JOIN public.games g ON g.id = s.game_id
       WHERE g.base_game_id IS NULL  -- 과거 판의 확장판 전적은 보존하되 랭킹에는 노출하지 않는다
+        AND s.game_id IN (SELECT p.id FROM public._fun_wc_pool(v_theme.filter) AS p(id))  -- 후보에서 뺀 게임은 전적만 남기고 숨긴다 (10/26 대화 카드)
     )
   );
 END;
