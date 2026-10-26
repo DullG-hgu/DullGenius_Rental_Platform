@@ -75,10 +75,19 @@ for (const g of games) {
 }
 
 // ── 현재 DB 와 비교 ──
-const { data: curTerms, error: e1 } = await sb.from('bgg_terms').select('id,kind,name_en,family_group');
-if (e1) throw e1;
-const { data: curLinks, error: e2 } = await sb.from('game_bgg_terms').select('game_id,term_id');
-if (e2) throw e2;
+// PostgREST 기본 상한이 1000행이라 끝까지 나눠 읽는다 (10/26 연결 2919건 중 1000건만 읽혀 삭제 누락)
+const selectAll = async (table, cols, order) => {
+  const rows = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error: e } = await sb.from(table).select(cols).order(order[0]).order(order[1] || order[0]).range(from, from + 999);
+    if (e) throw e;
+    rows.push(...data);
+    if (data.length < 1000) return rows;
+    await sleep(500);
+  }
+};
+const curTerms = await selectAll('bgg_terms', 'id,kind,name_en,family_group', ['id']);
+const curLinks = await selectAll('game_bgg_terms', 'game_id,term_id', ['game_id', 'term_id']);
 const curTermMap = new Map(curTerms.map(t => [t.id, t]));
 const termUpserts = [...termDict.values()].filter(t => { const c = curTermMap.get(t.id); return !c || c.kind !== t.kind || c.name_en !== t.name_en || c.family_group !== t.family_group; });
 const curByGame = new Map();
@@ -128,7 +137,8 @@ for (let i = 0; i < termUpserts.length; i += 200) {
   await sleep(2000); // 운영 DB가 Nano — 배치 사이 간격 (2026-10-04 장애)
 }
 const now = new Date().toISOString();
-const linkRows = [...wanted].flatMap(([gid, set]) => [...set].map(term_id => ({ game_id: gid, term_id, fetched_at: now })));
+// 새로 생긴 연결만 쓴다 (기존 연결의 fetched_at 은 처음 수집 시각으로 남는다)
+const linkRows = [...wanted].flatMap(([gid, set]) => { const cur = curByGame.get(gid) || new Set(); return [...set].filter(t => !cur.has(t)).map(term_id => ({ game_id: gid, term_id, fetched_at: now })); });
 for (let i = 0; i < linkRows.length; i += 500) {
   const { error: e } = await sb.from('game_bgg_terms').upsert(linkRows.slice(i, i + 500), { onConflict: 'game_id,term_id' });
   if (e) throw e;
