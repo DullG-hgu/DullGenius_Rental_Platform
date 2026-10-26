@@ -1,5 +1,5 @@
 // 골라 지우기 진행 상태 (2026-10-12) — 놀이터(/play/pick)용. 추첨 규칙은 roulette.js 의 drawCards 한 곳.
-// 키오스크(src/kiosk/PickEliminateModal.jsx)는 같은 규칙을 자체 상태로 쓴다. 옮길 때 이 훅으로 바꾸면 된다.
+// 키오스크에 있던 같은 기능(PickEliminateModal)은 2026-10-26 제거 — 이제 이 훅만 쓴다.
 import { useMemo, useState } from 'react';
 import { PICK_COUNT, SPLIT_MODE, drawCards, hasNumplayersData } from './roulette';
 

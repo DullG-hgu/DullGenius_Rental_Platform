@@ -1,7 +1,7 @@
 // 놀이터 「게임소거선택론」(구 골라 지우기) (/play/pick, 2026-10-12)
 // 인원을 고르면 지금 대여 가능한 게임 중 그 인원의 베스트·추천 게임 8장 → ✕로 하나씩 지워 1장(4/4 는 2장)으로 결정.
 // 동방에서 폰 하나로 같이 고르는 용도. 로그인 불필요, 새 조회 없음(전역 게임 목록), 진행 상태는 저장하지 않는다.
-// 추첨 규칙은 키오스크와 같은 roulette.js. 키오스크 화면은 src/kiosk/PickEliminateModal.jsx
+// 추첨 규칙은 roulette.js 한 곳 (키오스크 게임 추천 룰렛도 같은 파일). 키오스크판은 2026-10-26 제거
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGameData } from '../../contexts/GameDataContext';

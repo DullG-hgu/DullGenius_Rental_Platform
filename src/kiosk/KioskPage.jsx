@@ -6,7 +6,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSuspendGameData } from '../contexts/GameDataContext';
 import { supabase } from '../lib/supabaseClient.jsx';
 import RouletteModal from './RouletteModal';
-import PickEliminateModal from './PickEliminateModal';
 import ReturnModal from './ReturnModal';
 import ReservationModal from './ReservationModal'; // [NEW] 예약 수령 모달
 import MurderMysteryTimerModal from './MurderMysteryTimerModal'; // [NEW] 머더 미스터리 타이머
@@ -46,7 +45,6 @@ function KioskPage() {
     // [Modals State]
     const [showReturnModal, setShowReturnModal] = useState(false);
     const [showRouletteModal, setShowRouletteModal] = useState(false);
-    const [showPickModal, setShowPickModal] = useState(false); // 게임소거선택론
     const [showReservationModal, setShowReservationModal] = useState(false); // [NEW]
     const [showMurderMysteryTimer, setShowMurderMysteryTimer] = useState(false); // [NEW] 머더 미스터리
 
@@ -305,11 +303,6 @@ function KioskPage() {
     // [Effect 1] 새 빌드 자동 적용 — 확인은 수시로, 적용은 화면보호기 상태에서만
     useKioskAutoUpdate(isIdle, isIdleRef);
 
-    // 화면보호기에 들어가면 고르던 판을 닫는다 — 공용 기기라 남은 카드가 다음 사람에게 보이면 안 된다
-    useEffect(() => {
-        if (isIdle) setShowPickModal(false);
-    }, [isIdle]);
-
     // [Effect: Wake Lock] Prevent screen sleep
     useEffect(() => {
         let wakeLock = null;
@@ -522,19 +515,12 @@ function KioskPage() {
                     <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>대여중인 게임 반납</span>
                 </button>
 
-                {/* 왼쪽 아래 칸: 룰렛과 게임소거선택론을 나란히 */}
-                <div className="kiosk-pick-cell">
-                    <button className="kiosk-btn btn-roulette" onClick={() => setShowRouletteModal(true)}>
-                        <div className="btn-icon">🎰</div>
-                        게임 추천
-                        <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>뭐 할지 모를 때!</span>
-                    </button>
-                    <button className="kiosk-btn btn-pick" onClick={() => setShowPickModal(true)}>
-                        <div className="btn-icon">✕</div>
-                        게임소거선택론
-                        <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>8개 중 하나씩 지워 결정</span>
-                    </button>
-                </div>
+                {/* 왼쪽 아래 칸: 게임 추천(룰렛). 게임소거선택론은 10/26 키오스크에서 제거 — 웹 /play/pick 에만 */}
+                <button className="kiosk-btn btn-roulette" onClick={() => setShowRouletteModal(true)}>
+                    <div className="btn-icon">🎰</div>
+                    게임 추천
+                    <span style={{ fontSize: "1rem", marginTop: "10px", fontWeight: "normal" }}>뭐 할지 모를 때!</span>
+                </button>
 
 
             </div>
@@ -563,9 +549,6 @@ function KioskPage() {
 
             {/* 룰렛 모달 */}
             {showRouletteModal && <RouletteModal onClose={() => setShowRouletteModal(false)} />}
-
-            {/* 게임소거선택론 */}
-            {showPickModal && <PickEliminateModal onClose={() => setShowPickModal(false)} />}
 
             {/* 반납 모달 */}
             {showReturnModal && <ReturnModal onClose={() => {
