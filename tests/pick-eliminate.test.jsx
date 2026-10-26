@@ -33,7 +33,7 @@ describe('골라 지우기', () => {
         expect(removeButtons()).toHaveLength(3);
         fireEvent.click(removeButtons()[0]);
         fireEvent.click(removeButtons()[0]);
-        expect(screen.getByText('결정')).toBeTruthy();
+        expect(screen.getByText('결론')).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: '↻ 처음 8개로' }));
         expect(removeButtons()).toHaveLength(8);
     });
@@ -78,7 +78,7 @@ describe('골라 지우기 verification follow-ups', () => {
         render(<PickEliminateModal onClose={() => {}} />);
         fireEvent.click(screen.getByRole('button', { name: '4명' }));
         for (let i = 0; i < 7; i++) fireEvent.click(removeButtons()[0]);
-        expect(screen.getByText('결정')).toBeTruthy();
+        expect(screen.getByText('결론')).toBeTruthy();
         expect(screen.getByText('난이도 2.1')).toBeTruthy(); // 결정 카드에도 난이도
         fireEvent.click(screen.getByRole('button', { name: '되돌리기 (한 장)' }));
         expect(removeButtons()).toHaveLength(2);
@@ -99,6 +99,6 @@ describe('골라 지우기 verification follow-ups', () => {
         data.games = [game(1, { status: '대여중' }), game(2), game(3)];
         view.rerender(<PickEliminateModal onClose={() => {}} />);
         expect(removeButtons()).toHaveLength(3);
-        expect(screen.getAllByText('방금 대여됨')).toHaveLength(1);
+        expect(screen.getAllByText('지금 대여 불가')).toHaveLength(1);
     });
 });

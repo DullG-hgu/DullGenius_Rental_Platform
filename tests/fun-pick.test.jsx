@@ -40,7 +40,7 @@ describe('놀이터 골라 지우기 (/play/pick)', () => {
         fireEvent.click(screen.getAllByText(/^게임\d+$/)[0]);
         expect(removeButtons()).toHaveLength(8);
         for (let i = 0; i < 7; i++) fireEvent.click(removeButtons()[0]);
-        expect(screen.getByText('결정')).toBeTruthy();
+        expect(screen.getByText('결론')).toBeTruthy();
         expect(screen.getByRole('link', { name: '게임 정보 보기' }).getAttribute('href')).toMatch(/^\/game\/\d+$/);
         fireEvent.click(screen.getByRole('button', { name: '되돌리기 (한 장)' }));
         expect(removeButtons()).toHaveLength(2);
