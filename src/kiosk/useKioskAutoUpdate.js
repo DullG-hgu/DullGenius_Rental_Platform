@@ -15,7 +15,11 @@ export default function useKioskAutoUpdate(isIdle, isIdleRef) {
     const pendingRef = useRef(null);
 
     const tryApply = () => {
-        if (pendingRef.current && isIdleRef.current) applyUpdate(pendingRef.current);
+        if (!pendingRef.current || !isIdleRef.current) return;
+        // 새 서비스워커로 넘어갔으면 새로고침은 여기서 한다 (index.jsx 는 화면이 가려질 때만 새로고침)
+        applyUpdate(pendingRef.current).then((r) => {
+            if (r === 'sw-updated') window.location.reload();
+        });
     };
 
     useEffect(() => {

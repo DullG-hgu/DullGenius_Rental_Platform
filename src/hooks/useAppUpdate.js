@@ -33,7 +33,7 @@ export default function useAppUpdate() {
     const update = async () => {
         if (!latest || updating) return;
         setUpdating(true);
-        // 새로고침되면 이 화면은 사라진다. 'sw-updated' 면 index.jsx 가 새로고침한다.
+        // 새로고침되면 이 화면은 사라진다. force 는 서비스워커를 기다리지 않고 바로 강력 새로고침한다.
         await applyUpdate(latest, { force: true });
     };
 

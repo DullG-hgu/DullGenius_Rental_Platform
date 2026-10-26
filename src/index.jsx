@@ -3,30 +3,24 @@ import './index.css';
 import App from './App';
 
 // autoUpdate로 새 서비스워커가 활성화돼도 이미 열린 탭의 JavaScript는 자동으로
-// 교체되지 않는다. 공개 API 키 교체처럼 구 번들이 즉시 무효가 되는 배포에서는
-// 페이지까지 다시 로드해야 새 설정을 사용한다.
+// 교체되지 않는다. 다만 바로 새로고침하면 보던 화면·고르던 선택이 눈앞에서 날아가므로
+// 앱이 뒤로 갈 때(화면이 가려질 때) 새로고침한다. 그 전에 닫으면 다음 실행이 새 버전이다.
+// 지금 화면도 바로 바꿔야 하는 배포는 minor 를 올려 헤더 「업데이트」 버튼으로 알린다.
+// 키오스크는 화면이 가려지지 않으니 useKioskAutoUpdate 가 화면보호기 때 새로고침한다.
 if ('serviceWorker' in navigator) {
-    let reloadingForUpdate = false;
+    // 첫 설치(열 때 서비스워커가 없었음)의 controllerchange 는 새 버전이 아니다.
+    // 예전엔 이것도 새로고침해서 첫 방문 몇 초 뒤 화면이 다시 열렸다 (2026-10-26, 월드컵 진입 때 새로고침으로 보고됨)
+    const hadController = !!navigator.serviceWorker.controller;
+    let pending = false;
 
-    // 조작 중에 새로고침하면 열려 있던 모달과 선택이 통째로 날아간다.
-    // 키오스크에서는 수령·반납을 누른 직후 화면이 첫 페이지로 돌아가 "눌러도 아무 일이
-    // 없는" 것처럼 보인다. 모달이 하나도 없을 때까지 미룬다.
-    const hasOpenModal = () =>
-        document.querySelector('.kiosk-modal-overlay, .modal-overlay') !== null;
-
-    const reloadWhenIdle = () => {
-        if (!hasOpenModal()) {
-            window.location.reload();
-            return;
-        }
-        console.log('[SW] 새 버전 준비됨 — 조작이 끝나면 새로고침합니다.');
-        setTimeout(reloadWhenIdle, 3000);
+    const reloadIfHidden = () => {
+        if (document.visibilityState === 'hidden') window.location.reload();
     };
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloadingForUpdate) return;
-        reloadingForUpdate = true;
-        reloadWhenIdle();
+        if (!hadController || pending) return;
+        pending = true;
+        document.addEventListener('visibilitychange', reloadIfHidden);
     });
 }
 
