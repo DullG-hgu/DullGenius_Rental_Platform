@@ -1,7 +1,7 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 26. AM 11:00:49
+-- 생성 시각: 2026. 10. 26. AM 11:57:37
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -376,6 +376,7 @@ AS $function$
   FROM public.fun_worldcup_runs r
   WHERE r.theme_id = p_theme_id
     AND r.status = 'finished'
+    AND r.weights IS NULL  -- 웨이트 범위를 좁힌 판은 집계 제외 (2026-10-26)
     AND (p_scope = 'all' OR r.is_member)
     AND NOT EXISTS (
       SELECT 1 FROM public.user_roles ur
