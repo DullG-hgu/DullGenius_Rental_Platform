@@ -229,9 +229,9 @@ function GameDetail() {
     if (duesBlocked) return;
 
     const termsNotice = (
-      <div style={{ marginTop: '12px', padding: '8px 12px', background: '#f0f4ff', borderRadius: '8px', border: '1px solid #d0d9f0', fontSize: '0.82rem', color: '#555', lineHeight: '1.5', textAlign: 'left' }}>
+      <div style={{ marginTop: '12px', padding: '8px 12px', background: '#f1ecfd', borderRadius: '8px', fontSize: '0.875rem', color: '#5f5c6c', lineHeight: '1.5', textAlign: 'left' }}>
         <span>대여 시 </span>
-        <button onClick={() => setShowTermsModal(true)} style={{ background: 'none', border: 'none', padding: 0, color: '#4a6cf7', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.82rem', textDecoration: 'underline' }}>
+        <button onClick={() => setShowTermsModal(true)} style={{ background: 'none', border: 'none', padding: 0, color: '#5b2bd6', fontWeight: 'bold', cursor: 'pointer', font: 'inherit', textDecoration: 'underline' }}>
           동아리 이용 약관
         </button>
         <span>에 동의한 것으로 간주합니다.</span>
@@ -406,7 +406,7 @@ function GameDetail() {
               onClick={() => openVideo(game.video_url)}
               className="action-btn video"
             >
-              📺 영상 가이드
+              영상 가이드
             </button>
           )}
           {game.manual_url && (
@@ -420,7 +420,7 @@ function GameDetail() {
               }}
               className="action-btn manual"
             >
-              📖 설명서 보기
+              설명서 보기
             </button>
           )}
         </div>
@@ -432,37 +432,35 @@ function GameDetail() {
         {/* 플레이 가능 인원 */}
         {(game.min_players || game.max_players) && (
           <p className="detail-players">
-            👥 {game.min_players || "?"}~{game.max_players || "?"}명
+            {game.min_players && game.min_players === game.max_players ? `${game.min_players}명` : `${game.min_players || "?"}~${game.max_players || "?"}명`}
           </p>
         )}
 
         {/* 추천 문구 */}
         {game.recommendation_text && (
           <div className="detail-recommendation">
-            💡 {game.recommendation_text}
+            {game.recommendation_text}
           </div>
         )}
 
         <div className="detail-stats">
           <div>
             <div className="stat-label">난이도</div>
-            <div className="stat-value difficulty">{game.difficulty || "-"} <span className="stat-label">/ 5.0</span></div>
+            <div className="stat-value difficulty">{game.difficulty || "-"}<span className="stat-label"> / 5</span></div>
           </div>
           <div>
             <div className="stat-label">상태</div>
             <div className={`stat-value ${game.status === "대여가능" ? "status-available" : "status-unavailable"}`}>
               {game.status}
               {game.status === "대여가능" && game.available_count > 0 && (
-                <span className="stat-value status-available" style={{ fontSize: "0.8em", marginLeft: "5px" }}>
-                  ({game.available_count}{game.quantity >= 2 ? ` / ${game.quantity}` : ""}개 남음)
-                </span>
+                <span className="stat-sub">{game.available_count}{game.quantity >= 2 ? ` / ${game.quantity}` : ""}개 남음</span>
               )}
             </div>
           </div>
           {game.playingtime && (
             <div>
               <div className="stat-label">플레이 시간</div>
-              <div className="stat-value">⏱️ {game.playingtime}{typeof game.playingtime === 'number' ? '분' : ''}</div>
+              <div className="stat-value">{game.playingtime}{typeof game.playingtime === 'number' ? '분' : ''}</div>
             </div>
           )}
         </div>
@@ -534,8 +532,8 @@ function GameDetail() {
         ) : (
           <div className="review-input-box">
             <div className="review-header-row">
-              <div style={{ fontWeight: "bold", color: "#555" }}>
-                작성자: <span style={{ color: "#2c3e50" }}>{profile?.name || "익명"}</span>
+              <div style={{ fontWeight: "bold", color: "#5f5c6c" }}>
+                작성자: <span style={{ color: "#1d1a26" }}>{profile?.name || "익명"}</span>
               </div>
               <select
                 className="review-rating-select"
@@ -562,7 +560,7 @@ function GameDetail() {
                 disabled={isReviewSubmitting || cooldown > 0}
                 className="review-submit-btn"
                 style={{
-                  background: cooldown > 0 ? "#bdc3c7" : "#3498db",
+                  background: cooldown > 0 ? "#8f8b9c" : "#5b2bd6",
                   cursor: cooldown > 0 ? "not-allowed" : "pointer"
                 }}
               >
@@ -576,7 +574,7 @@ function GameDetail() {
       {/* 리뷰 목록 */}
       <div className="review-list">
         <h4 className="review-list-title">
-          📝 리뷰 ({reviews.length})
+          리뷰 ({reviews.length})
         </h4>
         {reviewsError && <div role="alert">리뷰를 불러오지 못했습니다. <button onClick={() => setReviewRefresh(value => value + 1)}>리뷰 다시 시도</button></div>}
         {isReviewsLoading ? <div>리뷰 불러오는 중...</div> : (
@@ -637,7 +635,7 @@ function GameDetail() {
             </div>
           ))
         )}
-        {reviews.length === 0 && !isReviewsLoading && !reviewsError && <div style={{ color: "#999", textAlign: "center", padding: "20px" }}>아직 리뷰가 없습니다. 첫 리뷰를 남겨주세요!</div>}
+        {reviews.length === 0 && !isReviewsLoading && !reviewsError && <div style={{ color: "#5f5c6c", textAlign: "center", padding: "20px" }}>아직 리뷰가 없습니다. 첫 리뷰를 남겨주세요!</div>}
       </div>
 
       {/* 유튜브 모달 */}
