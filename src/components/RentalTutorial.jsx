@@ -93,7 +93,7 @@ function RentalTutorial({ isOpen, onClose, onOpenReport }) {
             {
                 key: 'dibs',
                 icon: '⚡',
-                image: { src: '/tutorial/dibs.webp', alt: '게임 상세 아래쪽의 주황색 찜하기 버튼' },
+                image: { src: '/tutorial/dibs.webp', alt: '게임 상세 아래쪽의 찜하기 버튼' },
                 title: '찜하기',
                 body: (
                     <>

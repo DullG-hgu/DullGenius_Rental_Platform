@@ -131,75 +131,172 @@
 }
 
 .main-action-area {
+    /* 홈과 같은 값 (src/pages/Home.css 의 --home-*) */
+    --act-primary: #5b2bd6;
+    --act-primary-press: #4a21b5;
+    --act-soft: #f1ecfd;
+    --act-ink: #1d1a26;
+    --act-sub: #5f5c6c;
+    --act-line: #e3deee;
+    --act-warn: #a3470a;
     margin-top: 20px;
+    text-align: left;
 }
 
 .main-btn {
     width: 100%;
-    padding: 15px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1em;
-    font-weight: bold;
+    min-height: 52px;
+    padding: 14px 16px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
+    transition: background-color 0.15s ease-out, transform 0.1s ease-out;
 }
 
-.main-btn:active {
+.main-btn:active:not(:disabled) {
     transform: scale(0.98);
 }
 
+.main-btn:focus-visible,
+.action-link:focus-visible {
+    outline: 2px solid var(--act-primary);
+    outline-offset: 2px;
+}
+
 .main-btn.rent {
-    background: linear-gradient(135deg, #F39C12 0%, #D35400 100%);
-    /* [FIX] Rich Gradient */
-    color: white;
-    box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
-    /* Stronger glow */
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-}
-
-.main-btn.rent::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: 0.5s;
-    z-index: -1;
-}
-
-.main-btn.rent:hover::before {
-    left: 100%;
-    /* Shine effect on hover */
+    background: var(--act-primary);
+    color: #ffffff;
 }
 
 .main-btn.rent:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(243, 156, 18, 0.5);
+    background: var(--act-primary-press);
 }
 
 .main-btn.cancel {
-    background: #e74c3c;
-    color: white;
-    box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3);
+    background: #ffffff;
+    border-color: var(--act-line);
+    color: var(--act-ink);
+}
+
+.main-btn.cancel:hover {
+    background: var(--act-soft);
 }
 
 .main-btn.using {
-    background: #7f8c8d;
-    /* [FIX] Green -> Gray */
-    color: white;
+    background: #eeecf3;
+    color: var(--act-sub);
     cursor: not-allowed;
-    opacity: 0.8;
 }
 
 .main-btn.miss {
-    background: #95a5a6;
-    color: white;
+    background: #ffffff;
+    border-color: var(--act-line);
+    color: var(--act-ink);
+}
+
+.action-hint {
+    margin: 10px 2px 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--act-sub);
+    text-align: center;
+    text-wrap: balance;
+}
+
+.action-note {
+    padding: 16px;
+    border: 1px solid var(--act-line);
+    border-radius: 12px;
+    background: #ffffff;
+    color: var(--act-ink);
+}
+
+.action-note strong {
+    display: block;
+    font-size: 1.05rem;
+}
+
+.action-note p {
+    margin: 6px 0 0;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--act-sub);
+}
+
+.action-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--act-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.action-link:disabled {
+    color: var(--act-sub);
+    text-decoration: none;
+    cursor: default;
+}
+
+.pickup-panel {
+    padding: 16px;
+    border: 1px solid var(--act-line);
+    border-radius: 12px;
+    background: var(--act-soft);
+    color: var(--act-ink);
+}
+
+.pickup-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px 12px;
+    margin: 0;
+}
+
+.pickup-head strong {
+    font-size: 1.125rem;
+}
+
+.pickup-left {
+    font-weight: 700;
+    color: var(--act-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.pickup-steps {
+    margin: 12px 0 0;
+    padding-left: 1.4em;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+.pickup-steps li + li {
+    margin-top: 4px;
+}
+
+.pickup-note {
+    margin: 12px 0 14px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--act-sub);
+}
+
+.pickup-note.is-warn {
+    font-weight: 700;
+    color: var(--act-warn);
 }
 
 /* 리뷰 섹션 */

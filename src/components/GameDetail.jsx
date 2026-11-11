@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, sendLog } from '../api';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, sendLog, fetchPaymentCheckEnabled } from '../api';
 import { TEXTS } from '../constants';
 import { translateGenre } from '../constants/genreMap';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,13 +14,41 @@ import { fetchQuizBadges } from '../api_fun';
 import InfoModal from './InfoModal';
 import LazyImage from './common/LazyImage'; // [NEW] Lazy Image
 import { getOptimizedImageUrl } from '../utils/imageOptimizer';
+import { isPaidMember } from '../lib/membership';
+import { rentalDDayLabel } from '../lib/rentalDue';
+import { CLUB_INFO } from '../infoData';
 import './GameDetail.css'; // [NEW] External CSS
+
+const ROOM = CLUB_INFO.location.trim().replace(/\.$/, '');
+const KST_DAY = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric' });
+const KST_TIME = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false });
+
+/** 수령 마감까지 남은 시간: 「27분」. 1분 미만도 「1분」으로 올려 보여 준다 */
+const minutesLeft = (dueDate, nowMs) => Math.max(1, Math.ceil((Date.parse(dueDate) - nowMs) / 60000));
+
+/**
+ * 남이 잡고 있는 게임이 언제 풀리는지 한 줄. 알 수 없으면 null.
+ * rentals 의 due_date 는 비회원에게도 열려 있는 컬럼이다 (이름·user_id 는 쓰지 않는다).
+ */
+const describeReturn = (rentals, nowMs) => {
+  const active = (rentals || []).filter(r => r && !r.returned_at && r.due_date && !Number.isNaN(Date.parse(r.due_date)));
+  const byDue = (a, b) => Date.parse(a.due_date) - Date.parse(b.due_date);
+  const rent = active.filter(r => r.type === 'RENT').sort(byDue)[0];
+  if (rent) {
+    const due = Date.parse(rent.due_date);
+    // 00:00 마감은 「그 전날 밤 12시」 — rentalDue.js 와 같은 기준으로 1ms 전 날짜를 반납일로 본다
+    return due > nowMs ? `반납 예정일은 ${KST_DAY.format(new Date(due - 1))}이에요.` : '반납 기한이 지난 대여예요. 돌아오는 날은 아직 알 수 없어요.';
+  }
+  const dibs = active.filter(r => r.type === 'DIBS' && Date.parse(r.due_date) > nowMs).sort(byDue)[0];
+  if (dibs) return `다른 부원이 찜했어요. ${KST_TIME.format(new Date(dibs.due_date))}까지 받아 가지 않으면 다시 풀려요.`;
+  return null;
+};
 
 function GameDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile } = useAuth();
+  const { user, profile, roles, refreshProfile } = useAuth();
   const { showToast } = useToast();
   const { games, loading: gamesLoading, error: gamesError, refreshGames } = useGameData();
   const { loading: authLoading } = useAuth();
@@ -39,6 +67,10 @@ function GameDetail() {
   const gameError = globalGame ? gamesError : currentDetail?.error;
   const myRental = game?.rentals?.find(rental => user && rental.user_id === user.id && !rental.returned_at &&
     (rental.type === 'RENT' || (rental.type === 'DIBS' && Date.parse(rental.due_date) > Date.now())));
+  // 상태 계산이 대표 대여자만 넘겨 주는 경우(renterId)까지 내 찜으로 본다
+  const isMyDibs = myRental?.type === 'DIBS' ||
+    (!myRental && (game?.status === "예약됨" || game?.status === "찜") && Boolean(user) && String(game.renterId) === String(user.id));
+  const returnHint = game && !myRental ? describeReturn(game.rentals, Date.now()) : null;
   const [newReview, setNewReview] = useState({ rating: "5", comment: "" });
   const [cooldown, setCooldown] = useState(0);
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
@@ -58,6 +90,45 @@ function GameDetail() {
     subContent: null,
   });
   const [showTermsModal, setShowTermsModal] = useState(false);
+
+  // 회비 검사: 서버는 찜을 받아 주고 키오스크 수령에서만 막는다. 걸어간 뒤에 거절당하지 않게 화면에서 먼저 막는다.
+  // 검사 토글(무료 대여 기간이면 꺼짐)·면제 역할을 서버와 같은 기준으로 본다. 설정을 아직 못 읽었으면(null) 막지 않는다.
+  const isMember = isPaidMember(user, profile, roles);
+  const [paymentCheck, setPaymentCheck] = useState(null);
+  const [isRecheckingDues, setIsRecheckingDues] = useState(false);
+  const duesBlocked = Boolean(user) && !isMember && paymentCheck === true;
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (authLoading || !user || isMember) return;
+    let active = true;
+    fetchPaymentCheckEnabled()
+      .then(enabled => { if (active) setPaymentCheck(enabled); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [authLoading, user, isMember]);
+
+  // 찜 수령 마감 카운트다운 — 내 찜이 있을 때만 돈다
+  const myDibsDue = myRental?.type === 'DIBS' ? myRental.due_date : null;
+  useEffect(() => {
+    if (!myDibsDue) return;
+    setNowMs(Date.now());
+    const timer = setInterval(() => setNowMs(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, [myDibsDue]);
+
+  const recheckDues = async () => {
+    if (isRecheckingDues) return;
+    setIsRecheckingDues(true);
+    try {
+      await refreshProfile?.();
+      setPaymentCheck(await fetchPaymentCheckEnabled());
+    } catch {
+      showToast("납부 상태를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.", { type: "error" });
+    } finally {
+      setIsRecheckingDues(false);
+    }
+  };
 
   const showConfirmModal = (title, message, onConfirm, type = "info", subContent = null) => {
     setConfirmModal({ isOpen: true, title, message, onConfirm, type, subContent });
@@ -150,11 +221,12 @@ function GameDetail() {
 
   const handleRent = async () => {
     if (!user) {
-      showConfirmModal("로그인 필요", "로그인이 필요합니다. 로그인 페이지로 이동할까요?", () => {
+      showConfirmModal("로그인 필요", "찜하려면 덜지니어스 부원 계정으로 로그인해야 해요.\n로그인 화면으로 이동할까요?", () => {
         navigate("/login", { state: { from: location.pathname + location.search } });
       }, "info");
       return;
     }
+    if (duesBlocked) return;
 
     const termsNotice = (
       <div style={{ marginTop: '12px', padding: '8px 12px', background: '#f0f4ff', borderRadius: '8px', border: '1px solid #d0d9f0', fontSize: '0.82rem', color: '#555', lineHeight: '1.5', textAlign: 'left' }}>
@@ -168,7 +240,7 @@ function GameDetail() {
 
     showConfirmModal(
       "찜하기 확인",
-      `'${game.name}'을(를) 찜하시겠습니까?\n30분 내로 동아리방에서 수령해야 합니다.`,
+      `'${game.name}'을(를) 찜할까요?\n30분 안에 동아리방(${ROOM}) 태블릿에서 받아야 해요.`,
       async () => {
         try {
           const result = await dibsGame(game.id, user.id);
@@ -176,16 +248,12 @@ function GameDetail() {
           if (result.success) {
             await refreshGames({ gamesOnly: true });
             setRetry(value => value + 1);
-            showToast("찜 완료! 30분 내에 수령해주세요.", {
-              showButton: true,
-              buttonText: "마이페이지로 가기",
-              onButtonClick: () => navigate('/mypage')
-            });
+            showToast("찜 완료. 아래 안내대로 30분 안에 받아 주세요.");
           } else {
-            showToast(result.message || "찜하기 실패", { type: "error" });
+            showToast(result.message || "찜하지 못했어요.", { type: "error" });
           }
-        } catch (e) {
-          showToast("오류 발생: " + (e.message || "알 수 없는 오류"), { type: "error" });
+        } catch {
+          showToast("찜하지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.", { type: "error" });
         }
       },
       "primary",
@@ -196,7 +264,7 @@ function GameDetail() {
   const handleCancelDibs = async () => {
     showConfirmModal(
       "찜 취소",
-      `'${game.name}' 찜을 취소하시겠습니까?`,
+      `'${game.name}' 찜을 취소할까요?`,
       async () => {
         try {
           const result = await cancelDibsGame(game.id, user.id);
@@ -205,10 +273,10 @@ function GameDetail() {
             setRetry(value => value + 1);
             showToast("찜이 취소되었습니다.");
           } else {
-            showToast(result.message || "취소 실패", { type: "error" });
+            showToast(result.message || "찜을 취소하지 못했어요.", { type: "error" });
           }
-        } catch (e) {
-          showToast("오류 발생: " + (e.message || "알 수 없는 오류"), { type: "error" });
+        } catch {
+          showToast("찜을 취소하지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.", { type: "error" });
         }
       },
       "danger"
@@ -404,29 +472,53 @@ function GameDetail() {
 
         <div className="main-action-area">
           {game.status === "대여 불가" ? (
-            <button disabled className="main-btn using" style={{ backgroundColor: "#95a5a6", cursor: "not-allowed", border: "none" }}>
-              🚫 대여 불가 (열람 전용)
-            </button>
-          ) : myRental?.type === 'DIBS' ? (
-            <button onClick={handleCancelDibs} className="main-btn cancel">❌ 예약 취소</button>
+            <button disabled className="main-btn using">대여 불가 (열람 전용)</button>
+          ) : isMyDibs ? (
+            <section className="pickup-panel" aria-label="찜 수령 안내">
+              <p className="pickup-head">
+                <strong>찜 완료</strong>
+                {myDibsDue && <span className="pickup-left">수령 마감까지 {minutesLeft(myDibsDue, nowMs)}분</span>}
+              </p>
+              <ol className="pickup-steps">
+                <li>동아리방({ROOM})으로 와요.</li>
+                <li>문을 열자마자 오른쪽 책상 위 태블릿에서 「찜 수령하기」를 눌러요.</li>
+                <li>내 이름을 골라요.</li>
+              </ol>
+              {duesBlocked ? (
+                <p className="pickup-note is-warn">이번 학기 회비 납부가 확인돼야 받을 수 있어요.</p>
+              ) : (
+                <p className="pickup-note">시간 안에 받지 않으면 찜이 자동으로 풀려요.</p>
+              )}
+              <button onClick={handleCancelDibs} className="main-btn cancel">찜 취소</button>
+            </section>
           ) : myRental?.type === 'RENT' ? (
-            <button disabled className="main-btn using">🔒 이미 이용 중인 게임입니다</button>
+            <div className="action-note">
+              <strong>내가 빌린 게임</strong>
+              <p>{rentalDDayLabel(myRental.due_date)}</p>
+              <Link to="/mypage" className="action-link">마이페이지에서 대여 확인</Link>
+            </div>
           ) : game.status === "대여가능" ? (
-            <button onClick={handleRent} className="main-btn rent">
-              ⚡ 찜하기 (30분)
-            </button>
-          ) : (game.status === "예약됨" || game.status === "찜") && user && String(game.renterId) === String(user.id) ? (
-            <button onClick={handleCancelDibs} className="main-btn cancel">
-              ❌ 예약 취소
-            </button>
+            duesBlocked ? (
+              <div className="action-note">
+                <strong>회비 납부 후 대여 가능</strong>
+                <p>이번 학기 회비 납부가 확인되면 찜할 수 있어요. 납부 방법은 운영진에게 문의해 주세요.</p>
+                <button onClick={recheckDues} disabled={isRecheckingDues} className="action-link">
+                  {isRecheckingDues ? "확인하는 중" : "방금 냈다면 다시 확인"}
+                </button>
+              </div>
+            ) : (
+              <>
+                <button onClick={handleRent} className="main-btn rent">찜하기 (30분)</button>
+                <p className="action-hint">30분 동안 잡아 두고, 동아리방 태블릿에서 받아 가요.</p>
+              </>
+            )
           ) : game.status === "예약됨" || game.status === "찜" || game.status === "대여중" || game.status === "이용중" ? (
-            <button disabled className="main-btn using">
-              🔒 이미 이용 중인 게임입니다
-            </button>
+            <>
+              <button disabled className="main-btn using">지금은 빌릴 수 없어요</button>
+              {returnHint && <p className="action-hint">{returnHint}</p>}
+            </>
           ) : (
-            <button onClick={handleMiss} className="main-btn miss">
-              😢 아쉬워요 (입고 요청)
-            </button>
+            <button onClick={handleMiss} className="main-btn miss">아쉬워요 (입고 요청)</button>
           )}
         </div>
       </div>
