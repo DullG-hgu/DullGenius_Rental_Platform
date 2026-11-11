@@ -14,7 +14,7 @@ import RentalTutorial from '../components/RentalTutorial';
 import PoweredByBGG from '../components/PoweredByBGG';
 import Header from '../components/Header';
 import { sendLog, fetchOfficeInfo, fetchPaymentCheckEnabled } from '../api';
-import { LINKS } from '../infoData';
+import { LINKS, CLUB_INFO } from '../infoData';
 import { FUN_ITEMS } from '../fun/funItems';
 import { isPaidMember } from '../lib/membership';
 import { HomeGameCard, RecommendationDeck } from './home/HomeSections';
@@ -185,7 +185,7 @@ const Home = () => {
             {needsDuesCheck && paymentCheck === true && (
                 <p className="home-dues-note" role="note">
                     <strong>이번 학기 회비 납부 확인 전이에요.</strong>
-                    <span>납부가 확인되면 찜하고 빌릴 수 있어요.</span>
+                    <span>납부가 확인되면 찜하고 빌릴 수 있어요. 회비 계좌는 게임 상세의 찜 버튼 자리에서 볼 수 있어요.</span>
                 </p>
             )}
             {!authLoading && !isPaidUser && (
@@ -205,6 +205,11 @@ const Home = () => {
                         <span aria-hidden="true">→</span>
                     </a>
                 </div>
+            )}
+
+            {/* 오피스아워가 아닐 때: 언제 가면 되는지 한 줄 */}
+            {!isOfficeOpen && (
+                <p className="home-room-note">동아리방은 {CLUB_INFO.roomDays}에 이용할 수 있어요.</p>
             )}
 
             <section className="home-search">

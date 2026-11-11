@@ -149,7 +149,7 @@ function Signup() {
               aria-describedby="signup-phone-hint"
               required
             />
-            <p id="signup-phone-hint" className="auth-hint">숫자만 (예: 01012345678)</p>
+            <p id="signup-phone-hint" className="auth-hint">숫자만 (예: 01012345678). 연체·미반납 연락과 총동아리연합회 제출 명단에 써요.</p>
           </div>
 
           <button type="submit" className="auth-submit" disabled={loading}>

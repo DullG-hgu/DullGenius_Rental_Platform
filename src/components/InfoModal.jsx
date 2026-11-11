@@ -176,8 +176,9 @@ function InfoModal({ isOpen, onClose, initialTab = 'intro' }) {
                 return (
                     <div style={styles.tabContent}>
                         <h3>{CLUB_INFO.name}</h3>
-                        <p><strong>🕒 오피스아워:</strong> {CLUB_INFO.officeHour}</p>
-                        <p><strong>📍 장소:</strong> {CLUB_INFO.location}</p>
+                        <p><strong>동아리방 이용:</strong> {CLUB_INFO.roomDays}</p>
+                        <p><strong>학기 초 오피스아워:</strong> {CLUB_INFO.officeHour}</p>
+                        <p><strong>장소:</strong> {CLUB_INFO.location}</p>
                         <hr style={styles.divider} />
                         <h4>📞 연락처</h4>
                         <p>📧 이메일: <a href={`mailto:${CONTACTS.email}`}>{CONTACTS.email}</a></p>

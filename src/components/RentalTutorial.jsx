@@ -81,12 +81,19 @@ function RentalTutorial({ isOpen, onClose, onOpenReport }) {
             {
                 key: 'search',
                 icon: '🔍',
-                image: { src: '/tutorial/search.webp', alt: '검색 화면 맨 위의 게임 이름 검색창' },
+                image: { src: '/tutorial/search.webp', alt: '검색 화면 맨 위의 검색창' },
                 title: '게임 찾기',
                 body: (
                     <>
                         <p>검색창이나 카테고리로 빌리고 싶은 게임을 찾아요.</p>
                         <p>게임마다 <strong>대여 가능 · 찜 · 대여중</strong> 상태가 표시돼요.</p>
+                        {!isMember && (
+                            <div className="rt-actions">
+                                <button type="button" className="rt-btn" onClick={() => setIndex(Number.MAX_SAFE_INTEGER)}>
+                                    부원이 아니라면 빌리는 방법 먼저 보기 →
+                                </button>
+                            </div>
+                        )}
                     </>
                 ),
             },
@@ -122,7 +129,8 @@ function RentalTutorial({ isOpen, onClose, onOpenReport }) {
                 body: (
                     <>
                         <p>동아리방({ROOM}) 문을 열자마자 <strong>오른쪽 책상 위 태블릿</strong>에서 「찜 수령하기」를 누르고 내 이름을 골라요.</p>
-                        <p>💳 <strong>회비를 낸 부원만</strong> 빌릴 수 있어요. 회비는 학기 초에 따로 안내해요.</p>
+                        <p>동아리방은 <strong>{CLUB_INFO.roomDays}</strong>에 이용할 수 있어요.</p>
+                        <p><strong>회비를 낸 부원만</strong> 빌릴 수 있어요. 아직 안 냈다면 로그인한 뒤 게임 상세에서 회비 계좌를 볼 수 있어요.</p>
                     </>
                 ),
             },

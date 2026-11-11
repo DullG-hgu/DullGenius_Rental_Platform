@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchPaymentCheckEnabled, fetchOfficeHoursConfig, saveOfficeHoursConfig } from '../api';
+import { fetchPaymentCheckEnabled, fetchOfficeHoursConfig, saveOfficeHoursConfig, fetchDuesAccount, saveDuesAccount } from '../api';
 import { togglePaymentCheck } from '../api_members';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
@@ -17,6 +17,8 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
     const [officeBusy, setOfficeBusy] = useState(false);
     const [paymentCheckEnabled, setPaymentCheckEnabled] = useState(true);
     const [officeHoursConfig, setOfficeHoursConfig] = useState(null);
+    const [duesAccount, setDuesAccount] = useState({ bank: '', number: '', holder: '' });
+    const [duesSaving, setDuesSaving] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'info' });
     const showConfirmModal = (title, message, onConfirm, type = 'info') => setConfirmModal({ isOpen: true, title, message, onConfirm, type });
     const closeConfirmModal = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
@@ -33,8 +35,27 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
                 if (active) setLoadFailed(true);
             })
             .finally(() => { if (active) setLoading(false); });
+        // 회비 계좌는 따로 읽는다 — 실패해도 나머지 설정 화면은 그대로 쓴다
+        fetchDuesAccount()
+            .then((account) => { if (active && account) setDuesAccount(account); })
+            .catch(() => {});
         return () => { active = false; };
     }, []);
+
+    // 회비 계좌 저장 (회비 확인 전인 부원의 게임 상세에 표시된다)
+    const handleSaveDuesAccount = async () => {
+        if (duesSaving) return;
+        setDuesSaving(true);
+        try {
+            setDuesAccount(await saveDuesAccount(duesAccount));
+            showToast('회비 계좌가 저장되었습니다.', { type: 'success' });
+        } catch (e) {
+            console.error('[OfficeHoursTab] 회비 계좌 저장 실패:', e);
+            showToast('저장 실패: ' + e.message, { type: 'error' });
+        } finally {
+            setDuesSaving(false);
+        }
+    };
 
     const handleOfficeToggle = async () => {
         setOfficeBusy(true);
@@ -139,6 +160,37 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
                         }}
                     >
                         {paymentCheckEnabled ? '전체 회원 대여 허용' : '회비 검사 복원'}
+                    </button>
+                </div>
+            </div>
+
+            {/* 회비 계좌 */}
+            <div className="admin-card" style={{ marginTop: '20px' }}>
+                <h4 style={{ marginBottom: '8px' }}>회비 입금 계좌</h4>
+                <p style={{ color: 'var(--admin-text-sub)', fontSize: '0.9em', marginBottom: '16px' }}>
+                    회비 확인 전인 부원이 게임 상세에서 찜하려 할 때 이 계좌가 보입니다. 계좌가 바뀌면 여기서 고치세요.<br />
+                    계좌번호를 비워 두면 「납부 방법은 운영진에게 문의」로 표시됩니다.
+                </p>
+                <div className="admin-grid-auto">
+                    <label style={styles.duesField}>
+                        <span>은행</span>
+                        <input type="text" className="admin-input" value={duesAccount.bank} placeholder="예: 카카오뱅크"
+                            onChange={(e) => setDuesAccount(prev => ({ ...prev, bank: e.target.value }))} />
+                    </label>
+                    <label style={styles.duesField}>
+                        <span>계좌번호</span>
+                        <input type="text" inputMode="numeric" className="admin-input" value={duesAccount.number}
+                            onChange={(e) => setDuesAccount(prev => ({ ...prev, number: e.target.value }))} />
+                    </label>
+                    <label style={styles.duesField}>
+                        <span>예금주</span>
+                        <input type="text" className="admin-input" value={duesAccount.holder}
+                            onChange={(e) => setDuesAccount(prev => ({ ...prev, holder: e.target.value }))} />
+                    </label>
+                </div>
+                <div className="admin-btn-row" style={{ marginTop: '16px' }}>
+                    <button type="button" onClick={handleSaveDuesAccount} disabled={duesSaving} style={{ ...styles.toggleBtn, background: '#237a46' }}>
+                        {duesSaving ? '저장 중…' : '계좌 저장'}
                     </button>
                 </div>
             </div>
@@ -338,6 +390,13 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
 }
 
 const styles = {
+    duesField: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+        color: 'var(--admin-text-sub)',
+        fontSize: '0.9em'
+    },
     toggleContainer: {
         display: 'flex',
         flexWrap: 'wrap',

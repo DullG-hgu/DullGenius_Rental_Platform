@@ -380,6 +380,33 @@ export const fetchPaymentCheckEnabled = async () => {
   return true;
 };
 
+// 회비 입금 계좌 (app_config.dues_account = { bank, number, holder }).
+// 저장소가 공개라 코드·마이그레이션에 값을 적지 않는다 — 관리자 화면(오피스아워 탭)에서만 입력·수정한다.
+// 번호가 비어 있으면 null (화면은 「운영진에게 문의」로 대신한다).
+export const fetchDuesAccount = async () => {
+  const { data, error } = await supabase
+    .from('app_config')
+    .select('value')
+    .eq('key', 'dues_account')
+    .maybeSingle();
+  if (error) throw error;
+  const v = data?.value;
+  if (!v || typeof v !== 'object') return null;
+  const number = String(v.number ?? '').trim();
+  if (!number) return null;
+  return { bank: String(v.bank ?? '').trim(), number, holder: String(v.holder ?? '').trim() };
+};
+
+// [Admin] 회비 입금 계좌 저장
+export const saveDuesAccount = async ({ bank, number, holder }) => {
+  const value = { bank: String(bank ?? '').trim(), number: String(number ?? '').trim(), holder: String(holder ?? '').trim() };
+  const { error } = await supabase
+    .from('app_config')
+    .upsert({ key: 'dues_account', value }, { onConflict: 'key' });
+  if (error) throw error;
+  return value;
+};
+
 // 오피스아워 배너 설정 저장
 export const saveOfficeHoursConfig = async (config) => {
   const { error } = await supabase

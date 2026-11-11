@@ -8,7 +8,7 @@ import { setOfficeOpen } from '../src/api_members';
 const mocks = vi.hoisted(() => ({ auth: { user: { id: 'first' }, loading: false, hasRole: () => true, logout: vi.fn() }, showToast: vi.fn() }));
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => mocks.auth }));
 vi.mock('../src/contexts/ToastContext', () => ({ useToast: () => ({ showToast: mocks.showToast }) }));
-vi.mock('../src/api', () => ({ fetchGames: vi.fn(), fetchConfig: vi.fn(), fetchOfficeStatus: vi.fn(), fetchUsers: vi.fn(), fetchPaymentCheckEnabled: vi.fn(), fetchOfficeHoursConfig: vi.fn() }));
+vi.mock('../src/api', () => ({ fetchGames: vi.fn(), fetchConfig: vi.fn(), fetchOfficeStatus: vi.fn(), fetchUsers: vi.fn(), fetchPaymentCheckEnabled: vi.fn(), fetchDuesAccount: vi.fn(async () => null), saveDuesAccount: vi.fn(), fetchOfficeHoursConfig: vi.fn() }));
 vi.mock('../src/api_members', () => ({ setOfficeOpen: vi.fn(), setOfficeClosed: vi.fn() }));
 vi.mock('../src/admin/DashboardTab', () => ({ default: ({ games, users, onReload }) => <div>{games.map(g => <p key={g.id}>{g.name}</p>)}{users.map(u => <p key={u.id}>{u.name}</p>)}<button onClick={onReload}>reload games</button></div> }));
 vi.mock('../src/admin/AdminOverviewCard', () => ({ default: () => null }));

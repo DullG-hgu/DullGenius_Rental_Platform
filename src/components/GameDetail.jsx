@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, sendLog, fetchPaymentCheckEnabled } from '../api';
+import { fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, sendLog, fetchPaymentCheckEnabled, fetchDuesAccount } from '../api';
 import { TEXTS } from '../constants';
 import { translateGenre } from '../constants/genreMap';
 import { useAuth } from '../contexts/AuthContext';
@@ -98,6 +98,14 @@ function GameDetail() {
   const [isRecheckingDues, setIsRecheckingDues] = useState(false);
   const duesBlocked = Boolean(user) && !isMember && paymentCheck === true;
   const [nowMs, setNowMs] = useState(() => Date.now());
+  // 회비 계좌는 관리자 설정값 — 막힌 사람에게만 읽어 온다. 없거나 못 읽으면 문의 안내로 대신한다
+  const [duesAccount, setDuesAccount] = useState(null);
+  useEffect(() => {
+    if (!duesBlocked) return;
+    let active = true;
+    fetchDuesAccount().then(account => { if (active) setDuesAccount(account); }).catch(() => {});
+    return () => { active = false; };
+  }, [duesBlocked]);
 
   useEffect(() => {
     if (authLoading || !user || isMember) return;
@@ -116,6 +124,15 @@ function GameDetail() {
     const timer = setInterval(() => setNowMs(Date.now()), 15000);
     return () => clearInterval(timer);
   }, [myDibsDue]);
+
+  const copyDuesAccount = async () => {
+    try {
+      await navigator.clipboard.writeText(duesAccount.number);
+      showToast("계좌번호를 복사했어요.");
+    } catch {
+      showToast("복사하지 못했어요. 번호를 길게 눌러 복사해 주세요.", { type: "warning" });
+    }
+  };
 
   const recheckDues = async () => {
     if (isRecheckingDues) return;
@@ -478,7 +495,7 @@ function GameDetail() {
                 {myDibsDue && <span className="pickup-left">수령 마감까지 {minutesLeft(myDibsDue, nowMs)}분</span>}
               </p>
               <ol className="pickup-steps">
-                <li>동아리방({ROOM})으로 와요.</li>
+                <li>동아리방({ROOM})으로 와요. {CLUB_INFO.roomDays}에 이용할 수 있어요.</li>
                 <li>문을 열자마자 오른쪽 책상 위 태블릿에서 「찜 수령하기」를 눌러요.</li>
                 <li>내 이름을 골라요.</li>
               </ol>
@@ -499,7 +516,20 @@ function GameDetail() {
             duesBlocked ? (
               <div className="action-note">
                 <strong>회비 납부 후 대여 가능</strong>
-                <p>이번 학기 회비 납부가 확인되면 찜할 수 있어요. 납부 방법은 운영진에게 문의해 주세요.</p>
+                <p>이번 학기 회비 납부가 확인되면 찜할 수 있어요.</p>
+                {duesAccount ? (
+                  <>
+                    <p className="dues-account">
+                      <span>회비 계좌</span>
+                      <strong>{duesAccount.bank} {duesAccount.number}</strong>
+                      {duesAccount.holder && <span>예금주 {duesAccount.holder}</span>}
+                    </p>
+                    <button onClick={copyDuesAccount} className="action-link">계좌번호 복사</button>
+                    <p>입금 뒤 운영진이 확인하면 반영돼요.</p>
+                  </>
+                ) : (
+                  <p>납부 방법은 운영진에게 문의해 주세요.</p>
+                )}
                 <button onClick={recheckDues} disabled={isRecheckingDues} className="action-link">
                   {isRecheckingDues ? "확인하는 중" : "방금 냈다면 다시 확인"}
                 </button>
@@ -507,7 +537,7 @@ function GameDetail() {
             ) : (
               <>
                 <button onClick={handleRent} className="main-btn rent">찜하기 (30분)</button>
-                <p className="action-hint">30분 동안 잡아 두고, 동아리방 태블릿에서 받아 가요.</p>
+                <p className="action-hint">30분 동안 잡아 두고, 동아리방 태블릿에서 받아 가요.<br />동아리방 이용일은 {CLUB_INFO.roomDays}이에요.</p>
               </>
             )
           ) : game.status === "예약됨" || game.status === "찜" || game.status === "대여중" || game.status === "이용중" ? (

@@ -3,20 +3,20 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import GameDetail from '../src/components/GameDetail';
-import { fetchGameById, fetchReviews, addReview, deleteReview, fetchPaymentCheckEnabled } from '../src/api';
+import { fetchGameById, fetchReviews, addReview, deleteReview, fetchPaymentCheckEnabled, fetchDuesAccount } from '../src/api';
 const state = vi.hoisted(() => ({ games: [], loading: false, error: null, refreshGames: vi.fn() }));
 vi.mock('../src/contexts/GameDataContext', () => ({ useGameData: () => state }));
 const auth = vi.hoisted(() => ({ user: null, profile: null, loading: false }));
 const showToast = vi.hoisted(() => vi.fn());
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('../src/contexts/ToastContext', () => ({ useToast: () => ({ showToast }) }));
-vi.mock('../src/api', () => ({ fetchGameById: vi.fn(), fetchReviews: vi.fn(), increaseViewCount: vi.fn(), sendLog: vi.fn(), sendMiss: vi.fn(), addReview: vi.fn(), updateReview: vi.fn(), deleteReview: vi.fn(), dibsGame: vi.fn(), cancelDibsGame: vi.fn(), fetchPaymentCheckEnabled: vi.fn() }));
+vi.mock('../src/api', () => ({ fetchGameById: vi.fn(), fetchReviews: vi.fn(), increaseViewCount: vi.fn(), sendLog: vi.fn(), sendMiss: vi.fn(), addReview: vi.fn(), updateReview: vi.fn(), deleteReview: vi.fn(), dibsGame: vi.fn(), cancelDibsGame: vi.fn(), fetchPaymentCheckEnabled: vi.fn(), fetchDuesAccount: vi.fn(async () => null) }));
 vi.mock('../src/components/InfoModal', () => ({ default: () => null }));
 const available = { id: 1, name: 'Current game', status: '대여가능', rentals: [], quantity: 1, available_count: 1 };
 const App = () => <MemoryRouter initialEntries={[{ pathname: '/game/1', state: { game: { ...available, status: '대여중' } } }]}><Routes><Route path="/game/:id" element={<GameDetail />} /></Routes></MemoryRouter>;
 beforeEach(() => {
   vi.resetAllMocks(); auth.user = null; auth.profile = null; auth.roles = []; auth.refreshProfile = vi.fn(); window.scrollTo = vi.fn(); state.games = []; state.loading = false; state.error = null;
-  fetchReviews.mockResolvedValue([]); fetchGameById.mockResolvedValue(null); fetchPaymentCheckEnabled.mockResolvedValue(true);
+  fetchReviews.mockResolvedValue([]); fetchGameById.mockResolvedValue(null); fetchPaymentCheckEnabled.mockResolvedValue(true); fetchDuesAccount.mockResolvedValue(null);
 });
 afterEach(cleanup);
 it('follows refreshed shared inventory instead of route-state snapshots', async () => {
@@ -74,6 +74,7 @@ it('blocks dibs for an unpaid member while the dues check is on, and lets paid m
   const view = render(<App />);
   expect(await screen.findByText('회비 납부 후 대여 가능')).toBeTruthy();
   expect(screen.queryByText('찜하기 (30분)')).toBeNull();
+  expect(await screen.findByText('납부 방법은 운영진에게 문의해 주세요.')).toBeTruthy();
   auth.profile = { is_paid: true }; view.rerender(<App />);
   expect(await screen.findByText('찜하기 (30분)')).toBeTruthy();
 });
@@ -99,4 +100,11 @@ it('tells when a rented-out game is due back', async () => {
   state.games = [{ ...available, status: '대여중', available_count: 0, rentals: [{ type: 'RENT', due_date: '2099-03-05T15:00:00Z', returned_at: null }] }];
   render(<App />);
   expect(await screen.findByText('반납 예정일은 3월 5일이에요.')).toBeTruthy();
+});
+it('shows the dues account from admin settings to a blocked member', async () => {
+  fetchDuesAccount.mockResolvedValue({ bank: '시험은행', number: '000-0000', holder: '시험' });
+  state.games = [available]; auth.user = { id: 'member' }; auth.profile = { is_paid: false };
+  render(<App />);
+  expect(await screen.findByText('시험은행 000-0000')).toBeTruthy();
+  expect(screen.getByRole('button', { name: '계좌번호 복사' })).toBeTruthy();
 });

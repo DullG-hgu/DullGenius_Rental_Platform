@@ -7,7 +7,9 @@ import { TEXTS } from './constants';
 export const CLUB_INFO = {
     name: "한동대 보드게임 동아리 덜지니어스 (DullGenius)",
     officeHour: "1주차 월~금 18:00 ~ 21:00",
-    location: "학관 2층 231호, 동아리방 골목 운동장 방면. "
+    location: "학관 2층 231호, 동아리방 골목 운동장 방면. ",
+    // 동아리방을 쓸 수 있는 요일 (2026-11 기준). 바뀌면 여기만 고친다
+    roomDays: "월·수·금·토요일"
 };
 
 export const CONTACTS = {
