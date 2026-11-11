@@ -676,6 +676,11 @@
     outline-offset: 2px;
 }
 
+.action-note .dues-account .action-link {
+    align-self: flex-start;
+    margin-top: 0;
+}
+
 .action-note .dues-account {
     display: flex;
     flex-direction: column;

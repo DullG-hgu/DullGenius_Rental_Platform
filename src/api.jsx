@@ -380,26 +380,29 @@ export const fetchPaymentCheckEnabled = async () => {
   return true;
 };
 
-// 회비 입금 계좌 (app_config.dues_account = { bank, number, holder }).
+// 회비 입금 계좌 목록 (app_config.dues_account = [{ bank, number, holder }, ...]). 계좌가 여러 개일 수 있다.
 // 저장소가 공개라 코드·마이그레이션에 값을 적지 않는다 — 관리자 화면(오피스아워 탭)에서만 입력·수정한다.
-// 번호가 비어 있으면 null (화면은 「운영진에게 문의」로 대신한다).
-export const fetchDuesAccount = async () => {
+// 번호가 빈 줄은 버린다. 하나도 없으면 빈 배열 (화면은 「운영진에게 문의」로 대신한다).
+const normalizeDuesAccounts = (value) => {
+  const list = Array.isArray(value) ? value : (value && typeof value === 'object' ? [value] : []);
+  return list
+    .map((v) => ({ bank: String(v?.bank ?? '').trim(), number: String(v?.number ?? '').trim(), holder: String(v?.holder ?? '').trim() }))
+    .filter((v) => v.number);
+};
+
+export const fetchDuesAccounts = async () => {
   const { data, error } = await supabase
     .from('app_config')
     .select('value')
     .eq('key', 'dues_account')
     .maybeSingle();
   if (error) throw error;
-  const v = data?.value;
-  if (!v || typeof v !== 'object') return null;
-  const number = String(v.number ?? '').trim();
-  if (!number) return null;
-  return { bank: String(v.bank ?? '').trim(), number, holder: String(v.holder ?? '').trim() };
+  return normalizeDuesAccounts(data?.value);
 };
 
-// [Admin] 회비 입금 계좌 저장
-export const saveDuesAccount = async ({ bank, number, holder }) => {
-  const value = { bank: String(bank ?? '').trim(), number: String(number ?? '').trim(), holder: String(holder ?? '').trim() };
+// [Admin] 회비 입금 계좌 목록 저장
+export const saveDuesAccounts = async (accounts) => {
+  const value = normalizeDuesAccounts(accounts);
   const { error } = await supabase
     .from('app_config')
     .upsert({ key: 'dues_account', value }, { onConflict: 'key' });

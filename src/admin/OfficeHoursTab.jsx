@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchPaymentCheckEnabled, fetchOfficeHoursConfig, saveOfficeHoursConfig, fetchDuesAccount, saveDuesAccount } from '../api';
+import { fetchPaymentCheckEnabled, fetchOfficeHoursConfig, saveOfficeHoursConfig, fetchDuesAccounts, saveDuesAccounts } from '../api';
 import { togglePaymentCheck } from '../api_members';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
@@ -17,7 +17,7 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
     const [officeBusy, setOfficeBusy] = useState(false);
     const [paymentCheckEnabled, setPaymentCheckEnabled] = useState(true);
     const [officeHoursConfig, setOfficeHoursConfig] = useState(null);
-    const [duesAccount, setDuesAccount] = useState({ bank: '', number: '', holder: '' });
+    const [duesAccounts, setDuesAccounts] = useState([{ bank: '', number: '', holder: '' }]);
     const [duesSaving, setDuesSaving] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'info' });
     const showConfirmModal = (title, message, onConfirm, type = 'info') => setConfirmModal({ isOpen: true, title, message, onConfirm, type });
@@ -36,8 +36,8 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
             })
             .finally(() => { if (active) setLoading(false); });
         // 회비 계좌는 따로 읽는다 — 실패해도 나머지 설정 화면은 그대로 쓴다
-        fetchDuesAccount()
-            .then((account) => { if (active && account) setDuesAccount(account); })
+        fetchDuesAccounts()
+            .then((accounts) => { if (active && accounts.length) setDuesAccounts(accounts); })
             .catch(() => {});
         return () => { active = false; };
     }, []);
@@ -47,8 +47,9 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
         if (duesSaving) return;
         setDuesSaving(true);
         try {
-            setDuesAccount(await saveDuesAccount(duesAccount));
-            showToast('회비 계좌가 저장되었습니다.', { type: 'success' });
+            const saved = await saveDuesAccounts(duesAccounts);
+            setDuesAccounts(saved.length ? saved : [{ bank: '', number: '', holder: '' }]);
+            showToast(`회비 계좌 ${saved.length}개가 저장되었습니다.`, { type: 'success' });
         } catch (e) {
             console.error('[OfficeHoursTab] 회비 계좌 저장 실패:', e);
             showToast('저장 실패: ' + e.message, { type: 'error' });
@@ -56,6 +57,9 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
             setDuesSaving(false);
         }
     };
+
+    const setDuesField = (index, field, value) =>
+        setDuesAccounts(prev => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
 
     const handleOfficeToggle = async () => {
         setOfficeBusy(true);
@@ -169,26 +173,32 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
                 <h4 style={{ marginBottom: '8px' }}>회비 입금 계좌</h4>
                 <p style={{ color: 'var(--admin-text-sub)', fontSize: '0.9em', marginBottom: '16px' }}>
                     회비 확인 전인 부원이 게임 상세에서 찜하려 할 때 이 계좌가 보입니다. 계좌가 바뀌면 여기서 고치세요.<br />
-                    계좌번호를 비워 두면 「납부 방법은 운영진에게 문의」로 표시됩니다.
+                    계좌는 여러 개 넣을 수 있습니다. 계좌번호를 비운 줄은 저장할 때 빠지고, 하나도 없으면 「납부 방법은 운영진에게 문의」로 표시됩니다.
                 </p>
-                <div className="admin-grid-auto">
-                    <label style={styles.duesField}>
-                        <span>은행</span>
-                        <input type="text" className="admin-input" value={duesAccount.bank} placeholder="예: 카카오뱅크"
-                            onChange={(e) => setDuesAccount(prev => ({ ...prev, bank: e.target.value }))} />
-                    </label>
-                    <label style={styles.duesField}>
-                        <span>계좌번호</span>
-                        <input type="text" inputMode="numeric" className="admin-input" value={duesAccount.number}
-                            onChange={(e) => setDuesAccount(prev => ({ ...prev, number: e.target.value }))} />
-                    </label>
-                    <label style={styles.duesField}>
-                        <span>예금주</span>
-                        <input type="text" className="admin-input" value={duesAccount.holder}
-                            onChange={(e) => setDuesAccount(prev => ({ ...prev, holder: e.target.value }))} />
-                    </label>
-                </div>
+                {duesAccounts.map((account, index) => (
+                    <div key={index} className="admin-grid-auto" style={{ marginBottom: '12px' }}>
+                        <label style={styles.duesField}>
+                            <span>은행</span>
+                            <input type="text" className="admin-input" value={account.bank} placeholder="예: 카카오뱅크"
+                                onChange={(e) => setDuesField(index, 'bank', e.target.value)} />
+                        </label>
+                        <label style={styles.duesField}>
+                            <span>계좌번호</span>
+                            <input type="text" inputMode="numeric" className="admin-input" value={account.number}
+                                onChange={(e) => setDuesField(index, 'number', e.target.value)} />
+                        </label>
+                        <label style={styles.duesField}>
+                            <span>예금주</span>
+                            <input type="text" className="admin-input" value={account.holder}
+                                onChange={(e) => setDuesField(index, 'holder', e.target.value)} />
+                        </label>
+                    </div>
+                ))}
                 <div className="admin-btn-row" style={{ marginTop: '16px' }}>
+                    <button type="button" onClick={() => setDuesAccounts(prev => [...prev, { bank: '', number: '', holder: '' }])}
+                        style={{ ...styles.toggleBtn, background: 'transparent', color: 'var(--admin-text-main)', border: '1px solid var(--admin-border)' }}>
+                        계좌 추가
+                    </button>
                     <button type="button" onClick={handleSaveDuesAccount} disabled={duesSaving} style={{ ...styles.toggleBtn, background: '#237a46' }}>
                         {duesSaving ? '저장 중…' : '계좌 저장'}
                     </button>

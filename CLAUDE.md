@@ -220,5 +220,5 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 - Jev(TypeSafe 판정 API)는 **관리자 작성 시점에만** 쓴다: 게임 폼 「🤖 AI 장르 제안」(`netlify/functions/jev-genre-suggest.js`)과 읽기 전용 `node scripts/jev_genre_report.mjs`(→ `database/genre_review/`).
 - **사용자·키오스크 경로에서 Jev를 부르지 않는다.** 구독 해지·잔액 0·장애여도 제안 칩만 사라지고 서비스는 그대로여야 한다. 실패는 200 + `{ available: false, reason }`.
 - 결과는 제안이다. 자동 적용 금지 — 운영자가 칩을 골라 넣는다. 정규 장르 목록은 `netlify/functions/_shared/jevGenres.js`의 `CANONICAL_GENRES` 한 곳.
-- 키 `JEV_AI_API_KEY`(jev-ai.pro)·`JEV_API_KEY`(OpenRouter)는 서버 전용(Netlify 함수·`.env.local`). 보내는 건 게임 한글명과 BGG 공개 정보뿐 — 회원 이름·전화·후기는 보내지 않는다(jev-ai.pro는 제출 텍스트를 보관하고, OpenRouter는 TypeSafe로 전송한다).
-- 공급자 순서: jev-ai.pro(`jev-1.13.0`, 구독 소진용) 먼저 → 키 없음·401·402면 OpenRouter `api/alpha/decisions` + `typesafe/jev-1.13` (2026-10-13). 그 외 실패는 재전송하지 않는다(이중 과금). `typesafe/jev-router`는 Jev가 아닌 모델로 라우팅되므로 금지.
+- 키 `JEV_API_KEY`(OpenRouter)는 서버 전용(Netlify 함수·`.env.local`). `JEV_AI_API_KEY`(jev-ai.pro)는 옛 공급자 키다. 보내는 건 게임 한글명과 BGG 공개 정보뿐 — 회원 이름·전화·후기는 보내지 않는다(OpenRouter는 TypeSafe로 전송한다).
+- **공급자는 OpenRouter다 (2026-11-11~).** `api/alpha/decisions` + `typesafe/jev-1.13`, 키 `JEV_API_KEY`(Jev 전용 OpenRouter 키). 코드(`_shared/jevGenres.js`)에는 jev-ai.pro(`JEV_AI_API_KEY`)를 먼저 시도하는 옛 순서가 남아 있다 — 그 키가 없거나 401·402면 OpenRouter로 넘어가므로 동작은 같다. 그 외 실패는 재전송하지 않는다(이중 과금). `typesafe/jev-router`는 Jev가 아닌 모델로 라우팅되므로 금지.

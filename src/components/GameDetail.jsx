@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, sendLog, fetchPaymentCheckEnabled, fetchDuesAccount } from '../api';
+import { fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, sendLog, fetchPaymentCheckEnabled, fetchDuesAccounts } from '../api';
 import { TEXTS } from '../constants';
 import { translateGenre } from '../constants/genreMap';
 import { useAuth } from '../contexts/AuthContext';
@@ -99,11 +99,11 @@ function GameDetail() {
   const duesBlocked = Boolean(user) && !isMember && paymentCheck === true;
   const [nowMs, setNowMs] = useState(() => Date.now());
   // 회비 계좌는 관리자 설정값 — 막힌 사람에게만 읽어 온다. 없거나 못 읽으면 문의 안내로 대신한다
-  const [duesAccount, setDuesAccount] = useState(null);
+  const [duesAccounts, setDuesAccounts] = useState([]);
   useEffect(() => {
     if (!duesBlocked) return;
     let active = true;
-    fetchDuesAccount().then(account => { if (active) setDuesAccount(account); }).catch(() => {});
+    fetchDuesAccounts().then(accounts => { if (active) setDuesAccounts(accounts); }).catch(() => {});
     return () => { active = false; };
   }, [duesBlocked]);
 
@@ -125,9 +125,9 @@ function GameDetail() {
     return () => clearInterval(timer);
   }, [myDibsDue]);
 
-  const copyDuesAccount = async () => {
+  const copyDuesAccount = async (number) => {
     try {
-      await navigator.clipboard.writeText(duesAccount.number);
+      await navigator.clipboard.writeText(number);
       showToast("계좌번호를 복사했어요.");
     } catch {
       showToast("복사하지 못했어요. 번호를 길게 눌러 복사해 주세요.", { type: "warning" });
@@ -517,14 +517,16 @@ function GameDetail() {
               <div className="action-note">
                 <strong>회비 납부 후 대여 가능</strong>
                 <p>이번 학기 회비 납부가 확인되면 찜할 수 있어요.</p>
-                {duesAccount ? (
+                {duesAccounts.length > 0 ? (
                   <>
-                    <p className="dues-account">
-                      <span>회비 계좌</span>
-                      <strong>{duesAccount.bank} {duesAccount.number}</strong>
-                      {duesAccount.holder && <span>예금주 {duesAccount.holder}</span>}
-                    </p>
-                    <button onClick={copyDuesAccount} className="action-link">계좌번호 복사</button>
+                    {duesAccounts.map((account) => (
+                      <div key={account.number} className="dues-account">
+                        <span>회비 계좌{duesAccounts.length > 1 ? ' (아무 곳이나)' : ''}</span>
+                        <strong>{account.bank} {account.number}</strong>
+                        {account.holder && <span>예금주 {account.holder}</span>}
+                        <button onClick={() => copyDuesAccount(account.number)} className="action-link">계좌번호 복사</button>
+                      </div>
+                    ))}
                     <p>입금 뒤 운영진이 확인하면 반영돼요.</p>
                   </>
                 ) : (
