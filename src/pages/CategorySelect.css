@@ -199,8 +199,6 @@
 .trending-entrance-card {
     background: white;
     border: 1px solid #eee;
-    border-left: 4px solid #ff6b6b;
-    /* 불꽃 컨셉의 붉은색 포인트 */
     border-radius: 12px;
     padding: 15px 20px;
     display: flex;

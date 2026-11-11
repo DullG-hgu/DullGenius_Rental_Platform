@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'; // [NEW] Context 사용
 import { useToast } from '../contexts/ToastContext'; // [NEW]
 import { getAuthErrorMessage } from '../constants'; // [NEW] 에러 메시지 헬퍼
 import { takePendingRoute, getSafeReturnPath } from '../lib/pendingRoute';
+import './Auth.css';
 
 function Login() {
   const navigate = useNavigate();
@@ -51,54 +52,52 @@ function Login() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={{ marginBottom: "20px" }}>
-        <Link to="/" style={{ textDecoration: "none", color: "#666", fontSize: "0.9em", fontWeight: "bold" }}>← 메인으로 돌아가기</Link>
-      </div>
-      <h2 style={{ textAlign: "center", marginBottom: "30px" }}>🔐 로그인</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <input
-          type="text"
-          inputMode="numeric"
-          placeholder="학번 (예: 21500000)"
-          aria-label="학번"
-          autoComplete="username"
-          value={studentId}
-          onChange={(e) => setStudentId(e.target.value)}
-          style={styles.input}
-          required
-        />
-        <input
-          type="password"
-          placeholder="비밀번호"
-          aria-label="비밀번호"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={styles.input}
-          required
-        />
-        <button type="submit" style={styles.button} disabled={loading}>
-          {loading ? "로그인 중..." : "로그인"}
-        </button>
-      </form>
-      <div style={{ textAlign: "center", marginTop: "20px", fontSize: "0.9em", display: "flex", flexDirection: "column", gap: "10px" }}>
-        <div>
-          계정이 없으신가요? <Link to={`/signup${returnQuery}`} style={{ color: "#3498db" }}>회원가입</Link>
+    <div className="auth-page">
+      <div className="auth-inner">
+        <Link to="/" className="auth-back">← 메인으로 돌아가기</Link>
+        <h2 className="auth-title">로그인</h2>
+        <p className="auth-lead">덜지니어스 부원 계정으로 로그인해요.</p>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="auth-field">
+            <label htmlFor="login-student-id">학번</label>
+            <input
+              id="login-student-id"
+              type="text"
+              inputMode="numeric"
+              placeholder="예: 21500000"
+              autoComplete="username"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              required
+            />
+          </div>
+          <div className="auth-field">
+            <label htmlFor="login-password">비밀번호</label>
+            <input
+              id="login-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="auth-submit" disabled={loading}>
+            {loading ? "로그인 중..." : "로그인"}
+          </button>
+        </form>
+
+        <div className="auth-foot">
+          <span>계정이 없으신가요?</span>
+          <Link to={`/signup${returnQuery}`} className="auth-link">회원가입</Link>
         </div>
-        <div style={{ marginTop: "5px" }}>
-          <Link to={`/reset-password${returnQuery}`} style={{ color: "#7f8c8d", fontSize: "0.9em", textDecoration: "none" }}>비밀번호를 잊으셨나요?</Link>
+        <div className="auth-foot">
+          <Link to={`/reset-password${returnQuery}`} className="auth-link">비밀번호를 잊으셨나요?</Link>
         </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: { maxWidth: "400px", margin: "100px auto", padding: "30px", border: "1px solid #ddd", borderRadius: "10px", backgroundColor: "#fff" },
-  form: { display: "flex", flexDirection: "column", gap: "15px" },
-  input: { padding: "12px", border: "1px solid #ddd", borderRadius: "5px", fontSize: "1em" },
-  button: { padding: "12px", backgroundColor: "#333", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold", fontSize: "1em" }
-};
 
 export default Login;

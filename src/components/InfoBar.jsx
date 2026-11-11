@@ -20,10 +20,10 @@ function InfoBar({ games, onOpenGuide }) {
                 {/* 상단: 핵심 액션 (크고 예쁜 버튼) */}
                 <div className="infobar-actions">
                     <button onClick={onOpenGuide} className="infobar-action-btn primary">
-                        <span className="action-icon">📖</span> 대여 안내
+                        대여 안내
                     </button>
                     <button onClick={() => openModal('report')} className="infobar-action-btn secondary">
-                        <span className="action-icon">🚨</span> 파손/문의
+                        파손/문의
                     </button>
                 </div>
 

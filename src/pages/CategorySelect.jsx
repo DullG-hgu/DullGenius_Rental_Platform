@@ -43,7 +43,7 @@ const CategorySelect = () => {
 
             {/* 인원수로 찾기 섹션 */}
             <div className="player-count-section">
-                <h3 className="section-subtitle">👥 인원수로 찾기</h3>
+                <h3 className="section-subtitle">인원수로 찾기</h3>
                 <div className="player-btn-grid">
                     {[['2', '2인'], ['3', '3인'], ['4', '4인'], ['5+', '5인 이상'], ['6+', '6인 이상'], ['8+', '8인 이상']].map(([value, label]) => (
                         <button
@@ -63,18 +63,17 @@ const CategorySelect = () => {
                     to="/search?type=trending"
                     className="trending-entrance-card"
                 >
-                    <div className="trending-entrance-icon">🔥</div>
                     <div className="trending-entrance-text">
                         <div className="entrance-title">요즘 뜨는 보드게임</div>
                         <div className="entrance-desc">Top 20 랭킹 보기</div>
                     </div>
-                    <div className="trending-entrance-arrow">➔</div>
+                    <div className="trending-entrance-arrow">→</div>
                 </Link>
             </div>
 
             {/* 상황별 추천 섹션 */}
             <div className="recommendation-section-cat">
-                <h3 className="section-subtitle">🎯 상황별 추천</h3>
+                <h3 className="section-subtitle">상황별 추천</h3>
                 {configError && (
                     <div role="alert">
                         <p>상황별 추천을 불러오지 못했습니다.</p>
@@ -90,12 +89,11 @@ const CategorySelect = () => {
                                 // 만약 필터로 적용하려면 로직 확인 필요. 현재는 query로 넘김.
                                 onClick={() => navigate(`/search?query=${encodeURIComponent(btn.value)}`)}
                                 className="theme-btn-cat"
-                                style={{ borderLeft: `4px solid ${btn.color}` }}
                             >
                                 <div className="theme-btn-content-cat">
                                     {btn.label.split("\\n").map((line, i) => <div key={i}>{line}</div>)}
                                 </div>
-                                <span className="theme-btn-arrow-cat">➔</span>
+                                <span className="theme-btn-arrow-cat">→</span>
                             </button>
                         ))}
                     </div>
@@ -103,7 +101,7 @@ const CategorySelect = () => {
             </div>
 
             <div className="category-section">
-                <h3 className="section-subtitle">📂 장르별 카테고리</h3>
+                <h3 className="section-subtitle">장르별 카테고리</h3>
                 <div className="category-grid">
                     {categories.map(cat => (
                         <Link

@@ -22,6 +22,14 @@
   box-sizing: border-box;
 }
 
+/* 폼 요소는 글꼴을 상속하지 않아 버튼만 브라우저 기본 글꼴로 나왔다 */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
 body {
   font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
   background-color: #ffffff;
@@ -200,20 +208,21 @@ a {
 
 /* 신청 버튼 (Vibrant Gradient) */
 .infobar-action-btn.primary {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: var(--dg-primary);
   color: white;
-  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+  box-shadow: none;
 }
 
 .infobar-action-btn.primary:hover {
-  box-shadow: 0 8px 20px rgba(79, 172, 254, 0.4);
+  background: var(--dg-primary-press);
+  box-shadow: none;
 }
 
 /* 신고 버튼 (Clean White with Border) */
 .infobar-action-btn.secondary {
   background: #ffffff;
-  color: #555;
-  border: 2px solid #f0f0f0;
+  color: var(--dg-ink);
+  border: 1px solid var(--dg-line);
 }
 
 .infobar-action-btn.secondary:hover {
@@ -240,9 +249,10 @@ a {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 0.85rem;
-  color: #999;
+  font-size: 0.875rem;
+  color: var(--dg-sub);
   padding: 5px;
+  min-height: 44px;
   transition: all 0.2s;
   font-weight: 500;
 }
@@ -253,14 +263,15 @@ a {
 }
 
 .link-divider {
+  display: none;
   color: #eee;
   font-size: 0.7rem;
 }
 
 /* 3. Copyright */
 .infobar-copyright {
-  font-size: 0.7rem;
-  color: #bbb;
+  font-size: 0.75rem;
+  color: var(--dg-sub);
   margin-top: 5px;
   font-weight: 400;
 }
