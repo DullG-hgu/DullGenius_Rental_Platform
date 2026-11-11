@@ -13,7 +13,7 @@ import InfoModal from '../components/InfoModal';
 import RentalTutorial from '../components/RentalTutorial';
 import PoweredByBGG from '../components/PoweredByBGG';
 import Header from '../components/Header';
-import { sendLog, fetchOfficeInfo } from '../api';
+import { sendLog, fetchOfficeInfo, fetchPaymentCheckEnabled } from '../api';
 import { LINKS } from '../infoData';
 import { FUN_ITEMS } from '../fun/funItems';
 import { isPaidMember } from '../lib/membership';
@@ -137,6 +137,15 @@ const Home = () => {
     }, []);
 
     const isPaidUser = isPaidMember(user, profile, roles);
+    // 로그인했지만 이번 학기 회비 확인 전인 부원에게만 알린다. 회비 검사가 꺼진 무료 대여 기간엔 알리지 않는다
+    const [paymentCheck, setPaymentCheck] = useState(null);
+    const needsDuesCheck = !authLoading && Boolean(user) && !isPaidUser;
+    useEffect(() => {
+        if (!needsDuesCheck) return;
+        let active = true;
+        fetchPaymentCheckEnabled().then((v) => { if (active) setPaymentCheck(v); }).catch(() => {});
+        return () => { active = false; };
+    }, [needsDuesCheck]);
     const browsableCount = useMemo(() => games.filter((g) => g.name && g.category !== 'TRPG').length, [games]);
     const officeIcon = isClosingSoon
         ? '⏰'
@@ -172,6 +181,12 @@ const Home = () => {
             {/* 로그인 부원: 「내 대여」(없으면 마이페이지 입구 한 줄) · 비부원(비로그인·회비 미납): 행사·단체 대여 / 부원 가입 */}
             {!authLoading && isPaidUser && (
                 <MyRentalsCard games={games} userId={user?.id} now={now} onClick={saveScroll} />
+            )}
+            {needsDuesCheck && paymentCheck === true && (
+                <p className="home-dues-note" role="note">
+                    <strong>이번 학기 회비 납부 확인 전이에요.</strong>
+                    <span>납부가 확인되면 찜하고 빌릴 수 있어요.</span>
+                </p>
             )}
             {!authLoading && !isPaidUser && (
                 <div className="home-entry-pair">

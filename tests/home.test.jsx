@@ -20,7 +20,7 @@ vi.mock('../src/api_fun', () => ({
     saveMyTier: () => Promise.resolve({ ok: true }),
     setTierPublic: () => Promise.resolve(true),
 }));
-vi.mock('../src/api', () => ({ sendLog: vi.fn(), fetchOfficeInfo }));
+vi.mock('../src/api', () => ({ sendLog: vi.fn(), fetchOfficeInfo, fetchPaymentCheckEnabled: vi.fn(async () => true) }));
 vi.mock('../src/components/Header', () => ({ default: () => null }));
 vi.mock('../src/components/InfoBar', () => ({ default: () => null }));
 vi.mock('../src/components/InfoModal', () => ({ default: () => null }));

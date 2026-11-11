@@ -198,7 +198,7 @@ function InfoModal({ isOpen, onClose, initialTab = 'intro' }) {
                         {!user ? (
                             <div style={styles.loginWarn}>
                                 <p>로그인이 필요한 기능입니다.</p>
-                                <p style={{ fontSize: '0.9em', color: '#666' }}>상단의 로그인 버튼을 이용해주세요.</p>
+                                <a href="/login" style={{ display: 'inline-flex', alignItems: 'center', minHeight: '44px', fontWeight: 'bold', color: '#5b2bd6', textDecoration: 'underline' }}>로그인하러 가기</a>
                             </div>
                         ) : (
                             <form onSubmit={handleReportSubmit} style={styles.form}>
@@ -243,7 +243,7 @@ function InfoModal({ isOpen, onClose, initialTab = 'intro' }) {
                         {!user ? (
                             <div style={styles.loginWarn}>
                                 <p>로그인이 필요한 기능입니다.</p>
-                                <p style={{ fontSize: '0.9em', color: '#666' }}>상단의 로그인 버튼을 이용해주세요.</p>
+                                <a href="/login" style={{ display: 'inline-flex', alignItems: 'center', minHeight: '44px', fontWeight: 'bold', color: '#5b2bd6', textDecoration: 'underline' }}>로그인하러 가기</a>
                             </div>
                         ) : (
                             <form onSubmit={handleRequestSubmit} style={styles.form}>

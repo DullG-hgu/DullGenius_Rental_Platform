@@ -44,3 +44,18 @@ code {
   scrollbar-width: none;
   /* Firefox */
 }
+
+/* 일반 사용자 화면 공용 색 (홈 개편 2026-09-29 의 --home-* 와 같은 값). 관리자·키오스크는 쓰지 않는다 */
+:root {
+  --dg-primary: #5b2bd6;
+  --dg-primary-press: #4a21b5;
+  --dg-soft: #f1ecfd;
+  --dg-ink: #1d1a26;
+  --dg-sub: #5f5c6c;
+  --dg-line: #e3deee;
+  --dg-bg: #faf9fd;
+  --dg-card: #ffffff;
+  --dg-ok: #1d7a3a;
+  --dg-warn: #a3470a;
+  --dg-danger: #b3261e;
+}

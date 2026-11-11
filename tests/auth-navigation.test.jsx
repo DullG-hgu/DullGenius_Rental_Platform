@@ -58,19 +58,19 @@ describe('login and recovery flow', () => {
     it('keeps the event destination through the signup link and successful signup', async () => {
         renderRoute('/login?redirect=%2Fevent%2Fteam%2FABC');
         fireEvent.click(screen.getByRole('link', { name: '회원가입' }));
-        fireEvent.change(screen.getByPlaceholderText('이름'), { target: { value: '진단용 회원' } });
-        fireEvent.change(screen.getByPlaceholderText('학번 (8자리)'), { target: { value: '00000000' } });
-        fireEvent.change(screen.getByPlaceholderText('비밀번호'), { target: { value: 'test-only' } });
-        fireEvent.change(screen.getByPlaceholderText('전화번호'), { target: { value: '01000000000' } });
+        fireEvent.change(screen.getByLabelText('이름'), { target: { value: '진단용 회원' } });
+        fireEvent.change(screen.getByLabelText('학번'), { target: { value: '00000000' } });
+        fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'test-only' } });
+        fireEvent.change(screen.getByLabelText('전화번호'), { target: { value: '01000000000' } });
         fireEvent.click(screen.getByRole('button', { name: '가입하기' }));
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('/event/team/ABC'));
     });
     it('sends a plain signup to the home welcome guide', async () => {
         renderRoute('/signup');
-        fireEvent.change(screen.getByPlaceholderText('이름'), { target: { value: '진단용 회원' } });
-        fireEvent.change(screen.getByPlaceholderText('학번 (8자리)'), { target: { value: '00000000' } });
-        fireEvent.change(screen.getByPlaceholderText('비밀번호'), { target: { value: 'test-only' } });
-        fireEvent.change(screen.getByPlaceholderText('전화번호'), { target: { value: '01000000000' } });
+        fireEvent.change(screen.getByLabelText('이름'), { target: { value: '진단용 회원' } });
+        fireEvent.change(screen.getByLabelText('학번'), { target: { value: '00000000' } });
+        fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'test-only' } });
+        fireEvent.change(screen.getByLabelText('전화번호'), { target: { value: '01000000000' } });
         fireEvent.click(screen.getByRole('button', { name: '가입하기' }));
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('/?welcome=1'));
     });

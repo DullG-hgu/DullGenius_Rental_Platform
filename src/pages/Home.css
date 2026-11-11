@@ -576,6 +576,26 @@
     gap: 12px;
 }
 
+/* 로그인했지만 이번 학기 회비 확인 전 */
+.home-dues-note {
+    margin: 12px 16px 0;
+    padding: 12px 16px;
+    border-radius: 16px;
+    border: 1px solid var(--home-line);
+    background: var(--home-card);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--home-sub);
+}
+
+.home-dues-note strong {
+    font-size: 0.9375rem;
+    color: var(--home-ink);
+}
+
 /* 비로그인 짝 카드 (2026-10-04): 왼쪽 행사·단체 대여 · 오른쪽 가입 */
 .home-entry-pair {
     display: grid;
