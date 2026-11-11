@@ -16,12 +16,12 @@ function FilterBar({
   renterFilter, setRenterFilter,
   renterOptions = [],
   ownerFilter, setOwnerFilter, // [NEW] props 추가
-  hideSearch = false
+  hideSearch = false, hideAvailable = false, hideReset = false
 }) {
   return (
     <div
-      className={isAdmin ? "filter-bar-container admin-filter-bar" : "filter-bar-container"}
-      style={isAdmin ? {} : styles.container}
+      className={isAdmin ? "filter-bar-container admin-filter-bar" : "filter-bar-container user-filter-bar"}
+      style={isAdmin || hideSearch ? {} : styles.container}
     >
 
       {/* 1. 검색창 (게임 이름/태그) */}
@@ -70,36 +70,36 @@ function FilterBar({
       <select
         value={selectedCategory}
         onChange={(e) => setSelectedCategory(e.target.value)}
-        className={isAdmin ? "admin-select" : ""}
-        style={isAdmin ? {} : styles.select}
+        className={isAdmin ? "admin-select" : `user-filter-select${selectedCategory !== "전체" ? " is-active" : ""}`}
+        style={isAdmin || hideSearch ? {} : styles.select}
         aria-label="카테고리 선택"
       >
-        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+        {categories.map(cat => <option key={cat} value={cat}>{!isAdmin && cat === "전체" ? "종류" : cat}</option>)}
       </select>
 
       {/* 4. 난이도 선택 */}
       <select
         value={difficultyFilter}
         onChange={(e) => setDifficultyFilter(e.target.value)}
-        className={isAdmin ? "admin-select" : ""}
-        style={isAdmin ? {} : styles.select}
+        className={isAdmin ? "admin-select" : `user-filter-select${difficultyFilter !== "전체" ? " is-active" : ""}`}
+        style={isAdmin || hideSearch ? {} : styles.select}
         aria-label="난이도 선택"
       >
-        <option value="전체">난이도 전체</option>
-        <option value="입문">🐣 입문 (0~2점)</option>
-        <option value="초중급">🎲 초중급 (2~3점)</option>
-        <option value="전략">🧠 전략 (3점+)</option>
+        <option value="전체">{isAdmin ? "난이도 전체" : "난이도"}</option>
+        <option value="입문">{isAdmin ? "🐣 " : ""}입문 (0~2점)</option>
+        <option value="초중급">{isAdmin ? "🎲 " : ""}초중급 (2~3점)</option>
+        <option value="전략">{isAdmin ? "🧠 " : ""}전략 (3점+)</option>
       </select>
 
       {/* 5. 인원수 선택 */}
       <select
         value={playerFilter}
         onChange={(e) => setPlayerFilter(e.target.value)}
-        className={isAdmin ? "admin-select" : ""}
-        style={isAdmin ? { fontWeight: playerFilter !== "all" ? "bold" : "normal", color: playerFilter !== "all" ? "var(--admin-primary)" : "inherit" } : { ...styles.select, fontWeight: playerFilter !== "all" ? "bold" : "normal", color: playerFilter !== "all" ? "#3498db" : "black" }}
+        className={isAdmin ? "admin-select" : `user-filter-select${playerFilter !== "all" ? " is-active" : ""}`}
+        style={isAdmin ? { fontWeight: playerFilter !== "all" ? "bold" : "normal", color: playerFilter !== "all" ? "var(--admin-primary)" : "inherit" } : hideSearch ? {} : { ...styles.select, fontWeight: playerFilter !== "all" ? "bold" : "normal", color: playerFilter !== "all" ? "#3498db" : "black" }}
         aria-label="인원수 선택"
       >
-        <option value="all">인원수 전체</option>
+        <option value="all">{isAdmin ? "인원수 전체" : "인원"}</option>
         <option value="2">2인</option>
         <option value="3">3인</option>
         <option value="4">4인</option>
@@ -110,7 +110,7 @@ function FilterBar({
       </select>
 
       {/* 6. 대여 가능만 보기 체크박스 */}
-      <label className={isAdmin ? 'admin-available-filter' : undefined} style={isAdmin ? undefined : styles.checkboxLabel}>
+      {!hideAvailable && <label className={isAdmin ? 'admin-available-filter' : undefined} style={isAdmin ? undefined : styles.checkboxLabel}>
         <input
           type="checkbox"
           checked={onlyAvailable}
@@ -118,12 +118,12 @@ function FilterBar({
           style={isAdmin ? undefined : { transform: "scale(1.2)" }}
         />
         <span style={{ fontWeight: onlyAvailable ? "bold" : "normal" }}>대여 가능만</span>
-      </label>
+      </label>}
 
       {/* 7. 초기화 버튼 */}
-      <button type="button" onClick={onReset} className={isAdmin ? 'admin-filter-reset' : undefined} style={isAdmin ? undefined : styles.resetBtn}>
+      {!hideReset && <button type="button" onClick={onReset} className={isAdmin ? 'admin-filter-reset' : undefined} style={isAdmin ? undefined : styles.resetBtn}>
         🔄 초기화
-      </button>
+      </button>}
     </div>
   );
 }

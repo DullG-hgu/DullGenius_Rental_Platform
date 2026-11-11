@@ -131,6 +131,9 @@ const GameSearch = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [setQueryParams]);
 
+    const hasQuery = inputValue.trim() !== '';
+    const hasFilter = hasQuery || selectedCategory !== '전체' || difficultyFilter !== '전체' || playerFilter !== 'all' || onlyAvailable;
+
     const handleBack = () => {
         // 검색 페이지에서 뒤로가기는 홈으로 (기획)
         // 스크롤 위치는 sessionStorage에 남아있으므로 유지됨
@@ -154,12 +157,12 @@ const GameSearch = () => {
                 <button onClick={handleBack} className="back-btn" aria-label="홈으로">←</button>
                 <div className="search-input-wrapper">
                     {isTrendingMode ? (
-                        <h2 className="trending-search-title">🔥 요즘 뜨는 보드게임 (Top 20)</h2>
+                        <h2 className="trending-search-title">요즘 뜨는 보드게임 Top 20</h2>
                     ) : (
                         <input
                             type="text"
                             className="search-page-input"
-                            placeholder="게임 이름 검색..."
+                            placeholder="이름·초성·#태그 검색"
                             value={inputValue}
                             onChange={handleInputChange}
                             onCompositionStart={handleCompositionStart}
@@ -181,6 +184,8 @@ const GameSearch = () => {
                     categories={categories}
                     onReset={resetFilters}
                     hideSearch={true}
+                    hideAvailable={true}
+                    hideReset={true}
                 />
             )}
 
@@ -195,8 +200,11 @@ const GameSearch = () => {
                             aria-pressed={onlyAvailable}
                             className={`available-filter-chip${onlyAvailable ? ' active' : ''}`}
                         >
-                            🟢 대여 가능만
+                            대여 가능만
                         </button>
+                        {hasFilter && (
+                            <button type="button" onClick={resetFilters} className="search-reset-btn">필터 초기화</button>
+                        )}
                     </>
                 )}
             </div>
@@ -227,9 +235,7 @@ const GameSearch = () => {
                                             aspectRatio="1/1"
                                         />
                                     ) : (
-                                        <div className="game-item-img" style={{ background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <span style={{ fontSize: '3em' }}>🎲</span>
-                                        </div>
+                                        <div className="game-item-img is-empty" aria-hidden="true">{String(game.name || '').trim().charAt(0)}</div>
                                     )}
                                 </div>
                                 <div className="game-item-info">
@@ -242,9 +248,9 @@ const GameSearch = () => {
                                             </>
                                         )}
                                         {game.genres?.length > 0 && (game.min_players || game.playingtime) && " · "}
-                                        {game.min_players && game.max_players ? `👥 ${game.min_players}~${game.max_players}인` : ""}
+                                        {game.min_players && game.max_players ? (game.min_players === game.max_players ? `${game.min_players}인` : `${game.min_players}~${game.max_players}인`) : ""}
                                         {game.min_players && game.playingtime && " · "}
-                                        {game.playingtime ? `⏱️ ${game.playingtime}` : ""}
+                                        {game.playingtime ? `${game.playingtime}` : ""}
                                     </div>
                                     <div className="game-item-badges">
                                         {game.status === "대여가능" ? (
@@ -262,7 +268,17 @@ const GameSearch = () => {
                 ))}
                 {filteredGames.length === 0 && (
                     <div className="no-results">
-                        {isTrendingMode ? '최근 7일간 집계된 인기 게임이 없습니다.' : '검색 결과가 없습니다. 😅'}
+                        {isTrendingMode ? (
+                            <p>최근 7일간 집계된 인기 게임이 없습니다.</p>
+                        ) : (
+                            <>
+                                <p><strong>조건에 맞는 게임이 없어요.</strong></p>
+                                <p>이름 일부나 초성(예: ㅋㅌ)으로 찾아보거나 필터를 줄여 보세요.</p>
+                                {hasFilter && (
+                                    <button type="button" onClick={resetFilters} className="search-empty-btn">필터 지우고 전체 보기</button>
+                                )}
+                            </>
+                        )}
                     </div>
                 )}
             </div>

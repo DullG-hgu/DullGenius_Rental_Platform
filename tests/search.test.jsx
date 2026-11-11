@@ -35,7 +35,7 @@ it('stores all edited filters in URL and restores them after details/back', () =
     fireEvent.change(screen.getByRole('combobox', { name: '카테고리 선택' }), { target: { value: '전략' } });
     fireEvent.change(screen.getByRole('combobox', { name: '난이도 선택' }), { target: { value: '초중급' } });
     fireEvent.change(screen.getByRole('combobox', { name: '인원수 선택' }), { target: { value: '5+' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: '대여 가능만' }));
+    fireEvent.click(screen.getByRole('button', { name: '대여 가능만' }));
     act(() => vi.advanceTimersByTime(300));
     const url = screen.getByTestId('url').textContent;
     const params = new URLSearchParams(url.split('?')[1]);
@@ -48,10 +48,10 @@ it('stores all edited filters in URL and restores them after details/back', () =
     expect(screen.getByRole('combobox', { name: '카테고리 선택' }).value).toBe('전략');
     expect(screen.getByRole('combobox', { name: '난이도 선택' }).value).toBe('초중급');
     expect(screen.getByRole('combobox', { name: '인원수 선택' }).value).toBe('5+');
-    expect(screen.getByRole('checkbox').checked).toBe(true);
+    expect(screen.getByRole('button', { name: '대여 가능만' }).getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: /초기화/ }));
     expect(screen.getByTestId('url').textContent).toBe('/search');
-    expect(screen.getByRole('checkbox').checked).toBe(false);
+    expect(screen.getByRole('button', { name: '대여 가능만' }).getAttribute('aria-pressed')).toBe('false');
 });
 
 it('restores legacy player links as a selected canonical option', () => {
@@ -63,7 +63,7 @@ it.each(['/search', '/categories'])('%s displays a recoverable loading error ins
     data.error = new Error('offline');
     mount(url);
     expect(screen.getByRole('alert').textContent).toContain('불러오지 못했습니다');
-    expect(screen.queryByText(/검색 결과가 없습니다/)).toBeNull();
+    expect(screen.queryByText(/조건에 맞는 게임이 없어요/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
     expect(data.refreshGames).toHaveBeenCalledTimes(1);
 });
