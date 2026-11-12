@@ -562,11 +562,6 @@
 /* 홈 톤 통일 (2026-11): 구조 보정 */
 .game-detail-container {
     color: var(--dg-ink);
-    /* 이 화면 안에서 뜨는 확인 모달 버튼(ModalButton)만 홈 색으로 — 관리자·키오스크 모달은 그대로 */
-    --color-primary-alpha: var(--dg-primary);
-    --color-primary-opaque: var(--dg-primary-press);
-    --color-neutral-alpha: #6b6878;
-    --color-neutral-opaque: var(--dg-sub);
 }
 
 .detail-back-btn {

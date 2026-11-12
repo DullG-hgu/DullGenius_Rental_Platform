@@ -1,14 +1,14 @@
 /* src/pages/Home.css — 메인 (2026-09-29 개편): 강조색 하나(보라) + 무채색 */
 
 .home-container {
-    --home-primary: #5b2bd6;
-    --home-primary-soft: #f1ecfd;
-    --home-ink: #1d1a26;
-    --home-sub: #6b6878;
-    --home-line: #ece9f3;
-    --home-bg: #faf9fd;
+    --home-primary: var(--dg-primary);
+    --home-primary-soft: var(--dg-soft);
+    --home-ink: var(--dg-ink);
+    --home-sub: var(--dg-sub);
+    --home-line: var(--dg-line);
+    --home-bg: var(--dg-bg);
     --home-card: #ffffff;
-    --home-ok: #1d7a3a;
+    --home-ok: var(--dg-ok);
 
     max-width: 960px;
     margin: 0 auto;
@@ -335,7 +335,7 @@
 /* 놀이터 */
 .home-play-card {
     margin: 0 16px;
-    background: linear-gradient(135deg, #5b2bd6, #8a4dff);
+    background: linear-gradient(135deg, var(--dg-primary), #8a4dff);
     color: #fff;
     display: flex;
     align-items: center;
@@ -795,7 +795,7 @@
 }
 
 .home-my-due.is-overdue {
-    color: #c0392b;
+    color: var(--dg-danger);
 }
 
 .home-my-go {

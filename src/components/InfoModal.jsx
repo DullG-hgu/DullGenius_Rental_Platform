@@ -511,7 +511,7 @@ const styles = {
     },
     submitBtn: {
         padding: '12px',
-        background: '#e74c3c', // 파손 신고 — 위험 행동 빨간색
+        background: 'var(--dg-danger)', // 파손 신고 — 위험 행동 빨간색
         color: 'white',
         border: 'none',
         borderRadius: '5px',
@@ -522,7 +522,7 @@ const styles = {
     },
     requestSubmitBtn: {
         padding: '12px',
-        background: '#3498db', // [NEW] 게임 신청 — 중립 파란색 (긍정 행동)
+        background: 'var(--dg-primary)', // [NEW] 게임 신청 — 중립 파란색 (긍정 행동)
         color: 'white',
         border: 'none',
         borderRadius: '5px',

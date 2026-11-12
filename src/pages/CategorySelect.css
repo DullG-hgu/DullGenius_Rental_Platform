@@ -44,7 +44,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border: 1px solid #eee;
+    border: 1px solid var(--dg-line);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -60,13 +60,13 @@
 
 .category-name {
     font-weight: bold;
-    color: #000;
+    color: var(--dg-ink);
     /* [FIX] Darker black */
 }
 
 .category-count {
     font-size: 0.8em;
-    color: #888;
+    color: var(--dg-sub);
     margin-top: 5px;
 }
 
@@ -74,7 +74,7 @@
     margin-bottom: 30px;
     /* [FIX] Add margin bottom instead of top */
     /* padding-top: 20px; */
-    /* border-top: 1px solid #eee; */
+    /* border-top: 1px solid var(--dg-line); */
 }
 
 .player-count-title {
@@ -95,7 +95,7 @@
     padding: 12px 8px;
     /* 좌우 패딩을 살짝 줄여서 폰트 공간 확보 */
     border-radius: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--dg-line);
     background: white;
     cursor: pointer;
     text-align: center;
@@ -104,8 +104,8 @@
 }
 
 .player-btn:hover {
-    background: #f8f9fa;
-    border-color: #bbb;
+    background: var(--dg-bg);
+    border-color: var(--dg-line);
 }
 
 @keyframes fadeIn {
@@ -126,9 +126,9 @@
 .section-subtitle {
     margin-bottom: 15px;
     font-size: 1.2em;
-    color: #111;
+    color: var(--dg-ink);
     /* [FIX] Darken text color */
-    border-bottom: 2px solid #eee;
+    border-bottom: 2px solid var(--dg-line);
     padding-bottom: 10px;
 }
 
@@ -140,12 +140,12 @@
 
 .theme-btn-cat {
     background: white;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--dg-line);
     border-radius: 12px;
     padding: 15px;
     font-size: 1em;
     font-weight: bold;
-    color: #000;
+    color: var(--dg-ink);
     cursor: pointer;
     text-align: left;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
@@ -167,7 +167,7 @@
 }
 
 .theme-btn-arrow-cat {
-    color: #999;
+    color: var(--dg-sub);
     font-size: 1.2em;
     margin-left: 8px;
     transition: transform 0.2s;
@@ -176,13 +176,13 @@
 .theme-btn-cat:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    background: #f8f9fa;
+    background: var(--dg-bg);
 }
 
 .theme-btn-cat:hover .theme-btn-arrow-cat {
     transform: translateX(3px);
     /* 호버 시 살짝 우측으로 이동 */
-    color: #666;
+    color: var(--dg-sub);
 }
 
 .theme-btn-content-cat div:first-child {
@@ -191,14 +191,14 @@
 
 .theme-btn-content-cat div:last-child {
     font-size: 0.9em;
-    color: #000;
+    color: var(--dg-ink);
     font-weight: normal;
 }
 
 /* [NEW] 트렌딩 접속 입구 스타일 */
 .trending-entrance-card {
     background: white;
-    border: 1px solid #eee;
+    border: 1px solid var(--dg-line);
     border-radius: 12px;
     padding: 15px 20px;
     display: flex;
@@ -207,7 +207,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     /* 다른 카드들과 유사한 그림자 */
     transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-    color: #111;
+    color: var(--dg-ink);
 }
 
 .trending-entrance-card:hover {
@@ -240,7 +240,7 @@
 .trending-entrance-arrow {
     font-size: 1.2em;
     font-weight: bold;
-    color: #666;
+    color: var(--dg-sub);
 }
 .category-card,
 .trending-entrance-card {

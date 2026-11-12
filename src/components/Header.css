@@ -24,7 +24,7 @@
 }
 
 .site-brand-text {
-    color: #1d1a26;
+    color: var(--dg-ink);
     text-decoration: none;
     font-weight: 800;
     font-size: 1.05rem;
@@ -45,9 +45,9 @@
     align-items: center;
     padding: 0 12px;
     border-radius: 999px;
-    border: 1px solid #ece9f3;
+    border: 1px solid var(--dg-line);
     background: #fff;
-    color: #1d1a26;
+    color: var(--dg-ink);
     font-size: 0.85rem;
     font-weight: 700;
     text-decoration: none;
@@ -56,15 +56,15 @@
 }
 
 .site-header-btn.is-primary {
-    background: #5b2bd6;
-    border-color: #5b2bd6;
+    background: var(--dg-primary);
+    border-color: var(--dg-primary);
     color: #fff;
 }
 
 .site-header-btn.is-ghost {
     border-color: transparent;
     background: transparent;
-    color: #6b6878;
+    color: var(--dg-sub);
     padding: 0 8px;
 }
 

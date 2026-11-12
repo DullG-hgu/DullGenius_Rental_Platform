@@ -177,10 +177,10 @@ function LoginModal({ isOpen, onClose, onConfirm, gameName, currentUser, session
           />
 
           <div style={{ background: "#f0f9ff", padding: "20px", borderRadius: "10px", marginBottom: "20px" }}>
-            <div style={{ fontSize: "1.2em", fontWeight: "bold", color: "#2c3e50" }}>{currentUser.name} 님</div>
-            <div style={{ color: "#7f8c8d", fontSize: "0.9em", marginTop: "5px" }}>{currentUser.studentId || currentUser.student_id}</div>
+            <div style={{ fontSize: "1.2em", fontWeight: "bold", color: "var(--dg-ink)" }}>{currentUser.name} 님</div>
+            <div style={{ color: "var(--dg-sub)", fontSize: "0.9em", marginTop: "5px" }}>{currentUser.studentId || currentUser.student_id}</div>
 
-            <p style={{ color: "#3498db", fontSize: "0.85em", marginTop: "15px" }}
+            <p style={{ color: "var(--dg-primary)", fontSize: "0.85em", marginTop: "15px" }}
               dangerouslySetInnerHTML={{ __html: TEXTS.USER_MODAL_LOGGED_IN_DESC }}
             />
           </div>

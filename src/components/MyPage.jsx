@@ -256,7 +256,7 @@ const MyPage = () => {
   if (authLoading) return <div style={{ padding: "50px", textAlign: "center" }}>인증 정보 확인 중...</div>;
 
   return (
-    <div style={styles.container}>
+    <div className="mypage-container" style={styles.container}>
       {/* 상단 네비게이션 */}
       <div style={{ marginBottom: "20px" }}>
         <Link to="/" style={styles.backLink}>← 메인으로 돌아가기</Link>
@@ -280,8 +280,8 @@ const MyPage = () => {
           />
 
           <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-            <span style={{ fontSize: "0.85em", color: "#5f5c6c" }}>보유 포인트</span>
-            <span style={{ fontSize: "1.5em", fontWeight: "bold", color: "#5b2bd6" }}>{currentPoints.toLocaleString()} P</span>
+            <span style={{ fontSize: "0.85em", color: "var(--dg-sub)" }}>보유 포인트</span>
+            <span style={{ fontSize: "1.5em", fontWeight: "bold", color: "var(--dg-primary)" }}>{currentPoints.toLocaleString()} P</span>
           </div>
         </div>
         <div style={styles.infoNote}>
@@ -291,7 +291,7 @@ const MyPage = () => {
         </div>
 
         {/* 비밀번호 변경 */}
-        <div style={{ marginTop: "15px", borderTop: "1px solid #e3deee", paddingTop: "12px" }}>
+        <div style={{ marginTop: "15px", borderTop: "1px solid var(--dg-line)", paddingTop: "12px" }}>
           <button
             onClick={() => setPwOpen(v => !v)}
             style={styles.pwToggleBtn}
@@ -343,7 +343,7 @@ const MyPage = () => {
         <h3 style={styles.sectionTitle}>빌려둔 보드게임 (현재 대여 중)</h3>
 
         {loading ? (
-          <div style={{ padding: "20px", textAlign: "center", color: "#5f5c6c" }}>로딩 중...</div>
+          <div style={{ padding: "20px", textAlign: "center", color: "var(--dg-sub)" }}>로딩 중...</div>
         ) : rentals.length === 0 ? (
           <div style={styles.emptyState}>
             <p>현재 대여 중인 게임이 없습니다.</p>
@@ -358,17 +358,17 @@ const MyPage = () => {
               const dDayStr = getDDayString(item.dueDate, item.type);
 
               // 2. 뱃지 색상 및 텍스트 결정
-              let badgeColor = "#1d7a3a"; // 기본 초록
+              let badgeColor = "var(--dg-ok)"; // 기본 초록
               let typeLabel = "대여중";
 
               if (item.type === 'DIBS') {
                 typeLabel = "찜";
-                badgeColor = "#a3470a"; // 찜은 항상 주황
-                if (dDayStr.includes("만료")) badgeColor = "#b3261e"; // 시간 초과시 빨강
+                badgeColor = "var(--dg-warn)"; // 찜은 항상 주황
+                if (dDayStr.includes("만료")) badgeColor = "var(--dg-danger)"; // 시간 초과시 빨강
               } else {
                 // RENT
-                if (dDayStr === "오늘 반납") badgeColor = "#a3470a";
-                if (dDayStr.includes("연체")) badgeColor = "#b3261e";
+                if (dDayStr === "오늘 반납") badgeColor = "var(--dg-warn)";
+                if (dDayStr.includes("연체")) badgeColor = "var(--dg-danger)";
               }
 
               return (
@@ -385,7 +385,7 @@ const MyPage = () => {
                       {item.videoUrl && (
                         <button
                           onClick={() => openVideo(item.videoUrl)}
-                          style={{ padding: "4px 8px", borderRadius: "12px", border: "1px solid #b3261e", background: "white", color: "#b3261e", cursor: "pointer", fontSize: "0.75em", fontWeight: "bold" }}
+                          style={{ padding: "4px 8px", borderRadius: "12px", border: "1px solid var(--dg-danger)", background: "white", color: "var(--dg-danger)", cursor: "pointer", fontSize: "0.75em", fontWeight: "bold" }}
                         >
                           가이드
                         </button>
@@ -393,7 +393,7 @@ const MyPage = () => {
                       {item.manualUrl && (
                         <button
                           onClick={() => window.open(item.manualUrl, '_blank')}
-                          style={{ padding: "4px 8px", borderRadius: "12px", border: "1px solid #5b2bd6", background: "white", color: "#5b2bd6", cursor: "pointer", fontSize: "0.75em", fontWeight: "bold" }}
+                          style={{ padding: "4px 8px", borderRadius: "12px", border: "1px solid var(--dg-primary)", background: "white", color: "var(--dg-primary)", cursor: "pointer", fontSize: "0.75em", fontWeight: "bold" }}
                         >
                           룰북
                         </button>
@@ -405,7 +405,7 @@ const MyPage = () => {
                             <button
                               onClick={() => handleCancelDibs(item.gameId, item.gameName)}
                               disabled={isCanceling}
-                              style={{ padding: "4px 8px", borderRadius: "12px", border: "1px solid #b3261e", background: "white", color: "#b3261e", cursor: isCanceling ? "wait" : "pointer", fontSize: "0.75em", fontWeight: "bold", opacity: isCanceling ? 0.6 : 1 }}
+                              style={{ padding: "4px 8px", borderRadius: "12px", border: "1px solid var(--dg-danger)", background: "white", color: "var(--dg-danger)", cursor: isCanceling ? "wait" : "pointer", fontSize: "0.75em", fontWeight: "bold", opacity: isCanceling ? 0.6 : 1 }}
                             >
                               {isCanceling ? "처리 중..." : "찜 취소"}
                             </button>
@@ -432,8 +432,8 @@ const MyPage = () => {
       {/* 2-a. 내 보드게임 취향 (이상형 월드컵 기록, 본인만 봄) */}
       <Link to="/play/me" style={{ ...styles.card, marginTop: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", textDecoration: "none", color: "inherit" }}>
         <span>
-          <strong style={{ display: "block", fontSize: "1.05em", color: "#1d1a26" }}>내 보드게임 취향</strong>
-          <span style={{ fontSize: "0.85em", color: "#5f5c6c" }}>이상형 월드컵에서 고른 기록으로 보는 내 취향</span>
+          <strong style={{ display: "block", fontSize: "1.05em", color: "var(--dg-ink)" }}>내 보드게임 취향</strong>
+          <span style={{ fontSize: "0.85em", color: "var(--dg-sub)" }}>이상형 월드컵에서 고른 기록으로 보는 내 취향</span>
         </span>
         <span aria-hidden="true">→</span>
       </Link>
@@ -445,22 +445,22 @@ const MyPage = () => {
           onClick={() => setHistoryOpen(v => !v)}
         >
           <span>과거 대여 이력 (최근 30건)</span>
-          <span style={{ fontSize: "0.85em", color: "#5f5c6c" }}>{historyOpen ? "▲" : "▼"}</span>
+          <span style={{ fontSize: "0.85em", color: "var(--dg-sub)" }}>{historyOpen ? "▲" : "▼"}</span>
         </h3>
         {historyOpen && (loading ? (
-          <div style={{ padding: "20px", textAlign: "center", color: "#5f5c6c" }}>로딩 중...</div>
+          <div style={{ padding: "20px", textAlign: "center", color: "var(--dg-sub)" }}>로딩 중...</div>
         ) : rentalHistoryError && rentalHistory.length === 0 ? (
-          <div style={{ padding: "20px", textAlign: "center", color: "#b3261e" }}>
+          <div style={{ padding: "20px", textAlign: "center", color: "var(--dg-danger)" }}>
             {rentalHistoryError}
           </div>
         ) : rentalHistory.length === 0 ? (
-          <div style={{ padding: "20px", textAlign: "center", color: "#5f5c6c" }}>
+          <div style={{ padding: "20px", textAlign: "center", color: "var(--dg-sub)" }}>
             아직 반납한 게임이 없습니다.
           </div>
         ) : (
           <>
             {rentalHistoryError && (
-              <div style={{ padding: "8px 12px", marginBottom: "8px", color: "#8a6d3b", background: "#fcf8e3", border: "1px solid #faebcc", borderRadius: "8px", fontSize: "0.85em" }}>
+              <div style={{ padding: "8px 12px", marginBottom: "8px", color: "var(--dg-warn)", background: "#fcf8e3", border: "1px solid #faebcc", borderRadius: "8px", fontSize: "0.85em" }}>
                 {rentalHistoryError} 이전에 불러온 이력을 표시하고 있습니다.
               </div>
             )}
@@ -477,14 +477,14 @@ const MyPage = () => {
                   <div key={item.rentalId}>
                   <div style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",
-                    padding: "10px 12px", background: "#faf9fd", borderRadius: "8px",
-                    border: "1px solid #e3deee"
+                    padding: "10px 12px", background: "var(--dg-bg)", borderRadius: "8px",
+                    border: "1px solid var(--dg-line)"
                   }}>
                     <div>
-                      <div style={{ fontWeight: "bold", color: "#1d1a26", fontSize: "0.95em" }}>
+                      <div style={{ fontWeight: "bold", color: "var(--dg-ink)", fontSize: "0.95em" }}>
                         {item.gameName}
                       </div>
-                      <div style={{ fontSize: "0.8em", color: item.dateAnomaly ? "#b3261e" : "#5f5c6c", marginTop: "2px" }}>
+                      <div style={{ fontSize: "0.8em", color: item.dateAnomaly ? "var(--dg-danger)" : "var(--dg-sub)", marginTop: "2px" }}>
                         {item.dateAnomaly
                           ? (RENTAL_HISTORY_DATE_ANOMALY_LABELS[item.dateAnomalyReason] || "대여·반납 시각 확인 필요")
                           : `${formatDate(item.borrowedAt)} → ${formatDate(item.returnedAt)}`}
@@ -498,8 +498,8 @@ const MyPage = () => {
                     </div>
                     <span style={{
                       fontSize: "0.75em", padding: "3px 8px", borderRadius: "10px",
-                      background: isLost ? "#fdecea" : isUnknownClosure ? "#fcf8e3" : "#e3deee",
-                      color: isLost ? "#b3261e" : isUnknownClosure ? "#8a6d3b" : "#5f5c6c",
+                      background: isLost ? "#fdecea" : isUnknownClosure ? "#fcf8e3" : "var(--dg-line)",
+                      color: isLost ? "var(--dg-danger)" : isUnknownClosure ? "var(--dg-warn)" : "var(--dg-sub)",
                       fontWeight: "bold"
                     }}>
                       {closureLabel}
@@ -523,19 +523,19 @@ const MyPage = () => {
           onClick={() => setPointsOpen(v => !v)}
         >
           <span>포인트 적립 내역</span>
-          <span style={{ fontSize: "0.85em", color: "#5f5c6c" }}>{pointsOpen ? "▲" : "▼"}</span>
+          <span style={{ fontSize: "0.85em", color: "var(--dg-sub)" }}>{pointsOpen ? "▲" : "▼"}</span>
         </h3>
         {pointsOpen && (pointHistory.length === 0 ? (
-          <div style={{ padding: "20px", textAlign: "center", color: "#5f5c6c" }}>아직 포인트 내역이 없습니다. 동아리 활동을 해보세요!</div>
+          <div style={{ padding: "20px", textAlign: "center", color: "var(--dg-sub)" }}>아직 포인트 내역이 없습니다. 동아리 활동을 해보세요!</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {pointHistory.map((item) => (
-              <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", borderBottom: "1px solid #e3deee" }}>
+              <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", borderBottom: "1px solid var(--dg-line)" }}>
                 <div>
-                  <div style={{ fontWeight: "bold", color: "#1d1a26" }}>{item.reason}</div>
-                  <div style={{ fontSize: "0.8em", color: "#5f5c6c" }}>{formatDate(item.created_at)}</div>
+                  <div style={{ fontWeight: "bold", color: "var(--dg-ink)" }}>{item.reason}</div>
+                  <div style={{ fontSize: "0.8em", color: "var(--dg-sub)" }}>{formatDate(item.created_at)}</div>
                 </div>
-                <div style={{ fontWeight: "bold", color: item.amount > 0 ? "#1d7a3a" : "#b3261e" }}>
+                <div style={{ fontWeight: "bold", color: item.amount > 0 ? "var(--dg-ok)" : "var(--dg-danger)" }}>
                   {item.amount > 0 ? "+" : ""}{item.amount} P
                 </div>
               </div>
@@ -555,7 +555,7 @@ const MyPage = () => {
       </div>
 
       {/* 문제 신고 시 어느 빌드인지 확인용 */}
-      <div style={{ textAlign: "center", marginTop: "16px", fontSize: "0.75em", color: "#5f5c6c" }}>{formatVersion()}</div>
+      <div style={{ textAlign: "center", marginTop: "16px", fontSize: "0.75em", color: "var(--dg-sub)" }}>{formatVersion()}</div>
 
       {/* [NEW] 유튜브 모달 */}
       {
@@ -599,8 +599,8 @@ const MyPage = () => {
 // 작은 정보 아이템 컴포넌트
 const InfoItem = ({ label, value }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-    <span style={{ fontSize: "0.85em", color: "#5f5c6c" }}>{label}</span>
-    <span style={{ fontSize: "1.1em", fontWeight: "bold", color: "#1d1a26" }}>{value || "-"}</span>
+    <span style={{ fontSize: "0.85em", color: "var(--dg-sub)" }}>{label}</span>
+    <span style={{ fontSize: "1.1em", fontWeight: "bold", color: "var(--dg-ink)" }}>{value || "-"}</span>
   </div>
 );
 
@@ -665,10 +665,10 @@ const SemesterItem = ({ semester, isFixed, onUpdate }) => {
     // 아직 확정 안됨 -> 수정 버튼 노출
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-        <span style={{ fontSize: "0.85em", color: "#5f5c6c" }}>가입 학기 (미확정)</span>
+        <span style={{ fontSize: "0.85em", color: "var(--dg-sub)" }}>가입 학기 (미확정)</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: "1.1em", fontWeight: "bold", color: "#a3470a" }}>{semester || "-"}</span>
-          <button onClick={() => setEditing(true)} style={{ ...styles.miniBtn, background: '#a3470a' }}>수정/확정</button>
+          <span style={{ fontSize: "1.1em", fontWeight: "bold", color: "var(--dg-warn)" }}>{semester || "-"}</span>
+          <button onClick={() => setEditing(true)} style={{ ...styles.miniBtn, background: 'var(--dg-warn)' }}>수정/확정</button>
         </div>
       </div>
     );
@@ -678,17 +678,17 @@ const SemesterItem = ({ semester, isFixed, onUpdate }) => {
     // 수정 모드
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-        <span style={{ fontSize: "0.85em", color: "#5f5c6c" }}>가입 학기 입력</span>
+        <span style={{ fontSize: "0.85em", color: "var(--dg-sub)" }}>가입 학기 입력</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <input
             type="text"
             value={tempSemester}
             onChange={(e) => setTempSemester(e.target.value)}
             placeholder="예: 2025-1"
-            style={{ padding: '5px', width: '80px', border: '1px solid #e3deee', borderRadius: '4px' }}
+            style={{ padding: '5px', width: '80px', border: '1px solid var(--dg-line)', borderRadius: '4px' }}
           />
-          <button onClick={() => setConfirmOpen(true)} style={{ ...styles.miniBtn, background: '#1d7a3a' }}>저장</button>
-          <button onClick={() => setEditing(false)} style={{ ...styles.miniBtn, background: '#5f5c6c' }}>취소</button>
+          <button onClick={() => setConfirmOpen(true)} style={{ ...styles.miniBtn, background: 'var(--dg-ok)' }}>저장</button>
+          <button onClick={() => setEditing(false)} style={{ ...styles.miniBtn, background: 'var(--dg-sub)' }}>취소</button>
         </div>
         <ConfirmModal
           isOpen={confirmOpen}
@@ -706,46 +706,46 @@ const SemesterItem = ({ semester, isFixed, onUpdate }) => {
   // 확정됨
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-      <span style={{ fontSize: "0.85em", color: "#5f5c6c" }}>가입 학기</span>
-      <span style={{ fontSize: "1.1em", fontWeight: "bold", color: "#1d1a26" }}>{semester}</span>
+      <span style={{ fontSize: "0.85em", color: "var(--dg-sub)" }}>가입 학기</span>
+      <span style={{ fontSize: "1.1em", fontWeight: "bold", color: "var(--dg-ink)" }}>{semester}</span>
     </div>
   );
 };
 
 // 스타일 객체
 const styles = {
-  container: { maxWidth: "600px", margin: "0 auto", padding: "20px", color: "#1d1a26" },
-  backLink: { textDecoration: "none", color: "#5f5c6c", fontSize: "0.9em", fontWeight: "bold" },
-  pageTitle: { fontSize: "1.8em", marginBottom: "25px", color: "#1d1a26" },
+  container: { maxWidth: "600px", margin: "0 auto", padding: "20px", color: "var(--dg-ink)" },
+  backLink: { textDecoration: "none", color: "var(--dg-sub)", fontSize: "0.9em", fontWeight: "bold" },
+  pageTitle: { fontSize: "1.8em", marginBottom: "25px", color: "var(--dg-ink)" },
 
-  card: { background: "white", padding: "25px", borderRadius: "15px", border: "1px solid #e3deee" },
-  sectionTitle: { margin: "0 0 20px 0", fontSize: "1.2em", color: "#1d1a26", borderBottom: "1px solid #e3deee", paddingBottom: "10px" },
+  card: { background: "white", padding: "25px", borderRadius: "15px", border: "1px solid var(--dg-line)" },
+  sectionTitle: { margin: "0 0 20px 0", fontSize: "1.2em", color: "var(--dg-ink)", borderBottom: "1px solid var(--dg-line)", paddingBottom: "10px" },
 
   infoGrid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "15px" },
-  infoNote: { marginTop: "20px", fontSize: "0.8em", color: "#5f5c6c", textAlign: "right" },
+  infoNote: { marginTop: "20px", fontSize: "0.8em", color: "var(--dg-sub)", textAlign: "right" },
 
   miniBtn: { minHeight: "36px", padding: "4px 12px", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.8em", fontWeight: "bold" },
 
-  emptyState: { textAlign: "center", padding: "30px 0", color: "#5f5c6c" },
-  goRentBtn: { padding: "10px 20px", background: "#5b2bd6", color: "white", border: "none", borderRadius: "20px", marginTop: "15px", cursor: "pointer", fontWeight: "bold" },
+  emptyState: { textAlign: "center", padding: "30px 0", color: "var(--dg-sub)" },
+  goRentBtn: { padding: "10px 20px", background: "var(--dg-primary)", color: "white", border: "none", borderRadius: "20px", marginTop: "15px", cursor: "pointer", fontWeight: "bold" },
 
   rentalList: { display: "flex", flexDirection: "column", gap: "15px" },
-  rentalItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px", background: "#faf9fd", borderRadius: "10px", border: "1px solid #e3deee" },
+  rentalItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px", background: "var(--dg-bg)", borderRadius: "10px", border: "1px solid var(--dg-line)" },
   rentalInfo: { display: "flex", flexDirection: "column", gap: "5px" },
-  gameName: { fontWeight: "bold", fontSize: "1.1em", color: "#1d1a26" },
-  rentalDate: { fontSize: "0.85em", color: "#5f5c6c" },
+  gameName: { fontWeight: "bold", fontSize: "1.1em", color: "var(--dg-ink)" },
+  rentalDate: { fontSize: "0.85em", color: "var(--dg-sub)" },
 
   rentalStatus: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "5px" },
   dDayBadge: { padding: "5px 10px", borderRadius: "15px", color: "white", fontSize: "0.85em", fontWeight: "bold" },
-  dueDateText: { fontSize: "0.8em", color: "#b3261e", fontWeight: "bold" },
+  dueDateText: { fontSize: "0.8em", color: "var(--dg-danger)", fontWeight: "bold" },
 
   // [NEW] 회원 탈퇴 섹션 스타일
-  withdrawalSection: { marginTop: "40px", paddingTop: "20px", borderTop: "1px solid #e3deee", textAlign: "center" },
-  withdrawalBtn: { background: "none", border: "none", color: "#5f5c6c", fontSize: "0.85em", textDecoration: "underline", cursor: "pointer", padding: "10px" },
+  withdrawalSection: { marginTop: "40px", paddingTop: "20px", borderTop: "1px solid var(--dg-line)", textAlign: "center" },
+  withdrawalBtn: { background: "none", border: "none", color: "var(--dg-sub)", fontSize: "0.85em", textDecoration: "underline", cursor: "pointer", padding: "10px" },
 
-  pwInput: { padding: "10px", border: "1px solid #e3deee", borderRadius: "10px", fontSize: "1em", minHeight: "44px" },
-  pwBtn: { minHeight: "44px", padding: "10px", backgroundColor: "#5b2bd6", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "0.9em" },
-  pwToggleBtn: { padding: "8px 14px", backgroundColor: "white", color: "#5f5c6c", border: "1.5px solid #e3deee", borderRadius: "20px", cursor: "pointer", fontSize: "0.85em", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "4px" }
+  pwInput: { padding: "10px", border: "1px solid var(--dg-line)", borderRadius: "10px", fontSize: "1em", minHeight: "44px" },
+  pwBtn: { minHeight: "44px", padding: "10px", backgroundColor: "var(--dg-primary)", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "0.9em" },
+  pwToggleBtn: { padding: "8px 14px", backgroundColor: "white", color: "var(--dg-sub)", border: "1.5px solid var(--dg-line)", borderRadius: "20px", cursor: "pointer", fontSize: "0.85em", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "4px" }
 };
 
 export default MyPage;
