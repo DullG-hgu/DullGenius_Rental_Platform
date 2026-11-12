@@ -31,7 +31,7 @@ CREATE POLICY "Authenticated read config" ON public.app_config
   AS PERMISSIVE
   FOR SELECT
   TO authenticated
-  USING (true)
+  USING ((key <> 'dues_account'::text))
 ;
 
 -- ----------------------------------------------------------------
