@@ -159,7 +159,7 @@ const useKioskData = ({ includeUsers = true } = {}) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [syncAll, includeUsers]);
 
-    // [REALTIME] 키오스크는 오피스아워 내내 한 번 켜두고 쓴다. 예전에는 마운트 시점
+    // [REALTIME] 키오스크는 학기 내내 24시간 켜두고 쓴다. 예전에는 마운트 시점
     // 스냅샷으로 하루를 버텨서, 관리자나 다른 회원이 대여·반납해도 키오스크 화면은
     // 옛 재고를 계속 보여줬다. games 변경 신호로 목록을 따라가게 한다.
     // 네트워크가 끊겼다 붙으면(태블릿 특성상 잦다) 회원 목록까지 한 번 전체 동기화한다.

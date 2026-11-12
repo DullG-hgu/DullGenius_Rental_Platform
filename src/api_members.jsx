@@ -46,7 +46,7 @@ export const resetSemesterPayments = async () => {
     return data;
 };
 
-// [Admin] 오피스아워 출근 (자동 퇴근 시간은 DB office_hours_config에서 읽음)
+// [Admin] 출근 — 홈 배너 켜기 (자동 퇴근 시간은 DB office_hours_config에서 읽음)
 export const setOfficeOpen = async () => {
     // 설정에서 자동 퇴근 시간 읽기 (없으면 21:00 기본값)
     const { data: configData } = await supabase
@@ -70,7 +70,7 @@ export const setOfficeOpen = async () => {
     if (error) throw error;
 };
 
-// [Admin] 오피스아워 퇴근
+// [Admin] 퇴근 — 홈 배너 끄기
 export const setOfficeClosed = async () => {
     const { error } = await supabase
         .from('app_config')
@@ -83,7 +83,7 @@ export const setOfficeClosed = async () => {
 export const togglePaymentCheck = async (enabled) => {
     const { error } = await supabase
         .from('app_config')
-        .update({ value: enabled ? 'true' : 'false' })
+        .update({ value: enabled ? 'true' : 'false', updated_at: new Date().toISOString() }) // 자동 갱신 트리거가 없다 — 「무료 대여 켜진 지 N일」 알림이 이 값을 본다
         .eq('key', 'payment_check_enabled');
 
     if (error) throw error;

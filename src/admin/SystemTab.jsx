@@ -143,7 +143,7 @@ function SystemTab({ users, onUsersReload }) {
             <div style={styles.infoBox}>
                 <p><strong>💡 사용 안내:</strong></p>
                 <ul style={{ margin: '10px 0', paddingLeft: '20px', lineHeight: '1.6' }}>
-                    <li>무료 대여 전환과 출근·퇴근은 오피스아워 탭에서 관리합니다.</li>
+                    <li>무료 대여 전환과 출근·퇴근은 「무료 대여·회비」 탭에서 관리합니다.</li>
                     <li>학기 초기화는 되돌릴 수 없으므로 신중하게 실행하세요.</li>
                     <li>영구 면제 역할은 회원 관리 탭에서 개별적으로 부여할 수 있습니다.</li>
                 </ul>

@@ -8,7 +8,7 @@ import { setOfficeOpen } from '../src/api_members';
 const mocks = vi.hoisted(() => ({ auth: { user: { id: 'first' }, loading: false, hasRole: () => true, logout: vi.fn() }, showToast: vi.fn() }));
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => mocks.auth }));
 vi.mock('../src/contexts/ToastContext', () => ({ useToast: () => ({ showToast: mocks.showToast }) }));
-vi.mock('../src/api', () => ({ fetchGames: vi.fn(), fetchConfig: vi.fn(), fetchOfficeStatus: vi.fn(), fetchUsers: vi.fn(), fetchPaymentCheckEnabled: vi.fn(), fetchDuesAccounts: vi.fn(async () => []), saveDuesAccounts: vi.fn(), fetchOfficeHoursConfig: vi.fn() }));
+vi.mock('../src/api', () => ({ fetchGames: vi.fn(), fetchConfig: vi.fn(), fetchOfficeStatus: vi.fn(), fetchUsers: vi.fn(), fetchPaymentCheckEnabled: vi.fn(), fetchDuesAccounts: vi.fn(async () => []), saveDuesAccounts: vi.fn(), fetchDuesAmount: vi.fn(async () => null), saveDuesAmount: vi.fn(), fetchAdminDuesProofs: vi.fn(async () => null), reviewDuesProof: vi.fn(), getDuesProofImageUrl: vi.fn(), clearDuesProofImages: vi.fn(), fetchOfficeHoursConfig: vi.fn() }));
 vi.mock('../src/api_members', () => ({ setOfficeOpen: vi.fn(), setOfficeClosed: vi.fn() }));
 vi.mock('../src/admin/DashboardTab', () => ({ default: ({ games, users, onReload }) => <div>{games.map(g => <p key={g.id}>{g.name}</p>)}{users.map(u => <p key={u.id}>{u.name}</p>)}<button onClick={onReload}>reload games</button></div> }));
 vi.mock('../src/admin/AdminOverviewCard', () => ({ default: () => null }));
@@ -51,16 +51,16 @@ it('discards games and users returned after an account switch', async () => {
 it('reports unknown office status rather than claiming offline on failure and can retry', async () => {
   fetchOfficeStatus.mockRejectedValueOnce(new Error('offline'));
   render(<App />);
-  fireEvent.click(await screen.findByText('🕒 오피스아워'));
+  fireEvent.click(await screen.findByText('🆓 무료 대여·회비'));
   await screen.findByText('상태 확인 실패');
   expect(screen.queryByText('⭕ 오프라인')).toBeNull();
   fireEvent.click(screen.getByText('상태 다시 조회'));
-  await screen.findByText('⭕ 오피스아워 종료');
+  await screen.findByText('⭕ 퇴근 — 홈 배너 없음');
 });
 it('does not claim opening succeeded when the follow-up read fails', async () => {
   fetchOfficeStatus.mockResolvedValueOnce({ open: false }).mockRejectedValueOnce(new Error('offline'));
   setOfficeOpen.mockResolvedValue({}); render(<App />);
-  fireEvent.click(await screen.findByText('🕒 오피스아워'));
+  fireEvent.click(await screen.findByText('🆓 무료 대여·회비'));
   fireEvent.click(await screen.findByText('출근'));
   await screen.findByText('상태 확인 실패');
   expect(setOfficeOpen).toHaveBeenCalledOnce();

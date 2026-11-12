@@ -2,12 +2,13 @@ import React from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
-const { data } = vi.hoisted(() => ({ data: { reports: [], requests: [], rentals: [], rentalArgs: [], failReports: false } }));
+const { data } = vi.hoisted(() => ({ data: { reports: [], requests: [], rentals: [], rentalArgs: [], failReports: false, payment: null } }));
 
 vi.mock('../src/api', () => ({
   fetchDamageReports: () => (data.failReports ? Promise.reject(new Error('down')) : Promise.resolve(data.reports)),
   fetchGameRequests: () => Promise.resolve(data.requests),
   fetchRentalRequests: (statuses) => { data.rentalArgs.push(statuses); return Promise.resolve(data.rentals); },
+  fetchPaymentCheckState: () => (data.payment ? Promise.resolve(data.payment) : Promise.reject(new Error('down'))),
 }));
 
 import AdminOverviewCard from '../src/admin/AdminOverviewCard';
@@ -17,7 +18,7 @@ const overdueGame = { id: 1, name: '카탄', adminStatus: '대여중', dueDate: 
 const okGame = { id: 2, name: '스플렌더', adminStatus: '대여중', dueDate: kst('2026-10-20T00:00:00').toISOString() };
 
 beforeEach(() => {
-  data.reports = []; data.requests = []; data.rentals = []; data.rentalArgs = []; data.failReports = false;
+  data.reports = []; data.requests = []; data.rentals = []; data.rentalArgs = []; data.failReports = false; data.payment = null;
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(kst('2026-10-12T12:00:00'));
 });
@@ -29,7 +30,7 @@ const renderCard = async (props) => {
   return utils;
 };
 
-it('할 일이 하나도 없으면 섹션째 숨긴다 (오피스아워 꺼짐·연체 0·신청 0·신고 0)', async () => {
+it('할 일이 하나도 없으면 섹션째 숨긴다 (퇴근·연체 0·신청 0·신고 0)', async () => {
   const { container } = await renderCard({ games: [okGame], isOfficeOpen: false });
   expect(container.innerHTML).toBe('');
 });
@@ -40,11 +41,11 @@ it('불러오는 동안은 숨긴다 — 게임 목록 첫 로딩 중이면 카�
   expect(container.innerHTML).toBe('');
 });
 
-it('오피스아워는 켜져 있을 때만 한 줄 — [끄기]', async () => {
+it('출근 중일 때만 한 줄 — [퇴근하러 가기]', async () => {
   const onGoOffice = vi.fn();
   await renderCard({ games: [], isOfficeOpen: true, onGoOffice });
-  expect(screen.getByText('오피스아워 켜짐')).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: '끄기' }));
+  expect(screen.getByText('출근 중 (홈 배너 표시)')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: '퇴근하러 가기' }));
   expect(onGoOffice).toHaveBeenCalled();
   expect(screen.queryByText('반납 기한 지남')).toBeNull();
   expect(screen.queryByText(/외부 대여 신청/)).toBeNull();
@@ -55,7 +56,7 @@ it('오피스아워는 켜져 있을 때만 한 줄 — [끄기]', async () => {
 it('연체가 있으면 「반납 기한 지남 N건 [대여자별 처리]」', async () => {
   const onOpenWorkList = vi.fn();
   await renderCard({ games: [overdueGame, okGame], isOfficeOpen: false, onOpenWorkList });
-  expect(screen.queryByText('오피스아워 켜짐')).toBeNull();
+  expect(screen.queryByText('출근 중 (홈 배너 표시)')).toBeNull();
   expect(screen.getByText('반납 기한 지남')).toBeTruthy();
   expect(screen.getByText('1건')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '대여자별 처리' }));
@@ -104,4 +105,24 @@ it('단체 연체(HOLD, 기한 다음 날부터)를 신청 단위로 반납 기�
   await renderCard({ games: [overdueGame, holdOverdue], isOfficeOpen: false, onOpenWorkList: vi.fn() });
   expect(screen.getByText('반납 기한 지남')).toBeTruthy();
   expect(screen.getByText(/2건 \(단체 1\)/)).toBeTruthy();
+});
+
+it('무료 대여(회비 검사 꺼짐)가 7일 넘게 켜져 있으면 복원 알림 — 그 전이나 검사 켜짐이면 없음', async () => {
+  const onGoOffice = vi.fn();
+  data.payment = { enabled: false, updatedAt: kst('2026-10-03T12:00:00').toISOString() };
+  const first = await renderCard({ games: [], isOfficeOpen: false, onGoOffice });
+  expect(screen.getByText('무료 대여 켜진 지')).toBeTruthy();
+  expect(screen.getByText('9일')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: '회비 검사 복원하러 가기' }));
+  expect(onGoOffice).toHaveBeenCalled();
+  first.unmount();
+
+  data.payment = { enabled: false, updatedAt: kst('2026-10-08T12:00:00').toISOString() };
+  const second = await renderCard({ games: [], isOfficeOpen: false });
+  expect(second.container.innerHTML).toBe('');
+  second.unmount();
+
+  data.payment = { enabled: true, updatedAt: kst('2026-01-01T12:00:00').toISOString() };
+  const third = await renderCard({ games: [], isOfficeOpen: false });
+  expect(third.container.innerHTML).toBe('');
 });

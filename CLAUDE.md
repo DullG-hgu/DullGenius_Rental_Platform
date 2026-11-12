@@ -10,7 +10,7 @@ React + Vite + Supabase / 배포: Netlify (`netlify.toml`)
 | 경로 | 역할 |
 |------|------|
 | `src/api.jsx` | Supabase 호출 전담 API 레이어 |
-| `src/api_members.jsx` | 회원·오피스아워 관련 API |
+| `src/api_members.jsx` | 회원·출근/퇴근(홈 배너)·회비 검사 API |
 | `src/lib/supabaseClient.jsx` | Supabase 클라이언트 — **항상 named import**: `import { supabase } from '../lib/supabaseClient.jsx'` |
 | `src/constants.jsx` | 상수·STATUS enum 헬퍼 |
 | `src/lib/gameStatus.js` | 게임 상태 계산 로직 |
@@ -118,6 +118,17 @@ var(--admin-border)      // 테두리
 
 ---
 
+## 「오피스아워」는 상시 운영 시간이 아니다 (2026-11-12)
+
+코드·DB·관리자 탭에 `office_status` / `office_hours_config` / `isOfficeOpen` / `OfficeHoursTab` 라는 이름이 남아 있지만(관리자 탭 표시 이름은 「🆓 무료 대여·회비」), 실제 뜻은 좁다.
+
+- **학기 1주차 무료 대여 때 운영진이 출근·퇴근으로 켜고 끄는 홈 안내 배너**다. 뜻은 「지금 운영진이 방에 있다」 — 시간표대로 자동으로 뜨는 게 아니라 사람이 실제로 나왔을 때 켠다(자동 퇴근 시각에 스스로 꺼진다). 그게 전부다.
+- 실제로 대여를 푸는 건 별개 스위치인 **회비 검사**(`app_config.payment_check_enabled`, 「전체 회원 대여 허용」)다. 배너 상태는 대여·찜·키오스크 권한에 아무 영향이 없다.
+- **평소(학기 대부분)는 배너가 꺼진 상태가 기본**이다. 부원은 동아리방 이용 요일에 와서 무인 키오스크로 빌린다. 운영진이 정해진 시간에 상주하는 「운영 시간」은 없다.
+- 그러니 「오피스아워 중/밖」을 기준으로 기능을 설계하지 말 것 — 「지금은 운영 시간이 아니에요」류 안내, 오피스아워 시간표, 운영 시간에만 열리는 기능을 만들지 않는다. 부원 화면에는 「오피스아워」라는 말을 쓰지 않고 「무료 대여」라고 쓴다.
+
+---
+
 ## 키오스크 인증 구조
 
 **⚠️ 프론트엔드에서 키오스크 계정 자격증명을 절대 읽지 말 것.**
@@ -139,7 +150,7 @@ netlify/functions/kiosk-session.js   ← 계정 자격증명은 여기(서버)�
 access_token / refresh_token 반환 → supabase.auth.setSession()
 ```
 
-- 세션이 만료돼도 저장된 마스터키로 **무인 자동 복구**된다 (오피스아워가 학기 초에만 열림)
+- 세션이 만료돼도 저장된 마스터키로 **무인 자동 복구**된다 (평소 동아리방에 운영진이 없어 사람이 다시 등록해 줄 수 없다)
 - 새 기기·캐시 초기화 시에만 "기기 등록" 화면이 뜨고, `KIOSK_MASTER_KEY`를 1회 입력한다
 
 **서버 전용 환경변수 (전부 `VITE_` 없이):**
@@ -167,6 +178,35 @@ access_token / refresh_token 반환 → supabase.auth.setSession()
 - 서버에서만 쓸 값은 `netlify/functions/`에서 `process.env`로 읽는다
 - `npm run validate:env`와 빌드는 공개 프런트엔드 설정만 검사한다. 키오스크는 `npm run validate:env:kiosk`, 프런트엔드·키오스크·NAVER·BGG는 `npm run validate:env:all`로 명시적으로 검사하며, 금지된 `VITE_` secret은 모든 검사에서 차단한다.
 - 키오스크 운영 주소는 `https://dullgrental.netlify.app/kiosk`다. 예전 주소의 PWA는 제거 후 재설치한다
+
+---
+
+## 회비 캡처 인증 (2026-11-11)
+
+미납 부원이 이체 캡처를 올리면 바로 `is_paid` 가 켜진다. 설계·결정 기록은 `spec_dues_capture.md`.
+
+```
+부원 브라우저 (긴 변 1600px JPEG 로 줄임)
+   ▼
+netlify/functions/dues-proof.js ── 그림 ──▶ 오라클 OCR (https://dullg.duckdns.org/dues-ocr/ocr, ops/dues-ocr/)
+   │  글자만 받아 _shared/duesRules.js 로 판정
+   ▼
+보관소 dues-proofs (비공개) + RPC dues_submit_proof (부원 토큰 + 서버 비밀값)
+```
+
+- **판정 기준은 「회비 금액이 화면에 있으면 허가」 하나다** (사용자 결정 — 각박하게 잡지 않는다). 계좌·예금주 일치는 막는 데 쓰지 않고 `reason` 표시로만 남긴다. 속임수 방어 규칙을 더 얹지 말 것.
+- 회비 금액·계좌는 `app_config.dues_amount` / `dues_account` — 관리자 「무료 대여·회비」 탭에서 입력. 금액이 비어 있으면 인증 버튼이 숨는다. **계좌(`dues_account`)는 비회원(anon)이 읽지 못한다**(2026-11-12, RLS). 금액은 anon 도 읽는다. `member-application` 함수(anon 키)는 계좌를 `dues_accounts_for_form(폼 공유 비밀값)` RPC 로 받는다 — `app_config` 에서 직접 읽게 되돌리면 빈 값이 온다.
+- OCR 서버가 죽으면 반려하지 않고 `pending_review`(운영진 확인)로 넘어간다. 관리자 회원 탭 위 「회비 캡처 인증」 카드에서 승인·반려·되돌리기.
+- 처음 내는 부원은 입부 신청(`member_applications`)이 있어야 올릴 수 있다. 입부 폼 → DB 는 「단체 신청 알림」 Apps Script 프로젝트의 `MemberForm.gs`(저장소 사본 `scripts/apps_script_member_form.gs`)가 보낸다. 가입 전에 폼으로 낸 회비는 `dues_my_proof_status()` 가 학번으로 연결한다.
+- 방학 중에는 회비를 받지 않는다. 학기 캡처는 관리자 카드의 「캡처 지우기」로 지운다(2월·8월).
+
+**서버 전용 환경변수 (Netlify, `VITE_` 금지):**
+
+| 변수 | 값의 출처 |
+|------|------|
+| `DUES_RPC_SECRET` | Supabase `private_config.dues_rpc_secret` (마이그레이션이 만든 값) |
+| `DUES_OCR_URL` | `https://dullg.duckdns.org/dues-ocr/ocr` |
+| `DUES_OCR_SECRET` | 오라클 서버 `/etc/dues-ocr/env` |
 
 ---
 

@@ -321,15 +321,12 @@ const DEFAULT_OFFICE_HOURS_CONFIG = {
     auto_close_hour: 21,
     auto_close_minute: 0,
     banner_icon: '🟢',
-    banner_title: '오피스아워 진행 중!',
+    banner_title: '무료 대여 진행 중!',
     banner_subtitle: '지금 방문하시면 게임을 대여할 수 있어요',
-    banner_color: 'linear-gradient(135deg, #1a5c2a, #27ae60)',
-    schedule_icon: '📅',
-    schedule_text: '',
-    offline_text: '현재 오피스아워를 운영하고 있지 않아요'
+    banner_color: 'linear-gradient(135deg, #1a5c2a, #27ae60)'
 };
 
-// 오피스아워 상태 조회
+// 무료 대여 안내 배너 상태 조회 (코드 이름은 office_status — 상시 운영 시간이 아니다. CLAUDE.md 「오피스아워」 참고)
 export const fetchOfficeStatus = async () => {
   const { data, error } = await supabase
     .from('app_config')
@@ -340,7 +337,7 @@ export const fetchOfficeStatus = async () => {
   return data?.value ?? { ...DEFAULT_OFFICE_STATUS };
 };
 
-// 오피스아워 배너 설정 조회
+// 홈 배너 설정 조회
 export const fetchOfficeHoursConfig = async () => {
   const { data, error } = await supabase
     .from('app_config')
@@ -351,7 +348,7 @@ export const fetchOfficeHoursConfig = async () => {
   return data?.value ?? { ...DEFAULT_OFFICE_HOURS_CONFIG };
 };
 
-// 오피스아워 상태 + 배너 설정을 한 번에 (홈 60초 폴링용 — 키마다 1건씩이던 것을 1건으로, 2026-10-10)
+// 출근 상태 + 홈 배너 설정을 한 번에 (홈 60초 폴링용 — 키마다 1건씩이던 것을 1건으로, 2026-10-10)
 export const fetchOfficeInfo = async () => {
   const { data, error } = await supabase
     .from('app_config')
@@ -365,6 +362,23 @@ export const fetchOfficeInfo = async () => {
   };
 };
 
+const parsePaymentCheck = (v) => {
+  if (v === true || v === false) return v;
+  if (typeof v === 'string') return v.toLowerCase() !== 'false';
+  return true;
+};
+
+// [Admin] 회비 검사 상태 + 마지막으로 바꾼 시각 (관리자 요약 카드의 「무료 대여 켜진 지 N일」 알림용)
+export const fetchPaymentCheckState = async () => {
+  const { data, error } = await supabase
+    .from('app_config')
+    .select('value, updated_at')
+    .eq('key', 'payment_check_enabled')
+    .maybeSingle();
+  if (error) throw error;
+  return { enabled: parsePaymentCheck(data?.value), updatedAt: data?.updated_at ?? null };
+};
+
 // 회비 검사 활성화 여부 조회
 export const fetchPaymentCheckEnabled = async () => {
   const { data } = await supabase
@@ -374,14 +388,11 @@ export const fetchPaymentCheckEnabled = async () => {
     .single();
   // value 는 jsonb — 문자열 "true" 와 boolean true 둘 다 허용 (DB 함수 is_payment_check_enabled 와 동일 기준).
   // 행이 없거나 형식이 이상하면 DB 함수처럼 "검사 켜짐"(true)으로 본다 — 화면이 "꺼짐"으로 오표시되지 않게.
-  const v = data?.value;
-  if (v === true || v === false) return v;
-  if (typeof v === 'string') return v.toLowerCase() !== 'false';
-  return true;
+  return parsePaymentCheck(data?.value);
 };
 
 // 회비 입금 계좌 목록 (app_config.dues_account = [{ bank, number, holder }, ...]). 계좌가 여러 개일 수 있다.
-// 저장소가 공개라 코드·마이그레이션에 값을 적지 않는다 — 관리자 화면(오피스아워 탭)에서만 입력·수정한다.
+// 저장소가 공개라 코드·마이그레이션에 값을 적지 않는다 — 관리자 화면(「무료 대여·회비」 탭)에서만 입력·수정한다.
 // 번호가 빈 줄은 버린다. 하나도 없으면 빈 배열 (화면은 「운영진에게 문의」로 대신한다).
 const normalizeDuesAccounts = (value) => {
   const list = Array.isArray(value) ? value : (value && typeof value === 'object' ? [value] : []);
@@ -400,6 +411,14 @@ export const fetchDuesAccounts = async () => {
   return normalizeDuesAccounts(data?.value);
 };
 
+// 부원 화면용: 낼 사람 본인에게만 계좌를 내려준다 (dues_my_accounts — 예전에 냈거나 입부 신청이 있는 미납 부원).
+// app_config 의 dues_account 행은 관리자만 직접 읽는다. 위 fetchDuesAccounts 는 관리자 화면 전용이다.
+export const fetchMyDuesAccounts = async () => {
+  const { data, error } = await supabase.rpc('dues_my_accounts');
+  if (error) throw error;
+  return normalizeDuesAccounts(data);
+};
+
 // [Admin] 회비 입금 계좌 목록 저장
 export const saveDuesAccounts = async (accounts) => {
   const value = normalizeDuesAccounts(accounts);
@@ -410,7 +429,107 @@ export const saveDuesAccounts = async (accounts) => {
   return value;
 };
 
-// 오피스아워 배너 설정 저장
+// 회비 금액 (app_config.dues_amount = 숫자). 캡처 인증이 이 금액을 찾는다. 없으면 null — 인증 버튼을 숨긴다.
+export const fetchDuesAmount = async () => {
+  const { data, error } = await supabase
+    .from('app_config')
+    .select('value')
+    .eq('key', 'dues_amount')
+    .maybeSingle();
+  if (error) throw error;
+  const n = Number(data?.value);
+  return Number.isInteger(n) && n > 0 ? n : null;
+};
+
+// [Admin] 회비 금액 저장
+export const saveDuesAmount = async (amount) => {
+  const n = Number(amount);
+  if (!Number.isInteger(n) || n <= 0) throw new Error('회비 금액은 0보다 큰 정수여야 합니다.');
+  const { error } = await supabase
+    .from('app_config')
+    .upsert({ key: 'dues_amount', value: n }, { onConflict: 'key' });
+  if (error) throw error;
+  return n;
+};
+
+// 회비 캡처 인증 — 내 상태. { eligibility: 'ok'|'paid'|'exempt'|'need_form'|'no_profile', claimed, latest, ... }
+// 가입 전에 입부 폼으로 낸 회비가 있으면 이 호출이 내 계정에 연결한다(claimed: true).
+export const fetchDuesProofStatus = async () => {
+  const { data, error } = await supabase.rpc('dues_my_proof_status');
+  if (error) throw error;
+  return data;
+};
+
+// 캡처를 긴 변 1600px JPEG 로 줄인다. 원본(수 MB·HEIC 등)을 그대로 보내지 않는다.
+const shrinkImage = async (file, maxSide = 1600) => {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  return canvas.toDataURL('image/jpeg', 0.85);
+};
+
+// 회비 캡처 올리기 → { ok, status: 'approved'|'pending_review'|'rejected'|'retry', reason } 또는 { ok: false, error }
+// attempt: 「다시 찍어 주세요」 뒤의 두 번째 시도면 2 (또 안 읽히면 운영진 확인으로 넘어간다)
+export const submitDuesProof = async (file, attempt = 1) => {
+  let image;
+  try {
+    image = await shrinkImage(file);
+  } catch {
+    return { ok: false, error: 'bad_image' };
+  }
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return { ok: false, error: 'auth' };
+  try {
+    const response = await fetch('/.netlify/functions/dues-proof', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ image, mime: 'image/jpeg', attempt }),
+    });
+    return await response.json();
+  } catch {
+    return { ok: false, error: 'network' };
+  }
+};
+
+// [Admin] 회비 캡처 인증 목록·처리
+export const fetchAdminDuesProofs = async (semester = null) => {
+  const { data, error } = await supabase.rpc('admin_list_dues_proofs', { p_semester: semester });
+  if (error) throw error;
+  return data;
+};
+
+export const reviewDuesProof = async (id, action) => {
+  const { data, error } = await supabase.rpc('admin_review_dues_proof', { p_id: id, p_action: action });
+  if (error) throw error;
+  if (!data?.success) throw new Error(data?.message || '처리하지 못했습니다.');
+  return data;
+};
+
+// 캡처 보기 — 비공개 보관소라 1분짜리 주소를 받는다
+export const getDuesProofImageUrl = async (path) => {
+  const { data, error } = await supabase.storage.from('dues-proofs').createSignedUrl(path, 60);
+  if (error) throw error;
+  return data.signedUrl;
+};
+
+// 학기 캡처 지우기: DB 경로를 비우고 보관소 파일을 지운다. 파일 삭제가 실패하면 남은 개수를 돌려준다.
+export const clearDuesProofImages = async (semester) => {
+  const { data, error } = await supabase.rpc('admin_clear_dues_proof_images', { p_semester: semester });
+  if (error) throw error;
+  const paths = data?.paths || [];
+  let failed = 0;
+  for (let i = 0; i < paths.length; i += 100) {
+    const { error: removeError } = await supabase.storage.from('dues-proofs').remove(paths.slice(i, i + 100));
+    if (removeError) failed += Math.min(100, paths.length - i);
+  }
+  return { total: paths.length, failed };
+};
+
+// 홈 배너 설정 저장
 export const saveOfficeHoursConfig = async (config) => {
   const { error } = await supabase
     .from('app_config')

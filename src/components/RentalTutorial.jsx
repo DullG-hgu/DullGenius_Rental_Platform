@@ -3,7 +3,7 @@
 // 설명: 신규 부원용 대여 튜토리얼 — 한 장씩 넘기는 카드형 (스와이프·이전/다음·진행 점)
 //   - 대여 4장 뒤에, 비로그인이면 「먼저 사이트 가입」 장, 비부원(비로그인·회비 미납)이면 「부원이 아니어도」 갈래 장이 붙는다
 //   - 수령 장은 회비 검사 토글(app_config.payment_check_enabled)을 보고 평소/무료 대여 기간 문구를 바꾼다
-//     (오피스아워 안내는 무료 대여 기간에만 의미가 있어 그때만 보여준다)
+//     (홈 배너 안내는 무료 대여 기간에만 의미가 있어 그때만 보여준다)
 //   - 장마다 그림(public/tutorial/*.webp, 실제 화면 캡처)이 있으면 아이콘 대신 보여준다
 //   - InfoModal 「이용 안내」 탭을 대체한다 (2026-10-04)
 
@@ -117,7 +117,7 @@ function RentalTutorial({ isOpen, onClose, onOpenReport }) {
                 title: '지금은 무료 대여 기간!',
                 body: (
                     <>
-                        <p><strong>회비 없이</strong> 누구나 빌릴 수 있어요. 홈 위쪽에 「오피스아워 진행 중」이 떠 있을 때 동아리방({ROOM})으로 오세요.</p>
+                        <p><strong>회비 없이</strong> 누구나 빌릴 수 있어요. 홈 위쪽에 「무료 대여 진행 중」 안내가 떠 있을 때 동아리방({ROOM})으로 오세요.</p>
                         <p>문을 열자마자 <strong>오른쪽 책상 위 태블릿</strong>에서 「찜 수령하기」를 누르고 내 이름을 골라요.</p>
                     </>
                 ),
@@ -192,7 +192,7 @@ function RentalTutorial({ isOpen, onClose, onOpenReport }) {
                         </div>
                         <div className={`rt-path${isFreePeriod ? ' is-live' : ''}`}>
                             <strong>🆓 무료 대여 기간 {isFreePeriod && <span className="rt-badge">지금 진행 중!</span>}</strong>
-                            <p>학기 초 오피스아워에는 사이트에 가입만 하면 회비 없이 빌릴 수 있어요.</p>
+                            <p>학기 첫 주에는 사이트에 가입만 하면 회비 없이 빌릴 수 있어요.</p>
                             {!user && (
                                 <button type="button" className="rt-btn" onClick={() => goAndClose('/signup')}>
                                     사이트 회원가입 →

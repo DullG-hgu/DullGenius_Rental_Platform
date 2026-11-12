@@ -2,23 +2,27 @@
 // 관리자 대시보드 맨 위 할 일 알림 — 한 줄짜리 항목만, 할 일이 있는 것만 보이고 하나도 없으면 섹션째 숨긴다.
 // (10/12 사용자 피드백: 상태 안내까지 늘 깔려 있어 게임 관리가 밀렸다 → 할 일 있을 때만, 다시 한 줄 목록으로 축소.
 //  예전 「처음 사용하시나요?」 안내는 대여 현황 탭 맨 아래로 옮겼다)
-//   - 오피스아워: 켜져 있을 때만. 목적은 끄는 걸 잊지 않게 (켜는 건 오피스아워 탭)
+//   - 출근 중(홈 배너): 켜져 있을 때만. 목적은 퇴근을 잊지 않게 (켜는 건 「무료 대여·회비」 탭)
+//   - 무료 대여(회비 검사 꺼짐)가 7일 넘게 켜져 있을 때 — 1주차 뒤 복원을 잊지 않게
 //   - 외부 대여 신청: 처리할 신청(대기·검토 필요)이 있을 때만
 //   - 미처리 신고·신청: 1건 이상일 때만
 //   - 반납 기한 지난 게임: 1건 이상일 때만 — 「대여자별 처리」 모달 진입점 (나중에 단체 연체도 여기에 합류)
 // 카운트를 불러오는 동안은 섹션을 숨긴 채 둔다 (카드가 하나씩 튀어나오는 깜빡임 방지).
 
 import { useEffect, useState } from 'react';
-import { fetchDamageReports, fetchGameRequests, fetchRentalRequests } from '../api';
+import { fetchDamageReports, fetchGameRequests, fetchRentalRequests, fetchPaymentCheckState } from '../api';
 import { holdOverdueDays, rentalDueDays } from '../lib/rentalDue';
 
 // 「처리할」 외부 대여 신청 — 확정 건(auto/manual_confirmed)은 반납 관리 대상이라 여기서 세지 않는다
 const ACTIONABLE_RENTAL_STATUSES = ['pending', 'needs_review'];
+// 무료 대여는 1주차 월~금 — 이보다 오래 켜져 있으면 복원을 잊은 것일 수 있다
+const FREE_RENTAL_REMIND_DAYS = 7;
 
 function AdminOverviewCard({ games = [], gamesLoading = false, isOfficeOpen, onGoReports, onGoRentalRequests, onGoOffice, onOpenWorkList }) {
     const [pendingReports, setPendingReports] = useState(null); // null = 로딩 중
     const [pendingRequests, setPendingRequests] = useState(null);
     const [pendingRentals, setPendingRentals] = useState(null);
+    const [paymentState, setPaymentState] = useState(null); // 못 읽으면 null — 알림만 안 뜬다
     const [failedCounts, setFailedCounts] = useState([]); // 불러오지 못한 카운트 이름 — 0건으로 조용히 숨기지 않고 알린다
 
     useEffect(() => {
@@ -44,6 +48,7 @@ function AdminOverviewCard({ games = [], gamesLoading = false, isOfficeOpen, onG
             setFailedCounts(failed);
         };
         load();
+        fetchPaymentCheckState().then((s) => { if (!cancelled) setPaymentState(s); }).catch(() => {});
         return () => { cancelled = true; };
     }, []);
 
@@ -76,7 +81,13 @@ function AdminOverviewCard({ games = [], gamesLoading = false, isOfficeOpen, onG
         rows.push({ key: 'overdue', icon: '⏰', label: '반납 기한 지남', count, tone: 'danger', action: '대여자별 처리', onAction: onOpenWorkList });
     }
     if (isOfficeOpen) {
-        rows.push({ key: 'office', icon: '🟢', label: '오피스아워 켜짐', count: null, tone: 'ok', action: '끄기', onAction: onGoOffice, hint: '운영이 끝나면 퇴근 처리' });
+        rows.push({ key: 'office', icon: '🟢', label: '출근 중 (홈 배너 표시)', count: null, tone: 'ok', action: '퇴근하러 가기', onAction: onGoOffice, hint: '방을 비우면 퇴근 처리' });
+    }
+    if (paymentState?.enabled === false && paymentState.updatedAt) {
+        const days = Math.floor((now - new Date(paymentState.updatedAt)) / 86400000);
+        if (days >= FREE_RENTAL_REMIND_DAYS) {
+            rows.push({ key: 'freeRental', icon: '🆓', label: '무료 대여 켜진 지', count: `${days}일`, tone: 'warn', action: '회비 검사 복원하러 가기', onAction: onGoOffice, hint: '무료 대여 기간이 끝났다면 회비 검사를 복원' });
+        }
     }
     if (rentalCount > 0) {
         rows.push({ key: 'rental', icon: '📝', label: '외부 대여 신청', count: `${rentalCount}건`, tone: 'warn', action: '보기', onAction: onGoRentalRequests });

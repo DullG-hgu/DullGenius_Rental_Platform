@@ -1,6 +1,6 @@
 // src/pages/Home.jsx
 // 최종 수정일: 2026.10.04 (💡 대여 튜토리얼 + 가입 직후 안내)
-// 설명: 메인 — 오피스아워(운영 중일 때만) · 내 대여(부원)/비부원 카드 · 검색 · 상황별 추천 · 인기 게임 · 놀이터 · 하단 정보
+// 설명: 메인 — 무료 대여 안내 배너(운영진이 켰을 때만) · 내 대여(부원)/비부원 카드 · 검색 · 상황별 추천 · 인기 게임 · 놀이터 · 하단 정보
 //   (2026-10-12 A안: 상황별 추천을 위로, 마이페이지 입구로 「내 대여」 카드)
 //   색은 강조색 하나(보라) + 무채색. 상황별 추천은 관리자 설정(app_config.recommendations) 그대로.
 
@@ -166,8 +166,8 @@ const Home = () => {
                     <div>
                         <div className="home-office-title">
                             {isClosingSoon
-                                ? `${closeTimeStr}에 오피스아워가 끝나요!`
-                                : (officeHoursConfig?.banner_title ?? '오피스아워 진행 중!')}
+                                ? `오늘은 ${closeTimeStr}까지 빌릴 수 있어요`
+                                : (officeHoursConfig?.banner_title ?? '무료 대여 진행 중!')}
                         </div>
                         <div className="home-office-sub">
                             {isClosingSoon
@@ -207,7 +207,7 @@ const Home = () => {
                 </div>
             )}
 
-            {/* 오피스아워가 아닐 때: 언제 가면 되는지 한 줄 */}
+            {/* 평소(무료 대여 배너가 꺼진 상태 = 기본): 동아리방 이용 요일 한 줄 */}
             {!isOfficeOpen && (
                 <p className="home-room-note">동아리방은 {CLUB_INFO.roomDays}에 이용할 수 있어요.</p>
             )}

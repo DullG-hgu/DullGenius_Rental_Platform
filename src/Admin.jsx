@@ -63,7 +63,7 @@ function Admin() {
   const [dataScope, setDataScope] = useState(null);
   const [officeError, setOfficeError] = useState(false);
 
-  // 오피스아워 진행 중 이동/로그아웃 시 확인용 모달
+  // 출근 중 이동/로그아웃 시 확인용 모달
   const [exitConfirm, setExitConfirm] = useState({ isOpen: false, action: null, target: null });
   // 대여자별 처리 모달 — 「오늘의 할 일」 연체 카드에서 열고, 처리 핸들러가 있는 DashboardTab 이 그린다
   const [workListOpen, setWorkListOpen] = useState(false);
@@ -134,7 +134,7 @@ function Admin() {
       if (scopeRef.current !== scope || requests.current.office !== request) return null;
       setOfficeStatus(null);
       setOfficeError(true);
-      showToast("오피스아워 상태를 확인하지 못했습니다. 다시 조회해 주세요.", { type: "error" });
+      showToast("출근 상태를 확인하지 못했습니다. 다시 조회해 주세요.", { type: "error" });
       return null;
     }
   }, [scope, showToast]);
@@ -161,7 +161,7 @@ function Admin() {
 
   // --- 3. 로딩 및 권한 체크 ---
 
-  // 오피스아워 상태
+  // 출근 상태 = 홈 배너 표시 여부 (대여 권한과 무관 — CLAUDE.md 「오피스아워」 절)
   const isOfficeOpen = officeStatus?.open &&
     (!officeStatus.auto_close_at || new Date() < new Date(officeStatus.auto_close_at));
 
@@ -169,7 +169,7 @@ function Admin() {
     try {
       await setOfficeOpen();
       if (!await loadOfficeStatus()) return false;
-      showToast("🟢 출근 완료! 오피스아워가 시작되었습니다.", { type: "success" });
+      showToast("🟢 출근 완료! 홈에 배너가 떴습니다.", { type: "success" });
       return true;
     } catch (e) {
       console.error('[Admin] 출근 처리 실패:', e);
@@ -182,7 +182,7 @@ function Admin() {
     try {
       await setOfficeClosed();
       if (!await loadOfficeStatus()) return false;
-      showToast("퇴근 완료! 오피스아워가 종료되었습니다.", { type: "success" });
+      showToast("퇴근 완료! 홈 배너를 내렸습니다.", { type: "success" });
       return true;
     } catch (e) {
       console.error('[Admin] 퇴근 처리 실패:', e);
@@ -253,8 +253,8 @@ function Admin() {
           hint="BGG에서 새 게임을 검색해 목록에 등록" />
         <TabButton label="⚙️ 시스템 설정" id="system" activeTab={activeTab} onClick={changeTab}
           hint="회원 회비 통계, 학기 초기화" />
-        <TabButton label="🕒 오피스아워" id="office" activeTab={activeTab} onClick={changeTab}
-          hint="1주차 무료 대여: 출근·퇴근, 전체 회원 대여 허용, 운영 안내 설정" />
+        <TabButton label="🆓 무료 대여·회비" id="office" activeTab={activeTab} onClick={changeTab}
+          hint="1주차 무료 대여(출근·퇴근 배너, 전체 회원 대여 허용)와 회비 금액·계좌" />
         <TabButton label="👥 회원 관리" id="members" activeTab={activeTab} onClick={changeTab}
           hint="회원 목록, 회비 납부 상태, 비밀번호 초기화, 권한 변경" />
         <TabButton label="💰 포인트 시스템" id="points" activeTab={activeTab} onClick={changeTab}
@@ -337,12 +337,12 @@ function Admin() {
         )}
       </div>
 
-      {/* 오피스아워 진행 중 이동/로그아웃 확인 */}
+      {/* 출근 중 이동/로그아웃 확인 */}
       <ConfirmModal
         isOpen={exitConfirm.isOpen}
         onClose={() => setExitConfirm({ isOpen: false, action: null, target: null })}
         onConfirm={handleExitConfirm}
-        title="⚠️ 오피스아워 진행 중"
+        title="⚠️ 출근 중 (홈 배너 표시 중)"
         message={
           exitConfirm.action === 'logout'
             ? '지금 로그아웃하면 자동으로 퇴근 처리됩니다.\n계속하시겠습니까?'

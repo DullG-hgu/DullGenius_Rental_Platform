@@ -42,9 +42,9 @@ afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 it('hides the office card at the deadline without requiring a server refresh (closed = nothing shown)', async () => {
     await mount();
-    expect(screen.getByText(/18:00에 오피스아워가 끝나요/)).toBeTruthy();
+    expect(screen.getByText(/18:00까지 빌릴 수 있어요/)).toBeTruthy();
     await act(async () => { vi.advanceTimersByTime(10_000); });
-    expect(screen.queryByText(/오피스아워/)).toBeNull();
+    expect(screen.queryByText(/18:00까지/)).toBeNull();
     expect(screen.queryByText('평일 17~18시 운영')).toBeNull();
     expect(fetchOfficeStatus).toHaveBeenCalledTimes(1);
 });
@@ -52,7 +52,7 @@ it('hides the office card at the deadline without requiring a server refresh (cl
 it('uses Korean office time when only configured closing time is available', async () => {
     fetchOfficeStatus.mockResolvedValue({ open: true });
     await mount();
-    expect(screen.getByText(/18:00에 오피스아워가 끝나요/)).toBeTruthy();
+    expect(screen.getByText(/18:00까지 빌릴 수 있어요/)).toBeTruthy();
 });
 
 it('refreshes office status on poll, focus and visibility, and cleans up after unmount', async () => {
@@ -95,11 +95,11 @@ it('shows nothing when the office status fails to load, and recovers on the next
     fetchOfficeStatus.mockRejectedValue(new Error('offline'));
     await mount();
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.queryByText(/오피스아워/)).toBeNull();
+    expect(screen.queryByText(/무료 대여 진행 중/)).toBeNull();
     fetchOfficeStatus.mockResolvedValue({ open: true });
-    fetchOfficeHoursConfig.mockResolvedValue({ banner_title: '오피스아워 진행 중!' });
+    fetchOfficeHoursConfig.mockResolvedValue({});
     await act(async () => { vi.advanceTimersByTime(60_000); });
-    expect(screen.getByText('오피스아워 진행 중!')).toBeTruthy();
+    expect(screen.getByText('무료 대여 진행 중!')).toBeTruthy();
 });
 
 it('offers native links for search, browsing, ranked games, the full ranking and the playground', async () => {

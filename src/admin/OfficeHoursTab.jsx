@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchPaymentCheckEnabled, fetchOfficeHoursConfig, saveOfficeHoursConfig, fetchDuesAccounts, saveDuesAccounts } from '../api';
+import { fetchPaymentCheckEnabled, fetchOfficeHoursConfig, saveOfficeHoursConfig, fetchDuesAccounts, saveDuesAccounts, fetchDuesAmount, saveDuesAmount } from '../api';
 import { togglePaymentCheck } from '../api_members';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
@@ -19,6 +19,7 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
     const [officeHoursConfig, setOfficeHoursConfig] = useState(null);
     const [duesAccounts, setDuesAccounts] = useState([{ bank: '', number: '', holder: '' }]);
     const [duesSaving, setDuesSaving] = useState(false);
+    const [duesAmount, setDuesAmount] = useState('');
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'info' });
     const showConfirmModal = (title, message, onConfirm, type = 'info') => setConfirmModal({ isOpen: true, title, message, onConfirm, type });
     const closeConfirmModal = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
@@ -39,6 +40,9 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
         fetchDuesAccounts()
             .then((accounts) => { if (active && accounts.length) setDuesAccounts(accounts); })
             .catch(() => {});
+        fetchDuesAmount()
+            .then((amount) => { if (active && amount) setDuesAmount(String(amount)); })
+            .catch(() => {});
         return () => { active = false; };
     }, []);
 
@@ -49,7 +53,10 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
         try {
             const saved = await saveDuesAccounts(duesAccounts);
             setDuesAccounts(saved.length ? saved : [{ bank: '', number: '', holder: '' }]);
-            showToast(`회비 계좌 ${saved.length}개가 저장되었습니다.`, { type: 'success' });
+            // 금액 칸을 비워 두면 금액은 건드리지 않는다 (캡처 인증 버튼이 숨겨진 상태 그대로)
+            const amountText = duesAmount.replace(/[^0-9]/g, '');
+            if (amountText) setDuesAmount(String(await saveDuesAmount(Number(amountText))));
+            showToast(`회비 계좌 ${saved.length}개${amountText ? '와 회비 금액' : ''}이 저장되었습니다.`, { type: 'success' });
         } catch (e) {
             console.error('[OfficeHoursTab] 회비 계좌 저장 실패:', e);
             showToast('저장 실패: ' + e.message, { type: 'error' });
@@ -98,7 +105,7 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
         return Math.min(max, Math.max(min, n));
     };
 
-    // 오피스아워 설정 저장
+    // 홈 배너 설정 저장
     const handleSaveOfficeHoursConfig = async () => {
         try {
             const normalized = {
@@ -108,9 +115,9 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
             };
             setOfficeHoursConfig(normalized);
             await saveOfficeHoursConfig(normalized);
-            showToast('✅ 오피스아워 설정이 저장되었습니다.', { type: 'success' });
+            showToast('✅ 홈 배너 설정이 저장되었습니다.', { type: 'success' });
         } catch (e) {
-            console.error('[OfficeHoursTab] 오피스아워 설정 저장 실패:', e);
+            console.error('[OfficeHoursTab] 홈 배너 설정 저장 실패:', e);
             showToast('저장 실패: ' + e.message, { type: 'error' });
         }
     };
@@ -118,15 +125,15 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
 
     return (
         <div>
-            <h3>🕒 오피스아워</h3>
+            <h3>🆓 무료 대여·회비</h3>
             <p style={{ color: 'var(--admin-text-sub)', lineHeight: 1.6 }}>
-                1주차 무료 대여 운영을 위한 출근·퇴근, 회비 검사와 운영 안내를 관리합니다.
+                1주차 무료 대여(출근·퇴근 배너, 전체 회원 대여 허용)와 회비 금액·계좌를 관리합니다. 출근·퇴근은 홈 배너만 켜고 끄며, 실제로 대여를 푸는 건 아래 「전체 회원 대여 허용」입니다.
             </p>
             <div className="admin-card">
                 <div style={styles.toggleContainer}>
                     <div>
-                        <h4 style={{ margin: '0 0 8px' }} aria-live="polite">{!statusKnown ? (officeError ? '상태 확인 실패' : '상태 확인 중…') : isOfficeOpen ? '🟢 오피스아워 운영 중' : '⭕ 오피스아워 종료'}</h4>
-                        <span style={{ color: 'var(--admin-text-sub)' }}>출근·퇴근으로 홈페이지 운영 상태를 전환합니다.</span>
+                        <h4 style={{ margin: '0 0 8px' }} aria-live="polite">{!statusKnown ? (officeError ? '상태 확인 실패' : '상태 확인 중…') : isOfficeOpen ? '🟢 출근 중 — 홈에 배너 표시' : '⭕ 퇴근 — 홈 배너 없음'}</h4>
+                        <span style={{ color: 'var(--admin-text-sub)' }}>운영진이 방에 있는 동안만 출근해 두세요. 홈 맨 위에 「지금 오면 빌릴 수 있다」는 배너가 뜹니다.</span>
                     </div>
                     <button type="button" disabled={officeBusy} onClick={statusKnown ? handleOfficeToggle : onReloadStatus}
                         style={{ ...styles.toggleBtn, minHeight: '48px', background: isOfficeOpen ? '#b33b35' : '#237a46' }}>
@@ -175,6 +182,16 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
                     회비 확인 전인 부원이 게임 상세에서 찜하려 할 때 이 계좌가 보입니다. 계좌가 바뀌면 여기서 고치세요.<br />
                     계좌는 여러 개 넣을 수 있습니다. 계좌번호를 비운 줄은 저장할 때 빠지고, 하나도 없으면 「납부 방법은 운영진에게 문의」로 표시됩니다.
                 </p>
+                <div className="admin-grid-auto" style={{ marginBottom: '12px' }}>
+                    <label style={styles.duesField}>
+                        <span>회비 금액 (원)</span>
+                        <input type="text" inputMode="numeric" className="admin-input" value={duesAmount} placeholder="예: 20000"
+                            onChange={(e) => setDuesAmount(e.target.value)} />
+                    </label>
+                </div>
+                <p style={{ color: 'var(--admin-text-sub)', fontSize: '0.9em', marginBottom: '16px' }}>
+                    금액을 넣으면 부원이 이체 캡처를 올려 바로 인증할 수 있습니다. 캡처에서 이 금액을 찾으므로, 회비가 바뀌면 여기부터 고치세요.
+                </p>
                 {duesAccounts.map((account, index) => (
                     <div key={index} className="admin-grid-auto" style={{ marginBottom: '12px' }}>
                         <label style={styles.duesField}>
@@ -200,17 +217,17 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
                         계좌 추가
                     </button>
                     <button type="button" onClick={handleSaveDuesAccount} disabled={duesSaving} style={{ ...styles.toggleBtn, background: '#237a46' }}>
-                        {duesSaving ? '저장 중…' : '계좌 저장'}
+                        {duesSaving ? '저장 중…' : '계좌·금액 저장'}
                     </button>
                 </div>
             </div>
 
-            {/* 오피스아워 배너 설정 */}
+            {/* 홈 배너 설정 */}
             {officeHoursConfig && (
                 <div className="admin-card" style={{ marginTop: '20px' }}>
-                    <h4 style={{ marginBottom: '8px' }}>🟢 오피스아워 배너 설정</h4>
+                    <h4 style={{ marginBottom: '8px' }}>🟢 홈 배너 설정</h4>
                     <p style={{ color: 'var(--admin-text-sub)', fontSize: '0.9em', marginBottom: '20px' }}>
-                        홈 화면 배너 문구/색상과 자동 퇴근 시간을 설정합니다.
+                        출근해 있는 동안 홈 맨 위에 뜨는 배너의 문구·색상과 자동 퇴근 시간을 설정합니다. 퇴근 상태에서는 홈에 아무것도 뜨지 않습니다.
                     </p>
 
                     {/* 자동 퇴근 시간 */}
@@ -261,7 +278,7 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
                             value={officeHoursConfig.banner_title}
                             onChange={e => setOfficeHoursConfig(prev => ({ ...prev, banner_title: e.target.value }))}
                             style={styles.input}
-                            placeholder="오피스아워 진행 중!"
+                            placeholder="무료 대여 진행 중!"
                         />
                     </div>
 
@@ -311,38 +328,6 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
                         </div>
                     </div>
 
-                    {/* 운영 예정 시간 안내 */}
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={styles.fieldLabel}>운영 예정 시간 안내 아이콘</label>
-                        <input
-                            type="text"
-                            value={officeHoursConfig.schedule_icon ?? '📅'}
-                            onChange={e => setOfficeHoursConfig(prev => ({ ...prev, schedule_icon: e.target.value }))}
-                            style={{ ...styles.input, width: '100px' }}
-                            placeholder="📅"
-                        />
-                    </div>
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={styles.fieldLabel}>운영 예정 시간 안내 문구 (비워두면 아래 기본 문구로 표시)</label>
-                        <input
-                            type="text"
-                            value={officeHoursConfig.schedule_text ?? ''}
-                            onChange={e => setOfficeHoursConfig(prev => ({ ...prev, schedule_text: e.target.value }))}
-                            style={styles.input}
-                            placeholder="예) 오늘 오후 6시~9시에 빌려갈 수 있어요"
-                        />
-                    </div>
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={styles.fieldLabel}>퇴근 중 기본 문구 (예정 시간 미입력 시 표시)</label>
-                        <input
-                            type="text"
-                            value={officeHoursConfig.offline_text ?? ''}
-                            onChange={e => setOfficeHoursConfig(prev => ({ ...prev, offline_text: e.target.value }))}
-                            style={styles.input}
-                            placeholder="현재 오피스아워를 운영하고 있지 않아요"
-                        />
-                    </div>
-
                     {/* 미리보기 */}
                     <div style={{ marginBottom: '20px' }}>
                         <label style={styles.fieldLabel}>미리보기</label>
@@ -367,23 +352,6 @@ function OfficeHoursTab({ isOfficeOpen, statusKnown, officeError, onReloadStatus
                                     </div>
                                 </div>
                             </div>
-                            {/* 오프라인 안내 배너 (schedule_text 있을 때만) */}
-                            {officeHoursConfig.schedule_text && (
-                                <div style={{
-                                    padding: '11px 16px',
-                                    background: 'rgba(100, 120, 160, 0.15)',
-                                    borderRadius: '12px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    border: '1px solid rgba(100, 120, 160, 0.3)',
-                                    color: 'var(--admin-text-main)',
-                                    fontSize: '0.9rem',
-                                }}>
-                                    <span style={{ fontSize: '1.1rem' }}>{officeHoursConfig.schedule_icon || '📅'}</span>
-                                    <span>{officeHoursConfig.schedule_text}</span>
-                                </div>
-                            )}
                         </div>
                     </div>
 
