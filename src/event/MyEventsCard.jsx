@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { userMessage } from '../lib/userMessage';
 import { listMyRegistrations, cancelMyRegistration } from './api_events_public';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -46,7 +47,7 @@ export default function MyEventsCard() {
       showToast('신청이 취소되었습니다.', { type: 'success' });
       load();
     } catch (e) {
-      showToast('취소 실패: ' + e.message, { type: 'error' });
+      showToast(userMessage(e, '신청을 취소하지 못했어요. 잠시 후 다시 시도해 주세요.'), { type: 'error' });
     }
   };
 

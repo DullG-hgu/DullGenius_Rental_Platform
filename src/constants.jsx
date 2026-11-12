@@ -95,7 +95,7 @@ export const TEXTS = {
 - 30분 내에 동아리방(학관 2층 231호) 키오스크에서 **수령 인증**을 해야 최종 대여가 완료됩니다.
 
 3. 반납 및 에티켓
-- 반납 기한: 다음날 저녁 12시까지
+- 반납 기한: 다음날 밤 12시까지
 - 반납 방법: 동아리방 키오스크(태블릿) 이용
 - 구성품 확인 필수! 파손/분실 시 꼭 신고해주세요. (자진 신고 시 정상 참작)
 `,
@@ -364,6 +364,12 @@ export const getAuthErrorMessage = (error) => {
   if (msg.includes("Password should be")) return "비밀번호는 6자 이상이어야 합니다.";
   if (msg.includes("weak_password")) return "비밀번호가 너무 쉽습니다.";
   if (msg.includes("User already registered")) return "이미 가입된 학번입니다.";
+  if (msg.includes("different from the old")) return "지금 쓰는 비밀번호와 다른 비밀번호를 입력해 주세요.";
+  if (msg.includes("rate limit")) return "요청이 많아요. 잠시 후 다시 시도해 주세요.";
+  if (msg.includes("Failed to fetch")) return "연결 상태를 확인하고 다시 시도해 주세요.";
+  // 한글이면 우리가 만든 안내 문구다. 그 밖의 원문(영문)은 화면에 내보내지 않는다.
+  if (/[가-힣]/.test(msg)) return msg;
 
-  return "오류가 발생했습니다: " + msg;
+  console.error(error);
+  return "처리하지 못했어요. 잠시 후 다시 시도해 주세요.";
 };

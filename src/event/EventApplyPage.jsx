@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { userMessage } from '../lib/userMessage';
 import { getEventBySlug, getMyRegistration, registerIndividual, createTeam, getRegistration } from './api_events_public';
 import NotFound from '../components/NotFound';
 import EventPaymentGuide from './EventPaymentGuide';
@@ -60,7 +61,7 @@ export default function EventApplyPage() {
         if (!alive) return;
         setLoadError(true);
         console.error(e);
-        showToast('로딩 실패: ' + e.message, { type: 'error' });
+        showToast(userMessage(e, '행사 정보를 불러오지 못했어요. 연결 상태를 확인하고 다시 열어 주세요.'), { type: 'error' });
       } finally {
         if (alive) setLoading(false);
       }
@@ -190,7 +191,7 @@ function ApplyForm({ event, mode, user, profile, onSuccess }) {
       else if (m.includes('event_not_recruiting')) showToast('현재 모집 중인 행사가 아닙니다.', { type: 'error' });
       else if (m.includes('team_name_taken')) showToast('이미 사용 중인 팀명입니다.', { type: 'error' });
       else if (m.includes('extra_answers_too_large')) showToast('추가 답변이 너무 깁니다.', { type: 'error' });
-      else showToast('신청 실패: ' + m, { type: 'error' });
+      else showToast(userMessage(e, '신청하지 못했어요. 잠시 후 다시 시도해 주세요.'), { type: 'error' });
     } finally {
       setSubmitting(false);
     }

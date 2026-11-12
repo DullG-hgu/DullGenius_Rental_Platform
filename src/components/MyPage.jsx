@@ -12,6 +12,7 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabaseClient';
 import { formatVersion } from '../lib/appUpdate';
 import { rentalDDayLabel } from '../lib/rentalDue';
+import { userMessage } from '../lib/userMessage';
 import ConfirmModal from './ConfirmModal';
 
 const RENTAL_HISTORY_DATE_ANOMALY_LABELS = {
@@ -162,7 +163,7 @@ const MyPage = () => {
       setPwForm({ newPw: '', confirmPw: '' });
       setPwOpen(false);
     } catch (err) {
-      showToast(err.message || "비밀번호 변경에 실패했습니다.", { type: "error" });
+      showToast(getAuthErrorMessage(err), { type: "error" });
     } finally {
       setPwLoading(false);
     }
@@ -241,7 +242,7 @@ const MyPage = () => {
         showToast(result.message || "취소 실패", { type: "error" });
       }
     } catch (e) {
-      showToast("오류 발생: " + (e.message || "알 수 없는 오류"), { type: "error" });
+      showToast(userMessage(e, "찜을 취소하지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요."), { type: "error" });
     } finally {
       setCancelingIds(prev => {
         const next = new Set(prev);
@@ -361,7 +362,7 @@ const MyPage = () => {
               let typeLabel = "대여중";
 
               if (item.type === 'DIBS') {
-                typeLabel = "찜 (수령 대기)";
+                typeLabel = "찜";
                 badgeColor = "#a3470a"; // 찜은 항상 주황
                 if (dDayStr.includes("만료")) badgeColor = "#b3261e"; // 시간 초과시 빨강
               } else {
@@ -636,7 +637,7 @@ const formatDate = (dateString) => {
 };
 
 import { updateMySemester } from '../api';
-import { DEFAULT_SEMESTER } from '../constants'; // [NEW]
+import { DEFAULT_SEMESTER, getAuthErrorMessage } from '../constants'; // [NEW]
 
 // [NEW] 학기 수정 컴포넌트
 const SemesterItem = ({ semester, isFixed, onUpdate }) => {
@@ -656,7 +657,7 @@ const SemesterItem = ({ semester, isFixed, onUpdate }) => {
       setEditing(false);
       await onUpdate(); // 부모 갱신 요청 (refreshProfile)
     } catch (e) {
-      showToast(e.message, { type: "error" });
+      showToast(userMessage(e, "가입 학기를 저장하지 못했어요. 잠시 후 다시 시도해 주세요."), { type: "error" });
     }
   };
 

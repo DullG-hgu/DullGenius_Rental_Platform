@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { getTeamByInviteCode, getEventBySlug, joinTeamByCode, getRegistration, getMyRegistration } from './api_events_public';
 import { supabase } from '../lib/supabaseClient.jsx';
+import { userMessage } from '../lib/userMessage';
 import NotFound from '../components/NotFound';
 import EventPaymentGuide from './EventPaymentGuide';
 import './EventPage.css';
@@ -68,7 +69,7 @@ export default function EventTeamJoinPage() {
         if (!alive) return;
         setLoadError(true);
         console.error(e);
-        showToast('정보 로딩 실패: ' + e.message, { type: 'error' });
+        showToast(userMessage(e, '정보를 불러오지 못했어요. 연결 상태를 확인하고 다시 열어 주세요.'), { type: 'error' });
       } finally {
         if (alive) setLoading(false);
       }
@@ -116,7 +117,7 @@ export default function EventTeamJoinPage() {
       else if (m.includes('event_full')) showToast('정원이 마감되었습니다.', { type: 'error' });
       else if (m.includes('team_not_forming')) showToast('이미 마감된 팀입니다.', { type: 'error' });
       else if (m.includes('invalid_invite_code')) showToast('유효하지 않은 초대 코드입니다.', { type: 'error' });
-      else showToast('합류 실패: ' + m, { type: 'error' });
+      else showToast(userMessage(e, '팀에 합류하지 못했어요. 잠시 후 다시 시도해 주세요.'), { type: 'error' });
     } finally {
       setSubmitting(false);
     }
