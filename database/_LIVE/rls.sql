@@ -9,7 +9,7 @@
 -- 총 48개 정책
 
 -- ----------------------------------------------------------------
--- 테이블: app_config  (2개 정책)
+-- 테이블: app_config  (3개 정책)
 -- ----------------------------------------------------------------
 ALTER TABLE public.app_config ENABLE ROW LEVEL SECURITY;
 
@@ -20,10 +20,17 @@ CREATE POLICY "Admin Manage Config" ON public.app_config
   USING (is_admin())
 ;
 
-CREATE POLICY "Allow public read access" ON public.app_config
+CREATE POLICY "Anon read public config" ON public.app_config
   AS PERMISSIVE
   FOR SELECT
-  TO anon,authenticated
+  TO anon
+  USING ((key <> 'dues_account'::text))
+;
+
+CREATE POLICY "Authenticated read config" ON public.app_config
+  AS PERMISSIVE
+  FOR SELECT
+  TO authenticated
   USING (true)
 ;
 
