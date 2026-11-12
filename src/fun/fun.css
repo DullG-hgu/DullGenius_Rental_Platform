@@ -31,14 +31,14 @@
 
 .fun-subtitle {
     margin: -8px 0 16px;
-    color: #666;
+    color: var(--dg-sub);
     font-size: 0.92rem;
 }
 
 .fun-status {
     padding: 24px 8px;
     text-align: center;
-    color: #555;
+    color: var(--dg-sub);
 }
 
 .fun-status button,
@@ -55,7 +55,7 @@
 .fun-primary-btn {
     width: 100%;
     border: none;
-    background: #6a11cb;
+    background: var(--dg-primary);
     color: #fff;
 }
 
@@ -84,7 +84,7 @@
     gap: 14px;
     padding: 18px;
     border-radius: 16px;
-    border: 1px solid #eee;
+    border: 1px solid var(--dg-line);
     background: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     color: inherit;
@@ -107,7 +107,7 @@
 }
 
 .fun-hub-desc {
-    color: #666;
+    color: var(--dg-sub);
     font-size: 0.88rem;
     margin-top: 2px;
 }
@@ -116,8 +116,8 @@
     margin-left: 6px;
     padding: 2px 8px;
     border-radius: 999px;
-    background: #eee;
-    color: #666;
+    background: var(--dg-line);
+    color: var(--dg-sub);
     font-size: 0.75rem;
     font-weight: 600;
 }
@@ -133,7 +133,7 @@
     width: 100%;
     padding: 18px;
     border-radius: 16px;
-    border: 1px solid #eee;
+    border: 1px solid var(--dg-line);
     background: linear-gradient(135deg, rgba(106, 17, 203, 0.07), rgba(37, 117, 252, 0.07));
     text-align: left;
     cursor: pointer;
@@ -147,13 +147,13 @@
 }
 
 .wc-theme-desc {
-    color: #555;
+    color: var(--dg-sub);
     font-size: 0.9rem;
     margin-top: 4px;
 }
 
 .wc-theme-meta {
-    color: #777;
+    color: var(--dg-sub);
     font-size: 0.82rem;
     margin-top: 10px;
 }
@@ -163,7 +163,7 @@
     margin-top: 10px;
     padding: 3px 10px;
     border-radius: 999px;
-    background: #6a11cb;
+    background: var(--dg-primary);
     color: #fff;
     font-size: 0.78rem;
     font-weight: 700;
@@ -193,7 +193,7 @@
     width: 40px;
     height: 4px;
     border-radius: 2px;
-    background: #ddd;
+    background: var(--dg-line);
     margin: 0 auto 14px;
 }
 
@@ -223,7 +223,7 @@
     min-height: 40px;
     padding: 0 14px;
     border-radius: 999px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--dg-line);
     background: #f7f7f9;
     font-size: 0.92rem;
     font-weight: 700;
@@ -276,12 +276,12 @@
 
 .wc-sheet-note {
     margin: 0 0 14px;
-    color: #666;
+    color: var(--dg-sub);
     font-size: 0.9rem;
 }
 
 .wc-sheet-note strong {
-    color: #6a11cb;
+    color: var(--dg-primary);
 }
 
 .wc-size-grid {
@@ -294,7 +294,7 @@
 .wc-size-btn {
     min-height: 44px;
     border-radius: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--dg-line);
     background: #f7f7f9;
     font-size: 1rem;
     font-weight: 700;
@@ -303,8 +303,8 @@
 }
 
 .wc-size-btn[aria-pressed="true"] {
-    background: #6a11cb;
-    border-color: #6a11cb;
+    background: var(--dg-primary);
+    border-color: var(--dg-primary);
     color: #fff;
 }
 
@@ -343,7 +343,7 @@
     justify-self: start;
     background: none;
     border: none;
-    color: #666;
+    color: var(--dg-sub);
     font-size: 0.95rem;
     cursor: pointer;
     min-height: 44px;
@@ -357,27 +357,27 @@
 
 .wc-round small {
     margin-left: 6px;
-    color: #888;
+    color: var(--dg-sub);
     font-weight: 600;
 }
 
 .wc-percent {
     justify-self: end;
     font-weight: 700;
-    color: #6a11cb;
+    color: var(--dg-primary);
 }
 
 .wc-progress {
     height: 6px;
     border-radius: 3px;
-    background: #eee;
+    background: var(--dg-line);
     overflow: hidden;
     margin: 4px 0 10px;
 }
 
 .wc-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #6a11cb, #2575fc);
+    background: linear-gradient(90deg, var(--dg-primary), #2575fc);
     transition: width 0.3s ease;
 }
 
@@ -413,7 +413,7 @@
 
 /* 위(왼쪽) 카드는 보라, 아래(오른쪽) 카드는 파랑 — 진행 막대 그라데이션 양 끝 색 */
 .wc-card {
-    --wc-accent: #6a11cb;
+    --wc-accent: var(--dg-primary);
     --wc-tint: #f7f2fe;
     flex: 1;
     min-width: 0;
@@ -501,7 +501,7 @@
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.08);
-    color: #666;
+    color: var(--dg-sub);
     font-size: 0.78rem;
     font-weight: 600;
 }
@@ -525,7 +525,7 @@
     height: 64px;
     margin: -32px 0 0 -32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    background: linear-gradient(135deg, var(--dg-primary), #2575fc);
     color: #fff;
     font-size: 2rem;
     font-weight: 900;
@@ -556,7 +556,7 @@
     border-radius: 999px;
     border: 1px solid rgba(0, 0, 0, 0.12);
     background: rgba(255, 255, 255, 0.92);
-    color: #666;
+    color: var(--dg-sub);
     font-size: 0.8rem;
     font-weight: 700;
     cursor: pointer;
@@ -592,7 +592,7 @@
     margin-bottom: 12px;
     padding: 10px 12px;
     border-radius: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--dg-line);
     font: inherit;
     font-size: 16px;
     resize: none;
@@ -612,7 +612,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    background: linear-gradient(135deg, var(--dg-primary), #2575fc);
     border: 3px solid #fff;
     font-size: 0.9rem;
     font-style: italic;
@@ -638,7 +638,7 @@
     min-height: 40px;
     padding: 0 16px;
     border-radius: 999px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--dg-line);
     background: #fff;
     color: #4a2b8c;
     font-size: 0.9rem;
@@ -648,7 +648,7 @@
 
 .wc-undo-btn:disabled {
     color: #bbb;
-    border-color: #eee;
+    border-color: var(--dg-line);
     cursor: default;
 }
 
@@ -660,7 +660,7 @@
     justify-content: center;
     gap: 12px;
     text-align: center;
-    color: #555;
+    color: var(--dg-sub);
 }
 
 @media (min-width: 720px) {
@@ -747,15 +747,15 @@
     margin-top: 10px;
     padding: 4px 12px;
     border-radius: 999px;
-    background: #eee;
-    color: #666;
+    background: var(--dg-line);
+    color: var(--dg-sub);
     font-size: 0.82rem;
     font-weight: 700;
 }
 
 .wc-rent-badge.is-available {
     background: #e3f7e8;
-    color: #1d7a3a;
+    color: var(--dg-ok);
 }
 
 .wc-result-stats {
@@ -768,7 +768,7 @@
 .wc-result-stats > div {
     padding: 12px;
     border-radius: 14px;
-    border: 1px solid #eee;
+    border: 1px solid var(--dg-line);
     background: #fff;
     display: flex;
     flex-direction: column;
@@ -777,12 +777,12 @@
 
 .wc-result-stats strong {
     font-size: 1.15rem;
-    color: #6a11cb;
+    color: var(--dg-primary);
 }
 
 .wc-result-stats span {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--dg-sub);
 }
 
 .wc-result-path h3 {
@@ -812,7 +812,7 @@
     min-width: 40px;
     font-size: 0.8rem;
     font-weight: 700;
-    color: #6a11cb;
+    color: var(--dg-primary);
 }
 
 .wc-path-name {
@@ -855,7 +855,7 @@
     background: transparent;
     font-size: 0.95rem;
     font-weight: 700;
-    color: #666;
+    color: var(--dg-sub);
     cursor: pointer;
 }
 
@@ -875,21 +875,21 @@
     min-height: 36px;
     padding: 0 12px;
     border-radius: 999px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--dg-line);
     background: #fff;
     font-size: 0.85rem;
-    color: #555;
+    color: var(--dg-sub);
     cursor: pointer;
 }
 
 .wc-sort-btn[aria-pressed="true"] {
-    border-color: #6a11cb;
-    color: #6a11cb;
+    border-color: var(--dg-primary);
+    color: var(--dg-primary);
     font-weight: 700;
 }
 
 .wc-rank-summary {
-    color: #777;
+    color: var(--dg-sub);
     font-size: 0.82rem;
     margin: 0 0 8px;
 }
@@ -916,7 +916,7 @@
     flex-shrink: 0;
     text-align: center;
     font-weight: 800;
-    color: #6a11cb;
+    color: var(--dg-primary);
 }
 
 .wc-rank-img {
@@ -949,7 +949,7 @@
 
 .wc-rank-meta {
     font-size: 0.8rem;
-    color: #777;
+    color: var(--dg-sub);
 }
 
 .wc-unranked {
@@ -962,7 +962,7 @@
 
 .wc-result-entrants {
     font-weight: 600;
-    color: #777;
+    color: var(--dg-sub);
 }
 
 .wc-unplayed-note {
@@ -1011,7 +1011,7 @@
 .wc-my-footnote {
     margin: 0 0 8px;
     font-size: 0.8rem;
-    color: #777;
+    color: var(--dg-sub);
 }
 
 .wc-my-genres {
@@ -1040,42 +1040,42 @@
 .wc-my-bar {
     height: 8px;
     border-radius: 4px;
-    background: #eee;
+    background: var(--dg-line);
     overflow: hidden;
 }
 
 .wc-my-bar span {
     display: block;
     height: 100%;
-    background: linear-gradient(90deg, #6a11cb, #2575fc);
+    background: linear-gradient(90deg, var(--dg-primary), #2575fc);
 }
 
 .wc-my-genre-rate {
     text-align: right;
-    color: #6a11cb;
+    color: var(--dg-primary);
     font-weight: 700;
 }
 
 .wc-my-status {
-    color: #777;
+    color: var(--dg-sub);
 }
 
 .wc-my-status.is-on {
-    color: #1d7a3a;
+    color: var(--dg-ok);
     font-weight: 700;
 }
 
 .wc-my-privacy {
     margin: 22px 0 10px;
     font-size: 0.8rem;
-    color: #888;
+    color: var(--dg-sub);
     text-align: center;
 }
 
 .wc-record-note {
     margin: 4px 0 0;
     font-size: 0.78rem;
-    color: #888;
+    color: var(--dg-sub);
     text-align: center;
 }
 
@@ -1132,15 +1132,15 @@
     display: inline-block;
     padding: 3px 10px;
     border-radius: 999px;
-    background: #eee;
-    color: #666;
+    background: var(--dg-line);
+    color: var(--dg-sub);
     font-size: 0.8rem;
     font-weight: 700;
 }
 
 .wc-detail-status.is-on {
     background: #e3f7e8;
-    color: #1d7a3a;
+    color: var(--dg-ok);
 }
 
 .wc-detail-genres {
@@ -1195,7 +1195,7 @@
 
 .wc-sheet.wc-sheet-inline {
     max-width: none;
-    border: 1px solid #eee;
+    border: 1px solid var(--dg-line);
     border-radius: 16px;
     padding: 16px 16px 18px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);

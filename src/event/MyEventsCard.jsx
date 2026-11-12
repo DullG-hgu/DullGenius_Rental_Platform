@@ -47,7 +47,10 @@ export default function MyEventsCard() {
       showToast('신청이 취소되었습니다.', { type: 'success' });
       load();
     } catch (e) {
-      showToast(userMessage(e, '신청을 취소하지 못했어요. 잠시 후 다시 시도해 주세요.'), { type: 'error' });
+      const m = e?.message || '';
+      if (m.includes('event_already_started')) showToast('이미 시작한 행사는 취소할 수 없어요.', { type: 'error' });
+      else if (m.includes('cannot_cancel_in_status')) showToast('지금 상태에서는 취소할 수 없어요. 운영진에게 문의해 주세요.', { type: 'error' });
+      else showToast(userMessage(e, '신청을 취소하지 못했어요. 잠시 후 다시 시도해 주세요.'), { type: 'error' });
     }
   };
 
