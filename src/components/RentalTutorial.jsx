@@ -138,10 +138,10 @@ function RentalTutorial({ isOpen, onClose, onOpenReport }) {
                 key: 'return',
                 icon: '📦',
                 image: { src: '/tutorial/kiosk-return.webp', alt: '키오스크 첫 화면 오른쪽 아래의 반납하기 버튼' },
-                title: '다음날 자정까지 반납',
+                title: '다음날 밤 12시까지 반납',
                 body: (
                     <>
-                        <p>다음 사람을 위해 <strong>빌린 다음날 자정까지</strong> 같은 태블릿에서 「반납하기」를 눌러 주세요.</p>
+                        <p>다음 사람을 위해 <strong>빌린 다음날 밤 12시까지</strong> 같은 태블릿에서 「반납하기」를 눌러 주세요.</p>
                         <p>빌린 게임은 <strong>마이페이지</strong>에서 확인할 수 있어요.</p>
                         <p className="rt-note">부품이 없어졌거나 망가졌다면 바로 알려 주세요.</p>
                         {onOpenReport && (

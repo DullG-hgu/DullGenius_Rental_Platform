@@ -307,7 +307,7 @@ const Home = () => {
 
             <footer className="home-footer">
                 <button type="button" className="home-guide" onClick={openTutorial}>
-                    처음이신가요? 이용 가이드 →
+                    처음이신가요? 이용법 보기 →
                 </button>
                 {!loading && !error && <InfoBar games={games} onOpenGuide={openTutorial} />}
                 <div className="home-footer-bgg">

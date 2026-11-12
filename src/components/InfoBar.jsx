@@ -20,7 +20,7 @@ function InfoBar({ games, onOpenGuide }) {
                 {/* 상단: 핵심 액션 (크고 예쁜 버튼) */}
                 <div className="infobar-actions">
                     <button onClick={onOpenGuide} className="infobar-action-btn primary">
-                        대여 안내
+                        이용법
                     </button>
                     <button onClick={() => openModal('report')} className="infobar-action-btn secondary">
                         파손/문의

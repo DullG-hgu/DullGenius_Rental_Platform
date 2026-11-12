@@ -43,7 +43,6 @@ const TierCommunity = lazy(() => import('./fun/tier/TierCommunity'));
 const TierPublic = lazy(() => import('./fun/tier/TierPublic'));
 
 import ProtectedRoute from './components/ProtectedRoute';
-import LoginTooltip from './components/LoginTooltip';
 import ChunkErrorBoundary from './components/ChunkErrorBoundary';
 // [PERF] 첫 페인트 경로에서 제외: 사용자 상호작용 직전까지 불필요
 const InstallPromptBanner = lazy(() => import('./components/InstallPromptBanner'));
