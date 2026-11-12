@@ -3,20 +3,20 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import GameDetail from '../src/components/GameDetail';
-import { fetchGameById, fetchReviews, addReview, deleteReview, fetchPaymentCheckEnabled, fetchDuesAccounts } from '../src/api';
+import { fetchGameById, fetchReviews, addReview, deleteReview, fetchPaymentCheckEnabled, fetchMyDuesAccounts, fetchDuesAmount, fetchDuesProofStatus } from '../src/api';
 const state = vi.hoisted(() => ({ games: [], loading: false, error: null, refreshGames: vi.fn() }));
 vi.mock('../src/contexts/GameDataContext', () => ({ useGameData: () => state }));
 const auth = vi.hoisted(() => ({ user: null, profile: null, loading: false }));
 const showToast = vi.hoisted(() => vi.fn());
 vi.mock('../src/contexts/AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('../src/contexts/ToastContext', () => ({ useToast: () => ({ showToast }) }));
-vi.mock('../src/api', () => ({ fetchGameById: vi.fn(), fetchReviews: vi.fn(), increaseViewCount: vi.fn(), sendLog: vi.fn(), sendMiss: vi.fn(), addReview: vi.fn(), updateReview: vi.fn(), deleteReview: vi.fn(), dibsGame: vi.fn(), cancelDibsGame: vi.fn(), fetchPaymentCheckEnabled: vi.fn(), fetchDuesAccounts: vi.fn(async () => []) }));
+vi.mock('../src/api', () => ({ fetchGameById: vi.fn(), fetchReviews: vi.fn(), increaseViewCount: vi.fn(), sendLog: vi.fn(), sendMiss: vi.fn(), addReview: vi.fn(), updateReview: vi.fn(), deleteReview: vi.fn(), dibsGame: vi.fn(), cancelDibsGame: vi.fn(), fetchPaymentCheckEnabled: vi.fn(), fetchMyDuesAccounts: vi.fn(async () => []), fetchDuesAmount: vi.fn(async () => null), fetchDuesProofStatus: vi.fn(async () => null), submitDuesProof: vi.fn() }));
 vi.mock('../src/components/InfoModal', () => ({ default: () => null }));
 const available = { id: 1, name: 'Current game', status: '대여가능', rentals: [], quantity: 1, available_count: 1 };
 const App = () => <MemoryRouter initialEntries={[{ pathname: '/game/1', state: { game: { ...available, status: '대여중' } } }]}><Routes><Route path="/game/:id" element={<GameDetail />} /></Routes></MemoryRouter>;
 beforeEach(() => {
   vi.resetAllMocks(); auth.user = null; auth.profile = null; auth.roles = []; auth.refreshProfile = vi.fn(); window.scrollTo = vi.fn(); state.games = []; state.loading = false; state.error = null;
-  fetchReviews.mockResolvedValue([]); fetchGameById.mockResolvedValue(null); fetchPaymentCheckEnabled.mockResolvedValue(true); fetchDuesAccounts.mockResolvedValue([]);
+  fetchReviews.mockResolvedValue([]); fetchGameById.mockResolvedValue(null); fetchPaymentCheckEnabled.mockResolvedValue(true); fetchMyDuesAccounts.mockResolvedValue([]); fetchDuesAmount.mockResolvedValue(null); fetchDuesProofStatus.mockResolvedValue(null);
 });
 afterEach(cleanup);
 it('follows refreshed shared inventory instead of route-state snapshots', async () => {
@@ -102,10 +102,31 @@ it('tells when a rented-out game is due back', async () => {
   expect(await screen.findByText('반납 예정일은 3월 5일이에요.')).toBeTruthy();
 });
 it('shows the dues account from admin settings to a blocked member', async () => {
-  fetchDuesAccounts.mockResolvedValue([{ bank: '시험은행', number: '000-0000', holder: '시험' }, { bank: '둘째은행', number: '111-1111', holder: '시험' }]);
+  fetchMyDuesAccounts.mockResolvedValue([{ bank: '시험은행', number: '000-0000', holder: '시험' }, { bank: '둘째은행', number: '111-1111', holder: '시험' }]);
   state.games = [available]; auth.user = { id: 'member' }; auth.profile = { is_paid: false };
   render(<App />);
   expect(await screen.findByText('시험은행 000-0000')).toBeTruthy();
   expect(screen.getByText('둘째은행 111-1111')).toBeTruthy();
   expect(screen.getAllByRole('button', { name: '계좌번호 복사' })).toHaveLength(2);
+});
+it('offers capture upload to a blocked member only when the dues amount is set and they are eligible', async () => {
+  state.games = [available]; auth.user = { id: 'member' }; auth.profile = { is_paid: false };
+  fetchDuesAmount.mockResolvedValue(20000);
+  fetchDuesProofStatus.mockResolvedValue({ eligibility: 'ok', latest: null });
+  const first = render(<App />);
+  expect(await screen.findByRole('button', { name: '이체 캡처로 바로 인증' })).toBeTruthy();
+  expect(screen.getByText(/20,000원을 보낸 이체 완료 화면/)).toBeTruthy();
+  first.unmount();
+
+  fetchDuesProofStatus.mockResolvedValue({ eligibility: 'need_form', latest: null });
+  const second = render(<App />);
+  expect(await screen.findByRole('link', { name: '입부 신청서 열기' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '이체 캡처로 바로 인증' })).toBeNull();
+  second.unmount();
+
+  fetchDuesAmount.mockResolvedValue(null);
+  fetchDuesProofStatus.mockResolvedValue({ eligibility: 'ok', latest: null });
+  render(<App />);
+  expect(await screen.findByText('회비 납부 후 대여 가능')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '이체 캡처로 바로 인증' })).toBeNull();
 });

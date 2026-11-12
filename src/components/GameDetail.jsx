@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, sendLog, fetchPaymentCheckEnabled, fetchDuesAccounts } from '../api';
+import { fetchGameById, sendMiss, fetchReviews, addReview, updateReview, deleteReview, increaseViewCount, dibsGame, cancelDibsGame, sendLog, fetchPaymentCheckEnabled, fetchMyDuesAccounts } from '../api';
 import { TEXTS } from '../constants';
 import { translateGenre } from '../constants/genreMap';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,7 +16,9 @@ import LazyImage from './common/LazyImage'; // [NEW] Lazy Image
 import { getOptimizedImageUrl } from '../utils/imageOptimizer';
 import { isPaidMember } from '../lib/membership';
 import { rentalDDayLabel } from '../lib/rentalDue';
+import { userMessage } from '../lib/userMessage';
 import { CLUB_INFO } from '../infoData';
+import DuesProofUpload from './DuesProofUpload';
 import './GameDetail.css'; // [NEW] External CSS
 
 const ROOM = CLUB_INFO.location.trim().replace(/\.$/, '');
@@ -103,7 +105,7 @@ function GameDetail() {
   useEffect(() => {
     if (!duesBlocked) return;
     let active = true;
-    fetchDuesAccounts().then(accounts => { if (active) setDuesAccounts(accounts); }).catch(() => {});
+    fetchMyDuesAccounts().then(accounts => { if (active) setDuesAccounts(accounts); }).catch(() => {});
     return () => { active = false; };
   }, [duesBlocked]);
 
@@ -334,7 +336,7 @@ function GameDetail() {
       setReviewRefresh(value => value + 1);
 
     } catch (e) {
-      showToast("리뷰 등록 실패: " + e.message, { type: "error" });
+      showToast(userMessage(e, "리뷰를 등록하지 못했어요. 잠시 후 다시 시도해 주세요."), { type: "error" });
     } finally {
       setIsReviewSubmitting(false);
     }
@@ -360,7 +362,7 @@ function GameDetail() {
       handleCancelEdit();
       setReviewRefresh(value => value + 1);
     } catch (e) {
-      showToast("리뷰 수정 실패: " + e.message, { type: "error" });
+      showToast(userMessage(e, "리뷰를 수정하지 못했어요. 잠시 후 다시 시도해 주세요."), { type: "error" });
     } finally {
       setIsUpdating(false);
     }
@@ -376,7 +378,7 @@ function GameDetail() {
           showToast(TEXTS.ALERT_REVIEW_DELETE_SUCCESS);
           setReviewRefresh(value => value + 1);
         } catch (e) {
-          showToast("삭제 실패: " + e.message, { type: "error" });
+          showToast(userMessage(e, "리뷰를 삭제하지 못했어요. 잠시 후 다시 시도해 주세요."), { type: "error" });
         }
       },
       "danger"
@@ -535,6 +537,7 @@ function GameDetail() {
                 <button onClick={recheckDues} disabled={isRecheckingDues} className="action-link">
                   {isRecheckingDues ? "확인하는 중" : "방금 냈다면 다시 확인"}
                 </button>
+                <DuesProofUpload onApproved={recheckDues} />
               </div>
             ) : (
               <>

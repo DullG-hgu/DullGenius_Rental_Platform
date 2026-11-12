@@ -1,0 +1,22 @@
+[Unit]
+Description=Dues capture OCR (dullgrental)
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/dues-ocr/dues_ocr.py
+# /etc/dues-ocr/env: DUES_OCR_SECRET=... (root 600). 값은 서버에서 만들고 저장소에 두지 않는다.
+EnvironmentFile=/etc/dues-ocr/env
+DynamicUser=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+# 마인크래프트와 같은 서버 — 자리를 양보한다
+Nice=10
+CPUQuota=200%
+MemoryMax=768M
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

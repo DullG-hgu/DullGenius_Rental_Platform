@@ -1,0 +1,58 @@
+.dues-proof {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--dg-line);
+}
+
+.dues-proof-btn {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 10px;
+    background: var(--dg-primary);
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.dues-proof-btn:active {
+    background: var(--dg-primary-press);
+}
+
+.dues-proof-btn:focus-visible {
+    outline: 3px solid var(--dg-primary);
+    outline-offset: 2px;
+}
+
+.dues-proof-btn:disabled {
+    background: var(--dg-soft);
+    color: var(--dg-sub);
+    cursor: default;
+}
+
+.action-note .dues-proof-msg,
+.dues-proof-msg {
+    margin: 8px 0 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--dg-sub);
+}
+
+.action-note .dues-proof-msg.is-ok,
+.dues-proof-msg.is-ok {
+    font-weight: 700;
+    color: var(--dg-ok);
+}
+
+.action-note .dues-proof-msg.is-wait,
+.dues-proof-msg.is-wait {
+    color: var(--dg-ink);
+}
+
+.action-note .dues-proof-msg.is-warn,
+.dues-proof-msg.is-warn {
+    color: var(--dg-warn);
+}

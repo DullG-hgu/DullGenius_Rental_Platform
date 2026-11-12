@@ -6,6 +6,7 @@ import { fetchUsers, fetchUserProfile } from '../api';
 import { updatePaymentStatus, updateUserProfile, updateUserRoles, resetUserPassword } from '../api_members';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
+import DuesProofsCard from './DuesProofsCard';
 import { DEFAULT_SEMESTER, getCurrentSemester, compareSemester } from '../constants';
 
 // 회원 분류 상수/로직 (탭 필터용)
@@ -343,6 +344,9 @@ function MembersTab({ users, onUsersReload }) {
                 <h3 style={{ margin: 0 }}>👥 회원 관리 (총 {members.length}명)</h3>
                 <button onClick={loadMembers} style={styles.refreshBtn}>🔄 새로고침</button>
             </div>
+
+            {/* 회비 캡처 인증 — 승인·되돌리기 뒤 아래 회원 목록을 다시 읽는다 */}
+            <DuesProofsCard onChanged={loadMembers} />
 
             {/* 분류 탭 바 */}
             <div style={styles.tabBar}>
