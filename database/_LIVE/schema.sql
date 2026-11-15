@@ -1,12 +1,12 @@
 -- ================================================================
 -- SCHEMA — Tables (public schema 현재 배포 상태)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 26. AM 11:57:40
+-- 생성 시각: 2026. 11. 15. AM 11:12:54
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 36개 테이블
+-- 총 38개 테이블
 
 -- ----------------------------------------------------------------
 -- 테이블: allowed_users
@@ -52,6 +52,26 @@ CREATE TABLE public.damage_reports (
   content text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT timezone('utc'::text, now()),
   status text DEFAULT 'pending'::text
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: dues_proofs
+-- ----------------------------------------------------------------
+CREATE TABLE public.dues_proofs (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid,  -- FK → profiles(id)
+  student_id text NOT NULL,
+  semester text NOT NULL,
+  source text NOT NULL DEFAULT 'site'::text,
+  status text NOT NULL,
+  reason text,
+  amount int4,
+  account_tail text,
+  image_path text,
+  file_hash text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  reviewed_by uuid,
+  reviewed_at timestamptz
 );
 
 -- ----------------------------------------------------------------
@@ -412,6 +432,21 @@ CREATE TABLE public.matches (
   players jsonb NOT NULL,
   winner_id uuid,
   verified_at timestamptz
+);
+
+-- ----------------------------------------------------------------
+-- 테이블: member_applications
+-- ----------------------------------------------------------------
+CREATE TABLE public.member_applications (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  student_id text NOT NULL,
+  name text,
+  phone text,
+  department text,
+  track text,
+  semester text NOT NULL,
+  submitted_at timestamptz,
+  received_at timestamptz NOT NULL DEFAULT now()
 );
 
 -- ----------------------------------------------------------------

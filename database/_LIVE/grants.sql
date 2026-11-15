@@ -1,7 +1,7 @@
 -- ================================================================
 -- GRANTS — anon / authenticated 실효 권한 (RLS 이전 단계)
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 26. AM 11:57:54
+-- 생성 시각: 2026. 11. 15. AM 11:13:08
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
@@ -12,11 +12,13 @@
 --   테이블 GRANT 는 RLS 정책과 AND 로 작동한다. anon 에게는 쓰기 GRANT 가 없어야 한다.
 
 -- ----------------------------------------------------------------
--- 함수 EXECUTE  (150개)
+-- 함수 EXECUTE  (160개)
 -- ----------------------------------------------------------------
 -- anon  auth  security  function
 --  -     -    INVOKER   _active_rentals_json(p_game_id integer, p_uid uuid, p_admin boolean)
 --  -     -    INVOKER   _admin_cron_mask(p_message text)
+--  -     -    DEFINER   _dues_eligibility(p_user uuid)
+--  -     -    INVOKER   _dues_semester(p_at timestamp with time zone)
 --  Y     Y    INVOKER   _event_calc_fee(p_pricing jsonb, p_tier text)
 --  Y     Y    INVOKER   _event_generate_invite_code()
 --  Y     Y    INVOKER   _event_is_full(p_event_id uuid)
@@ -43,12 +45,15 @@
 --  -     -    INVOKER   _user_game_marks_log()
 --  -     Y    DEFINER   add_game_copy(p_game_id integer)
 --  -     Y    DEFINER   admin_cancel_dibs(p_game_id integer, p_rental_id uuid, p_user_id uuid)
+--  -     Y    DEFINER   admin_clear_dues_proof_images(p_semester text)
 --  -     Y    DEFINER   admin_cron_status(p_limit integer)
 --  -     Y    DEFINER   admin_extend_rentals(p_user_id uuid, p_renter_name text, p_game_id integer, p_rental_id uuid, p_days integer)
+--  -     Y    DEFINER   admin_list_dues_proofs(p_semester text)
 --  -     Y    DEFINER   admin_list_game_info_reports(p_status text, p_limit integer)
 --  -     Y    DEFINER   admin_mark_lost(p_game_id integer, p_rental_id uuid)
 --  -     Y    DEFINER   admin_rent_game(p_game_id integer, p_renter_name text, p_user_id uuid, p_rental_id uuid)
 --  -     Y    DEFINER   admin_return_game(p_game_id integer, p_renter_name text, p_user_id uuid, p_rental_id uuid)
+--  -     Y    DEFINER   admin_review_dues_proof(p_id uuid, p_action text)
 --  -     Y    DEFINER   admin_set_game_info_report_status(p_id uuid, p_status text)
 --  -     Y    DEFINER   admin_update_user_roles(p_user_id uuid, p_role_keys text[])
 --  -     Y    DEFINER   cancel_dibs(p_game_id integer, p_user_id uuid)
@@ -58,6 +63,10 @@
 --  Y     Y    INVOKER   count_active_occupancy(p_game_id integer)
 --  -     Y    DEFINER   dibs_any_copy(p_game_id integer, p_user_id uuid)
 --  -     Y    DEFINER   dibs_game(p_game_id integer, p_user_id uuid)
+--  Y     Y    DEFINER   dues_accounts_for_form(p_secret text)
+--  -     Y    DEFINER   dues_my_accounts()
+--  -     Y    DEFINER   dues_my_proof_status()
+--  -     Y    DEFINER   dues_submit_proof(p_payload jsonb)
 --  -     -    DEFINER   earn_points(p_user_id uuid, p_amount integer, p_type text, p_reason text)
 --  -     Y    DEFINER   event_admin_register(p_event_id uuid, p_user_id uuid, p_membership_tier text, p_team_id uuid, p_mark_paid boolean, p_actual_depositor_name text, p_note text)
 --  -     Y    DEFINER   event_cancel_admin(p_registration_id uuid, p_reason text)
@@ -132,6 +141,7 @@
 --  -     -    INVOKER   guard_rental_return_chronology()
 --  -     -    DEFINER   handle_new_user()
 --  -     Y    DEFINER   increment_view_count(p_game_id integer)
+--  Y     Y    DEFINER   ingest_member_application(p_payload jsonb)
 --  Y     Y    DEFINER   ingest_rental_request(p_payload jsonb)
 --  Y     Y    DEFINER   is_admin()
 --  Y     Y    DEFINER   is_event_team_leader(p_team_id uuid)

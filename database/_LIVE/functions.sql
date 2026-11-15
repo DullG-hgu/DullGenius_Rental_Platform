@@ -1,12 +1,12 @@
 -- ================================================================
 -- FUNCTIONS — public schema 현재 배포 상태
 -- 프로젝트: hptvqangstiaatdtusrg
--- 생성 시각: 2026. 10. 26. AM 11:57:37
+-- 생성 시각: 2026. 11. 15. AM 11:12:52
 -- 생성 스크립트: scripts/pull_schema.js
 -- (자동 생성 파일 — 직접 수정하지 마세요)
 -- ================================================================
 
--- 총 150개 함수
+-- 총 160개 함수
 
 -- ----------------------------------------------------------------
 -- 함수: _active_rentals_json
@@ -59,6 +59,46 @@ CREATE OR REPLACE FUNCTION public._admin_cron_mask(p_message text)
 AS $function$
   SELECT CASE WHEN p_message IS NULL THEN NULL
               ELSE left(regexp_replace(p_message, '[A-Za-z0-9_\-\.=+/]{24,}', '[가림]', 'g'), 300) END
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _dues_eligibility
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._dues_eligibility(p_user uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_p public.profiles%ROWTYPE;
+BEGIN
+  SELECT * INTO v_p FROM public.profiles WHERE id = p_user;
+  IF NOT FOUND THEN RETURN 'no_profile'; END IF;
+  IF EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = p_user AND role_key IN ('admin', 'executive', 'payment_exempt')) THEN
+    RETURN 'exempt';
+  END IF;
+  IF v_p.is_paid THEN RETURN 'paid'; END IF;
+  IF v_p.last_paid_semester IS NOT NULL THEN RETURN 'ok'; END IF;
+  IF EXISTS (SELECT 1 FROM public.member_applications
+             WHERE student_id = regexp_replace(v_p.student_id, '\D', '', 'g')) THEN
+    RETURN 'ok';
+  END IF;
+  RETURN 'need_form';
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: _dues_semester
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._dues_semester(p_at timestamp with time zone DEFAULT now())
+ RETURNS text
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT to_char(p_at AT TIME ZONE 'Asia/Seoul', 'YYYY') || '-' ||
+         CASE WHEN extract(month FROM p_at AT TIME ZONE 'Asia/Seoul') <= 6 THEN '1' ELSE '2' END;
 $function$
 
 -- ----------------------------------------------------------------
@@ -911,6 +951,31 @@ END;
 $function$
 
 -- ----------------------------------------------------------------
+-- 함수: admin_clear_dues_proof_images
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.admin_clear_dues_proof_images(p_semester text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_paths jsonb;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+  WITH old AS (
+    SELECT id, image_path FROM public.dues_proofs
+     WHERE semester = p_semester AND source = 'site' AND image_path IS NOT NULL
+     FOR UPDATE
+  ), cleared AS (
+    UPDATE public.dues_proofs SET image_path = NULL WHERE id IN (SELECT id FROM old)
+  )
+  SELECT coalesce(jsonb_agg(image_path), '[]'::jsonb) INTO v_paths FROM old;
+  RETURN jsonb_build_object('success', true, 'paths', v_paths);
+END;
+$function$
+
+-- ----------------------------------------------------------------
 -- 함수: admin_cron_status
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.admin_cron_status(p_limit integer DEFAULT 20)
@@ -1030,6 +1095,35 @@ BEGIN
     END IF;
 
     RETURN jsonb_build_object('success', true, 'message', v_count || '건 연장 처리 완료', 'new_due_date', v_new_due_date, 'count', v_count);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: admin_list_dues_proofs
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.admin_list_dues_proofs(p_semester text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_sem text := coalesce(p_semester, public._dues_semester());
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+  RETURN jsonb_build_object(
+    'semester', v_sem,
+    'approved_count', (SELECT count(*) FROM public.dues_proofs WHERE semester = v_sem AND status = 'approved'),
+    'images_left', (SELECT count(*) FROM public.dues_proofs WHERE semester = v_sem AND source = 'site' AND image_path IS NOT NULL),
+    'application_last_received', (SELECT max(received_at) FROM public.member_applications),
+    'application_count', (SELECT count(*) FROM public.member_applications WHERE semester = v_sem),
+    'rows', coalesce((
+      SELECT jsonb_agg(to_jsonb(r) ORDER BY r.created_at DESC) FROM (
+        SELECT d.id, d.user_id, d.student_id, p.name, d.source, d.status, d.reason, d.amount,
+               d.account_tail, d.image_path, d.created_at, d.reviewed_at
+          FROM public.dues_proofs d LEFT JOIN public.profiles p ON p.id = d.user_id
+         WHERE d.semester = v_sem
+      ) r), '[]'::jsonb));
 END;
 $function$
 
@@ -1310,6 +1404,39 @@ BEGIN
     VALUES (v_game_id, p_user_id, 'RETURN', jsonb_build_object('action', 'ADMIN RETURN', 'rental_id', v_target_id));
 
     RETURN jsonb_build_object('success', true, 'message', '반납 완료');
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: admin_review_dues_proof
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.admin_review_dues_proof(p_id uuid, p_action text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_row public.dues_proofs%ROWTYPE;
+  v_new text;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION '관리자 권한이 필요합니다.'; END IF;
+  SELECT * INTO v_row FROM public.dues_proofs WHERE id = p_id FOR UPDATE;
+  IF NOT FOUND THEN RETURN jsonb_build_object('success', false, 'message', '기록이 없습니다.'); END IF;
+  v_new := CASE p_action WHEN 'approve' THEN 'approved' WHEN 'reject' THEN 'rejected' WHEN 'revoke' THEN 'revoked' END;
+  IF v_new IS NULL THEN RETURN jsonb_build_object('success', false, 'message', '알 수 없는 동작'); END IF;
+
+  UPDATE public.dues_proofs SET status = v_new, reviewed_by = auth.uid(), reviewed_at = now() WHERE id = p_id;
+  IF v_row.user_id IS NOT NULL THEN
+    IF v_new = 'approved' THEN
+      UPDATE public.profiles SET is_paid = true, last_paid_semester = v_row.semester WHERE id = v_row.user_id;
+    ELSIF v_new = 'revoked' THEN
+      UPDATE public.profiles SET is_paid = false WHERE id = v_row.user_id;
+    END IF;
+  END IF;
+  INSERT INTO public.logs (user_id, action_type, details)
+  VALUES (auth.uid(), 'DUES_PROOF_REVIEW', jsonb_build_object('proof_id', p_id, 'target', v_row.user_id, 'action', p_action));
+  RETURN jsonb_build_object('success', true, 'status', v_new);
 END;
 $function$
 
@@ -1830,6 +1957,174 @@ BEGIN
     VALUES (p_game_id, p_user_id, 'DIBS', jsonb_build_object('action', 'DIBS'));
 
     RETURN jsonb_build_object('success', true, 'message', '찜 완료');
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: dues_accounts_for_form
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.dues_accounts_for_form(p_secret text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_expected text;
+  v_value    jsonb;
+BEGIN
+  SELECT value INTO v_expected FROM public.private_config WHERE key = 'gas_shared_secret';
+  IF v_expected IS NULL OR coalesce(p_secret, '') <> v_expected THEN
+    RETURN '[]'::jsonb;
+  END IF;
+  SELECT value INTO v_value FROM public.app_config WHERE key = 'dues_account';
+  RETURN coalesce(v_value, '[]'::jsonb);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: dues_my_accounts
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.dues_my_accounts()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid   uuid := auth.uid();
+  v_value jsonb;
+BEGIN
+  IF v_uid IS NULL THEN RETURN '[]'::jsonb; END IF;
+  IF NOT (public.is_admin() OR public._dues_eligibility(v_uid) = 'ok') THEN
+    RETURN '[]'::jsonb;
+  END IF;
+  SELECT value INTO v_value FROM public.app_config WHERE key = 'dues_account';
+  RETURN coalesce(v_value, '[]'::jsonb);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: dues_my_proof_status
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.dues_my_proof_status()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid      uuid := auth.uid();
+  v_sem      text := public._dues_semester();
+  v_sid      text;
+  v_elig     text;
+  v_claimed  boolean := false;
+  v_latest   jsonb;
+  v_today    int;
+BEGIN
+  IF v_uid IS NULL THEN
+    RETURN jsonb_build_object('eligibility', 'no_profile');
+  END IF;
+  SELECT regexp_replace(student_id, '\D', '', 'g') INTO v_sid FROM public.profiles WHERE id = v_uid;
+  v_elig := public._dues_eligibility(v_uid);
+
+  -- 선납 연결: 같은 학기에 내 학번으로 허가된, 아직 주인 없는 기록
+  IF v_elig IN ('ok', 'need_form') AND v_sid <> '' THEN
+    UPDATE public.dues_proofs SET user_id = v_uid
+     WHERE user_id IS NULL AND student_id = v_sid AND semester = v_sem AND status = 'approved';
+    IF FOUND THEN
+      UPDATE public.profiles SET is_paid = true, last_paid_semester = v_sem WHERE id = v_uid;
+      INSERT INTO public.logs (user_id, action_type, details)
+      VALUES (v_uid, 'DUES_PROOF', jsonb_build_object('status', 'approved', 'reason', 'prepaid_claimed', 'semester', v_sem));
+      v_claimed := true;
+      v_elig := 'paid';
+    END IF;
+  END IF;
+
+  SELECT jsonb_build_object('status', status, 'reason', reason, 'created_at', created_at)
+    INTO v_latest
+    FROM public.dues_proofs
+   WHERE user_id = v_uid AND semester = v_sem
+   ORDER BY created_at DESC LIMIT 1;
+
+  SELECT count(*) INTO v_today FROM public.dues_proofs
+   WHERE user_id = v_uid AND status = 'rejected'
+     AND created_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'Asia/Seoul';
+
+  RETURN jsonb_build_object(
+    'eligibility', v_elig, 'semester', v_sem, 'claimed', v_claimed,
+    'latest', v_latest, 'rejected_today', v_today, 'daily_limit', 5);
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: dues_submit_proof
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.dues_submit_proof(p_payload jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid      uuid := auth.uid();
+  v_expected text;
+  v_sem      text := public._dues_semester();
+  v_sid      text;
+  v_elig     text;
+  v_status   text := p_payload->>'status';
+  v_reason   text := p_payload->>'reason';
+  v_hash     text := nullif(p_payload->>'file_hash', '');
+  v_today    int;
+BEGIN
+  IF v_uid IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'auth');
+  END IF;
+  SELECT value INTO v_expected FROM public.private_config WHERE key = 'dues_rpc_secret';
+  IF v_expected IS NULL OR coalesce(p_payload->>'secret', '') <> v_expected THEN
+    RETURN jsonb_build_object('success', false, 'error', 'forbidden');
+  END IF;
+  IF v_status NOT IN ('approved', 'pending_review', 'rejected') THEN
+    RETURN jsonb_build_object('success', false, 'error', 'bad_status');
+  END IF;
+
+  v_elig := public._dues_eligibility(v_uid);
+  IF v_elig <> 'ok' THEN
+    RETURN jsonb_build_object('success', false, 'error', v_elig);
+  END IF;
+
+  SELECT count(*) INTO v_today FROM public.dues_proofs
+   WHERE user_id = v_uid AND status = 'rejected'
+     AND created_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'Asia/Seoul';
+  IF v_today >= 5 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'daily_limit');
+  END IF;
+
+  SELECT regexp_replace(student_id, '\D', '', 'g') INTO v_sid FROM public.profiles WHERE id = v_uid;
+
+  -- 같은 파일이 이미 쓰였으면 반려 (지난 학기분·다른 사람 것 포함)
+  IF v_status = 'approved' AND v_hash IS NOT NULL
+     AND EXISTS (SELECT 1 FROM public.dues_proofs WHERE file_hash = v_hash AND status IN ('approved', 'revoked')) THEN
+    v_status := 'rejected'; v_reason := 'duplicate';
+  END IF;
+  -- 이번 학기에 되돌려진 적이 있으면 자동 허가하지 않는다
+  IF v_status = 'approved'
+     AND EXISTS (SELECT 1 FROM public.dues_proofs WHERE user_id = v_uid AND semester = v_sem AND status = 'revoked') THEN
+    v_status := 'pending_review'; v_reason := 'revoked_before';
+  END IF;
+
+  INSERT INTO public.dues_proofs (user_id, student_id, semester, source, status, reason, amount, account_tail, image_path, file_hash)
+  VALUES (v_uid, v_sid, v_sem, 'site', v_status, v_reason,
+          nullif(p_payload->>'amount', '')::int, nullif(p_payload->>'account_tail', ''),
+          nullif(p_payload->>'image_path', ''), v_hash);
+
+  IF v_status = 'approved' THEN
+    UPDATE public.profiles SET is_paid = true, last_paid_semester = v_sem WHERE id = v_uid;
+  END IF;
+  INSERT INTO public.logs (user_id, action_type, details)
+  VALUES (v_uid, 'DUES_PROOF', jsonb_build_object('status', v_status, 'reason', v_reason, 'semester', v_sem));
+
+  RETURN jsonb_build_object('success', true, 'status', v_status, 'reason', v_reason);
 END;
 $function$
 
@@ -5057,6 +5352,83 @@ BEGIN
       'is_rentable', v_is_rentable
     )
   );
+END;
+$function$
+
+-- ----------------------------------------------------------------
+-- 함수: ingest_member_application
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.ingest_member_application(p_payload jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_expected text;
+  v_sid      text := regexp_replace(coalesce(p_payload->>'student_id', ''), '\D', '', 'g');
+  v_at       timestamptz;
+  v_sem      text;
+  v_proof    jsonb := p_payload->'proof';
+  v_status   text;
+  v_reason   text;
+  v_hash     text;
+  v_uid      uuid;
+  v_paid     boolean := false;
+BEGIN
+  SELECT value INTO v_expected FROM public.private_config WHERE key = 'gas_shared_secret';
+  IF v_expected IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'message', '서버 시크릿 미설정');
+  END IF;
+  IF coalesce(p_payload->>'secret', '') <> v_expected THEN
+    RETURN jsonb_build_object('success', false, 'message', '인증 실패');
+  END IF;
+  IF length(v_sid) < 6 THEN
+    RETURN jsonb_build_object('success', false, 'message', '학번 없음');
+  END IF;
+
+  BEGIN
+    v_at := (p_payload->>'submitted_at')::timestamptz;
+  EXCEPTION WHEN others THEN
+    v_at := NULL;
+  END;
+  v_at  := coalesce(v_at, now());
+  v_sem := public._dues_semester(v_at);
+
+  INSERT INTO public.member_applications (student_id, name, phone, department, track, semester, submitted_at)
+  VALUES (v_sid, nullif(btrim(p_payload->>'name'), ''), nullif(btrim(p_payload->>'phone'), ''),
+          nullif(btrim(p_payload->>'department'), ''), nullif(btrim(p_payload->>'track'), ''), v_sem, v_at)
+  ON CONFLICT (student_id, semester) DO UPDATE
+    SET name = EXCLUDED.name, phone = EXCLUDED.phone, department = EXCLUDED.department,
+        track = EXCLUDED.track, submitted_at = EXCLUDED.submitted_at, received_at = now();
+
+  -- 폼에 캡처가 같이 왔으면 같은 판정 결과를 기록한다 (이번 학기 제출분만)
+  IF v_proof IS NOT NULL AND jsonb_typeof(v_proof) = 'object' AND v_sem = public._dues_semester() THEN
+    v_status := v_proof->>'status';
+    v_reason := v_proof->>'reason';
+    v_hash   := nullif(v_proof->>'file_hash', '');
+    IF v_status IN ('approved', 'pending_review', 'rejected') THEN
+      IF v_status = 'approved' AND v_hash IS NOT NULL
+         AND EXISTS (SELECT 1 FROM public.dues_proofs WHERE file_hash = v_hash AND status IN ('approved', 'revoked')) THEN
+        v_status := 'rejected'; v_reason := 'duplicate';
+      END IF;
+      SELECT id INTO v_uid FROM public.profiles
+       WHERE regexp_replace(student_id, '\D', '', 'g') = v_sid LIMIT 1;
+      INSERT INTO public.dues_proofs (user_id, student_id, semester, source, status, reason, amount, account_tail, image_path, file_hash)
+      VALUES (v_uid, v_sid, v_sem, 'form', v_status, v_reason,
+              nullif(v_proof->>'amount', '')::int, nullif(v_proof->>'account_tail', ''),
+              nullif(v_proof->>'file_ref', ''), v_hash);
+      IF v_status = 'approved' AND v_uid IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM public.dues_proofs WHERE user_id = v_uid AND semester = v_sem AND status = 'revoked') THEN
+        UPDATE public.profiles SET is_paid = true, last_paid_semester = v_sem WHERE id = v_uid;
+        INSERT INTO public.logs (user_id, action_type, details)
+        VALUES (v_uid, 'DUES_PROOF', jsonb_build_object('status', 'approved', 'reason', v_reason, 'semester', v_sem, 'source', 'form'));
+        v_paid := true;
+      END IF;
+    END IF;
+  END IF;
+
+  RETURN jsonb_build_object('success', true, 'semester', v_sem, 'proof_status', v_status, 'paid', v_paid);
 END;
 $function$
 
