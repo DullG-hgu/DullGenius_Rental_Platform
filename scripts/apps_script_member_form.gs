@@ -133,5 +133,6 @@ function sendMemberApplication_(response, withProof) {
     muteHttpExceptions: true,
   });
   Logger.log('[Member] Supabase %s %s', res.getResponseCode(), res.getContentText());
-  return res.getResponseCode() === 200 && String(res.getContentText()).indexOf('"success":true') !== -1;
+  // PostgREST 는 jsonb 를 `"success": true` 처럼 빈칸을 넣어 돌려준다 — 글자 그대로 비교하면 성공도 실패로 센다.
+  return res.getResponseCode() === 200 && /"success"\s*:\s*true/.test(String(res.getContentText()));
 }
