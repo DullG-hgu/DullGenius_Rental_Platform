@@ -142,32 +142,6 @@ export const checkRateLimitOTP = async (studentId) => {
     }
 };
 
-// [User] 비밀번호 재설정 - OTP 요청
-export const requestPasswordResetOTP = async (studentId, name, phone) => {
-    const { data, error } = await supabase.rpc('request_password_reset_otp', {
-        p_student_id: studentId,
-        p_name: name,
-        p_phone: phone
-    });
-
-    if (error) throw error;
-    if (!data.success) throw new Error(data.message);
-    return data;
-};
-
-// [User] 비밀번호 재설정 - OTP 검증 후 변경
-export const verifyOTPAndResetPassword = async (studentId, otpCode, newPassword) => {
-    const { data, error } = await supabase.rpc('verify_otp_and_reset_password', {
-        p_student_id: studentId,
-        p_otp_code: otpCode,
-        p_new_password: newPassword
-    });
-
-    if (error) throw error;
-    if (!data.success) throw new Error(data.message);
-    return data;
-};
-
 // [Legacy] 이전 비밀번호 재설정 함수 (호환성)
 export const resetOwnPassword = async (studentId, name, phone, newPassword) => {
     const { data, error } = await supabase.rpc('reset_own_password', {
