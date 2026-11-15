@@ -129,7 +129,6 @@ function RentalTutorial({ isOpen, onClose, onOpenReport }) {
                 body: (
                     <>
                         <p>동아리방({ROOM}) 문을 열자마자 <strong>오른쪽 책상 위 태블릿</strong>에서 「찜 수령하기」를 누르고 내 이름을 골라요.</p>
-                        <p>동아리방은 <strong>{CLUB_INFO.roomDays}</strong>에 이용할 수 있어요.</p>
                         <p><strong>회비를 낸 부원만</strong> 빌릴 수 있어요. 아직 안 냈다면 로그인한 뒤 게임 상세에서 회비 계좌로 보내고, 「이체 캡처로 바로 인증」에 이체 완료 화면을 올리면 돼요.</p>
                     </>
                 ),

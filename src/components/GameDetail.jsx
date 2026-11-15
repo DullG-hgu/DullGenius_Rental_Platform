@@ -497,7 +497,7 @@ function GameDetail() {
                 {myDibsDue && <span className="pickup-left">수령 마감까지 {minutesLeft(myDibsDue, nowMs)}분</span>}
               </p>
               <ol className="pickup-steps">
-                <li>동아리방({ROOM})으로 와요. {CLUB_INFO.roomDays}에 이용할 수 있어요.</li>
+                <li>동아리방({ROOM})으로 와요.</li>
                 <li>문을 열자마자 오른쪽 책상 위 태블릿에서 「찜 수령하기」를 눌러요.</li>
                 <li>내 이름을 골라요.</li>
               </ol>
@@ -542,7 +542,7 @@ function GameDetail() {
             ) : (
               <>
                 <button onClick={handleRent} className="main-btn rent">찜하기 (30분)</button>
-                <p className="action-hint">30분 동안 잡아 두고, 동아리방 태블릿에서 받아 가요.<br />동아리방 이용일은 {CLUB_INFO.roomDays}이에요.</p>
+                <p className="action-hint">30분 동안 잡아 두고, 동아리방 태블릿에서 받아 가요.</p>
               </>
             )
           ) : game.status === "예약됨" || game.status === "찜" || game.status === "대여중" || game.status === "이용중" ? (

@@ -14,7 +14,7 @@ import RentalTutorial from '../components/RentalTutorial';
 import PoweredByBGG from '../components/PoweredByBGG';
 import Header from '../components/Header';
 import { sendLog, fetchOfficeInfo, fetchPaymentCheckEnabled } from '../api';
-import { LINKS, CLUB_INFO } from '../infoData';
+import { LINKS } from '../infoData';
 import { FUN_ITEMS } from '../fun/funItems';
 import { isPaidMember } from '../lib/membership';
 import { HomeGameCard, RecommendationDeck } from './home/HomeSections';
@@ -205,11 +205,6 @@ const Home = () => {
                         <span aria-hidden="true">→</span>
                     </a>
                 </div>
-            )}
-
-            {/* 평소(무료 대여 배너가 꺼진 상태 = 기본): 동아리방 이용 요일 한 줄 */}
-            {!isOfficeOpen && (
-                <p className="home-room-note">동아리방은 {CLUB_INFO.roomDays}에 이용할 수 있어요.</p>
             )}
 
             <section className="home-search">
